@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { genericWhen } from '@/fleet/testing_tools/integration/fleet_integration_test';
+import { screen, within } from '@testing-library/react';
+
+import {
+  genericWhen,
+  getUser,
+} from '@/fleet/testing_tools/integration/fleet_integration_test';
 
 import { Component as SitesRouteComponent, SitesPage } from './sites_page';
 
@@ -25,5 +30,36 @@ export const when = {
 
   routeComponentIsRendered() {
     return genericWhen.renderPage(<SitesRouteComponent />);
+  },
+
+  async userOpensAddSiteDialog() {
+    await genericWhen.userClicksButton('Add site');
+  },
+
+  async userFillsSiteForm(fields: { id?: string; name?: string }) {
+    const dialog = await screen.findByRole('dialog');
+    const user = getUser();
+    if (fields.id !== undefined) {
+      const idInput = within(dialog).getByLabelText(/Site code \(ID\)/i);
+      await user.clear(idInput);
+      if (fields.id) {
+        await user.type(idInput, fields.id);
+      }
+    }
+    if (fields.name !== undefined) {
+      const nameInput = within(dialog).getByLabelText(/Display name/i);
+      await user.clear(nameInput);
+      if (fields.name) {
+        await user.type(nameInput, fields.name);
+      }
+    }
+  },
+
+  async userSubmitsSiteForm() {
+    const dialog = await screen.findByRole('dialog');
+    const submitBtn = within(dialog).getByRole('button', {
+      name: /Add site/i,
+    });
+    await getUser().click(submitBtn);
   },
 };

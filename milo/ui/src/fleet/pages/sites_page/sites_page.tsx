@@ -12,17 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Typography,
+} from '@mui/material';
+import { useCallback, useMemo, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFeatureFlag } from '@/common/feature_flags';
+import { AdminAccessRequiredDialog } from '@/fleet/components/actions/shared/admin_access_required_dialog';
+import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { StatusPill } from '@/fleet/components/status_pill/status_pill';
 import { enablePhysicalSites } from '@/fleet/features';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { PageNotFoundPage } from '@/fleet/pages/not_found_page';
+import {
+  actionRowSx,
+  pageHeaderSx,
+  surfaceCardSx,
+} from '@/fleet/theme/recipes';
+import { borders, fleetColors, iconSizes } from '@/fleet/theme/tokens';
+import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-// Physical Sites directory page (http://goto.google.com/fcon-labs-directory-design).
+import { SiteCard } from './site_card';
+import { SiteFormDialog } from './site_form_dialog';
+import { usePhysicalSites } from './use_physical_sites';
+
+// Physical Sites directory page.
 //
 // Key design decisions:
 // 1. Naming ("Physical Sites" at /ui/fleet/sites vs. "Physical Labs"):
@@ -33,7 +56,167 @@ import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analyti
 //    string ID (matching Device.id hostnames) paired with a human-readable
 //    display name (e.g. "Palo Alto EM25").
 export const SitesPage = () => {
-  return <Box component="main" />;
+  const { sites, isLoading, isError, error, createSiteMutation } =
+    usePhysicalSites();
+  const { hasPermission: hasAdminPermission, fetchPermissions } =
+    useAdminTaskPermission();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isAdminAccessDialogOpen, setIsAdminAccessDialogOpen] = useState(false);
+
+  const sortedSites = useMemo(() => {
+    return [...sites].sort(
+      (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+    );
+  }, [sites]);
+
+  const runWithAdminPermission = useCallback(
+    async (action: () => void) => {
+      if (hasAdminPermission === true) {
+        action();
+        return;
+      }
+      if (hasAdminPermission === false) {
+        setIsAdminAccessDialogOpen(true);
+        return;
+      }
+      try {
+        const res = await fetchPermissions();
+        if (res.hasPermission) {
+          action();
+        } else {
+          setIsAdminAccessDialogOpen(true);
+        }
+      } catch {
+        setIsAdminAccessDialogOpen(true);
+      }
+    },
+    [fetchPermissions, hasAdminPermission],
+  );
+
+  const handleOpenCreate = useCallback(() => {
+    void runWithAdminPermission(() => {
+      createSiteMutation.reset();
+      setIsFormOpen(true);
+    });
+  }, [createSiteMutation, runWithAdminPermission]);
+
+  const handleCloseForm = useCallback(() => {
+    setIsFormOpen(false);
+  }, []);
+
+  const handleSaveSite = useCallback(
+    async (site: PhysicalSite) => {
+      try {
+        await createSiteMutation.mutateAsync(site);
+        setIsFormOpen(false);
+      } catch {
+        // Error is surfaced inside SiteFormDialog via mutation state.
+      }
+    },
+    [createSiteMutation],
+  );
+
+  return (
+    <Box
+      component="main"
+      sx={{
+        backgroundColor: fleetColors.canvas,
+        minHeight: '100%',
+      }}
+    >
+      <Box
+        sx={{
+          ...pageHeaderSx,
+          borderBottom: borders.default,
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
+        >
+          <Box sx={actionRowSx}>
+            <Typography variant="h5" component="h1">
+              Physical sites
+            </Typography>
+            {!isLoading && !isError && (
+              <StatusPill tone="neutral" dot={false}>
+                {`${sortedSites.length} ${
+                  sortedSites.length === 1 ? 'site' : 'sites'
+                }`}
+              </StatusPill>
+            )}
+          </Box>
+
+          <Box sx={actionRowSx}>
+            <Button
+              variant="toolbar"
+              startIcon={<AddIcon sx={{ fontSize: iconSizes.control }} />}
+              onClick={handleOpenCreate}
+            >
+              Add site
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        {isError ? (
+          <Alert severity="error">
+            {getErrorMessage(error, 'load physical sites')}
+          </Alert>
+        ) : isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={28} aria-label="Loading physical sites" />
+          </Box>
+        ) : sortedSites.length === 0 ? (
+          <Box sx={{ ...surfaceCardSx, p: 4, textAlign: 'center' }}>
+            <Typography variant="body1" color="text.secondary">
+              No physical sites registered yet.
+            </Typography>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: 2,
+            }}
+          >
+            {sortedSites.map((site) => (
+              <SiteCard key={site.id} site={site} />
+            ))}
+          </Box>
+        )}
+      </Box>
+
+      <SiteFormDialog
+        key={isFormOpen ? 'create-open' : 'create-closed'}
+        open={isFormOpen}
+        existingSites={sites}
+        isSaving={createSiteMutation.isPending}
+        error={createSiteMutation.error}
+        onClose={handleCloseForm}
+        onSave={handleSaveSite}
+      />
+
+      <AdminAccessRequiredDialog
+        open={isAdminAccessDialogOpen}
+        onClose={() => setIsAdminAccessDialogOpen(false)}
+      />
+    </Box>
+  );
 };
 
 export function Component() {

@@ -15,6 +15,8 @@
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { enablePhysicalSites } from '@/fleet/features';
 import { genericGiven } from '@/fleet/testing_tools/integration/fleet_integration_test';
+import { fakeFleetConsoleBackend } from '@/fleet/testing_tools/mock_api/fake_fleet_console_backend';
+import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 export const given = {
   ...genericGiven,
@@ -29,5 +31,24 @@ export const given = {
 
   unauthenticated() {
     genericGiven.authenticatedAs(ANONYMOUS_IDENTITY, '');
+  },
+
+  withoutAdminTaskPermission() {
+    fakeFleetConsoleBackend.permissions.setGroupPermission(
+      'mdb/fleet-console-admin-tasks-policy',
+      false,
+    );
+  },
+
+  sites(items: readonly PhysicalSite[]) {
+    fakeFleetConsoleBackend.physicalSites.seed(items);
+  },
+
+  listSitesError(message = 'Failed to fetch sites') {
+    genericGiven.rpcError('ListPhysicalSites', 13, message);
+  },
+
+  createSiteError(message = 'Failed to create site') {
+    genericGiven.rpcError('CreatePhysicalSite', 13, message);
   },
 };
