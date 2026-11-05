@@ -27,6 +27,7 @@ import {
   CircularProgress,
   Paper,
   Skeleton,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
@@ -133,8 +134,12 @@ export const WorkforceActivityView = ({
   const [expandedTechIds, setExpandedTechIds] = useState<
     Record<string, boolean>
   >({});
+  const [unclaimError, setUnclaimError] = useState<string | null>(null);
   const { mutate: unclaimTask, isPending: isUnclaimPending } =
-    useUnclaimRepairTask();
+    useUnclaimRepairTask({
+      onError: (err) =>
+        setUnclaimError(getErrorMessage(err, 'unclaim repair task')),
+    });
 
   const showPickupRank = useFeatureFlag(enableWorkforcePickupRank);
   const showInProgressRepairs = useFeatureFlag(
@@ -832,6 +837,20 @@ export const WorkforceActivityView = ({
           </TableBody>
         </Table>
       </TableContainer>
+      <Snackbar
+        open={Boolean(unclaimError)}
+        autoHideDuration={6000}
+        onClose={() => setUnclaimError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setUnclaimError(null)}
+          severity="error"
+          sx={{ width: '100%' }}
+        >
+          {unclaimError}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

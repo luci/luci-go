@@ -301,6 +301,34 @@ describe('<WorkforceActivityView /> (Full Page Integration with Fake pRPC Backen
     await then.claimedDutChipIsEnabled('dut-zero-task');
   });
 
+  it('displays an error Snackbar when UnclaimRepairTask fails', async () => {
+    given.inProgressRepairsEnabled();
+    given.authenticatedAs('user:andrew@google.com', 'andrew@google.com');
+    const unclaimRpc = given.deferredUnclaim();
+    given.workforceActivity({
+      technicians: [
+        aTechnicianActivity({
+          claimedDuts: [
+            {
+              taskId: '201',
+              dutId: 'dut-valid-task',
+              score: 150,
+              duration: { seconds: '900', nanos: 0 },
+            },
+          ],
+        }),
+      ],
+    });
+
+    when.viewIsRendered();
+    await when.userUnclaimsDut('dut-valid-task');
+    await unclaimRpc.rejectWithError(7, 'Permission denied');
+
+    await then.textIsVisible(
+      /You don't have permission to unclaim repair task/i,
+    );
+  });
+
   it('requests updated timeframe from GetWorkforceActivity when toggle buttons are clicked', async () => {
     given.timeframeFilterEnabled();
     given.workforceActivity({
