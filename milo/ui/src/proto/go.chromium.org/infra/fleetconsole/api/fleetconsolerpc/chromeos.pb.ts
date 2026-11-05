@@ -334,6 +334,22 @@ export interface ExportDevicesToCSVResponse {
 export interface ScheduleAutorepairRequest {
   readonly unitNames: readonly string[];
   readonly flags: readonly ScheduleAutorepairRequest_AutorepairFlag[];
+  /**
+   * Targeted repair requests to be performed on the DUTs before scheduling auto-repair.
+   * String values correspond to the canonical enum DutState.RepairRequest defined in UFS:
+   * go.chromium.org/infra/unifiedfleet/api/v1/models/chromeos/lab/dut_state.proto
+   *
+   * Supported values (accepted with or without the "REPAIR_REQUEST_" prefix):
+   * - "PROVISION" (or "REPAIR_REQUEST_PROVISION"): Re-provision DUT OS.
+   * - "REIMAGE_BY_USBKEY" (or "REPAIR_REQUEST_REIMAGE_BY_USBKEY"): Reimage DUT via USB key.
+   * - "UPDATE_USBKEY_IMAGE" (or "REPAIR_REQUEST_UPDATE_USBKEY_IMAGE"): Re-download image to USB key.
+   * - "REFLASH_FW" (or "REPAIR_REQUEST_REFLASH_FW"): Re-flash DUT firmware (AP and EC).
+   * - "AUDIT_STORAGE" (or "REPAIR_REQUEST_AUDIT_STORAGE"): Run storage audit (badblocks / SMART check).
+   * - "AUDIT_USBKEY" (or "REPAIR_REQUEST_AUDIT_USBKEY"): Audit Servo USB key health.
+   * - "AUDIT_RPM" (or "REPAIR_REQUEST_AUDIT_RPM"): Audit RPM power outlet configuration.
+   * - "POWER_CYCLE_SERVO_BY_HUB" (or "REPAIR_REQUEST_POWER_CYCLE_SERVO_BY_HUB"): Power-cycle servo via smart hub.
+   */
+  readonly repairRequests: readonly string[];
 }
 
 export enum ScheduleAutorepairRequest_AutorepairFlag {
@@ -3177,7 +3193,7 @@ export const ExportDevicesToCSVResponse: MessageFns<ExportDevicesToCSVResponse> 
 };
 
 function createBaseScheduleAutorepairRequest(): ScheduleAutorepairRequest {
-  return { unitNames: [], flags: [] };
+  return { unitNames: [], flags: [], repairRequests: [] };
 }
 
 export const ScheduleAutorepairRequest: MessageFns<ScheduleAutorepairRequest> = {
@@ -3190,6 +3206,9 @@ export const ScheduleAutorepairRequest: MessageFns<ScheduleAutorepairRequest> = 
       writer.int32(v);
     }
     writer.join();
+    for (const v of message.repairRequests) {
+      writer.uint32(26).string(v!);
+    }
     return writer;
   },
 
@@ -3232,6 +3251,14 @@ export const ScheduleAutorepairRequest: MessageFns<ScheduleAutorepairRequest> = 
 
             break;
           }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.repairRequests.push(reader.string());
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3254,6 +3281,11 @@ export const ScheduleAutorepairRequest: MessageFns<ScheduleAutorepairRequest> = 
       flags: globalThis.Array.isArray(object?.flags)
         ? object.flags.map((e: any) => scheduleAutorepairRequest_AutorepairFlagFromJSON(e))
         : [],
+      repairRequests: globalThis.Array.isArray(object?.repairRequests)
+        ? object.repairRequests.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.repair_requests)
+        ? object.repair_requests.map((e: any) => globalThis.String(e))
+        : [],
     };
   },
 
@@ -3265,6 +3297,9 @@ export const ScheduleAutorepairRequest: MessageFns<ScheduleAutorepairRequest> = 
     if (message.flags?.length) {
       obj.flags = message.flags.map((e) => scheduleAutorepairRequest_AutorepairFlagToJSON(e));
     }
+    if (message.repairRequests?.length) {
+      obj.repairRequests = message.repairRequests;
+    }
     return obj;
   },
 
@@ -3275,6 +3310,7 @@ export const ScheduleAutorepairRequest: MessageFns<ScheduleAutorepairRequest> = 
     const message = createBaseScheduleAutorepairRequest() as any;
     message.unitNames = object.unitNames?.map((e) => e) || [];
     message.flags = object.flags?.map((e) => e) || [];
+    message.repairRequests = object.repairRequests?.map((e) => e) || [];
     return message;
   },
 };

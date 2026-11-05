@@ -14,6 +14,10 @@
 
 import { BuildIdentifier, USING_BUILD_BUCKET_DEV } from '@/fleet/utils/builds';
 import {
+  ScheduleAutorepairRequest,
+  ScheduleAutorepairRequest_AutorepairFlag,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
   BatchRequest_Request,
   BatchResponse,
 } from '@/proto/go.chromium.org/luci/buildbucket/proto/builds_service.pb';
@@ -27,6 +31,103 @@ export const TASK_PRIORITY = 4;
 // See: https://source.chromium.org/chromium/_/chromium/infra/infra/+/f9b80a6c0bb478f5fb0a3b813579088408ca18dc:go/src/infra/libs/skylab/buildbucket/tasknames.go;l=27
 export const REPAIR_TASK_NAME = 'recovery';
 export const REPAIR_DEEP_TASK_NAME = 'deep_recovery';
+
+/**
+ * Canonical ChromeOS UFS / PARIS targeted repair actions (`ufslab.DutState_RepairRequest`
+ * in `infra/unifiedfleet/api/v1/models/chromeos/lab/dut_state.proto`) currently
+ * supported by Fleet Console autorepair.
+ */
+export type RepairRequestAction =
+  | 'PROVISION'
+  | 'UPDATE_USBKEY_IMAGE'
+  | 'REIMAGE_BY_USBKEY'
+  | 'AUDIT_STORAGE'
+  | 'AUDIT_USBKEY';
+
+export interface RepairRequestOption {
+  readonly value: RepairRequestAction;
+  readonly label: string;
+}
+
+export const REPAIR_REQUEST_OPTIONS: readonly RepairRequestOption[] = [
+  {
+    value: 'PROVISION',
+    label: 'Re-provision DUT',
+  },
+  {
+    value: 'UPDATE_USBKEY_IMAGE',
+    label: 'Update USB key image',
+  },
+  {
+    value: 'REIMAGE_BY_USBKEY',
+    label: 'Re-image from USB',
+  },
+  {
+    value: 'AUDIT_STORAGE',
+    label: 'Audit internal storage',
+  },
+  {
+    value: 'AUDIT_USBKEY',
+    label: 'Audit USB drive',
+  },
+];
+
+export interface AutorepairCliCommandOptions {
+  readonly deepRepair?: boolean;
+  readonly latestRepair?: boolean;
+  readonly verifyOnly?: boolean;
+  readonly isPartner?: boolean;
+  readonly repairRequests?: readonly RepairRequestAction[];
+}
+
+/**
+ * Formats the equivalent `shivas` CLI command(s). When targeted repair
+ * requests are selected, `shivas update dut-state -dut-name <dut> -repair-request <REQS>`
+ * is emitted for each DUT before the `shivas repair` command, because PARIS
+ * reads `dut_state.repair_requests` from UFS.
+ */
+export function formatShivasRepairCommand(
+  dutNames: readonly string[],
+  options: AutorepairCliCommandOptions = {},
+): string {
+  const {
+    deepRepair = false,
+    latestRepair = false,
+    verifyOnly = false,
+    isPartner = false,
+    repairRequests = [],
+  } = options;
+  const namespaceFlag = isPartner ? ' -namespace=os-partner' : '';
+  const repairCmd = `shivas repair${deepRepair ? ' -deep' : ''}${
+    latestRepair ? ' -latest' : ''
+  }${verifyOnly ? ' -verify' : ''}${namespaceFlag} ${dutNames.join(' ')}`;
+
+  if (repairRequests.length === 0 || dutNames.length === 0) {
+    return repairCmd;
+  }
+
+  const joinedRequests = repairRequests.join(',');
+  const updateCmds = dutNames.map(
+    (dut) =>
+      `shivas update dut-state -dut-name ${dut} -repair-request ${joinedRequests}${namespaceFlag}`,
+  );
+  return [...updateCmds, repairCmd].join('\n');
+}
+
+/**
+ * Constructs a `ScheduleAutorepairRequest` carrying optional `repairRequests`.
+ */
+export function createScheduleAutorepairRequest(
+  unitNames: readonly string[],
+  flags: readonly ScheduleAutorepairRequest_AutorepairFlag[],
+  repairRequests: readonly RepairRequestAction[] = [],
+): ScheduleAutorepairRequest {
+  return ScheduleAutorepairRequest.fromPartial({
+    unitNames: [...unitNames],
+    flags: [...flags],
+    repairRequests: [...repairRequests],
+  });
+}
 
 const PROD_BUILDER = {
   project: 'chromeos',
@@ -45,10 +146,15 @@ const DEV_BUILDER = {
 /**
  * Generates a set of batched requests to BuildBucket based on dut names.
  *
- * @param dutNames List of DUTS to run autorepair against.
+ * @param duts List of DUTs to run autorepair against.
  * @param sessionId A custom unique string identifying the admin session the
  *      user is in. Used for users to be able to look up all tasks run in this
  *      session.
+ * @param deep Whether to run a deep repair workflow.
+ * @param tags Additional Buildbucket/Swarming tags.
+ * @param repairRequests Optional targeted RepairRequest actions passed via
+ *      Buildbucket input properties (`repair_requests`) and Swarming tags
+ *      (`repair_request:<ACTION>`).
  * @returns A list of requests for Buildbucket's batch endpoint.
  */
 export function autorepairRequestsFromDuts(
@@ -56,10 +162,16 @@ export function autorepairRequestsFromDuts(
   sessionId: string,
   deep: boolean = false,
   tags: readonly StringPair[] = [],
+  repairRequests: readonly RepairRequestAction[] = [],
 ): BatchRequest_Request[] {
   // Combine all build requests into one Swarming view using a session ID.
 
   const builder = USING_BUILD_BUCKET_DEV ? DEV_BUILDER : PROD_BUILDER;
+  const repairRequestTags: StringPair[] = repairRequests.map((action) => ({
+    key: 'repair_request',
+    value: action,
+  }));
+
   return duts.map((dut) => {
     // Avoid matching dut_name on Buildbucket dev because duts do not exist
     // on dev.
@@ -82,6 +194,23 @@ export function autorepairRequestsFromDuts(
         value: dut.state,
       },
     ];
+
+    const properties: Record<string, unknown> = {
+      admin_service: 'chromeos-skylab-bot-fleet.appspot.com',
+      configuration: '',
+      disable_cft: false,
+      enable_recovery: true,
+      inventory_namespace: 'os',
+      inventory_service: 'ufs.api.cr.dev',
+      no_metrics: false,
+      no_stepper: false,
+      task_name: 'recovery',
+      unit_name: dut.name,
+      update_inventory: true,
+    };
+    if (repairRequests.length > 0) {
+      properties.repair_requests = [...repairRequests];
+    }
 
     return BatchRequest_Request.fromPartial({
       scheduleBuild: {
@@ -118,22 +247,11 @@ export function autorepairRequestsFromDuts(
             key: 'qs_account',
             value: 'unmanaged_p0',
           },
+          ...repairRequestTags,
           ...tags,
         ],
         // Required for autorepair to run successfully. See: b/401004801
-        properties: {
-          admin_service: 'chromeos-skylab-bot-fleet.appspot.com',
-          configuration: '',
-          disable_cft: false,
-          enable_recovery: true,
-          inventory_namespace: 'os',
-          inventory_service: 'ufs.api.cr.dev',
-          no_metrics: false,
-          no_stepper: false,
-          task_name: 'recovery',
-          unit_name: dut.name,
-          update_inventory: true,
-        },
+        properties,
       },
     });
   });

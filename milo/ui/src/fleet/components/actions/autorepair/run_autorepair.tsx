@@ -19,16 +19,14 @@ import { useState } from 'react';
 
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
-import {
-  ScheduleAutorepairRequest_AutorepairFlag,
-  ScheduleAutorepairRequest,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import { ScheduleAutorepairRequest_AutorepairFlag } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AdminAccessRequiredDialog } from '../shared/admin_access_required_dialog';
 import { DutToRepair } from '../shared/types';
 import { useAdminTaskPermission } from '../shared/use_admin_task_permission';
 
 import AutorepairDialog, { SessionInfo } from './autorepair_dialog';
+import { createScheduleAutorepairRequest, RepairRequestAction } from './shared';
 
 interface RunAutorepairProps {
   selectedDuts: DutToRepair[];
@@ -44,6 +42,9 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
   const [deepRepair, setDeepRepair] = useState<boolean>(false);
   const [latestRepair, setLatestRepair] = useState<boolean>(false);
   const [verifyOnly, setVerifyOnly] = useState<boolean>(false);
+  const [repairRequests, setRepairRequests] = useState<RepairRequestAction[]>(
+    [],
+  );
   const [adminAccessRequiredDialogOpen, setAdminAccessRequiredDialogOpen] =
     useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -96,10 +97,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
 
     try {
       const resp = await fleetConsoleClient.ScheduleAutorepair(
-        ScheduleAutorepairRequest.fromPartial({
-          unitNames: dutNames,
-          flags: flags,
-        }),
+        createScheduleAutorepairRequest(dutNames, flags, repairRequests),
       );
 
       setSessionInfo({
@@ -136,6 +134,7 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
     setDeepRepair(false);
     setLatestRepair(false);
     setVerifyOnly(false);
+    setRepairRequests([]);
   };
 
   return (
@@ -165,6 +164,8 @@ export function RunAutorepair({ selectedDuts }: RunAutorepairProps) {
         }
         verifyOnly={verifyOnly}
         handleVerifyOnlyChange={(checked: boolean) => setVerifyOnly(checked)}
+        repairRequests={repairRequests}
+        handleRepairRequestsChange={setRepairRequests}
         loading={loading}
       />
       <AdminAccessRequiredDialog

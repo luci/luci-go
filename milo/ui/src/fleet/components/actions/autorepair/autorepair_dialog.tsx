@@ -21,6 +21,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   FormControlLabel,
   FormGroup,
@@ -31,6 +32,7 @@ import {
 } from '@mui/material';
 
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
+import { statusTones } from '@/fleet/theme/tokens';
 import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { isPartnerNamespace } from '@/fleet/utils/devices';
 import { ScheduleAutorepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -39,6 +41,8 @@ import CodeSnippet from '../../code_snippet/code_snippet';
 import { MarkdownSnippet } from '../../code_snippet/markdown_snippet';
 
 import { generateAutorepairBugMarkdown } from './autorepair_utils';
+import { RepairRequestsSection } from './repair_requests_section';
+import { formatShivasRepairCommand, RepairRequestAction } from './shared';
 
 export interface SessionInfo {
   sessionId?: string;
@@ -58,6 +62,8 @@ export interface AutorepairDialogProps {
   handleLatestRepairChange: (checked: boolean) => void;
   verifyOnly: boolean;
   handleVerifyOnlyChange: (checked: boolean) => void;
+  repairRequests?: readonly RepairRequestAction[];
+  handleRepairRequestsChange?: (next: RepairRequestAction[]) => void;
   loading: boolean;
 }
 
@@ -90,14 +96,18 @@ export default function AutorepairDialog({
   handleLatestRepairChange,
   verifyOnly,
   handleVerifyOnlyChange,
+  repairRequests = [],
+  handleRepairRequestsChange,
   loading,
 }: AutorepairDialogProps) {
   const isPartner = namespaces.some(isPartnerNamespace);
-  const shivasCommand = `shivas repair${deepRepair ? ' -deep' : ''}${
-    latestRepair ? ' -latest' : ''
-  }${verifyOnly ? ' -verify' : ''}${
-    isPartner ? ' -namespace=os-partner' : ''
-  } ${dutNames.join(' ')}`;
+  const shivasCommand = formatShivasRepairCommand(dutNames, {
+    deepRepair,
+    latestRepair,
+    verifyOnly,
+    isPartner,
+    repairRequests,
+  });
 
   const satlabCommand = `satlab repair dut ${dutNames.join(' ')}`;
   const bugMarkdown = generateAutorepairBugMarkdown(results, sessionId);
@@ -164,19 +174,23 @@ export default function AutorepairDialog({
     </>
   ) : (
     <>
-      <DialogTitle>Running autorepair</DialogTitle>
-      <DialogContent>
+      <DialogTitle sx={{ pb: 1 }}>Running autorepair</DialogTitle>
+      <DialogContent sx={{ pt: 0.5, pb: 1, overflowX: 'hidden' }}>
         {dutNames.length > 0 && (
           <>
-            <p>
+            <p style={{ margin: '4px 0' }}>
               Please confirm that you want to run autorepair on the following{' '}
               {plurifyDevices(dutNames.length)}:
             </p>
-            <ul>
+            <ul style={{ margin: '4px 0 8px 0', paddingLeft: '20px' }}>
               {dutNames?.map((dutName) => getDeviceDetailListItem(dutName))}
             </ul>
-            <FormControl component="fieldset" variant="standard">
-              <Stack direction="row" alignItems="center" spacing={1}>
+            <FormControl
+              component="fieldset"
+              variant="standard"
+              sx={{ display: 'block', mb: 1 }}
+            >
+              <Stack direction="row" alignItems="center" spacing={0.5}>
                 <FormLabel
                   component="legend"
                   sx={{
@@ -200,12 +214,13 @@ export default function AutorepairDialog({
               <FormGroup
                 sx={{
                   ml: 2,
-                  '& .MuiFormControlLabel-root': { height: '30px' },
+                  '& .MuiFormControlLabel-root': { height: '26px' },
                 }}
               >
                 <FormControlLabel
                   control={
                     <Checkbox
+                      size="small"
                       checked={deepRepair}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         handleDeepRepairChange(e.target.checked)
@@ -217,6 +232,7 @@ export default function AutorepairDialog({
                 <FormControlLabel
                   control={
                     <Checkbox
+                      size="small"
                       checked={latestRepair}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         handleLatestRepairChange(e.target.checked)
@@ -228,6 +244,7 @@ export default function AutorepairDialog({
                 <FormControlLabel
                   control={
                     <Checkbox
+                      size="small"
                       checked={verifyOnly}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         handleVerifyOnlyChange(e.target.checked)
@@ -238,7 +255,13 @@ export default function AutorepairDialog({
                 />
               </FormGroup>
               {deepRepair && verifyOnly && (
-                <p style={{ color: 'red' }}>
+                <p
+                  style={{
+                    color: statusTones.error.fg,
+                    margin: '4px 0 0 0',
+                    fontSize: '12px',
+                  }}
+                >
                   Unusual case: both deep and verify are checked. Verify build
                   will be used but task will trigger a full deep recovery
                   workflow.
@@ -246,7 +269,14 @@ export default function AutorepairDialog({
               )}
             </FormControl>
 
-            <p>Equivalent shivas command:</p>
+            <Divider sx={{ my: 1.5 }} />
+
+            <RepairRequestsSection
+              repairRequests={repairRequests}
+              onChange={handleRepairRequestsChange}
+            />
+
+            <p style={{ margin: '6px 0 4px 0' }}>Equivalent shivas command:</p>
             <CodeSnippet
               displayText={shivasCommand}
               copyText={shivasCommand}

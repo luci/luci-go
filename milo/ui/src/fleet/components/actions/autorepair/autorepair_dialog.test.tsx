@@ -354,6 +354,49 @@ describe('<AutorepairDialog />', () => {
     expect(await navigator.clipboard.readText()).toBe(expectedMarkdown);
     expect(screen.getByRole('button', { name: 'Copied' })).toBeVisible();
   });
+
+  it('renders RepairRequest checkboxes, updates shivas command, and resets when Reset is clicked', () => {
+    const handleRepairRequestsChange = jest.fn();
+    render(
+      <FakeAuthStateProvider>
+        <AutorepairDialog
+          {...sharedTestProps}
+          sessionInfo={{ dutNames: ['test-dut-1', 'test-dut-2'] }}
+          repairRequests={['REIMAGE_BY_USBKEY', 'AUDIT_STORAGE']}
+          handleRepairRequestsChange={handleRepairRequestsChange}
+        />
+      </FakeAuthStateProvider>,
+    );
+
+    expect(screen.getByText('Place repair requests (optional)')).toBeVisible();
+    expect(
+      screen.getByText(
+        /shivas update dut-state -dut-name test-dut-1 -repair-request REIMAGE_BY_USBKEY,AUDIT_STORAGE/,
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        /shivas update dut-state -dut-name test-dut-2 -repair-request REIMAGE_BY_USBKEY,AUDIT_STORAGE/,
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/shivas repair test-dut-1 test-dut-2/),
+    ).toBeVisible();
+
+    const provisionCheckbox = screen.getByRole('checkbox', {
+      name: 'Re-provision DUT (PROVISION)',
+    });
+    fireEvent.click(provisionCheckbox);
+    expect(handleRepairRequestsChange).toHaveBeenCalledWith([
+      'PROVISION',
+      'REIMAGE_BY_USBKEY',
+      'AUDIT_STORAGE',
+    ]);
+
+    const resetButton = screen.getByRole('button', { name: 'Reset' });
+    fireEvent.click(resetButton);
+    expect(handleRepairRequestsChange).toHaveBeenLastCalledWith([]);
+  });
 });
 
 describe('generateAutorepairBugMarkdown', () => {

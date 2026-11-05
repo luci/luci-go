@@ -62,4 +62,61 @@ describe('ChromeOS Devices Page', () => {
     // Verify the row becomes selected/checked
     cy.get('[data-testid^="select-checkbox-"]').first().should('be.checked');
   });
+
+  it('should schedule autorepair with selected repairRequests', () => {
+    mockPrpcEndpoint(
+      'CheckPermission',
+      { hasPermission: true },
+      'checkPermission',
+    );
+    mockPrpcEndpoint(
+      'ScheduleAutorepair',
+      {
+        sessionId: 'e2e-session-1',
+        results: [
+          {
+            unitName: '1',
+            taskUrl: 'https://ci.chromium.org/b/870001',
+          },
+        ],
+      },
+      'scheduleAutorepair',
+    );
+
+    cy.visit('/ui/fleet/p/chromeos/devices');
+    cy.wait(['@listDevices', '@countDevices']);
+
+    // Select the first device row
+    cy.get('[data-testid^="select-checkbox-"]').first().click();
+    cy.get('[data-testid^="select-checkbox-"]').first().should('be.checked');
+
+    // Open the Run autorepair dialog
+    cy.contains('button', 'Run autorepair').click();
+    cy.wait('@checkPermission');
+
+    // Select targeted repair actions and verify shivas command preview
+    cy.get('input[aria-label="Re-image from USB (REIMAGE_BY_USBKEY)"]').check();
+    cy.get(
+      'input[aria-label="Audit internal storage (AUDIT_STORAGE)"]',
+    ).check();
+    cy.contains(
+      'shivas update dut-state -dut-name 1 -repair-request REIMAGE_BY_USBKEY,AUDIT_STORAGE',
+    ).should('be.visible');
+    cy.contains('shivas repair 1').should('be.visible');
+
+    // Confirm and verify the ScheduleAutorepair pRPC payload includes repairRequests
+    cy.contains('button', 'Confirm').click({ force: true });
+    cy.wait('@scheduleAutorepair').then((interception) => {
+      const body =
+        typeof interception.request.body === 'string'
+          ? JSON.parse(interception.request.body)
+          : interception.request.body;
+      expect(body).to.deep.include({
+        unitNames: ['1'],
+        repairRequests: ['REIMAGE_BY_USBKEY', 'AUDIT_STORAGE'],
+      });
+    });
+
+    cy.contains('Autorepair results').should('be.visible');
+  });
 });

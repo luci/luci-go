@@ -133,4 +133,85 @@ describe('<RunAutorepair />', () => {
       expect(screen.getByText(/Failed to schedule autorepair/i)).toBeVisible();
     });
   });
+
+  it('passes selected repairRequests in ScheduleAutorepair request and resets on close', async () => {
+    const mockScheduleAutorepair = jest.fn().mockReturnValue({
+      sessionId: 'sess-targeted-1',
+      results: [
+        {
+          unitName: 'device-1',
+          taskUrl: 'https://ci.chromium.org/b/870001',
+        },
+      ],
+    });
+    FleetConsoleMockAPI.setFixture(
+      'ScheduleAutorepair',
+      mockScheduleAutorepair,
+    );
+
+    render(
+      <FakeContextProvider>
+        <RunAutorepair selectedDuts={selectedDuts} />
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run autorepair' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
+    });
+
+    const reimageCheckbox = screen.getByRole('checkbox', {
+      name: 'Re-image from USB (REIMAGE_BY_USBKEY)',
+    });
+    const auditStorageCheckbox = screen.getByRole('checkbox', {
+      name: 'Audit internal storage (AUDIT_STORAGE)',
+    });
+
+    expect(reimageCheckbox).not.toBeChecked();
+    expect(auditStorageCheckbox).not.toBeChecked();
+
+    fireEvent.click(reimageCheckbox);
+    fireEvent.click(auditStorageCheckbox);
+
+    expect(
+      screen.getByText(
+        /shivas update dut-state -dut-name device-1 -repair-request REIMAGE_BY_USBKEY,AUDIT_STORAGE/,
+      ),
+    ).toBeVisible();
+    expect(screen.getByText(/shivas repair device-1/)).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => {
+      expect(mockScheduleAutorepair).toHaveBeenCalledWith(
+        expect.objectContaining({
+          unitNames: ['device-1'],
+          repairRequests: ['REIMAGE_BY_USBKEY', 'AUDIT_STORAGE'],
+        }),
+        expect.anything(),
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Done' })).toBeVisible();
+    });
+
+    // Close dialog and re-open to verify state reset
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'Run autorepair' }),
+      ).toBeVisible();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Run autorepair' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('checkbox', {
+          name: 'Re-image from USB (REIMAGE_BY_USBKEY)',
+        }),
+      ).not.toBeChecked();
+    });
+  });
 });
