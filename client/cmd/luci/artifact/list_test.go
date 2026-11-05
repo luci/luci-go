@@ -974,6 +974,36 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Work unit step-1"))
 			assert.Loosely(t, out, should.ContainSubstring("Work unit build-root"))
 		})
+
+		t.Run(`caps number of work units rendered in Pass 3 and respects strict maxBytes budget`, func(t *ftt.Test) {
+			var targets []string
+			for i := 0; i < 100; i++ {
+				targets = append(targets, fmt.Sprintf("rootInvocations/build-123/workUnits/task-1:u-mod-%d", i))
+			}
+
+			queryWorkUnitsCalls := 0
+			client := &mockResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *rdbpb.QueryWorkUnitsRequest) (*rdbpb.QueryWorkUnitsResponse, error) {
+					queryWorkUnitsCalls++
+					return &rdbpb.QueryWorkUnitsResponse{
+						WorkUnits: []*rdbpb.WorkUnit{{Name: "rootInvocations/build-123/workUnits/task-1"}},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					return &rdbpb.ListArtifactsResponse{
+						Artifacts: []*rdbpb.Artifact{
+							mkArt("wu", "module_logcat.txt", "LOGCAT"),
+						},
+					}, nil
+				},
+			}
+
+			out, directIDs := FetchWorkUnitAndAncestorNotices(ctx, client, targets, 800)
+			assert.Loosely(t, len(out) <= 800, should.BeTrue)
+			assert.Loosely(t, queryWorkUnitsCalls, should.Equal(1))
+			assert.Loosely(t, len(directIDs), should.Equal(maxInspectedWorkUnits))
+			assert.Loosely(t, out, should.ContainSubstring("more work units with artifacts; run 'luci artifact list -invocationid=build-123' to view all"))
+		})
 	})
 }
 

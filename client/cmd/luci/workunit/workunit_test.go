@@ -40,6 +40,8 @@ type mockWorkUnitResultDBClient struct {
 	getWorkUnit           func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
 	batchGetWorkUnits     func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error)
 	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
+	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
+	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
 }
 
 func (m *mockWorkUnitResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
@@ -78,7 +80,17 @@ func (m *mockWorkUnitResultDBClient) QueryTestAggregations(ctx context.Context, 
 }
 
 func (m *mockWorkUnitResultDBClient) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+	if m.queryWorkUnits != nil {
+		return m.queryWorkUnits(ctx, in)
+	}
 	return &pb.QueryWorkUnitsResponse{}, nil
+}
+
+func (m *mockWorkUnitResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+	if m.listArtifacts != nil {
+		return m.listArtifacts(ctx, in)
+	}
+	return &pb.ListArtifactsResponse{}, nil
 }
 
 func (m *mockWorkUnitResultDBClient) QueryArtifacts(ctx context.Context, in *pb.QueryArtifactsRequest, opts ...grpc.CallOption) (*pb.QueryArtifactsResponse, error) {
@@ -545,6 +557,93 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, outChild, should.NotContainSubstring("Branch:"))
 			assert.Loosely(t, outChild, should.NotContainSubstring("Target:"))
 			assert.Loosely(t, outChild, should.NotContainSubstring("Build ID:"))
+		})
+
+		t.Run(`surfaces direct and ancestor work unit artifact notices`, func(t *ftt.Test) {
+			targetWUName := "rootInvocations/ants-i77100010600769898/workUnits/ants-wu505:u-mod-1"
+			taskWUName := "rootInvocations/ants-i77100010600769898/workUnits/ants-wu505"
+			rootWUName := "rootInvocations/ants-i77100010600769898/workUnits/root"
+
+			client := &mockWorkUnitResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:            targetWUName,
+						WorkUnitId:      "ants-wu505:u-mod-1",
+						Parent:          taskWUName,
+						Kind:            "TF_MODULE",
+						State:           pb.WorkUnit_FAILED,
+						SummaryMarkdown: "TargetSetupError: Failed to install apk",
+					}, nil
+				},
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					if in.GetPredicate().GetAncestorsOf() == targetWUName {
+						return &pb.QueryWorkUnitsResponse{
+							WorkUnits: []*pb.WorkUnit{
+								{Name: taskWUName, WorkUnitId: "ants-wu505", Parent: rootWUName, Kind: "TFC_COMMAND_TASK"},
+								{Name: rootWUName, WorkUnitId: "root", Kind: "ATP_INVOCATION"},
+							},
+						}, nil
+					}
+					return &pb.QueryWorkUnitsResponse{}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					switch in.Parent {
+					case targetWUName:
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:         targetWUName + "/artifacts/module_setup_error.txt",
+									ArtifactId:   "module_setup_error.txt",
+									ArtifactType: "TEXT",
+									ContentType:  "text/plain",
+									SizeBytes:    1024,
+								},
+							},
+						}, nil
+					case taskWUName:
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:         taskWUName + "/artifacts/host_log_123.txt",
+									ArtifactId:   "host_log_123.txt",
+									ArtifactType: "HOST_LOG",
+									ContentType:  "text/plain",
+									SizeBytes:    20480,
+								},
+								{
+									Name:         taskWUName + "/artifacts/device_logcat_setup_123.txt",
+									ArtifactId:   "device_logcat_setup_123.txt",
+									ArtifactType: "LOGCAT",
+									ContentType:  "text/plain",
+									SizeBytes:    65536,
+								},
+							},
+						}, nil
+					default:
+						return &pb.ListArtifactsResponse{}, nil
+					}
+				},
+			}
+
+			r := &workUnitGetRun{
+				client:       client,
+				invocationID: "I77100010600769898",
+				workUnitID:   "ants-wu505:u-mod-1",
+			}
+
+			out := testutil.CaptureStdout(func() {
+				assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			})
+
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:\n"))
+			assert.Loosely(t, out, should.ContainSubstring("  Work unit ants-wu505:u-mod-1 (1 artifact):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("module_setup_error.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("To fetch a work unit artifact:\n  luci artifact <get|head|tail> -invocationid=ants-i77100010600769898 -workunitid=ants-wu505:u-mod-1 -artifactid=<ARTIFACT_ID>"))
+			assert.Loosely(t, out, should.ContainSubstring("Ancestor Work Unit Artifacts:\n"))
+			assert.Loosely(t, out, should.ContainSubstring("  Work unit ants-wu505 (2 artifacts):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("device_logcat_setup_123.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("host_log_123.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("To fetch an ancestor work unit artifact:\n  luci artifact <get|head|tail> -invocationid=ants-i77100010600769898 -workunitid=ants-wu505 -artifactid=<ARTIFACT_ID>"))
 		})
 	})
 }

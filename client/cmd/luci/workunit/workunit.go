@@ -283,6 +283,8 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		}
 	}
 
+	artifact.PrintWorkUnitAndAncestorNotices(rpcCtx, client, []string{clean}, os.Stdout)
+
 	return 0
 }
 

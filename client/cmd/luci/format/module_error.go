@@ -255,23 +255,59 @@ func getRootInvocationWithCache(ctx context.Context, client pb.ResultDBClient, n
 	return nil
 }
 
+// CacheWorkUnit stores a retrieved WorkUnit in the context's DiscoveryCache,
+// if present, avoiding duplicate GetWorkUnit or QueryWorkUnits RPCs.
+func CacheWorkUnit(ctx context.Context, wu *pb.WorkUnit) {
+	if wu == nil || wu.Name == "" {
+		return
+	}
+	cache := cacheFromContext(ctx)
+	if cache == nil {
+		return
+	}
+	cache.mu.Lock()
+	cache.workUnits[wu.Name] = wu
+	cache.mu.Unlock()
+}
+
 // QueryAncestorWorkUnits queries the ancestor work units of targetWorkUnit.
 func QueryAncestorWorkUnits(ctx context.Context, client pb.ResultDBClient, targetWorkUnit string) []*pb.WorkUnit {
 	cache := cacheFromContext(ctx)
+	var parentName string
 	if cache != nil {
 		cache.mu.RLock()
 		if anc, ok := cache.ancestors[targetWorkUnit]; ok {
 			cache.mu.RUnlock()
 			return anc
 		}
+		if wu := cache.workUnits[targetWorkUnit]; wu != nil && wu.Parent != "" {
+			parentName = wu.Parent
+			if anc, ok := cache.ancestors["parent:"+parentName]; ok {
+				cache.mu.RUnlock()
+				return anc
+			}
+		}
 		cache.mu.RUnlock()
 	}
 
-	rootInvID, _ := base.ExtractWorkUnitComponents(targetWorkUnit)
+	rootInvID, wuID := base.ExtractWorkUnitComponents(targetWorkUnit)
 	if rootInvID == "" {
 		return nil
 	}
 	rootInv := "rootInvocations/" + base.NormalizeInvocation(rootInvID)
+	if parentName == "" {
+		if idx := strings.Index(wuID, ":u-"); idx > 0 {
+			parentName = rootInv + "/workUnits/" + wuID[:idx]
+			if cache != nil {
+				cache.mu.RLock()
+				if anc, ok := cache.ancestors["parent:"+parentName]; ok {
+					cache.mu.RUnlock()
+					return anc
+				}
+				cache.mu.RUnlock()
+			}
+		}
+	}
 
 	qRes, err := client.QueryWorkUnits(ctx, &pb.QueryWorkUnitsRequest{
 		Parent: rootInv,
@@ -288,6 +324,12 @@ func QueryAncestorWorkUnits(ctx context.Context, client pb.ResultDBClient, targe
 	if cache != nil {
 		cache.mu.Lock()
 		cache.ancestors[targetWorkUnit] = ancestors
+		if parentName != "" {
+			cache.ancestors["parent:"+parentName] = ancestors
+		}
+		if len(ancestors) > 0 && ancestors[0].GetName() != "" {
+			cache.ancestors["parent:"+ancestors[0].GetName()] = ancestors
+		}
 		for _, wu := range ancestors {
 			cache.workUnits[wu.Name] = wu
 		}

@@ -37,6 +37,10 @@ import (
 // for each ancestor work unit in PrintAncestorWorkUnitNotices.
 const maxInlineAncestorArtifacts = 15
 
+// maxInspectedWorkUnits bounds the number of target work units queried for
+// direct and ancestor artifacts in a single FetchWorkUnitAndAncestorNotices call.
+const maxInspectedWorkUnits = 20
+
 // DefaultMaxOutputBytes is the default overall stdout byte cap (9.5 KB / 9,500 B)
 // for `luci artifact list` responses so output stays within Jetski's 10 KB
 // (9,728 B usable stdout) tool truncation threshold without middle-truncation.
@@ -291,7 +295,7 @@ func writePrimaryAndAncestorNotices(ctx context.Context, client rdbpb.ResultDBCl
 	primaryBudget := totalBudget
 	if totalBudget > 0 && len(ancFull) > 0 {
 		ancReserve := min(len(ancFull), totalBudget/2)
-		primaryBudget = max(totalBudget-ancReserve, 0)
+		primaryBudget = max(totalBudget-ancReserve, 1)
 	}
 
 	primaryOut := renderPrimaryArtifactSection(category, breadcrumb, cleanTarget, artifacts, totalCount, false, maxArtifacts, false, primaryBudget)
@@ -302,7 +306,10 @@ func writePrimaryAndAncestorNotices(ctx context.Context, client rdbpb.ResultDBCl
 	}
 	ancOut := ancFull
 	if totalBudget > 0 {
-		remaining := max(totalBudget-len(primaryOut), 0)
+		remaining := totalBudget - len(primaryOut)
+		if remaining <= 0 {
+			return
+		}
 		if len(ancOut) > remaining {
 			ancOut = formatAncestorWorkUnitNotices(withArtifacts, targetTestID, targetResultID, parentType, remaining)
 		}
@@ -531,7 +538,163 @@ func PrintAncestorWorkUnitNoticesWithBudget(ctx context.Context, client rdbpb.Re
 	fmt.Fprint(out, formatAncestorWorkUnitNotices(withArtifacts, targetTestID, targetResultID, parentType, maxBytes))
 }
 
+// PrintWorkUnitAndAncestorNotices queries direct artifacts on targetWorkUnits
+// and artifacts on their ancestor work units, printing inline artifact notices
+// bounded by DefaultMaxOutputBytes.
+func PrintWorkUnitAndAncestorNotices(ctx context.Context, client rdbpb.ResultDBClient, targetWorkUnits []string, out io.Writer) {
+	PrintWorkUnitAndAncestorNoticesWithBudget(ctx, client, targetWorkUnits, DefaultMaxOutputBytes, out)
+}
+
+// PrintWorkUnitAndAncestorNoticesWithBudget queries direct artifacts on
+// targetWorkUnits and artifacts on their ancestor work units, printing inline
+// artifact notices bounded by maxBytes (0 for unlimited).
+func PrintWorkUnitAndAncestorNoticesWithBudget(ctx context.Context, client rdbpb.ResultDBClient, targetWorkUnits []string, maxBytes int, out io.Writer) {
+	if maxBytes < 0 {
+		return
+	}
+	notices, _ := FetchWorkUnitAndAncestorNotices(ctx, client, targetWorkUnits, maxBytes)
+	if notices == "" {
+		return
+	}
+	fmt.Fprintln(out)
+	fmt.Fprint(out, notices)
+}
+
+// FetchWorkUnitAndAncestorNotices queries direct artifacts on targetWorkUnits
+// and artifacts on their ancestor work units, returning the formatted notice
+// sections (bounded by maxBytes; 0 for unlimited) and a map of direct artifact
+// IDs keyed by work unit resource name.
+func FetchWorkUnitAndAncestorNotices(ctx context.Context, client rdbpb.ResultDBClient, targetWorkUnits []string, maxBytes int) (string, map[string][]string) {
+	formatter, directArtifactIDs := FetchWorkUnitAndAncestorNoticeFormatter(ctx, client, targetWorkUnits)
+	if formatter == nil {
+		return "", directArtifactIDs
+	}
+	return formatter(maxBytes), directArtifactIDs
+}
+
+// FetchWorkUnitAndAncestorNoticeFormatter queries direct artifacts on up to
+// maxInspectedWorkUnits of targetWorkUnits and artifacts on their unique
+// ancestor work units, returning a function that formats the notice sections
+// within a given maxBytes budget (0 for unlimited, <0 for 0 bytes remaining)
+// and a map of direct artifact IDs keyed by work unit resource name.
+func FetchWorkUnitAndAncestorNoticeFormatter(ctx context.Context, client rdbpb.ResultDBClient, targetWorkUnits []string) (func(maxBytes int) string, map[string][]string) {
+	if client == nil || len(targetWorkUnits) == 0 {
+		return nil, nil
+	}
+	ctx = format.WithDiscoveryCache(ctx)
+
+	visited := make(map[string]bool, len(targetWorkUnits))
+	var uniqueTargets []string
+	for _, wuName := range targetWorkUnits {
+		if wuName == "" || visited[wuName] {
+			continue
+		}
+		visited[wuName] = true
+		uniqueTargets = append(uniqueTargets, wuName)
+	}
+	if len(uniqueTargets) == 0 {
+		return nil, nil
+	}
+
+	inspectedTargets := uniqueTargets
+	omittedDirectWUs := 0
+	if len(inspectedTargets) > maxInspectedWorkUnits {
+		omittedDirectWUs = len(inspectedTargets) - maxInspectedWorkUnits
+		inspectedTargets = inspectedTargets[:maxInspectedWorkUnits]
+	}
+
+	var directWithArtifacts []ancestorWUInfo
+	directArtifactIDs := make(map[string][]string)
+
+	for _, wuName := range inspectedTargets {
+		res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
+			Parent:   wuName,
+			PageSize: 1000,
+		})
+		if err == nil && len(res.Artifacts) > 0 {
+			directWithArtifacts = append(directWithArtifacts, ancestorWUInfo{
+				name:      wuName,
+				artifacts: res.Artifacts,
+				more:      res.NextPageToken != "",
+			})
+			artIDs := make([]string, 0, len(res.Artifacts))
+			for _, a := range res.Artifacts {
+				if a.GetArtifactId() != "" {
+					artIDs = append(artIDs, a.GetArtifactId())
+				}
+			}
+			directArtifactIDs[wuName] = artIDs
+		}
+	}
+
+	var ancToCheck []string
+	for _, wuName := range inspectedTargets {
+		for _, anc := range format.QueryAncestorWorkUnits(ctx, client, wuName) {
+			if anc.GetName() != "" && !visited[anc.GetName()] {
+				visited[anc.GetName()] = true
+				ancToCheck = append(ancToCheck, anc.GetName())
+			}
+		}
+	}
+
+	var ancestorsWithArtifacts []ancestorWUInfo
+	for _, ancName := range ancToCheck {
+		res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
+			Parent:   ancName,
+			PageSize: 1000,
+		})
+		if err == nil && len(res.Artifacts) > 0 {
+			ancestorsWithArtifacts = append(ancestorsWithArtifacts, ancestorWUInfo{
+				name:      ancName,
+				artifacts: res.Artifacts,
+				more:      res.NextPageToken != "",
+			})
+		}
+	}
+
+	if len(directWithArtifacts) == 0 && len(ancestorsWithArtifacts) == 0 {
+		return nil, directArtifactIDs
+	}
+
+	ancFull := formatAncestorWorkUnitNoticesWithOmitted(ancestorsWithArtifacts, 0, "", "", ParentTypeWorkUnit, 0)
+
+	formatter := func(maxBytes int) string {
+		if maxBytes < 0 {
+			return ""
+		}
+		if len(directWithArtifacts) == 0 {
+			return formatAncestorWorkUnitNoticesWithOmitted(ancestorsWithArtifacts, 0, "", "", ParentTypeWorkUnit, maxBytes)
+		}
+		if len(ancestorsWithArtifacts) == 0 {
+			return formatAncestorWorkUnitNoticesWithOmitted(directWithArtifacts, omittedDirectWUs, "", "", ParentTypeTestResult, maxBytes)
+		}
+
+		directBudget := maxBytes
+		if maxBytes > 0 && len(ancFull) > 0 {
+			ancReserve := min(len(ancFull), maxBytes/2)
+			directBudget = max(maxBytes-ancReserve, 1)
+		}
+		directOut := formatAncestorWorkUnitNoticesWithOmitted(directWithArtifacts, omittedDirectWUs, "", "", ParentTypeTestResult, directBudget)
+		ancOut := ancFull
+		if maxBytes > 0 {
+			remaining := maxBytes - len(directOut)
+			if remaining <= 0 {
+				ancOut = ""
+			} else if len(ancOut) > remaining {
+				ancOut = formatAncestorWorkUnitNoticesWithOmitted(ancestorsWithArtifacts, 0, "", "", ParentTypeWorkUnit, remaining)
+			}
+		}
+		return directOut + ancOut
+	}
+
+	return formatter, directArtifactIDs
+}
+
 func formatAncestorWorkUnitNotices(withArtifacts []ancestorWUInfo, targetTestID, targetResultID string, parentType ParentType, maxBytes int) string {
+	return formatAncestorWorkUnitNoticesWithOmitted(withArtifacts, 0, targetTestID, targetResultID, parentType, maxBytes)
+}
+
+func formatAncestorWorkUnitNoticesWithOmitted(withArtifacts []ancestorWUInfo, extraOmittedWUs int, targetTestID, targetResultID string, parentType ParentType, maxBytes int) string {
 	if len(withArtifacts) == 0 {
 		return ""
 	}
@@ -565,7 +728,7 @@ func formatAncestorWorkUnitNotices(withArtifacts []ancestorWUInfo, targetTestID,
 		counts[i] = len(candidates[i])
 	}
 
-	renderWithCounts := func(curCounts []int) string {
+	renderWithCounts := func(curCounts []int, shownWUs int) string {
 		var b bytes.Buffer
 		fmt.Fprintln(&b, sectionHeader)
 
@@ -578,7 +741,8 @@ func formatAncestorWorkUnitNotices(withArtifacts []ancestorWUInfo, targetTestID,
 			}
 		}
 
-		for i, info := range withArtifacts {
+		for i := 0; i < shownWUs; i++ {
+			info := withArtifacts[i]
 			invID, wuID := base.ExtractWorkUnitComponents(info.name)
 			quotedInv := base.ShellQuoteIfNeeded(invID)
 			quotedWU := base.ShellQuoteIfNeeded(wuID)
@@ -641,6 +805,17 @@ func formatAncestorWorkUnitNotices(withArtifacts []ancestorWUInfo, targetTestID,
 			fmt.Fprintln(&b)
 		}
 
+		omittedWUs := (len(withArtifacts) - shownWUs) + extraOmittedWUs
+		if omittedWUs > 0 {
+			invID, _ := base.ExtractWorkUnitComponents(withArtifacts[0].name)
+			quotedInv := base.ShellQuoteIfNeeded(invID)
+			wuNoun := "work units"
+			if omittedWUs == 1 {
+				wuNoun = "work unit"
+			}
+			fmt.Fprintf(&b, "  ... and %d more %s with artifacts; run 'luci artifact list -invocationid=%s' to view all\n\n", omittedWUs, wuNoun, quotedInv)
+		}
+
 		if len(inlineWUIDs) > 0 && sampleInvID != "" {
 			wuFlagVal := "<WORK_UNIT_ID>"
 			if len(inlineWUIDs) == 1 {
@@ -652,7 +827,8 @@ func formatAncestorWorkUnitNotices(withArtifacts []ancestorWUInfo, targetTestID,
 		return b.String()
 	}
 
-	outStr := renderWithCounts(counts)
+	shownWUs := len(withArtifacts)
+	outStr := renderWithCounts(counts, shownWUs)
 	if maxBytes <= 0 || len(outStr) <= maxBytes {
 		return outStr
 	}
@@ -661,15 +837,23 @@ func formatAncestorWorkUnitNotices(withArtifacts []ancestorWUInfo, targetTestID,
 	for i := len(counts) - 1; i >= 0 && len(outStr) > maxBytes; i-- {
 		for counts[i] > 1 && len(outStr) > maxBytes {
 			counts[i]--
-			outStr = renderWithCounts(counts)
+			outStr = renderWithCounts(counts, shownWUs)
 		}
 	}
 	// Pass 2: collapse ancestors to 1-line summary from farthest ancestor if still over budget.
 	for i := len(counts) - 1; i >= 0 && len(outStr) > maxBytes; i-- {
 		if counts[i] > 0 {
 			counts[i] = 0
-			outStr = renderWithCounts(counts)
+			outStr = renderWithCounts(counts, shownWUs)
 		}
+	}
+	// Pass 3: cap the number of work units rendered and collapse the remaining work units into a single summary line.
+	for shownWUs > 0 && len(outStr) > maxBytes {
+		shownWUs--
+		outStr = renderWithCounts(counts, shownWUs)
+	}
+	if len(outStr) > maxBytes {
+		return ""
 	}
 	return outStr
 }

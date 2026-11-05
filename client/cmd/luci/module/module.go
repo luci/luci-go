@@ -15,6 +15,7 @@
 package module
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -26,6 +27,7 @@ import (
 	"github.com/maruel/subcommands"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/client/cmd/luci/ids"
@@ -175,14 +177,22 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 	return 0
 }
 
+const (
+	maxSucceededModuleWorkUnitsForArtifacts = 5
+	maxDisplayedModuleWorkUnits             = 20
+	maxModuleDetailsHeaderBytes             = 6000
+)
+
 // ModuleDetails contains aggregate information, test counts, and work unit details for a module.
 type ModuleDetails struct {
-	InvocationID   string             `json:"invocation_id"`
-	ModuleName     string             `json:"module_name"`
-	ModuleStatus   string             `json:"module_status"`
-	TotalVerdicts  *VerdictCountsJSON `json:"total_verdicts,omitempty"`
-	WorkUnits      []*WorkUnitInfo    `json:"work_units,omitempty"`
-	RootInvocation *pb.RootInvocation `json:"-"`
+	InvocationID    string             `json:"invocation_id"`
+	ModuleName      string             `json:"module_name"`
+	ModuleStatus    string             `json:"module_status"`
+	TotalVerdicts   *VerdictCountsJSON `json:"total_verdicts,omitempty"`
+	WorkUnits       []*WorkUnitInfo    `json:"work_units,omitempty"`
+	RootInvocation  *pb.RootInvocation `json:"-"`
+	ArtifactNotices string             `json:"-"`
+	formatNotices   func(maxBytes int) string
 }
 
 // VerdictCountsJSON contains test verdict counts for JSON output.
@@ -217,6 +227,7 @@ type WorkUnitInfo struct {
 
 // FetchModuleDetails queries ResultDB for module aggregations and associated work units.
 func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClient *http.Client, invID, moduleName string) (*ModuleDetails, error) {
+	ctx = format.WithDiscoveryCache(ctx)
 	normInv := base.NormalizeInvocation(invID)
 	rootInvName := "rootInvocations/" + normInv
 
@@ -305,6 +316,29 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 		return nil, errors.Fmt("no module found matching %q in %s", moduleName, rootInvName)
 	}
 
+	var targetWUNames []string
+	for _, wu := range workUnits {
+		if anyFailed && wu.State != pb.WorkUnit_FAILED.String() && wu.Error == nil {
+			continue
+		}
+		if wu.FullName != "" {
+			targetWUNames = append(targetWUNames, wu.FullName)
+			if !anyFailed && len(targetWUNames) >= maxSucceededModuleWorkUnitsForArtifacts {
+				break
+			}
+		}
+	}
+	formatter, directArtIDs := artifact.FetchWorkUnitAndAncestorNoticeFormatter(ctx, client, targetWUNames)
+	details.formatNotices = formatter
+	if formatter != nil {
+		details.ArtifactNotices = formatter(artifact.DefaultMaxOutputBytes)
+	}
+	for _, wu := range workUnits {
+		if artIDs := directArtIDs[wu.FullName]; len(artIDs) > 0 {
+			wu.ArtifactList = artIDs
+		}
+	}
+
 	return details, nil
 }
 
@@ -336,6 +370,7 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 	if rootWU == nil {
 		return nil, errors.Fmt("root work unit %s not found", rootWUName)
 	}
+	format.CacheWorkUnit(ctx, rootWU)
 
 	var matchedWUs []*pb.WorkUnit
 
@@ -387,6 +422,7 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 					if wu == nil {
 						continue
 					}
+					format.CacheWorkUnit(ctx, wu)
 					if wu.ModuleId != nil {
 						if wu.ModuleId.ModuleName == moduleName {
 							matchedWUs = append(matchedWUs, wu)
@@ -410,6 +446,7 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 	}
 
 	var results []*WorkUnitInfo
+	failedDiscovered := 0
 	for _, wu := range matchedWUs {
 		info := &WorkUnitInfo{
 			WorkUnitID:   wu.WorkUnitId,
@@ -425,7 +462,8 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 			Properties:   wu.GetProperties(),
 			Summary:      wu.SummaryMarkdown,
 		}
-		if wu.State == pb.WorkUnit_FAILED {
+		if wu.State == pb.WorkUnit_FAILED && failedDiscovered < maxDisplayedModuleWorkUnits {
+			failedDiscovered++
 			discErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, wu.Name)
 			if discErr != nil {
 				info.Error = discErr
@@ -463,15 +501,16 @@ func printModuleDetails(details *ModuleDetails, showMetadata bool) {
 }
 
 func fprintModuleDetails(out io.Writer, details *ModuleDetails, showMetadata bool) {
+	var buf bytes.Buffer
 	statusClean := strings.TrimPrefix(details.ModuleStatus, "MODULE_STATUS_")
-	fmt.Fprintf(out, "Module:        %s\n", details.ModuleName)
-	fmt.Fprintf(out, "Invocation:    rootInvocations/%s\n", details.InvocationID)
-	fmt.Fprintf(out, "Status:        %s\n", statusClean)
+	fmt.Fprintf(&buf, "Module:        %s\n", details.ModuleName)
+	fmt.Fprintf(&buf, "Invocation:    rootInvocations/%s\n", details.InvocationID)
+	fmt.Fprintf(&buf, "Status:        %s\n", statusClean)
 
 	if details.TotalVerdicts != nil {
 		v := details.TotalVerdicts
 		if v.Total == 0 {
-			fmt.Fprintf(out, "Test Verdicts: 0 tests ran\n")
+			fmt.Fprintf(&buf, "Test Verdicts: 0 tests ran\n")
 		} else {
 			var parts []string
 			if v.Failed > 0 {
@@ -496,13 +535,19 @@ func fprintModuleDetails(out io.Writer, details *ModuleDetails, showMetadata boo
 			if summary == "" {
 				summary = fmt.Sprintf("%d tests", v.Total)
 			}
-			fmt.Fprintf(out, "Test Verdicts: %s (%d tests ran)\n", summary, v.Total)
+			fmt.Fprintf(&buf, "Test Verdicts: %s (%d tests ran)\n", summary, v.Total)
 		}
 	}
 
 	if len(details.WorkUnits) > 0 {
-		fmt.Fprintln(out, "\nShards & Work Units:")
-		for _, wu := range details.WorkUnits {
+		fmt.Fprintln(&buf, "\nShards & Work Units:")
+		shownWUs := 0
+		for i, wu := range details.WorkUnits {
+			if !showMetadata && (shownWUs >= maxDisplayedModuleWorkUnits || (shownWUs > 0 && buf.Len() >= maxModuleDetailsHeaderBytes)) {
+				fmt.Fprintf(&buf, "  ... and %d more work units\n", len(details.WorkUnits)-i)
+				break
+			}
+			var wuBuf bytes.Buffer
 			stateClean := strings.TrimPrefix(wu.State, "STATE_")
 			var meta []string
 			if wu.ShardKey != "" {
@@ -515,30 +560,53 @@ func fprintModuleDetails(out io.Writer, details *ModuleDetails, showMetadata boo
 			if len(meta) > 0 {
 				metaDesc = fmt.Sprintf(" (%s)", strings.Join(meta, ", "))
 			}
-			fmt.Fprintf(out, "  [%s] %s%s\n", stateClean, wu.WorkUnitID, metaDesc)
+			fmt.Fprintf(&wuBuf, "  [%s] %s%s\n", stateClean, wu.WorkUnitID, metaDesc)
 
 			if wu.Error != nil {
 				if wu.Error.Message != "" {
-					fmt.Fprintf(out, "    Error: %s\n", wu.Error.Message)
+					fmt.Fprintf(&wuBuf, "    Error: %s\n", wu.Error.Message)
 				} else if wu.Error.RawSummary != "" {
-					fmt.Fprintf(out, "    Summary:\n      %s\n", strings.ReplaceAll(wu.Error.RawSummary, "\n", "\n      "))
+					fmt.Fprintf(&wuBuf, "    Summary:\n      %s\n", strings.ReplaceAll(wu.Error.RawSummary, "\n", "\n      "))
 				}
 				if wu.Error.StackTrace != "" {
-					fmt.Fprintf(out, "    Stack Trace:\n      %s\n", strings.ReplaceAll(wu.Error.StackTrace, "\n", "\n      "))
+					fmt.Fprintf(&wuBuf, "    Stack Trace:\n      %s\n", strings.ReplaceAll(wu.Error.StackTrace, "\n", "\n      "))
 				}
 			} else if strings.TrimSpace(wu.Summary) != "" {
-				fmt.Fprintf(out, "    Summary:\n      %s\n", strings.ReplaceAll(strings.TrimSpace(wu.Summary), "\n", "\n      "))
+				fmt.Fprintf(&wuBuf, "    Summary:\n      %s\n", strings.ReplaceAll(strings.TrimSpace(wu.Summary), "\n", "\n      "))
 			}
 
 			if showMetadata {
-				format.FprintWorkUnitMetadata(out, wu.toWorkUnitProto(), "    ", true)
+				format.FprintWorkUnitMetadata(&wuBuf, wu.toWorkUnitProto(), "    ", true)
 			}
+			if !showMetadata && shownWUs > 0 && buf.Len()+wuBuf.Len() > maxModuleDetailsHeaderBytes {
+				fmt.Fprintf(&buf, "  ... and %d more work units\n", len(details.WorkUnits)-i)
+				break
+			}
+			buf.Write(wuBuf.Bytes())
+			shownWUs++
 		}
 	}
 
 	if showMetadata && details.RootInvocation != nil {
-		fmt.Fprintln(out)
-		format.FprintRootInvocationMetadata(out, details.RootInvocation)
-		format.FprintRootInvocationAdditionalMetadata(out, details.RootInvocation)
+		fmt.Fprintln(&buf)
+		format.FprintRootInvocationMetadata(&buf, details.RootInvocation)
+		format.FprintRootInvocationAdditionalMetadata(&buf, details.RootInvocation)
 	}
+
+	notices := details.ArtifactNotices
+	if details.formatNotices != nil {
+		remaining := artifact.DefaultMaxOutputBytes - buf.Len() - 1
+		if remaining <= 0 {
+			notices = ""
+		} else {
+			notices = details.formatNotices(remaining)
+		}
+	} else if notices != "" && buf.Len()+1+len(notices) > artifact.DefaultMaxOutputBytes {
+		notices = ""
+	}
+	if notices != "" {
+		fmt.Fprintln(&buf)
+		fmt.Fprint(&buf, notices)
+	}
+	fmt.Fprint(out, buf.String())
 }
