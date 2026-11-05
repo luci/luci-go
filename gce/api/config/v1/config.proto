@@ -163,18 +163,6 @@ enum PerformanceMonitoringUnit {
   STANDARD = 3;
 }
 
-// ConfidentialInstanceType defines the type of technology used by the
-// confidential instance.
-enum ConfidentialInstanceType {
-  CONFIDENTIAL_INSTANCE_TYPE_UNSPECIFIED = 0;
-  // AMD Secure Encrypted Virtualization.
-  CONFIDENTIAL_INSTANCE_TYPE_SEV = 1;
-  // AMD Secure Encrypted Virtualization - Secure Nested Paging.
-  CONFIDENTIAL_INSTANCE_TYPE_SEV_SNP = 2;
-  // Intel Trust Domain Extensions.
-  CONFIDENTIAL_INSTANCE_TYPE_TDX = 3;
-}
-
 // A description of a VM.
 // https://cloud.google.com/compute/docs/reference/rest/v1/instances.
 message VM {
@@ -253,15 +241,6 @@ message VM {
   // machine_type and disk.type must use the "{{.Zone}}" template placeholder
   // (e.g., "zones/{{.Zone}}/machineTypes/n2-standard-8").
   repeated string fallback_zones = 21;
-
-  // Defines the type of technology used by the confidential instance.
-  // Defaults to CONFIDENTIAL_INSTANCE_TYPE_UNSPECIFIED (0), which leaves
-  // ConfidentialInstanceConfig unset unless enable_confidential_compute is
-  // true. Specifying a confidential_instance_type enables Confidential Compute
-  // with that technology regardless of whether enable_confidential_compute is
-  // set. Note: Setting confidential_instance_type requires the NVME disk
-  // interface on all attached disks.
-  ConfidentialInstanceType confidential_instance_type = 22;
 }
 
 // A length of time.
