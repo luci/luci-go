@@ -76,7 +76,7 @@ describe('Physical Sites Directory Page', () => {
 
     cy.contains('button', 'Add site').click();
     cy.get('[role="dialog"]')
-      .find('input[placeholder="e.g. EM25"]')
+      .find('input[placeholder="e.g. US-PAO-EM25"]')
       .type('IAD65');
     cy.get('[role="dialog"]')
       .find('input[placeholder="e.g. Palo Alto EM25"]')

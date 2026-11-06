@@ -40,6 +40,11 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.siteCardIsVisible('Central Lab', 'LAB2');
     await then.siteCardIsVisible('Mountain View MTV', 'MTV');
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
+    await then.siteCardHasLink(
+      'EM25',
+      'Open EM25 in Campus Maps',
+      'https://goto.google.com/where/?id=EM25',
+    );
     await then.siteCardIdOrderIs(['LAB1', 'LAB2', 'MTV', 'EM25']);
     await then.textIsVisible('4 sites');
   });

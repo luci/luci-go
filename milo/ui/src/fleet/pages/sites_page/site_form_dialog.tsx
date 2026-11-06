@@ -120,7 +120,7 @@ export const SiteFormDialog = ({
           required
           fullWidth
           size="small"
-          placeholder="e.g. EM25"
+          placeholder="e.g. US-PAO-EM25"
           value={siteId}
           onChange={(e) => setSiteId(e.target.value)}
           disabled={isEditing || isSaving}
@@ -130,7 +130,7 @@ export const SiteFormDialog = ({
               ? 'Site code is the primary identifier and cannot be changed.'
               : isDuplicateId
                 ? 'A site with this code already exists.'
-                : 'Building or site code used in URLs (e.g. EM25, MTV).'
+                : 'Building or site code used in URLs (e.g. US-PAO-EM25, US-ATL-DAT3).'
           }
           slotProps={{
             htmlInput: {

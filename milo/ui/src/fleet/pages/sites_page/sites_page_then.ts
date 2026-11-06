@@ -38,6 +38,14 @@ export const then = {
     expect(within(card).getByText(id)).toBeInTheDocument();
   },
 
+  async siteCardHasLink(id: string, linkName: string, expectedHref: string) {
+    const card = await screen.findByTestId(`site-card-${id}`);
+    const link = within(card).getByRole('link', {
+      name: new RegExp(linkName, 'i'),
+    });
+    expect(link).toHaveAttribute('href', expectedHref);
+  },
+
   async siteCardIsRemoved(name: string) {
     await waitFor(() => {
       expect(screen.queryByRole('article', { name })).not.toBeInTheDocument();

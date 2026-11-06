@@ -14,8 +14,9 @@
 
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, IconButton, Link, Tooltip, Typography } from '@mui/material';
 
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
 import {
@@ -23,8 +24,15 @@ import {
   iconButtonSx,
   surfaceCardSx,
 } from '@/fleet/theme/recipes';
-import { fleetColors, fontFamilies, iconSizes } from '@/fleet/theme/tokens';
+import {
+  fleetColors,
+  fontFamilies,
+  iconSizes,
+  radii,
+} from '@/fleet/theme/tokens';
 import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import { getCampusMapsUrl } from './site_helpers';
 
 export interface SiteCardProps {
   readonly site: PhysicalSite;
@@ -33,6 +41,8 @@ export interface SiteCardProps {
 }
 
 export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
+  const campusMapsUrl = getCampusMapsUrl(site.id);
+
   return (
     <Box
       component="article"
@@ -106,12 +116,49 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
         )}
       </Box>
 
-      <Box sx={actionRowSx}>
-        <StatusPill tone="neutral" dot={false}>
-          <Box component="span" sx={{ fontFamily: fontFamilies.mono }}>
-            {site.id}
-          </Box>
-        </StatusPill>
+      <Box
+        sx={{
+          ...actionRowSx,
+          mt: 'auto',
+          justifyContent: 'space-between',
+          flexWrap: 'nowrap',
+          gap: 1,
+        }}
+      >
+        {campusMapsUrl ? (
+          <Tooltip title="Open in Campus Maps">
+            <Link
+              href={campusMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="none"
+              aria-label={`Open ${site.id} in Campus Maps`}
+              sx={{ display: 'inline-flex', borderRadius: radii.pill }}
+            >
+              <StatusPill tone="neutral" dot={false}>
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    fontFamily: fontFamilies.mono,
+                    color: fleetColors.primary,
+                  }}
+                >
+                  {site.id}
+                  <OpenInNewIcon sx={{ fontSize: 12 }} />
+                </Box>
+              </StatusPill>
+            </Link>
+          </Tooltip>
+        ) : (
+          <StatusPill tone="neutral" dot={false}>
+            <Box component="span" sx={{ fontFamily: fontFamilies.mono }}>
+              {site.id}
+            </Box>
+          </StatusPill>
+        )}
       </Box>
     </Box>
   );
