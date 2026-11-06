@@ -248,6 +248,13 @@ func TestWrapFile(t *testing.T) {
 				assert.Loosely(t, out.Executable(), should.BeTrue)
 			})
 
+			t.Run("WrapFile non-owner executable file is not executable", func(t *ftt.Test) {
+				writeFile(tempDir, "single_file", "12345", 0655)
+				out, err := WrapFile(filepath.Join(tempDir, "single_file"), tempDir, nil, ScanOptions{})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, out.Executable(), should.BeFalse)
+			})
+
 			t.Run("WrapFile rel symlink in root", func(t *ftt.Test) {
 				writeSymlink(tempDir, "a/b/c", filepath.FromSlash("../../d"))
 				mkDir(tempDir, "d")

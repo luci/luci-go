@@ -413,7 +413,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 			absPath:    abs,
 			name:       filepath.ToSlash(rel),
 			size:       uint64(info.Size()),
-			executable: (info.Mode().Perm() & 0111) != 0,
+			executable: (info.Mode().Perm() & 0100) != 0,
 			writable:   getWritable(info, scanOpts),
 			modtime:    getModTime(info, scanOpts),
 			winAttrs:   attrs,
