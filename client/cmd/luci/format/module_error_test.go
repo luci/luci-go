@@ -19,6 +19,7 @@ import (
 	"compress/gzip"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -66,6 +67,7 @@ func TestParseTradefedXMLReason(t *testing.T) {
 type fakeDiscoveryRDBClient struct {
 	pb.ResultDBClient
 	getWorkUnitFunc       func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error)
+	batchGetWorkUnitsFunc func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*pb.BatchGetWorkUnitsResponse, error)
 	queryWorkUnitsFunc    func(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error)
 	listArtifactsFunc     func(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error)
 	getRootInvocationFunc func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error)
@@ -77,6 +79,13 @@ func (f *fakeDiscoveryRDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWork
 		return f.getWorkUnitFunc(ctx, in, opts...)
 	}
 	return nil, nil
+}
+
+func (f *fakeDiscoveryRDBClient) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*pb.BatchGetWorkUnitsResponse, error) {
+	if f.batchGetWorkUnitsFunc != nil {
+		return f.batchGetWorkUnitsFunc(ctx, in, opts...)
+	}
+	return nil, errors.New("unimplemented")
 }
 
 func (f *fakeDiscoveryRDBClient) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
@@ -295,5 +304,86 @@ func TestDiscoveryCache(t *testing.T) {
 		assert.Loosely(t, err3, should.NotBeNil)
 		assert.Loosely(t, listArtCount, should.Equal(initialParentArtCount)) // no extra list artifacts call on parent
 		assert.Loosely(t, httpFetchCount, should.Equal(initialHTTPCount))    // no extra HTTP download
+	})
+}
+
+func TestDiscoverFirstLevelWorkUnitFailures(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`DiscoverFirstLevelWorkUnitFailures and FprintFirstLevelWorkUnitFailures`, t, func(t *ftt.Test) {
+		ctx := WithDiscoveryCache(t.Context())
+
+		var traceLines []string
+		for i := 1; i <= 45; i++ {
+			traceLines = append(traceLines, fmt.Sprintf("  at com.android.tradefed.invoker.TestInvocation.step%d(TestInvocation.java:%d)", i, i))
+		}
+		fullTrace := "com.android.tradefed.device.DeviceNotAvailableException[DEVICE_UNAVAILABLE|501001|INFRA_ERROR]: Device offline\n" + strings.Join(traceLines, "\n")
+		fullSummary := "- **error_code**: 501001\n- **error_name**: DEVICE_UNAVAILABLE\nFull untruncated failure summary"
+
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/trace":
+				_, _ = w.Write([]byte(fullTrace))
+			case "/summary":
+				_, _ = w.Write([]byte(fullSummary))
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+		defer srv.Close()
+
+		rootName := "rootInvocations/ants-i11700010583257168/workUnits/root"
+		childFailName := "rootInvocations/ants-i11700010583257168/workUnits/ants-wu11700010583257168"
+		childPassName := "rootInvocations/ants-i11700010583257168/workUnits/ants-wu11700010583257169"
+
+		var listedParents []string
+		fakeClient := &fakeDiscoveryRDBClient{
+			getWorkUnitFunc: func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+				return &pb.WorkUnit{
+					Name:           rootName,
+					WorkUnitId:     "root",
+					State:          pb.WorkUnit_FAILED,
+					ChildWorkUnits: []string{childFailName, childPassName},
+				}, nil
+			},
+			batchGetWorkUnitsFunc: func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*pb.BatchGetWorkUnitsResponse, error) {
+				return &pb.BatchGetWorkUnitsResponse{
+					WorkUnits: []*pb.WorkUnit{
+						{Name: childFailName, WorkUnitId: "ants-wu11700010583257168", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_FAILED, SummaryMarkdown: "truncated"},
+						{Name: childPassName, WorkUnitId: "ants-wu11700010583257169", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_SUCCEEDED},
+					},
+				}, nil
+			},
+			listArtifactsFunc: func(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+				listedParents = append(listedParents, in.Parent)
+				return &pb.ListArtifactsResponse{
+					Artifacts: []*pb.Artifact{
+						{ArtifactId: "invocationFailed_trace", FetchUrl: srv.URL + "/trace"},
+						{ArtifactId: "invocationFailed_summary_markdown", FetchUrl: srv.URL + "/summary"},
+						{ArtifactId: "invocationFailed_trace_1", FetchUrl: srv.URL + "/trace"},
+					},
+				}, nil
+			},
+		}
+
+		failures := DiscoverFirstLevelWorkUnitFailures(ctx, fakeClient, srv.Client(), "ants-i11700010583257168", nil)
+		assert.Loosely(t, listedParents, should.NotContain(childPassName))
+		assert.Loosely(t, len(failures), should.Equal(1))
+		assert.Loosely(t, failures[0].FullSummaryText, should.Equal(fullSummary))
+		assert.Loosely(t, len(failures[0].Artifacts), should.Equal(3))
+		assert.Loosely(t, failures[0].Artifacts[0].ID, should.Equal("invocationFailed_summary_markdown"))
+		assert.Loosely(t, failures[0].Artifacts[1].ID, should.Equal("invocationFailed_trace"))
+		assert.Loosely(t, failures[0].Artifacts[2].ID, should.Equal("invocationFailed_trace_1"))
+
+		var buf bytes.Buffer
+		FprintFirstLevelWorkUnitFailures(&buf, "ants-i11700010583257168", failures, "")
+		out := buf.String()
+
+		assert.Loosely(t, out, should.ContainSubstring("Failed Child Work Unit: ants-wu11700010583257168 (kind: TFC_COMMAND_TASK, state: FAILED)"))
+		assert.Loosely(t, out, should.ContainSubstring("Full untruncated failure summary"))
+		assert.Loosely(t, out, should.ContainSubstring("luci artifact get -invocationid=ants-i11700010583257168 -workunitid=ants-wu11700010583257168 -artifactid=invocationFailed_summary_markdown"))
+		assert.Loosely(t, out, should.ContainSubstring("Invocation Failure Trace (invocationFailed_trace):"))
+		assert.Loosely(t, out, should.ContainSubstring("... (6 more lines)"))
+		assert.Loosely(t, out, should.ContainSubstring("luci artifact get -invocationid=ants-i11700010583257168 -workunitid=ants-wu11700010583257168 -artifactid=invocationFailed_trace_1"))
 	})
 }

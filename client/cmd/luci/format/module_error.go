@@ -609,6 +609,284 @@ func PrintModuleErrorForTarget(err *DiscoveredError, targetWorkUnit string, inde
 	}
 }
 
+// maxTracePreviewLines is the maximum number of stack trace lines rendered
+// inline when displaying an interesting failure artifact preview.
+const maxTracePreviewLines = 40
+
+// InterestingArtifact represents a notable artifact on a failed or skipped
+// work unit (such as a full failure summary or stack trace) to surface in CLI output.
+type InterestingArtifact struct {
+	ID              string
+	Title           string // section heading for inline preview (e.g. "Invocation Failure Trace")
+	Label           string // description for the fetch hint (e.g. "failure summary", "failure trace")
+	Preview         string // inline text content (when <= maxInlineArtifactBytes)
+	MaxPreviewLines int    // max lines to render inline (0 when content is merged into FullSummaryText)
+}
+
+// WorkUnitFailure holds failure details and interesting artifacts discovered
+// on a work unit.
+type WorkUnitFailure struct {
+	WorkUnitID      string
+	Kind            string
+	State           pb.WorkUnit_State
+	SummaryMarkdown string
+	FullSummaryText string
+	Artifacts       []InterestingArtifact
+}
+
+// DiscoverSingleWorkUnitFailure checks wu for interesting failure or skip
+// artifacts (ordered by interestingArtifactRules), fetching bounded inline
+// previews in parallel when httpClient is provided.
+func DiscoverSingleWorkUnitFailure(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, wu *pb.WorkUnit) *WorkUnitFailure {
+	if rdbClient == nil || wu.GetName() == "" || !isFailedOrSkippedWorkUnit(wu) {
+		return nil
+	}
+	wuID := wu.GetWorkUnitId()
+	if wuID == "" {
+		_, wuID = base.ExtractWorkUnitComponents(wu.GetName())
+	}
+	arts, _ := queryArtifactsForParent(ctx, rdbClient, wu.GetName(), cacheFromContext(ctx))
+	f := &WorkUnitFailure{
+		WorkUnitID:      wuID,
+		Kind:            wu.GetKind(),
+		State:           wu.GetState(),
+		SummaryMarkdown: strings.TrimSpace(wu.GetSummaryMarkdown()),
+	}
+	type matchedArtifact struct {
+		rule failureArtifactRule
+		art  *pb.Artifact
+	}
+	var matched []matchedArtifact
+	for _, rule := range interestingArtifactRules {
+		for _, art := range arts {
+			if strings.HasPrefix(art.GetArtifactId(), rule.prefix) {
+				matched = append(matched, matchedArtifact{rule: rule, art: art})
+			}
+		}
+	}
+	if len(matched) == 0 {
+		return f
+	}
+	texts := make([]string, len(matched))
+	var wg sync.WaitGroup
+	for i, m := range matched {
+		wg.Add(1)
+		go func(idx int, art *pb.Artifact) {
+			defer wg.Done()
+			texts[idx] = fetchTextArtifact(ctx, httpClient, art)
+		}(i, m.art)
+	}
+	wg.Wait()
+
+	var summaries []string
+	f.Artifacts = make([]InterestingArtifact, 0, len(matched))
+	for i, m := range matched {
+		txt := texts[i]
+		if m.rule.isSummary && txt != "" {
+			summaries = append(summaries, txt)
+		}
+		f.Artifacts = append(f.Artifacts, InterestingArtifact{
+			ID:              m.art.GetArtifactId(),
+			Title:           m.rule.title,
+			Label:           m.rule.label,
+			Preview:         txt,
+			MaxPreviewLines: m.rule.maxPreviewLines,
+		})
+	}
+	f.FullSummaryText = strings.Join(summaries, "\n\n")
+	return f
+}
+
+// DiscoverFirstLevelWorkUnitFailures inspects direct (first-level) child work
+// units of the root work unit for failure summaries and interesting artifacts.
+func DiscoverFirstLevelWorkUnitFailures(ctx context.Context, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, rootWU *pb.WorkUnit) []*WorkUnitFailure {
+	if rdbClient == nil || invID == "" {
+		return nil
+	}
+	normInv := base.NormalizeInvocation(invID)
+	cache := cacheFromContext(ctx)
+	if rootWU == nil {
+		rootWU = getWorkUnitWithCache(ctx, rdbClient, base.FormatWorkUnitResourceName(normInv, "root"), cache)
+	}
+	if rootWU.GetState() == pb.WorkUnit_SUCCEEDED {
+		return nil
+	}
+	childNames := rootWU.GetChildWorkUnits()
+	if len(childNames) == 0 {
+		return nil
+	}
+	batchRes, err := rdbClient.BatchGetWorkUnits(ctx, &pb.BatchGetWorkUnitsRequest{
+		Parent: "rootInvocations/" + normInv,
+		Names:  childNames,
+	})
+	children := batchRes.GetWorkUnits()
+	if err == nil && len(children) > 0 && cache != nil {
+		cache.mu.Lock()
+		for _, wu := range children {
+			if wu.GetName() != "" {
+				cache.workUnits[wu.GetName()] = wu
+			}
+		}
+		cache.mu.Unlock()
+	}
+	if err != nil || len(children) == 0 {
+		for _, name := range childNames {
+			if wu := getWorkUnitWithCache(ctx, rdbClient, name, cache); wu != nil {
+				children = append(children, wu)
+			}
+		}
+	}
+	discovered := make([]*WorkUnitFailure, len(children))
+	var wg sync.WaitGroup
+	for i, child := range children {
+		if !isFailedOrSkippedWorkUnit(child) {
+			continue
+		}
+		wg.Add(1)
+		go func(idx int, wu *pb.WorkUnit) {
+			defer wg.Done()
+			discovered[idx] = DiscoverSingleWorkUnitFailure(ctx, rdbClient, httpClient, wu)
+		}(i, child)
+	}
+	wg.Wait()
+
+	var results []*WorkUnitFailure
+	for i, cf := range discovered {
+		if cf == nil {
+			continue
+		}
+		hasSummary := cf.SummaryMarkdown != "" && !isGenericHarnessSummary(cf.SummaryMarkdown)
+		if children[i].GetState() == pb.WorkUnit_FAILED || hasSummary || len(cf.Artifacts) > 0 {
+			results = append(results, cf)
+		}
+	}
+	return results
+}
+
+// FprintWorkUnitFailureArtifacts writes any inline previews and copy-pasteable
+// 'luci artifact get' commands for the interesting artifacts in f to out.
+func FprintWorkUnitFailureArtifacts(out io.Writer, invID string, f *WorkUnitFailure, indent string) {
+	if out == nil || f == nil {
+		return
+	}
+	normInv := base.NormalizeInvocation(invID)
+	for _, art := range f.Artifacts {
+		if art.Preview != "" && art.MaxPreviewLines > 0 {
+			title := art.Title
+			if title == "" {
+				title = "Artifact Preview"
+			}
+			fmt.Fprintf(out, "%s%s (%s):\n", indent, title, art.ID)
+			lines := strings.Split(strings.ReplaceAll(art.Preview, "\r\n", "\n"), "\n")
+			shown := lines
+			if len(lines) > art.MaxPreviewLines {
+				shown = lines[:art.MaxPreviewLines]
+			}
+			for _, line := range shown {
+				fmt.Fprintf(out, "%s  %s\n", indent, line)
+			}
+			if extra := len(lines) - len(shown); extra > 0 {
+				fmt.Fprintf(out, "%s  ... (%d more lines)\n", indent, extra)
+			}
+		}
+		label := art.Label
+		if label == "" {
+			label = "artifact"
+		}
+		fmt.Fprintf(out, "%sTo fetch full %s (%s):\n", indent, label, art.ID)
+		fmt.Fprintf(out, "%s  luci artifact get -invocationid=%s -workunitid=%s -artifactid=%s\n",
+			indent, base.ShellQuoteIfNeeded(normInv), base.ShellQuoteIfNeeded(f.WorkUnitID), base.ShellQuoteIfNeeded(art.ID))
+	}
+}
+
+// FprintFirstLevelWorkUnitFailures writes failed first-level child work units,
+// their summaries, and their interesting artifact previews and fetch commands.
+func FprintFirstLevelWorkUnitFailures(out io.Writer, invID string, failures []*WorkUnitFailure, indent string) {
+	for _, f := range failures {
+		if out == nil || f == nil {
+			continue
+		}
+		var meta []string
+		if f.Kind != "" {
+			meta = append(meta, "kind: "+f.Kind)
+		}
+		if f.State != pb.WorkUnit_STATE_UNSPECIFIED {
+			meta = append(meta, "state: "+f.State.String())
+		}
+		suffix := ""
+		if len(meta) > 0 {
+			suffix = " (" + strings.Join(meta, ", ") + ")"
+		}
+		fmt.Fprintf(out, "%sFailed Child Work Unit: %s%s\n", indent, f.WorkUnitID, suffix)
+		summary := f.FullSummaryText
+		if summary == "" {
+			summary = f.SummaryMarkdown
+		}
+		if summary != "" {
+			fmt.Fprintf(out, "%s  Summary:\n", indent)
+			for _, line := range strings.Split(strings.ReplaceAll(summary, "\r\n", "\n"), "\n") {
+				fmt.Fprintf(out, "%s    %s\n", indent, line)
+			}
+		}
+		FprintWorkUnitFailureArtifacts(out, invID, f, indent+"  ")
+	}
+}
+
+type failureArtifactRule struct {
+	prefix          string
+	title           string
+	label           string
+	isSummary       bool
+	maxPreviewLines int
+}
+
+// interestingArtifactRules is the ordered list of artifact ID prefixes to
+// surface when inspecting a failed or skipped work unit.
+//
+// Other test harnesses/projects can be supported by adding their failure or
+// diagnostic artifact prefixes in display priority order.
+var interestingArtifactRules = []failureArtifactRule{
+	// TradeFed-specific artifacts uploaded by GoogleTradefedResultReporter
+	// when a command work unit fails or is skipped (FullSummaryMarkdown is
+	// uploaded as an artifact because WorkUnit.SummaryMarkdown is capped at 4 KB).
+	{
+		prefix:    "invocationFailed_summary_markdown",
+		label:     "failure summary",
+		isSummary: true,
+	},
+	{
+		prefix:    "invocationSkipped_summary_markdown",
+		label:     "skipped summary",
+		isSummary: true,
+	},
+	{
+		prefix:          "invocationFailed_trace",
+		title:           "Invocation Failure Trace",
+		label:           "failure trace",
+		maxPreviewLines: maxTracePreviewLines,
+	},
+}
+
+func isFailedOrSkippedWorkUnit(wu *pb.WorkUnit) bool {
+	switch wu.GetState() {
+	case pb.WorkUnit_FAILED, pb.WorkUnit_SKIPPED, pb.WorkUnit_CANCELLED:
+		return true
+	default:
+		return strings.TrimSpace(wu.GetSummaryMarkdown()) != ""
+	}
+}
+
+func fetchTextArtifact(ctx context.Context, httpClient *http.Client, art *pb.Artifact) string {
+	if httpClient == nil || art.GetFetchUrl() == "" || art.GetSizeBytes() < 0 || art.GetSizeBytes() > maxInlineArtifactBytes {
+		return ""
+	}
+	var buf bytes.Buffer
+	if err := FetchArtifactContent(ctx, httpClient, art.GetFetchUrl(), &buf); err != nil || buf.Len() > maxInlineArtifactBytes {
+		return ""
+	}
+	return strings.TrimSpace(buf.String())
+}
+
 // FormatDiscoveredErrorFirstLine returns a single-line summary of a discovered error and whether it was truncated.
 func FormatDiscoveredErrorFirstLine(err *DiscoveredError, maxLen int) (string, bool) {
 	if err == nil {
