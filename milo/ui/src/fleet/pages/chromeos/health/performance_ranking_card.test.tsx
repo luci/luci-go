@@ -558,7 +558,7 @@ describe('PerformanceRankingCard', () => {
     ).toBeInTheDocument();
   });
 
-  it('displays state breakdown popover with SLA thresholds when hovering over progress bar', async () => {
+  it('displays state breakdown popover when hovering over progress bar', async () => {
     const mockTrends: GetFleetAvailabilityTrendsResponse = {
       metricType: TrendlineMetricType.AVAILABILITY,
       series: [

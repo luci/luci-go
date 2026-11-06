@@ -764,14 +764,18 @@ export const HistoricalAvailabilityTrendsChart = ({
   const subtitle = useMemo(() => {
     switch (viewBy) {
       case TrendlineGrouping.GROUP_BY_MODEL:
-        return 'Historical availability trendlines across models.';
+        return isAvailability
+          ? 'Historical availability trendlines across models.'
+          : 'Historical health percentage trendlines across models.';
       case TrendlineGrouping.GROUP_BY_POOL:
         return 'Historical health percentage trendlines across pools.';
       case TrendlineGrouping.GROUP_BY_OVERALL:
       default:
-        return 'Overall fleet health percentage trendline over the last 72 hours.';
+        return isAvailability
+          ? 'Overall fleet availability trendline over the last 72 hours.'
+          : 'Overall fleet health percentage trendline over the last 72 hours.';
     }
-  }, [viewBy]);
+  }, [viewBy, isAvailability]);
 
   return (
     <Card

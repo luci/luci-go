@@ -262,7 +262,7 @@ describe('HistoricalAvailabilityTrendsChart', () => {
     expect(baselineChip).toHaveTextContent('Enrolled Baseline');
     fireEvent.mouseOver(baselineChip);
     expect(
-      await screen.findByText(/Compares ready devices against/i),
+      await screen.findByText(/Compares healthy devices against/i),
     ).toBeInTheDocument();
     expect(screen.getByText('enrolled devices')).toBeInTheDocument();
     expect(

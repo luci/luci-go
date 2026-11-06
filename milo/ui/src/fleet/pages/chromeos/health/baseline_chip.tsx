@@ -43,14 +43,14 @@ export const BaselineChip = ({
   const label = isAvailability ? 'Quota Baseline' : 'Enrolled Baseline';
   const description = isAvailability ? (
     <>
-      Compares ready devices against the <b>target quota</b> (how many devices
+      Compares healthy devices against the <b>target quota</b> (how many devices
       we need). Active whenever the view has a defined quota target.
     </>
   ) : (
     <>
-      Compares ready devices against <b>enrolled devices</b> (physical machines
-      present in the lab). Active when viewing any group without a defined quota
-      target.
+      Compares healthy devices against <b>enrolled devices</b> (physical
+      machines present in the lab). Active when viewing any group without a
+      defined quota target.
     </>
   );
 
@@ -71,14 +71,6 @@ export const BaselineChip = ({
           </Typography>
           <Typography variant="caption" display="block">
             {description}
-          </Typography>
-          <Typography
-            variant="caption"
-            display="block"
-            color="text.secondary"
-            sx={{ fontStyle: 'italic', mt: 0.5 }}
-          >
-            Note: Calculated based on devices in <b>dut_state = READY</b>.
           </Typography>
         </Box>
       }

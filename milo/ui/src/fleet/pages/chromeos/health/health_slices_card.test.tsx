@@ -828,7 +828,7 @@ describe('HealthSlicesCard', () => {
     ).toBeNull();
   });
 
-  it('displays state breakdown and SLA thresholds popover when hovering over slice status label', async () => {
+  it('displays state breakdown popover when hovering over slice status label', async () => {
     render(
       <FakeContextProvider>
         <ShortcutProvider>

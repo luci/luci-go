@@ -51,7 +51,7 @@ const EMPTY_BREAKDOWN: DeviceStateBreakdown = {
 
 /**
  * Reusable hovercard popover wrapper that displays the complete DUT state breakdown
- * and horizontal SLA threshold status for any trigger element (e.g. status labels or progress bars).
+ * and availability / health status for any trigger element (e.g. status labels or progress bars).
  * Uses Popper and usePopoverHover for clean cursor anchoring and scroll dismissal.
  */
 export const HealthStatePopover = ({

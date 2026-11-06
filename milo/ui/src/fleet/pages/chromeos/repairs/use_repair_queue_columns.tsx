@@ -442,11 +442,8 @@ export const useRepairQueueColumns = ({
         enableSorting: false,
         meta: {
           infoTooltip:
-            'Percentage of devices in the assigned pool(s) and model(s) that ' +
-            'are healthy (not in manual repair or repair failed). When devices ' +
-            'in that pool or model are currently claimed in repair, in-flight ' +
-            'repairs (+X%) are indicated with a dashed underline and count ' +
-            'toward priority scoring rules.',
+            'Percentage of healthy devices in the assigned pool(s) and model. ' +
+            'For devices with multiple pools, the lowest percentage is shown.',
         },
         Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
           const poolHealth = row.original.poolHealthPct;

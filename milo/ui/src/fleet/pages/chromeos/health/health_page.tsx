@@ -150,30 +150,16 @@ export const HealthPage = () => {
                           display="block"
                           sx={{ mb: 0.5 }}
                         >
-                          • <b>Availability (Quota Baseline):</b> Compares ready
-                          devices against the <b>target quota</b> (how many
-                          devices we need). Active whenever the view has a
+                          • <b>Availability (Quota Baseline):</b> Compares
+                          healthy devices against the <b>target quota</b> (how
+                          many devices we need). Active whenever the view has a
                           defined quota target.
                         </Typography>
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          sx={{ mb: 0.5 }}
-                        >
-                          • <b>Health (Enrolled Baseline):</b> Compares ready
+                        <Typography variant="caption" display="block">
+                          • <b>Health (Enrolled Baseline):</b> Compares healthy
                           devices against <b>enrolled devices</b> (physical
                           machines present in the lab). Active when viewing any
                           group without a defined quota target.
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          color="text.secondary"
-                          sx={{ fontStyle: 'italic', mt: 0.5 }}
-                        >
-                          Note: Calculated based on devices in{' '}
-                          <b>dut_state = READY</b>, which may differ from other
-                          dashboards.
                         </Typography>
                       </Box>
                     }

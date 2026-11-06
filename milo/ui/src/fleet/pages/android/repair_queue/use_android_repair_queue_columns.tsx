@@ -228,9 +228,9 @@ export const useAndroidRepairQueueColumns = (
         enableSorting: false,
         meta: {
           infoTooltip:
-            'Percentage of devices in the assigned host group(s) and run target ' +
-            'that are healthy (not in manual repair). For devices with multiple ' +
-            'host groups, the lowest percentage is shown.',
+            'Percentage of healthy devices and hosts in the assigned host ' +
+            'group(s) and run target. For devices with multiple host groups, ' +
+            'the lowest percentage is shown.',
         },
         Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => {
           const hostGroupHealth = row.original.hostGroupHealthPct;
