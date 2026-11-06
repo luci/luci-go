@@ -22,9 +22,10 @@ var (
 	PermGetArtifact        = realms.RegisterPermission("resultdb.artifacts.get")
 	PermGetBaseline        = realms.RegisterPermission("resultdb.baselines.get")
 	PermGetInstruction     = realms.RegisterPermission("resultdb.instructions.get")
-	PermGetInvocation      = realms.RegisterPermission("resultdb.invocations.get")
-	PermGetRootInvocation  = realms.RegisterPermission("resultdb.rootInvocations.get")
-	PermGetTestExoneration = realms.RegisterPermission("resultdb.testExonerations.get")
+	PermGetInvocation            = realms.RegisterPermission("resultdb.invocations.get")
+	PermGetRootInvocation        = realms.RegisterPermission("resultdb.rootInvocations.get")
+	PermGetLimitedRootInvocation = realms.RegisterPermission("resultdb.rootInvocations.getLimited")
+	PermGetTestExoneration       = realms.RegisterPermission("resultdb.testExonerations.get")
 	PermGetTestResult      = realms.RegisterPermission("resultdb.testResults.get")
 	PermGetWorkUnit        = realms.RegisterPermission("resultdb.workUnits.get")
 

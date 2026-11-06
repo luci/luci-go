@@ -26,7 +26,7 @@ option java_package = "com.google.luci.resultdb.v1";
 option java_multiple_files = true;
 
 // A top-level container of test results.
-// Next ID: 26.
+// Next ID: 27.
 message RootInvocation {
   // The resource name of this root invocation.
   // Format: `rootInvocations/{ROOT_INVOCATION_ID}`
@@ -313,6 +313,29 @@ message RootInvocation {
   //
   // Required.
   StreamingExportState streaming_export_state = 19;
+
+  // Whether the root invocation has been masked so that it includes only
+  // metadata. The metadata fields for a RootInvocation are:
+  // * name
+  // * root_invocation_id
+  // * finalization_state
+  // * state
+  // * summary_markdown (truncated to the first 140 bytes)
+  // * realm
+  // * create_time
+  // * creator
+  // * last_updated
+  // * finalize_start_time
+  // * finalize_time
+  // * producer_resource
+  // * definition (all fields except `properties`)
+  // * sources
+  // * baseline_id
+  // * streaming_export_state
+  // * etag
+  //
+  // Output only.
+  bool is_masked = 26 [(google.api.field_behavior) = OUTPUT_ONLY];
 
   // This checksum is computed by the server based on the value of other
   // fields, and may be sent on update requests to ensure the client
