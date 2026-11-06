@@ -65,6 +65,9 @@ const GRAPH_CONFIG = {
   rankSep: 250,
   // Vertical spacing between nodes
   nodeSep: 25,
+  // Outer padding around the graph bounding box
+  marginX: 20,
+  marginY: 20,
 };
 
 // We must explicit set all top/right/bottom/left border properties here instead
@@ -285,6 +288,328 @@ function truncateLabel(
 ): string {
   if (label.length <= maxLength) return label;
   return label.substring(0, maxLength) + '...';
+}
+
+const NEGLIGIBLE_WEIGHT = 1e-9;
+
+interface PavaBlock {
+  start: number;
+  end: number;
+  sumWZ: number;
+  sumW: number;
+}
+
+interface NeighborEdge {
+  id: string;
+  weight: number;
+}
+
+interface ColumnLayoutData {
+  ids: string[];
+  minGaps: number[];
+  offsets: number[];
+  prevConnectedIdx: number[];
+  nextConnectedIdx: number[];
+  preds: NeighborEdge[][];
+  succs: NeighborEdge[][];
+}
+
+/**
+ * Solves weighted L2 isotonic regression with non-uniform minimum gaps using
+ * the Pool Adjacent Violators Algorithm (PAVA) in O(N) time:
+ *   minimize   sum_i w_i * (y_i - target_i)^2
+ *   subject to y_i - y_{i-1} >= minGaps[i]  for all i >= 1
+ *
+ * `offsets` must be the prefix sum of `minGaps` (`offsets[0] = 0`,
+ * `offsets[i] = offsets[i - 1] + minGaps[i]`).
+ */
+function solveIsotonicPava(
+  targets: number[],
+  weights: number[],
+  minGaps: number[],
+  offsets: number[],
+): number[] {
+  const n = targets.length;
+  if (n === 0) return [];
+
+  const blocks: PavaBlock[] = [];
+  for (let i = 0; i < n; i++) {
+    const w = weights[i] > 0 ? weights[i] : NEGLIGIBLE_WEIGHT;
+    const desiredZ = targets[i] - offsets[i];
+    blocks.push({ start: i, end: i, sumWZ: w * desiredZ, sumW: w });
+
+    while (blocks.length >= 2) {
+      const b2 = blocks[blocks.length - 1];
+      const b1 = blocks[blocks.length - 2];
+      if (b1.sumWZ / b1.sumW > b2.sumWZ / b2.sumW) {
+        b1.end = b2.end;
+        b1.sumWZ += b2.sumWZ;
+        b1.sumW += b2.sumW;
+        blocks.pop();
+      } else {
+        break;
+      }
+    }
+  }
+
+  const result = new Array<number>(n);
+  for (const block of blocks) {
+    const z = block.sumWZ / block.sumW;
+    for (let i = block.start; i <= block.end; i++) {
+      result[i] = z + offsets[i];
+    }
+  }
+
+  // Clamp tiny floating-point rounding discrepancies across merged blocks.
+  for (let i = 1; i < n; i++) {
+    const minAllowed = result[i - 1] + minGaps[i];
+    if (result[i] < minAllowed) {
+      result[i] = minAllowed;
+    }
+  }
+  return result;
+}
+
+/**
+ * Replaces Dagre's vertical (y) coordinates with a compact layout that
+ * preserves Dagre's column (rank) assignment and vertical intra-column
+ * ordering, while eliminating vertical bloat from Dagre's intermediate
+ * edge-label dummy ranks and rigid Brandes-Kopf block alignment.
+ *
+ * All edges present in `dagreGraph` (including hidden assignment edges) pull
+ * connected nodes toward their neighbors' weighted centroid subject to
+ * non-overlapping column order constraints.
+ *
+ * Note: This mutates only `node.y` in place, leaving `dagreGraph.graph().height`
+ * and edge `points` at Dagre's pre-compaction values.
+ */
+function compactVerticalPositions(
+  dagreGraph: dagre.graphlib.Graph<DagreAssignmentGroupData>,
+  nodeSep: number,
+  marginY: number,
+): void {
+  const nodeIds = dagreGraph.nodes();
+  if (nodeIds.length === 0) return;
+
+  // Group nodes into columns by Dagre rank (falling back to x if unavailable),
+  // preserving Dagre's crossing-minimized top-to-bottom ordering per column.
+  const colsByKey = new Map<number, string[]>();
+  for (const id of nodeIds) {
+    const node = dagreGraph.node(id);
+    const colKey = node.rank ?? Math.round(node.x * 100);
+    let col = colsByKey.get(colKey);
+    if (!col) {
+      col = [];
+      colsByKey.set(colKey, col);
+    }
+    col.push(id);
+  }
+
+  const sortedColKeys = Array.from(colsByKey.keys()).sort((a, b) => a - b);
+  const posById = new Map<string, { colIdx: number; rowIdx: number }>();
+  const ys = new Map<string, number>();
+
+  // Precompute invariant per-column spacing metadata and initialize each column
+  // tightly packed and centered around y = 0.
+  const columns: ColumnLayoutData[] = sortedColKeys.map((key, colIdx) => {
+    const ids = colsByKey
+      .get(key)!
+      .sort(
+        (a, b) =>
+          dagreGraph.node(a).y - dagreGraph.node(b).y ||
+          (a < b ? -1 : a > b ? 1 : 0),
+      );
+    const n = ids.length;
+    const minGaps = new Array<number>(n);
+    const offsets = new Array<number>(n);
+    const prevConnectedIdx = new Array<number>(n).fill(-1);
+    const nextConnectedIdx = new Array<number>(n).fill(-1);
+    const preds = new Array<NeighborEdge[]>(n);
+    const succs = new Array<NeighborEdge[]>(n);
+
+    minGaps[0] = 0;
+    offsets[0] = 0;
+    let minTop = Infinity;
+    let maxBottom = -Infinity;
+    let cursor = 0;
+
+    for (let i = 0; i < n; i++) {
+      const id = ids[i];
+      posById.set(id, { colIdx, rowIdx: i });
+      preds[i] = [];
+      succs[i] = [];
+
+      const h = dagreGraph.node(id).height;
+      if (i > 0) {
+        const prevH = dagreGraph.node(ids[i - 1]).height;
+        const gap = (prevH + h) / 2 + nodeSep;
+        minGaps[i] = gap;
+        offsets[i] = offsets[i - 1] + gap;
+        cursor += gap;
+      }
+
+      ys.set(id, cursor);
+      minTop = Math.min(minTop, cursor - h / 2);
+      maxBottom = Math.max(maxBottom, cursor + h / 2);
+    }
+
+    const centerShift = (minTop + maxBottom) / 2;
+    for (const id of ids) {
+      ys.set(id, ys.get(id)! - centerShift);
+    }
+
+    return {
+      ids,
+      minGaps,
+      offsets,
+      prevConnectedIdx,
+      nextConnectedIdx,
+      preds,
+      succs,
+    };
+  });
+
+  // Populate weighted cross-column neighbor lists directly on each column.
+  for (const edge of dagreGraph.edges()) {
+    const src = posById.get(edge.v);
+    const tgt = posById.get(edge.w);
+    if (!src || !tgt || src.colIdx === tgt.colIdx) {
+      continue;
+    }
+    if (src.colIdx < tgt.colIdx) {
+      const weight = 1 / (tgt.colIdx - src.colIdx);
+      columns[src.colIdx].succs[src.rowIdx].push({ id: edge.w, weight });
+      columns[tgt.colIdx].preds[tgt.rowIdx].push({ id: edge.v, weight });
+    } else {
+      const weight = 1 / (src.colIdx - tgt.colIdx);
+      columns[src.colIdx].preds[src.rowIdx].push({ id: edge.w, weight });
+      columns[tgt.colIdx].succs[tgt.rowIdx].push({ id: edge.v, weight });
+    }
+  }
+
+  // Precompute nearest connected neighbors in each column for isolated nodes.
+  for (const col of columns) {
+    const n = col.ids.length;
+    let lastConnected = -1;
+    for (let i = 0; i < n; i++) {
+      if (col.preds[i].length > 0 || col.succs[i].length > 0) {
+        lastConnected = i;
+      }
+      col.prevConnectedIdx[i] = lastConnected;
+    }
+    lastConnected = -1;
+    for (let i = n - 1; i >= 0; i--) {
+      if (col.preds[i].length > 0 || col.succs[i].length > 0) {
+        lastConnected = i;
+      }
+      col.nextConnectedIdx[i] = lastConnected;
+    }
+  }
+
+  const updateColumn = (
+    col: ColumnLayoutData,
+    usePreds: boolean,
+    useSuccs: boolean,
+  ): number => {
+    const n = col.ids.length;
+    if (n === 0) return 0;
+
+    const targets = new Array<number>(n);
+    const weights = new Array<number>(n);
+    for (let i = 0; i < n; i++) {
+      const id = col.ids[i];
+      let sumWY = 0;
+      let sumW = 0;
+
+      if (usePreds) {
+        for (const edge of col.preds[i]) {
+          sumWY += edge.weight * ys.get(edge.id)!;
+          sumW += edge.weight;
+        }
+      }
+      if (useSuccs) {
+        for (const edge of col.succs[i]) {
+          sumWY += edge.weight * ys.get(edge.id)!;
+          sumW += edge.weight;
+        }
+      }
+
+      if (sumW > 0) {
+        targets[i] = sumWY / sumW;
+        weights[i] = sumW;
+      } else {
+        let target = ys.get(id)!;
+        if (col.preds[i].length === 0 && col.succs[i].length === 0) {
+          // Truly isolated nodes (0 cross-column edges) tuck tightly adjacent
+          // to connected nodes in their column rather than staying at stale y.
+          const pIdx = col.prevConnectedIdx[i];
+          const nIdx = col.nextConnectedIdx[i];
+          const fromPrev =
+            pIdx !== -1
+              ? ys.get(col.ids[pIdx])! + (col.offsets[i] - col.offsets[pIdx])
+              : undefined;
+          const fromNext =
+            nIdx !== -1
+              ? ys.get(col.ids[nIdx])! - (col.offsets[nIdx] - col.offsets[i])
+              : undefined;
+          target =
+            fromPrev !== undefined && fromNext !== undefined
+              ? 0.5 * (fromPrev + fromNext)
+              : (fromPrev ?? fromNext ?? target);
+        }
+        targets[i] = target;
+        weights[i] = NEGLIGIBLE_WEIGHT;
+      }
+    }
+
+    const newYs = solveIsotonicPava(targets, weights, col.minGaps, col.offsets);
+    let maxDelta = 0;
+    for (let i = 0; i < n; i++) {
+      const id = col.ids[i];
+      const prevY = ys.get(id)!;
+      const nextY = newYs[i];
+      maxDelta = Math.max(maxDelta, Math.abs(nextY - prevY));
+      ys.set(id, nextY);
+    }
+    return maxDelta;
+  };
+
+  // Phase 1: Bidirectional sweeps quickly propagate positions across columns.
+  const propagationSweeps = 6;
+  for (let iter = 0; iter < propagationSweeps; iter++) {
+    for (let c = 1; c < columns.length; c++) {
+      updateColumn(columns[c], true, false);
+    }
+    for (let c = columns.length - 2; c >= 0; c--) {
+      updateColumn(columns[c], false, true);
+    }
+  }
+
+  // Phase 2: Two-sided Gauss-Seidel sweeps minimize the convex edge-length
+  // objective to a stationary point.
+  const maxPolishSweeps = 40;
+  for (let iter = 0; iter < maxPolishSweeps; iter++) {
+    let maxDelta = 0;
+    for (let c = 0; c < columns.length; c++) {
+      maxDelta = Math.max(maxDelta, updateColumn(columns[c], true, true));
+    }
+    for (let c = columns.length - 2; c >= 0; c--) {
+      maxDelta = Math.max(maxDelta, updateColumn(columns[c], true, true));
+    }
+    if (maxDelta < 0.05) {
+      break;
+    }
+  }
+
+  // Shift all nodes so the top bounding-box edge sits at marginY (matching Dagre).
+  let minTop = Infinity;
+  for (const id of nodeIds) {
+    minTop = Math.min(minTop, ys.get(id)! - dagreGraph.node(id).height / 2);
+  }
+  const shift = marginY - minTop;
+  for (const id of nodeIds) {
+    dagreGraph.node(id).y = ys.get(id)! + shift;
+  }
 }
 
 function createCheckNode(
@@ -794,8 +1119,8 @@ export class TurboCIGraphBuilder {
       rankdir: 'LR',
       nodesep: GRAPH_CONFIG.nodeSep,
       ranksep: GRAPH_CONFIG.rankSep,
-      marginx: 20,
-      marginy: 20,
+      marginx: GRAPH_CONFIG.marginX,
+      marginy: GRAPH_CONFIG.marginY,
     });
 
     const nodesByDagreId = new Map<string, string>();
@@ -854,8 +1179,19 @@ export class TurboCIGraphBuilder {
       }
     });
 
-    // 4. Run Dagre Layout
+    // 4. Run Dagre Layout and compact vertical coordinates.
+    // Dagre does not expose per-node `order` in its public output, so we run
+    // full `dagre.layout` to recover crossing-minimized intra-column order from
+    // `node.y`, then overwrite `node.y` in place via `compactVerticalPositions`.
+    // Note: `dagreGraph.graph().height` and edge `points` remain at Dagre's
+    // pre-compaction values and must not be read downstream; React Flow routes
+    // edges and derives viewport bounds from the compacted node positions.
     dagre.layout(dagreGraph);
+    compactVerticalPositions(
+      dagreGraph,
+      GRAPH_CONFIG.nodeSep,
+      GRAPH_CONFIG.marginY,
+    );
 
     // 5. Apply calculated positions and styles to nodes
     this.nodes = this.nodes.map((node) => {

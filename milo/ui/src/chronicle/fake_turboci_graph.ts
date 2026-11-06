@@ -209,6 +209,10 @@ export class FakeGraphGenerator {
   private sourcePlanningStageId: StageId;
   private buildPlanningStageId: StageId;
 
+  // Deterministic PRNG seed derived from workPlanIdStr so generate() reproduces
+  // the same graph regardless of prior global faker state or repeated calls.
+  private readonly seed: number;
+
   // Simulated time to ensure Revisions allow logical ordering (createdAt < finalizedAt)
   private currentSimulatedTimeMs = Date.UTC(2024, 0, 1, 12, 0, 0);
 
@@ -224,13 +228,13 @@ export class FakeGraphGenerator {
   private valueDataMap: Map<string, ValueData> = new Map();
 
   constructor(private config: GraphGenerationConfig) {
-    // Initialize faker seed for reproducible graphs based on workplan ID
+    // Compute deterministic seed based on workplan ID for reproducible graphs.
     let seed = 0;
     for (let i = 0; i < config.workPlanIdStr.length; i++) {
       seed = (seed << 5) - seed + config.workPlanIdStr.charCodeAt(i);
       seed |= 0;
     }
-    faker.seed(seed);
+    this.seed = seed;
 
     this.workPlanId = { id: config.workPlanIdStr };
     this.sourcePlanningStageId = this.createStageId('S_Planning_Source');
@@ -275,6 +279,7 @@ export class FakeGraphGenerator {
   }
 
   private resetState() {
+    faker.seed(this.seed);
     this.checkViews = {};
     this.stageViews = {};
     this.sourceCheckIds = [];

@@ -30,12 +30,15 @@ import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 import { ValueRef } from '@/proto/turboci/graph/orchestrator/v1/value_ref.pb';
 import { WorkPlan as TurboCIGraphWorkPlan } from '@/proto/turboci/graph/orchestrator/v1/workplan.pb';
 
+import { FakeGraphGenerator, WorkflowType } from '../fake_turboci_graph';
+
 import {
   CheckResultStatus,
   StageResultStatus,
   TYPE_URL_BUILD_OPTIONS,
   TYPE_URL_BUILD_RESULT,
   TYPE_URL_BUILD_RESULTS,
+  isStage,
 } from './check_utils';
 import {
   ChronicleNode,
@@ -1266,6 +1269,495 @@ describe('TurboCIGraphBuilder', () => {
       expect(node?.data.resultStatus).toBe(StageResultStatus.FAILURE);
       expect(node?.style?.background).toBe('var(--failure-bg-color)');
       expect(node?.style?.borderTop).toBe('1px solid var(--failure-color)');
+    });
+  });
+
+  describe('Compact Vertical Layout', () => {
+    const NODE_HEIGHT = 32;
+    const EFFECTIVE_NODE_HEIGHT = 31;
+    const NODE_SEP = 25;
+    const MARGIN_Y = 20;
+
+    const createExpandedGroupModes = (
+      graph: TurboCIGraphWorkPlan,
+    ): Map<number, GroupMode> => {
+      const { groupIdToChecks } = getTopologyGroups(graph);
+      return new Map<number, GroupMode>(
+        Array.from(groupIdToChecks.keys()).map((id) => [
+          id,
+          GroupMode.EXPANDED,
+        ]),
+      );
+    };
+
+    const getAssignmentGroupKey = (node: ChronicleNode): string | undefined => {
+      if (!node.data.isGrouped || !node.data.view) return undefined;
+      return isStage(node.data.view)
+        ? node.data.view.assignments[0]?.target?.id
+        : node.id;
+    };
+
+    const assertValidColumnSpacing = (nodes: ChronicleNode[]) => {
+      const cols = new Map<number, ChronicleNode[]>();
+      for (const node of nodes) {
+        expect(Number.isFinite(node.position.x)).toBe(true);
+        expect(Number.isFinite(node.position.y)).toBe(true);
+        const x = node.position.x;
+        const col = cols.get(x);
+        if (col) {
+          col.push(node);
+        } else {
+          cols.set(x, [node]);
+        }
+      }
+
+      for (const colNodes of cols.values()) {
+        colNodes.sort((a, b) => a.position.y - b.position.y);
+        for (let i = 1; i < colNodes.length; i++) {
+          const prev = colNodes[i - 1];
+          const curr = colNodes[i];
+          const dy = curr.position.y - prev.position.y;
+          const prevGroupKey = getAssignmentGroupKey(prev);
+          const currGroupKey = getAssignmentGroupKey(curr);
+          const isSameGroupStack =
+            prevGroupKey !== undefined && prevGroupKey === currGroupKey;
+          if (isSameGroupStack) {
+            expect(dy).toBeCloseTo(EFFECTIVE_NODE_HEIGHT, 4);
+          } else {
+            expect(dy).toBeGreaterThanOrEqual(NODE_HEIGHT + NODE_SEP - 1e-4);
+          }
+        }
+      }
+    };
+
+    const getBoundingHeight = (nodes: ChronicleNode[]) => {
+      const minTop = Math.min(...nodes.map((n) => n.position.y));
+      const maxBot = Math.max(...nodes.map((n) => n.position.y + NODE_HEIGHT));
+      return { minTop, height: maxBot - minTop };
+    };
+
+    it('keeps dense cross-connected bipartite graphs compact without overlaps', () => {
+      const valueDataMap = new Map<string, ValueData>();
+      const numPerCol = 20;
+
+      // Expand every node into distinct topology by giving each L1 node a unique child
+      // so collapsing does not merge them, testing dense all-to-all cross connections.
+      const layer0 = Array.from({ length: numPerCol }, (_, i) =>
+        createCheck(`L0_${i}`, valueDataMap, CheckKind.CHECK_KIND_BUILD),
+      );
+      const l0Idents = layer0.map((c) => c.identifier!);
+      const layer1 = Array.from({ length: numPerCol }, (_, i) =>
+        createCheck(
+          `L1_${i}`,
+          valueDataMap,
+          CheckKind.CHECK_KIND_TEST,
+          l0Idents,
+        ),
+      );
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'dense-bipartite',
+        checks: [...layer0, ...layer1],
+        stages: [],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        groupModes: createExpandedGroupModes(graph),
+      });
+
+      assertValidColumnSpacing(nodes);
+      const { minTop, height } = getBoundingHeight(nodes);
+      expect(minTop).toBeCloseTo(MARGIN_Y, 4);
+      // 20 nodes * 32px + 19 * 25px = 1115px (previously > 8000px with Dagre dummy-rank bloat).
+      expect(height).toBeCloseTo(
+        numPerCol * NODE_HEIGHT + (numPerCol - 1) * NODE_SEP,
+        2,
+      );
+    });
+
+    it('keeps multi-layer cross-connected DAGs with skip-rank edges compact', () => {
+      const valueDataMap = new Map<string, ValueData>();
+      const layers = 4;
+      const nodesPerLayer = 15;
+      const checks: Check[] = [];
+
+      for (let l = 0; l < layers; l++) {
+        for (let i = 0; i < nodesPerLayer; i++) {
+          const deps: CheckId[] = [];
+          if (l > 0) {
+            for (let k = 0; k < 5; k++) {
+              deps.push(
+                createCheckIdentifier(`N_${l - 1}_${(i + k) % nodesPerLayer}`),
+              );
+            }
+          }
+          if (l > 1) {
+            deps.push(createCheckIdentifier(`N_${l - 2}_${i}`));
+          }
+          checks.push(
+            createCheck(
+              `N_${l}_${i}`,
+              valueDataMap,
+              CheckKind.CHECK_KIND_BUILD,
+              deps,
+            ),
+          );
+        }
+      }
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'multi-layer-skip',
+        checks,
+        stages: [],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        groupModes: createExpandedGroupModes(graph),
+      });
+
+      assertValidColumnSpacing(nodes);
+      const { minTop, height } = getBoundingHeight(nodes);
+      expect(minTop).toBeCloseTo(MARGIN_Y, 4);
+      const tightColHeight =
+        nodesPerLayer * NODE_HEIGHT + (nodesPerLayer - 1) * NODE_SEP;
+      expect(height).toBeLessThanOrEqual(tightColHeight * 1.15);
+    });
+
+    it('centers parents and sinks against fan-out / fan-in children', () => {
+      const valueDataMap = new Map<string, ValueData>();
+      const root = createCheck(
+        'Root',
+        valueDataMap,
+        CheckKind.CHECK_KIND_SOURCE,
+      );
+      const children = Array.from({ length: 11 }, (_, i) =>
+        createCheck(`Child_${i}`, valueDataMap, CheckKind.CHECK_KIND_TEST, [
+          root.identifier!,
+        ]),
+      );
+      const sink = createCheck(
+        'Sink',
+        valueDataMap,
+        CheckKind.CHECK_KIND_ANALYSIS,
+        children.map((c) => c.identifier!),
+      );
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'diamond-fanout',
+        checks: [root, ...children, sink],
+        stages: [],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        groupModes: createExpandedGroupModes(graph),
+      });
+
+      assertValidColumnSpacing(nodes);
+      const rootNode = nodes.find((n) => n.id === 'Root')!;
+      const sinkNode = nodes.find((n) => n.id === 'Sink')!;
+      const childYs = children
+        .map((c) => nodes.find((n) => n.id === c.identifier!.id)!.position.y)
+        .sort((a, b) => a - b);
+      const expectedMidY = (childYs[0] + childYs[childYs.length - 1]) / 2;
+
+      expect(rootNode.position.y).toBeCloseTo(expectedMidY, 1);
+      expect(sinkNode.position.y).toBeCloseTo(expectedMidY, 1);
+    });
+
+    it('preserves multi-stage assignment stacks without overlaps in dense columns', () => {
+      const valueDataMap = new Map<string, ValueData>();
+      const l0 = Array.from({ length: 6 }, (_, i) =>
+        createCheck(`B_${i}`, valueDataMap, CheckKind.CHECK_KIND_BUILD),
+      );
+      const l1 = Array.from({ length: 8 }, (_, i) =>
+        createCheck(
+          `T_${i}`,
+          valueDataMap,
+          CheckKind.CHECK_KIND_TEST,
+          l0.slice(0, 4).map((c) => c.identifier!),
+        ),
+      );
+      // Add multi-stage stacks to several checks in both columns
+      const stages = [
+        createStage('S_B0_a', ['B_0']),
+        createStage('S_B0_b', ['B_0']),
+        createStage('S_T2_a', ['T_2']),
+        createStage('S_T2_b', ['T_2']),
+        createStage('S_T2_c', ['T_2']),
+      ];
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'grouped-dense',
+        checks: [...l0, ...l1],
+        stages,
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        groupModes: createExpandedGroupModes(graph),
+      });
+
+      assertValidColumnSpacing(nodes);
+      const sT2a = nodes.find((n) => n.id === 'S_T2_a')!;
+      const sT2b = nodes.find((n) => n.id === 'S_T2_b')!;
+      const sT2c = nodes.find((n) => n.id === 'S_T2_c')!;
+      const cT2 = nodes.find((n) => n.id === 'T_2')!;
+      expect(sT2b.position.y - sT2a.position.y).toBeCloseTo(
+        EFFECTIVE_NODE_HEIGHT,
+        4,
+      );
+      expect(sT2c.position.y - sT2b.position.y).toBeCloseTo(
+        EFFECTIVE_NODE_HEIGHT,
+        4,
+      );
+      expect(cT2.position.y - sT2c.position.y).toBeCloseTo(
+        EFFECTIVE_NODE_HEIGHT,
+        4,
+      );
+    });
+
+    it('uses hidden assignment edges identically to visible ones to keep assigned checks grouped', () => {
+      const valueDataMap = new Map<string, ValueData>();
+      const shared0 = createCheck(
+        'Shared_0',
+        valueDataMap,
+        CheckKind.CHECK_KIND_BUILD,
+      );
+      const shared1 = createCheck(
+        'Shared_1',
+        valueDataMap,
+        CheckKind.CHECK_KIND_BUILD,
+      );
+      const sharedDeps = [shared0.identifier!, shared1.identifier!];
+
+      const groupA = Array.from({ length: 5 }, (_, i) =>
+        createCheck(
+          `Test_A_${i}`,
+          valueDataMap,
+          CheckKind.CHECK_KIND_TEST,
+          sharedDeps,
+        ),
+      );
+      const groupB = Array.from({ length: 5 }, (_, i) =>
+        createCheck(
+          `Test_B_${i}`,
+          valueDataMap,
+          CheckKind.CHECK_KIND_TEST,
+          sharedDeps,
+        ),
+      );
+      const planA = createStage(
+        'S_Plan_A',
+        groupA.map((c) => c.identifier!.id!),
+      );
+      const planB = createStage(
+        'S_Plan_B',
+        groupB.map((c) => c.identifier!.id!),
+      );
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'hidden-assignments',
+        checks: [shared0, shared1, ...groupA, ...groupB],
+        stages: [planA, planB],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const groupModes = createExpandedGroupModes(graph);
+      const hiddenLayout = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        showAssignmentEdges: false,
+        groupModes,
+      });
+      const visibleLayout = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        showAssignmentEdges: true,
+        groupModes,
+      });
+
+      const extractPos = (nodes: ChronicleNode[]) =>
+        nodes
+          .map((n) => ({ id: n.id, x: n.position.x, y: n.position.y }))
+          .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+      expect(extractPos(hiddenLayout.nodes)).toEqual(
+        extractPos(visibleLayout.nodes),
+      );
+      assertValidColumnSpacing(hiddenLayout.nodes);
+
+      // Each assignment stage should cluster its 5 assigned checks contiguously.
+      const aYs = groupA
+        .map(
+          (c) =>
+            hiddenLayout.nodes.find((n) => n.id === c.identifier!.id)!.position
+              .y,
+        )
+        .sort((a, b) => a - b);
+      const bYs = groupB
+        .map(
+          (c) =>
+            hiddenLayout.nodes.find((n) => n.id === c.identifier!.id)!.position
+              .y,
+        )
+        .sort((a, b) => a - b);
+      const spanA = aYs[aYs.length - 1] - aYs[0];
+      const spanB = bYs[bYs.length - 1] - bYs[0];
+      expect(spanA).toBeCloseTo(4 * (NODE_HEIGHT + NODE_SEP), 2);
+      expect(spanB).toBeCloseTo(4 * (NODE_HEIGHT + NODE_SEP), 2);
+    });
+
+    it('packs disconnected components and isolated nodes cleanly without large voids', () => {
+      const valueDataMap = new Map<string, ValueData>();
+      const topSrc = createCheck('TopSrc', valueDataMap);
+      const fanout = Array.from({ length: 12 }, (_, i) =>
+        createCheck(`Fan_${i}`, valueDataMap, CheckKind.CHECK_KIND_TEST, [
+          topSrc.identifier!,
+        ]),
+      );
+      const disconnectedA = createCheck('Disconnected_A', valueDataMap);
+      const disconnectedB = createCheck(
+        'Disconnected_B',
+        valueDataMap,
+        CheckKind.CHECK_KIND_TEST,
+        [disconnectedA.identifier!],
+      );
+      const isolated1 = createCheck('Isolated_1', valueDataMap);
+      const isolated2 = createCheck('Isolated_2', valueDataMap);
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'disconnected-isolated',
+        checks: [
+          topSrc,
+          ...fanout,
+          disconnectedA,
+          disconnectedB,
+          isolated1,
+          isolated2,
+        ],
+        stages: [],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        groupModes: createExpandedGroupModes(graph),
+      });
+
+      assertValidColumnSpacing(nodes);
+      const { minTop, height } = getBoundingHeight(nodes);
+      expect(minTop).toBeCloseTo(MARGIN_Y, 4);
+
+      const fanYs = fanout
+        .map((c) => nodes.find((n) => n.id === c.identifier!.id)!.position.y)
+        .sort((a, b) => a - b);
+      const disconnectedBY = nodes.find((n) => n.id === 'Disconnected_B')!
+        .position.y;
+      expect(fanYs[fanYs.length - 1] - fanYs[0]).toBeCloseTo(
+        11 * (NODE_HEIGHT + NODE_SEP),
+        2,
+      );
+      const gapToDisconnected = Math.min(
+        Math.abs(disconnectedBY - fanYs[0]),
+        Math.abs(disconnectedBY - fanYs[fanYs.length - 1]),
+      );
+      expect(gapToDisconnected).toBeCloseTo(NODE_HEIGHT + NODE_SEP, 2);
+
+      // Tight height is 13 rows in Col 1 (12 fanout + Disconnected_B),
+      // plus at most 2 isolated nodes in Col 0.
+      expect(height).toBeLessThanOrEqual(15 * NODE_HEIGHT + 14 * NODE_SEP + 1);
+    });
+
+    it('handles single-column disconnected graphs', () => {
+      const valueDataMap = new Map<string, ValueData>();
+      const singleColChecks = Array.from({ length: 4 }, (_, i) =>
+        createCheck(`Standalone_${i}`, valueDataMap),
+      );
+      const singleColGraph: TurboCIGraphWorkPlan = {
+        id: 'single-column',
+        checks: singleColChecks,
+        stages: [],
+      } as unknown as TurboCIGraphWorkPlan;
+      const { nodes } = new TurboCIGraphBuilder(
+        singleColGraph,
+        valueDataMap,
+      ).build({
+        groupModes: createExpandedGroupModes(singleColGraph),
+      });
+
+      assertValidColumnSpacing(nodes);
+      const { minTop } = getBoundingHeight(nodes);
+      expect(minTop).toBeCloseTo(MARGIN_Y, 4);
+      const sortedYs = nodes.map((n) => n.position.y).sort((a, b) => a - b);
+      for (let i = 1; i < sortedYs.length; i++) {
+        expect(sortedYs[i] - sortedYs[i - 1]).toBeCloseTo(
+          NODE_HEIGHT + NODE_SEP,
+          4,
+        );
+      }
+    });
+
+    it('handles cyclic edges reversed by Dagre without overlaps', () => {
+      const valueDataMap = new Map<string, ValueData>();
+      // Cycle C -> A -> B -> C plus tail C -> D.
+      const checkA = createCheck(
+        'Cycle_A',
+        valueDataMap,
+        CheckKind.CHECK_KIND_BUILD,
+        [createCheckIdentifier('Cycle_C')],
+      );
+      const checkB = createCheck(
+        'Cycle_B',
+        valueDataMap,
+        CheckKind.CHECK_KIND_TEST,
+        [checkA.identifier!],
+      );
+      const checkC = createCheck(
+        'Cycle_C',
+        valueDataMap,
+        CheckKind.CHECK_KIND_ANALYSIS,
+        [checkB.identifier!],
+      );
+      const checkD = createCheck(
+        'Tail_D',
+        valueDataMap,
+        CheckKind.CHECK_KIND_ANALYSIS,
+        [checkC.identifier!],
+      );
+
+      const graph: TurboCIGraphWorkPlan = {
+        id: 'cyclic-graph',
+        checks: [checkA, checkB, checkC, checkD],
+        stages: [],
+      } as unknown as TurboCIGraphWorkPlan;
+
+      const { nodes } = new TurboCIGraphBuilder(graph, valueDataMap).build({
+        groupModes: createExpandedGroupModes(graph),
+      });
+
+      expect(nodes).toHaveLength(4);
+      assertValidColumnSpacing(nodes);
+      expect(getBoundingHeight(nodes).minTop).toBeCloseTo(MARGIN_Y, 4);
+    });
+
+    it('lays out complex Android workflow compactly and without overlaps', () => {
+      const gen = new FakeGraphGenerator({
+        workPlanIdStr: 'android-layout-check',
+        workflowType: WorkflowType.ANDROID,
+      });
+      const { workplan, valueDataMap } = gen.generate();
+
+      const defaultLayout = new TurboCIGraphBuilder(
+        workplan,
+        valueDataMap,
+      ).build();
+      assertValidColumnSpacing(defaultLayout.nodes);
+      expect(getBoundingHeight(defaultLayout.nodes).minTop).toBeCloseTo(
+        MARGIN_Y,
+        4,
+      );
+
+      const expandedLayout = new TurboCIGraphBuilder(
+        workplan,
+        valueDataMap,
+      ).build({ groupModes: createExpandedGroupModes(workplan) });
+      assertValidColumnSpacing(expandedLayout.nodes);
+      const { minTop, height } = getBoundingHeight(expandedLayout.nodes);
+      expect(minTop).toBeCloseTo(MARGIN_Y, 4);
+      // Previously ~6600px with Dagre edge-label inflation; compacted is ~4623px.
+      expect(height).toBeLessThan(5000);
     });
   });
 });
