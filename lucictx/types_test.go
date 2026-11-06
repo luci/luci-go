@@ -110,6 +110,46 @@ func TestPredefinedTypes(t *testing.T) {
 			assert.Loosely(t, GetResultDB(c), should.Match(resultdb))
 		})
 
+		t.Run("result_sink", func(t *ftt.Test) {
+			assert.Loosely(t, GetResultSink(c), should.BeNil)
+
+			rs := &ResultSink{
+				Address:   "localhost:42",
+				AuthToken: "secret",
+			}
+			c = SetResultSink(c, rs)
+			data := getCurrent(c).sections["result_sink"]
+			var v any
+			assert.Loosely(t, json.Unmarshal(*data, &v), should.BeNil)
+			assert.Loosely(t, v, should.Match(map[string]any{
+				"address":    "localhost:42",
+				"auth_token": "secret",
+			}))
+			assert.Loosely(t, GetResultSink(c), should.Match(rs))
+
+			rsWithVar := &ResultSink{
+				Address:   "localhost:42",
+				AuthToken: "secret",
+				BaseVariant: map[string]string{
+					"board": "x64",
+					"os":    "Linux",
+				},
+			}
+			c = SetResultSink(c, rsWithVar)
+			data = getCurrent(c).sections["result_sink"]
+			v = nil
+			assert.Loosely(t, json.Unmarshal(*data, &v), should.BeNil)
+			assert.Loosely(t, v, should.Match(map[string]any{
+				"address":    "localhost:42",
+				"auth_token": "secret",
+				"base_variant": map[string]any{
+					"board": "x64",
+					"os":    "Linux",
+				},
+			}))
+			assert.Loosely(t, GetResultSink(c), should.Match(rsWithVar))
+		})
+
 		t.Run("realm", func(t *ftt.Test) {
 			assert.Loosely(t, GetRealm(c), should.BeNil)
 

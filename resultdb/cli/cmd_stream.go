@@ -141,6 +141,8 @@ func cmdStream(p Params) *subcommands.Command {
 			r.Flags.Var(flag.StringMap(r.vars), "var", text.Doc(`
 				The module variant. This also sets the module variant when uploading
 				test results with legacy test IDs.
+				If -include is set and a ResultSink is present in LUCI_CONTEXT, its
+				base variant is inherited and any matching keys specified here override it.
 			`))
 			r.Flags.UintVar(&r.artChannelMaxLeases, "max-concurrent-artifact-uploads",
 				sink.DefaultArtChannelMaxLeases, text.Doc(`
@@ -382,9 +384,21 @@ func (r *streamRun) validate(ctx context.Context, args []string) (err error) {
 	return nil
 }
 
+func (r *streamRun) inheritBaseVariant(ctx context.Context) {
+	if !r.isNew || !r.isIncluded {
+		return
+	}
+	for k, v := range lucictx.GetResultSink(ctx).GetBaseVariant() {
+		if _, ok := r.vars[k]; !ok {
+			r.vars[k] = v
+		}
+	}
+}
+
 func (r *streamRun) Run(a subcommands.Application, args []string, env subcommands.Env) (ret int) {
 	ctx := cli.GetContext(a, r, env)
 
+	r.inheritBaseVariant(ctx)
 	if err := r.validate(ctx, args); err != nil {
 		return r.done(err)
 	}

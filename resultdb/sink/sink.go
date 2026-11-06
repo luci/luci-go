@@ -525,8 +525,9 @@ func (s *Server) Close(ctx context.Context) (err error) {
 // the context.
 func (s *Server) Export(ctx context.Context) context.Context {
 	return lucictx.SetResultSink(ctx, &lucictx.ResultSink{
-		Address:   s.cfg.Address,
-		AuthToken: s.cfg.AuthToken,
+		Address:     s.cfg.Address,
+		AuthToken:   s.cfg.AuthToken,
+		BaseVariant: s.cfg.Variant.GetDef(),
 	})
 }
 

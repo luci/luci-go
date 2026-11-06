@@ -118,6 +118,10 @@ message ResultSink {
   // secret string required in all ResultSink requests in HTTP header
   // `Authorization: ResultSink <auth-token>`
   string auth_token = 2 [json_name = "auth_token"];
+
+  // Variant key-value pairs attached by default to all test results reported
+  // through this ResultSink server.
+  map<string, string> base_variant = 3 [json_name = "base_variant"];
 }
 
 // Deadline represents an externally-imposed termination criteria for the

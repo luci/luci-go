@@ -329,16 +329,21 @@ func TestServer(t *testing.T) {
 func TestServerExport(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("Export returns the configured address and auth_token", t, func(t *ftt.Test) {
+	ftt.Run("Export returns the configured address, auth_token and base_variant", t, func(t *ftt.Test) {
 		ctx := context.Background()
-		srv, err := NewServer(ctx, testServerConfig(":42", "hello"))
+		cfg := testServerConfig(":42", "hello")
+		cfg.Variant = pbutil.Variant("board", "x64", "os", "Linux")
+		srv, err := NewServer(ctx, cfg)
 		assert.Loosely(t, err, should.BeNil)
 
 		ctx = srv.Export(ctx)
 		sink := lucictx.GetResultSink(ctx)
 		assert.Loosely(t, sink, should.NotBeNil)
-		assert.Loosely(t, sink, should.NotBeNil)
 		assert.Loosely(t, sink.Address, should.Equal(":42"))
 		assert.Loosely(t, sink.AuthToken, should.Equal("hello"))
+		assert.Loosely(t, sink.BaseVariant, should.Match(map[string]string{
+			"board": "x64",
+			"os":    "Linux",
+		}))
 	})
 }
