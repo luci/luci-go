@@ -52,7 +52,11 @@ export function createPhysicalSitesFake() {
       const incoming = req.physicalSite;
       const id = incoming?.id?.trim() ?? '';
       const name = incoming?.name?.trim() ?? '';
-      const created = PhysicalSite.create({ id, name });
+      const created = PhysicalSite.fromPartial({
+        ...incoming,
+        id,
+        name,
+      });
       if (created.id) {
         sites.set(created.id, created);
       }
@@ -66,7 +70,9 @@ export function createPhysicalSitesFake() {
       if (!existing) {
         return UpdatePhysicalSiteResponse.create({});
       }
-      const updated = PhysicalSite.create({
+      const updated = PhysicalSite.fromPartial({
+        ...existing,
+        ...incoming,
         id,
         name: incoming?.name?.trim() || existing.name,
       });
@@ -105,12 +111,13 @@ export function createPhysicalSitesFake() {
       ),
     } satisfies Record<string, RpcJsonHandler>,
     sites,
-    seed(nextSites: readonly PhysicalSite[]) {
+    seed(nextSites: readonly Partial<PhysicalSite>[]) {
       sites.clear();
       for (const s of nextSites) {
-        const normalized = PhysicalSite.create({
-          id: s.id.trim(),
-          name: s.name.trim(),
+        const normalized = PhysicalSite.fromPartial({
+          ...s,
+          id: (s.id ?? '').trim(),
+          name: (s.name ?? '').trim(),
         });
         sites.set(normalized.id, normalized);
       }

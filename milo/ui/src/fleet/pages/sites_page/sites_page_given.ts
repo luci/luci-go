@@ -40,7 +40,7 @@ export const given = {
     );
   },
 
-  sites(items: readonly PhysicalSite[]) {
+  sites(items: readonly Partial<PhysicalSite>[]) {
     fakeFleetConsoleBackend.physicalSites.seed(items);
   },
 

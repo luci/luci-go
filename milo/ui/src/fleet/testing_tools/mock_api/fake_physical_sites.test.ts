@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import {
+  PhysicalSite,
+  Platform,
+} from '../../../proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
 import { createPhysicalSitesFake } from './fake_physical_sites';
 
 describe('createPhysicalSitesFake', () => {
@@ -26,38 +31,80 @@ describe('createPhysicalSitesFake', () => {
 
     const res = await fake.ListPhysicalSites({});
     expect(res.physicalSites).toEqual([
-      { id: 'LAB1', name: 'Central Lab' },
-      { id: 'MTV1', name: 'Mountain View' },
-      { id: 'MTV2', name: 'Mountain View' },
-      { id: 'EM25', name: 'Palo Alto' },
+      PhysicalSite.fromPartial({ id: 'LAB1', name: 'Central Lab' }),
+      PhysicalSite.fromPartial({ id: 'MTV1', name: 'Mountain View' }),
+      PhysicalSite.fromPartial({ id: 'MTV2', name: 'Mountain View' }),
+      PhysicalSite.fromPartial({ id: 'EM25', name: 'Palo Alto' }),
     ]);
   });
 
-  it('supports creating, updating, and deleting physical sites', async () => {
+  it('supports creating, updating, and deleting physical sites with V1.1 fields', async () => {
     const fake = createPhysicalSitesFake();
 
     const missingUpdate = await fake.UpdatePhysicalSite({
-      physicalSite: { id: 'UNKNOWN', name: 'Ignored' },
+      physicalSite: PhysicalSite.fromPartial({
+        id: 'UNKNOWN',
+        name: 'Ignored',
+      }),
     });
     expect(missingUpdate.physicalSite).toBeUndefined();
 
     const created = await fake.CreatePhysicalSite({
-      physicalSite: { id: 'EM25', name: 'Palo Alto' },
+      physicalSite: PhysicalSite.fromPartial({
+        id: 'EM25',
+        name: 'Palo Alto',
+        imageUrls: ['https://screenshot.googleplex.com/abc.png'],
+        platformFilters: [
+          {
+            platform: Platform.CHROMEOS,
+            filter: 'labels.zone = "ZONE_SFO36_OS"',
+          },
+        ],
+      }),
     });
-    expect(created.physicalSite).toEqual({ id: 'EM25', name: 'Palo Alto' });
+    expect(created.physicalSite).toEqual(
+      PhysicalSite.fromPartial({
+        id: 'EM25',
+        name: 'Palo Alto',
+        imageUrls: ['https://screenshot.googleplex.com/abc.png'],
+        platformFilters: [
+          {
+            platform: Platform.CHROMEOS,
+            filter: 'labels.zone = "ZONE_SFO36_OS"',
+          },
+        ],
+      }),
+    );
 
     const updated = await fake.UpdatePhysicalSite({
-      physicalSite: { id: 'EM25', name: 'Palo Alto EM25' },
+      physicalSite: PhysicalSite.fromPartial({
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        imageUrls: ['https://screenshot.googleplex.com/updated.png'],
+        platformFilters: [
+          {
+            platform: Platform.CHROMEOS,
+            filter: 'labels.zone = "ZONE_SFO36_OS"',
+          },
+        ],
+      }),
     });
-    expect(updated.physicalSite).toEqual({
-      id: 'EM25',
-      name: 'Palo Alto EM25',
-    });
+    expect(updated.physicalSite).toEqual(
+      PhysicalSite.fromPartial({
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        imageUrls: ['https://screenshot.googleplex.com/updated.png'],
+        platformFilters: [
+          {
+            platform: Platform.CHROMEOS,
+            filter: 'labels.zone = "ZONE_SFO36_OS"',
+          },
+        ],
+      }),
+    );
 
     const listedAfterUpdate = await fake.ListPhysicalSites({});
-    expect(listedAfterUpdate.physicalSites).toEqual([
-      { id: 'EM25', name: 'Palo Alto EM25' },
-    ]);
+    expect(listedAfterUpdate.physicalSites).toEqual([updated.physicalSite]);
 
     await fake.DeletePhysicalSite({ id: ' EM25 ' });
     const listedAfterDelete = await fake.ListPhysicalSites({});

@@ -6,11 +6,25 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
+import { Platform, platformFromJSON, platformToJSON } from "./common_types.pb";
+
+/**
+ * PlatformDeviceFilter associates a Fleet Console platform with an AIP-160
+ * device filter expression scoped to a physical site.
+ */
+export interface PlatformDeviceFilter {
+  /** Required. Target fleet platform (e.g. CHROMEOS, ANDROID, CHROMIUM). */
+  readonly platform: Platform;
+  /**
+   * Required. AIP-160 boolean filter expression scoping devices on this
+   * platform to the physical site (e.g. `labels.zone = "ZONE_SFO36_OS"`).
+   */
+  readonly filter: string;
+}
 
 /**
  * PhysicalSite represents a physical hardware site in Fleet Console.
- *
- * Design doc: http://goto.google.com/fcon-labs-directory-design
  *
  * Key design decisions:
  * 1. Naming ("PhysicalSite" vs. "PhysicalLab"): Selected in a 6-candidate
@@ -35,6 +49,15 @@ export interface PhysicalSite {
    * (e.g. "Palo Alto EM25").
    */
   readonly name: string;
+  /** Optional. Facility photo URLs for the physical site. */
+  readonly imageUrls: readonly string[];
+  /**
+   * Optional. Per-platform AIP-160 device filter bindings used to link site
+   * cards to pre-filtered Devices tables and compute site health rollups.
+   */
+  readonly platformFilters: readonly PlatformDeviceFilter[];
+  /** Output only. Timestamp when the physical site record was last updated. */
+  readonly updatedAt: string | undefined;
 }
 
 /**
@@ -77,8 +100,93 @@ export interface DeletePhysicalSiteRequest {
 export interface DeletePhysicalSiteResponse {
 }
 
+function createBasePlatformDeviceFilter(): PlatformDeviceFilter {
+  return { platform: 0, filter: "" };
+}
+
+export const PlatformDeviceFilter: MessageFns<PlatformDeviceFilter> = {
+  encode(message: PlatformDeviceFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.platform !== 0) {
+      writer.uint32(8).int32(message.platform);
+    }
+    if (message.filter !== "") {
+      writer.uint32(18).string(message.filter);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PlatformDeviceFilter {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBasePlatformDeviceFilter() as any;
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 8) {
+              break;
+            }
+
+            message.platform = reader.int32() as any;
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.filter = reader.string();
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): PlatformDeviceFilter {
+    return {
+      platform: isSet(object.platform) ? platformFromJSON(object.platform) : 0,
+      filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
+    };
+  },
+
+  toJSON(message: PlatformDeviceFilter): unknown {
+    const obj: any = {};
+    if (message.platform !== 0) {
+      obj.platform = platformToJSON(message.platform);
+    }
+    if (message.filter !== "") {
+      obj.filter = message.filter;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<PlatformDeviceFilter>): PlatformDeviceFilter {
+    return PlatformDeviceFilter.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<PlatformDeviceFilter>): PlatformDeviceFilter {
+    const message = createBasePlatformDeviceFilter() as any;
+    message.platform = object.platform ?? 0;
+    message.filter = object.filter ?? "";
+    return message;
+  },
+};
+
 function createBasePhysicalSite(): PhysicalSite {
-  return { id: "", name: "" };
+  return { id: "", name: "", imageUrls: [], platformFilters: [], updatedAt: undefined };
 }
 
 export const PhysicalSite: MessageFns<PhysicalSite> = {
@@ -88,6 +196,15 @@ export const PhysicalSite: MessageFns<PhysicalSite> = {
     }
     if (message.name !== "") {
       writer.uint32(18).string(message.name);
+    }
+    for (const v of message.imageUrls) {
+      writer.uint32(26).string(v!);
+    }
+    for (const v of message.platformFilters) {
+      PlatformDeviceFilter.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.updatedAt !== undefined) {
+      Timestamp.encode(toTimestamp(message.updatedAt), writer.uint32(42).fork()).join();
     }
     return writer;
   },
@@ -121,6 +238,30 @@ export const PhysicalSite: MessageFns<PhysicalSite> = {
             message.name = reader.string();
             continue;
           }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.imageUrls.push(reader.string());
+            continue;
+          }
+          case 4: {
+            if (tag !== 34) {
+              break;
+            }
+
+            message.platformFilters.push(PlatformDeviceFilter.decode(reader, reader.uint32()));
+            continue;
+          }
+          case 5: {
+            if (tag !== 42) {
+              break;
+            }
+
+            message.updatedAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -137,6 +278,21 @@ export const PhysicalSite: MessageFns<PhysicalSite> = {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
       name: isSet(object.name) ? globalThis.String(object.name) : "",
+      imageUrls: globalThis.Array.isArray(object?.imageUrls)
+        ? object.imageUrls.map((e: any) => globalThis.String(e))
+        : globalThis.Array.isArray(object?.image_urls)
+        ? object.image_urls.map((e: any) => globalThis.String(e))
+        : [],
+      platformFilters: globalThis.Array.isArray(object?.platformFilters)
+        ? object.platformFilters.map((e: any) => PlatformDeviceFilter.fromJSON(e))
+        : globalThis.Array.isArray(object?.platform_filters)
+        ? object.platform_filters.map((e: any) => PlatformDeviceFilter.fromJSON(e))
+        : [],
+      updatedAt: isSet(object.updatedAt)
+        ? globalThis.String(object.updatedAt)
+        : isSet(object.updated_at)
+        ? globalThis.String(object.updated_at)
+        : undefined,
     };
   },
 
@@ -148,6 +304,15 @@ export const PhysicalSite: MessageFns<PhysicalSite> = {
     if (message.name !== "") {
       obj.name = message.name;
     }
+    if (message.imageUrls?.length) {
+      obj.imageUrls = message.imageUrls;
+    }
+    if (message.platformFilters?.length) {
+      obj.platformFilters = message.platformFilters.map((e) => PlatformDeviceFilter.toJSON(e));
+    }
+    if (message.updatedAt !== undefined) {
+      obj.updatedAt = message.updatedAt;
+    }
     return obj;
   },
 
@@ -158,6 +323,9 @@ export const PhysicalSite: MessageFns<PhysicalSite> = {
     const message = createBasePhysicalSite() as any;
     message.id = object.id ?? "";
     message.name = object.name ?? "";
+    message.imageUrls = object.imageUrls?.map((e) => e) || [];
+    message.platformFilters = object.platformFilters?.map((e) => PlatformDeviceFilter.fromPartial(e)) || [];
+    message.updatedAt = object.updatedAt ?? undefined;
     return message;
   },
 };
@@ -713,6 +881,19 @@ type DeepPartial<T> = T extends Builtin ? T
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
+
+function toTimestamp(dateStr: string): Timestamp {
+  const date = new globalThis.Date(dateStr);
+  const seconds = Math.trunc(date.getTime() / 1_000).toString();
+  const nanos = (date.getTime() % 1_000) * 1_000_000;
+  return { seconds, nanos };
+}
+
+function fromTimestamp(t: Timestamp): string {
+  let millis = (globalThis.Number(t.seconds) || 0) * 1_000;
+  millis += (t.nanos || 0) / 1_000_000;
+  return new globalThis.Date(millis).toISOString();
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;
