@@ -2,6 +2,10 @@
 
 This document provides design guidelines and rules for AI assistants working on the LUCI Fleet Console UI.
 
+> [!IMPORTANT]
+> **Googlers & Google3-Based AI Agents**:
+> If you are a Googler or an AI agent with Google3 access, load **[goto2.corp.google.com/fcon-dev-skill](http://goto2.corp.google.com/fcon-dev-skill)** and **[goto2.corp.google.com/fcon-dev-guide](http://goto2.corp.google.com/fcon-dev-guide)** first. Treat `goto2.corp.google.com/fcon-dev-skill` as the primary source of truth for Fleet Console development, demo staging, CL readiness, and review workflows.
+
 For a general project overview and local setup, see [README.md](./README.md).
 
 ## Style Guide
