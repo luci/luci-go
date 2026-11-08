@@ -157,7 +157,7 @@ func (e *Entry) Update(ctx context.Context, meta *config.Meta) (proto.Message, e
 	// transactions if Update is called concurrently by many processes (perhaps
 	// through attemptEagerUpdate).
 	cur := cachedConfig{ID: e.entityID()}
-	if datastore.Get(ctx, &cur); err == nil && cur.Meta.Revision == fetchedMeta.Revision {
+	if err := datastore.Get(ctx, &cur); err == nil && cur.Meta.Revision == fetchedMeta.Revision {
 		logging.Infof(ctx, "Cached config %s is up-to-date at rev %q", cur.ID, cur.Meta.Revision)
 		if meta != nil {
 			*meta = fetchedMeta
