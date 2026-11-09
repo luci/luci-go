@@ -15,6 +15,7 @@
 import { screen, within } from '@testing-library/react';
 
 import {
+  fleetFilterBar,
   genericWhen,
   getUser,
 } from '@/fleet/testing_tools/integration/fleet_integration_test';
@@ -47,22 +48,42 @@ export const when = {
     await genericWhen.userClicksButton('Add site');
   },
 
-  async userFillsSiteForm(fields: { id?: string; name?: string }) {
+  async userFillsSiteForm(fields: {
+    id?: string;
+    name?: string;
+    chromeosFilter?: string;
+    androidFilter?: string;
+    browserFilter?: string;
+  }) {
     const dialog = await screen.findByRole('dialog');
     const user = getUser();
     if (fields.id !== undefined) {
       const idInput = within(dialog).getByLabelText(/Site code \(ID\)/i);
       await user.clear(idInput);
-      if (fields.id) {
-        await user.type(idInput, fields.id);
-      }
+      if (fields.id) await user.type(idInput, fields.id);
     }
     if (fields.name !== undefined) {
       const nameInput = within(dialog).getByLabelText(/Display name/i);
       await user.clear(nameInput);
-      if (fields.name) {
-        await user.type(nameInput, fields.name);
-      }
+      if (fields.name) await user.type(nameInput, fields.name);
+    }
+    if (fields.chromeosFilter) {
+      const bar = within(dialog).getByTestId('site-filter-bar-chromeos');
+      await fleetFilterBar.applyFilter(user, fields.chromeosFilter, {
+        container: bar,
+      });
+    }
+    if (fields.androidFilter) {
+      const bar = within(dialog).getByTestId('site-filter-bar-android');
+      await fleetFilterBar.applyFilter(user, fields.androidFilter, {
+        container: bar,
+      });
+    }
+    if (fields.browserFilter) {
+      const bar = within(dialog).getByTestId('site-filter-bar-chromium');
+      await fleetFilterBar.applyFilter(user, fields.browserFilter, {
+        container: bar,
+      });
     }
   },
 
@@ -76,6 +97,12 @@ export const when = {
 
   async userOpensEditSiteDialog(siteName: string) {
     await genericWhen.userClicksButton(`Edit ${siteName}`);
+  },
+
+  async userClicksAddFiltersOnCard(siteId: string) {
+    const card = await screen.findByTestId(`site-card-${siteId}`);
+    const addBtn = within(card).getByRole('button', { name: 'Add filters' });
+    await getUser().click(addBtn);
   },
 
   async userOpensDeleteSiteDialog(siteName: string) {

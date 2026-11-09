@@ -24,15 +24,11 @@ import {
   iconButtonSx,
   surfaceCardSx,
 } from '@/fleet/theme/recipes';
-import {
-  fleetColors,
-  fontFamilies,
-  iconSizes,
-  radii,
-} from '@/fleet/theme/tokens';
+import * as tk from '@/fleet/theme/tokens';
 import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { getCampusMapsUrl } from './site_helpers';
+import { formatSiteUpdatedAt, getCampusMapsUrl } from './site_helpers';
+import { SitePlatformRollup } from './site_platform_rollup';
 
 export interface SiteCardProps {
   readonly site: PhysicalSite;
@@ -40,52 +36,65 @@ export interface SiteCardProps {
   readonly onDelete?: (site: PhysicalSite) => void;
 }
 
+const ctrlIconSx = { fontSize: tk.iconSizes.control } as const;
+const rowBetweenSx = {
+  ...actionRowSx,
+  justifyContent: 'space-between',
+  flexWrap: 'nowrap',
+  gap: 1,
+} as const;
+const cardSx = {
+  ...surfaceCardSx,
+  p: 2.25,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 1.25,
+} as const;
+const titleRowSx = {
+  ...actionRowSx,
+  gap: 1,
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+  flexWrap: 'nowrap',
+} as const;
+const placeIconSx = {
+  fontSize: tk.iconSizes.inline,
+  color: tk.fleetColors.primary,
+  flexShrink: 0,
+} as const;
+const pillInnerSx = {
+  ...actionRowSx,
+  gap: 0.5,
+  fontFamily: tk.fontFamilies.mono,
+  color: tk.fleetColors.primary,
+} as const;
+
 export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
   const campusMapsUrl = getCampusMapsUrl(site.id);
+  const formattedUpdatedAt = formatSiteUpdatedAt(site.updatedAt);
 
   return (
     <Box
       component="article"
       aria-label={site.name}
       data-testid={`site-card-${site.id}`}
-      sx={{
-        ...surfaceCardSx,
-        p: 2.25,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1.25,
-      }}
+      sx={cardSx}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 1,
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            minWidth: 0,
-          }}
-        >
-          <PlaceOutlinedIcon
-            sx={{
-              fontSize: iconSizes.inline,
-              color: fleetColors.primary,
-              flexShrink: 0,
-            }}
-          />
+      <Box sx={{ ...rowBetweenSx, minHeight: 32 }}>
+        <Box sx={titleRowSx}>
+          <PlaceOutlinedIcon sx={placeIconSx} />
           <Tooltip title={site.name} enterDelay={500}>
-            <Typography variant="h6" component="h2" noWrap>
+            <Typography
+              variant="subtitle1"
+              component="h2"
+              noWrap
+              sx={{ fontWeight: 600, minWidth: 0, flex: 1 }}
+            >
               {site.name}
             </Typography>
           </Tooltip>
         </Box>
-
         {(onEdit || onDelete) && (
           <Box sx={{ ...actionRowSx, gap: 0.5, flexShrink: 0 }}>
             {onEdit && (
@@ -96,7 +105,7 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
                   onClick={() => onEdit(site)}
                   sx={iconButtonSx}
                 >
-                  <EditOutlinedIcon sx={{ fontSize: iconSizes.control }} />
+                  <EditOutlinedIcon sx={ctrlIconSx} />
                 </IconButton>
               </Tooltip>
             )}
@@ -108,7 +117,7 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
                   onClick={() => onDelete(site)}
                   sx={iconButtonSx}
                 >
-                  <DeleteOutlineIcon sx={{ fontSize: iconSizes.control }} />
+                  <DeleteOutlineIcon sx={ctrlIconSx} />
                 </IconButton>
               </Tooltip>
             )}
@@ -116,13 +125,17 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
         )}
       </Box>
 
+      <SitePlatformRollup
+        platformFilters={site.platformFilters}
+        onAddFilters={onEdit ? () => onEdit(site) : undefined}
+      />
+
       <Box
         sx={{
-          ...actionRowSx,
+          ...rowBetweenSx,
           mt: 'auto',
-          justifyContent: 'space-between',
-          flexWrap: 'nowrap',
-          gap: 1,
+          pt: 1.25,
+          borderTop: tk.borders.divider,
         }}
       >
         {campusMapsUrl ? (
@@ -133,19 +146,10 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
               rel="noopener noreferrer"
               underline="none"
               aria-label={`Open ${site.id} in Campus Maps`}
-              sx={{ display: 'inline-flex', borderRadius: radii.pill }}
+              sx={{ display: 'inline-flex', borderRadius: tk.radii.pill }}
             >
               <StatusPill tone="neutral" dot={false}>
-                <Box
-                  component="span"
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    fontFamily: fontFamilies.mono,
-                    color: fleetColors.primary,
-                  }}
-                >
+                <Box component="span" sx={pillInnerSx}>
                   {site.id}
                   <OpenInNewIcon sx={{ fontSize: 12 }} />
                 </Box>
@@ -154,10 +158,15 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
           </Tooltip>
         ) : (
           <StatusPill tone="neutral" dot={false}>
-            <Box component="span" sx={{ fontFamily: fontFamilies.mono }}>
+            <Box component="span" sx={{ fontFamily: tk.fontFamilies.mono }}>
               {site.id}
             </Box>
           </StatusPill>
+        )}
+        {formattedUpdatedAt && (
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {`Updated ${formattedUpdatedAt}`}
+          </Typography>
         )}
       </Box>
     </Box>

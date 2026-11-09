@@ -51,7 +51,8 @@ export const DeleteSiteDialog = ({
     <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       <Typography variant="body2" color="text.secondary">
         {site
-          ? `Delete "${site.name}" (${site.id})? This removes the site from the directory.`
+          ? `Delete "${site.name}" (${site.id})? This removes the site from the directory. ` +
+            'Underlying devices and lab configurations are not affected.'
           : ''}
       </Typography>
       {Boolean(error) && (

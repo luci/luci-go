@@ -40,10 +40,34 @@ export const then = {
 
   async siteCardHasLink(id: string, linkName: string, expectedHref: string) {
     const card = await screen.findByTestId(`site-card-${id}`);
-    const link = within(card).getByRole('link', {
+    const link = await within(card).findByRole('link', {
       name: new RegExp(linkName, 'i'),
     });
     expect(link).toHaveAttribute('href', expectedHref);
+  },
+
+  async siteCardHasCampusMapsLink(id: string, expectedHref: string) {
+    const card = await screen.findByTestId(`site-card-${id}`);
+    const link = within(card).getByRole('link', {
+      name: `Open ${id} in Campus Maps`,
+    });
+    expect(link).toHaveAttribute('href', expectedHref);
+    expect(link).toHaveAttribute('target', '_blank');
+  },
+
+  async siteCardShowsRollupTotal(
+    id: string,
+    expectedTotal: string,
+    expectedHealth: string,
+  ) {
+    const card = await screen.findByTestId(`site-card-${id}`);
+    const totalRow = await within(card).findByTestId(
+      'site-platform-rollup-total',
+    );
+    await waitFor(() => {
+      expect(within(totalRow).getByText(expectedTotal)).toBeInTheDocument();
+      expect(within(totalRow).getByText(expectedHealth)).toBeInTheDocument();
+    });
   },
 
   async siteCardIsRemoved(name: string) {

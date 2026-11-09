@@ -241,7 +241,14 @@ export function createFakeFleetConsoleBackend(
         }
 
         if (staticResponses.has(method)) {
-          return prpcResponse(staticResponses.get(method));
+          const configured = staticResponses.get(method);
+          const resolved =
+            typeof configured === 'function'
+              ? await (configured as (req: Record<string, unknown>) => unknown)(
+                  payload,
+                )
+              : configured;
+          return prpcResponse(resolved);
         }
 
         return prpcResponse({});

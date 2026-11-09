@@ -44,6 +44,37 @@ export const given = {
     fakeFleetConsoleBackend.physicalSites.seed(items);
   },
 
+  platformCounts(counts: {
+    chromeos?: { total: number; ready: number };
+    android?: { totalDevices: number; inService: number };
+    browser?: { total: number };
+  }) {
+    if (counts.chromeos) {
+      genericGiven.rpcResponse('CountDevices', {
+        total: counts.chromeos.total,
+        deviceState: {
+          ready: counts.chromeos.ready,
+          needRepair: 0,
+          repairFailed: 0,
+          needManualRepair: counts.chromeos.total - counts.chromeos.ready,
+        },
+      });
+    }
+    if (counts.android) {
+      genericGiven.rpcResponse('CountAndroidDevices', {
+        totalDevices: counts.android.totalDevices,
+        healthCategoryInService: {
+          total: counts.android.inService,
+        },
+      });
+    }
+    if (counts.browser) {
+      genericGiven.rpcResponse('CountBrowserDevices', {
+        total: counts.browser.total,
+      });
+    }
+  },
+
   listSitesError(message = 'Failed to fetch sites') {
     genericGiven.rpcError('ListPhysicalSites', 13, message);
   },

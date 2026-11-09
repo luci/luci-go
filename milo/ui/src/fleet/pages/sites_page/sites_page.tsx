@@ -25,7 +25,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { useFeatureFlag } from '@/common/feature_flags';
@@ -53,229 +53,171 @@ import { SiteCard } from './site_card';
 import { SiteFormDialog } from './site_form_dialog';
 import { usePhysicalSites } from './use_physical_sites';
 
-// Physical Sites directory page.
-//
-// Key design decisions:
-// 1. Naming ("Physical Sites" at /ui/fleet/sites vs. "Physical Labs"):
-//    Selected in a 6-candidate naming tournament to match FLOPS facility
-//    terminology without colliding with /ui/fleet/labs experimental routes.
-// 2. Primary identifier ("string id" building code vs. surrogate int64):
-//    Sites use canonical building codes (e.g. "EM25", "MTV") as their primary
-//    string ID (matching Device.id hostnames) paired with a human-readable
-//    display name (e.g. "Palo Alto EM25").
+const headerWrapSx = {
+  ...actionRowSx,
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: 1.5,
+} as const;
+const gridSx = {
+  display: 'grid',
+  gridTemplateColumns: {
+    xs: '1fr',
+    md: 'repeat(2, minmax(0, 1fr))',
+    lg: 'repeat(3, minmax(0, 1fr))',
+  },
+  gap: 2.5,
+} as const;
+const emptyMatchSx = {
+  ...surfaceCardSx,
+  p: 4,
+  textAlign: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 1.5,
+} as const;
+const searchIconSx = {
+  fontSize: iconSizes.inline,
+  color: fleetColors.textTertiary,
+} as const;
+const filterAriaProps = { 'aria-label': 'Filter physical sites' } as const;
+const ctrlIconSx = { fontSize: iconSizes.control } as const;
+
 export const SitesPage = () => {
-  const {
-    sites,
-    isLoading,
-    isError,
-    error,
-    createSiteMutation,
-    updateSiteMutation,
-    deleteSiteMutation,
-  } = usePhysicalSites();
-  const { hasPermission: hasAdminPermission, fetchPermissions } =
-    useAdminTaskPermission();
+  const api = usePhysicalSites();
+  const { sites, isLoading, isError, error } = api;
+  const { createSiteMutation, updateSiteMutation, deleteSiteMutation } = api;
+  const { hasPermission, fetchPermissions } = useAdminTaskPermission();
   const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<PhysicalSite | null>(null);
   const [deletingSite, setDeletingSite] = useState<PhysicalSite | null>(null);
-  const [isAdminAccessDialogOpen, setIsAdminAccessDialogOpen] = useState(false);
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
 
-  const trimmedQuery = searchQuery.trim().toLowerCase();
-
-  const sortedSites = useMemo(() => {
-    return [...sites].sort(
+  const q = searchQuery.trim().toLowerCase();
+  const filteredSites = useMemo(() => {
+    const sorted = [...sites].sort(
       (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
     );
-  }, [sites]);
+    return q
+      ? sorted.filter(
+          (s) =>
+            s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q),
+        )
+      : sorted;
+  }, [sites, q]);
 
-  const filteredSites = useMemo(() => {
-    if (!trimmedQuery) {
-      return sortedSites;
+  const runWithAdmin = async (action: () => void) => {
+    if (hasPermission === true) return action();
+    if (hasPermission === false) return setIsAdminDialogOpen(true);
+    try {
+      const res = await fetchPermissions();
+      if (res.hasPermission) action();
+      else setIsAdminDialogOpen(true);
+    } catch {
+      setIsAdminDialogOpen(true);
     }
-    return sortedSites.filter(
-      (site) =>
-        site.name.toLowerCase().includes(trimmedQuery) ||
-        site.id.toLowerCase().includes(trimmedQuery),
-    );
-  }, [sortedSites, trimmedQuery]);
+  };
 
-  const runWithAdminPermission = useCallback(
-    async (action: () => void) => {
-      if (hasAdminPermission === true) {
-        action();
-        return;
-      }
-      if (hasAdminPermission === false) {
-        setIsAdminAccessDialogOpen(true);
-        return;
-      }
-      try {
-        const res = await fetchPermissions();
-        if (res.hasPermission) {
-          action();
-        } else {
-          setIsAdminAccessDialogOpen(true);
-        }
-      } catch {
-        setIsAdminAccessDialogOpen(true);
-      }
-    },
-    [fetchPermissions, hasAdminPermission],
-  );
-
-  const handleOpenCreate = useCallback(() => {
-    void runWithAdminPermission(() => {
+  const openForm = (site: PhysicalSite | null) =>
+    void runWithAdmin(() => {
       createSiteMutation.reset();
       updateSiteMutation.reset();
-      setEditingSite(null);
+      setEditingSite(site);
       setIsFormOpen(true);
     });
-  }, [createSiteMutation, runWithAdminPermission, updateSiteMutation]);
 
-  const handleOpenEdit = useCallback(
-    (site: PhysicalSite) => {
-      void runWithAdminPermission(() => {
-        createSiteMutation.reset();
-        updateSiteMutation.reset();
-        setEditingSite(site);
-        setIsFormOpen(true);
-      });
-    },
-    [createSiteMutation, runWithAdminPermission, updateSiteMutation],
-  );
-
-  const handleCloseForm = useCallback(() => {
+  const closeForm = () => {
     setIsFormOpen(false);
     setEditingSite(null);
-  }, []);
+  };
 
-  const handleSaveSite = useCallback(
-    async (site: PhysicalSite) => {
-      try {
-        if (editingSite) {
-          await updateSiteMutation.mutateAsync(site);
-        } else {
-          await createSiteMutation.mutateAsync(site);
-        }
-        setIsFormOpen(false);
-        setEditingSite(null);
-      } catch {
-        // Error is surfaced inside SiteFormDialog via mutation state.
-      }
-    },
-    [createSiteMutation, editingSite, updateSiteMutation],
-  );
-
-  const handleOpenDelete = useCallback(
-    (site: PhysicalSite) => {
-      void runWithAdminPermission(() => {
-        deleteSiteMutation.reset();
-        setDeletingSite(site);
-      });
-    },
-    [deleteSiteMutation, runWithAdminPermission],
-  );
-
-  const handleCloseDelete = useCallback(() => {
-    if (deleteSiteMutation.isPending) {
-      return;
+  const handleSaveSite = async (site: PhysicalSite) => {
+    try {
+      if (editingSite) await updateSiteMutation.mutateAsync(site);
+      else await createSiteMutation.mutateAsync(site);
+      closeForm();
+    } catch {
+      // Surfaced inside SiteFormDialog.
     }
-    setDeletingSite(null);
-  }, [deleteSiteMutation.isPending]);
+  };
 
-  const handleConfirmDelete = useCallback(
-    async (id: string) => {
-      try {
-        await deleteSiteMutation.mutateAsync(id);
-        setDeletingSite(null);
-      } catch {
-        // Error is surfaced inside DeleteSiteDialog via mutation state.
-      }
+  const handleOpenDelete = (site: PhysicalSite) =>
+    void runWithAdmin(() => {
+      deleteSiteMutation.reset();
+      setDeletingSite(site);
+    });
+
+  const handleConfirmDelete = async (id: string) => {
+    try {
+      await deleteSiteMutation.mutateAsync(id);
+      setDeletingSite(null);
+    } catch {
+      // Surfaced inside DeleteSiteDialog.
+    }
+  };
+
+  const searchSlotProps = {
+    input: {
+      sx: { ...pillInputSx, minWidth: 260 },
+      startAdornment: (
+        <InputAdornment position="start">
+          <SearchIcon sx={searchIconSx} />
+        </InputAdornment>
+      ),
+      endAdornment: searchQuery ? (
+        <InputAdornment position="end">
+          <IconButton
+            size="small"
+            aria-label="Clear site filter"
+            onClick={() => setSearchQuery('')}
+            sx={iconButtonSx}
+          >
+            <ClearIcon sx={ctrlIconSx} />
+          </IconButton>
+        </InputAdornment>
+      ) : undefined,
     },
-    [deleteSiteMutation],
-  );
-
-  const formError = editingSite
+  };
+  const countTxt = `${filteredSites.length} ${filteredSites.length === 1 ? 'site' : 'sites'}`;
+  const isSaving = createSiteMutation.isPending || updateSiteMutation.isPending;
+  const saveErr = editingSite
     ? updateSiteMutation.error
     : createSiteMutation.error;
-  const isSaving = createSiteMutation.isPending || updateSiteMutation.isPending;
+  const formKey =
+    editingSite?.id ?? (isFormOpen ? 'create-open' : 'create-closed');
 
   return (
     <Box
       component="main"
-      sx={{
-        backgroundColor: fleetColors.canvas,
-        minHeight: '100%',
-      }}
+      sx={{ backgroundColor: fleetColors.canvas, minHeight: '100%' }}
     >
-      <Box
-        sx={{
-          ...pageHeaderSx,
-          borderBottom: borders.default,
-        }}
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 1.5,
-          }}
-        >
+      <Box sx={{ ...pageHeaderSx, borderBottom: borders.default }}>
+        <Box sx={headerWrapSx}>
           <Box sx={actionRowSx}>
             <Typography variant="h5" component="h1">
               Physical sites
             </Typography>
             {!isLoading && !isError && (
               <StatusPill tone="neutral" dot={false}>
-                {`${filteredSites.length} ${
-                  filteredSites.length === 1 ? 'site' : 'sites'
-                }`}
+                {countTxt}
               </StatusPill>
             )}
           </Box>
-
           <Box sx={actionRowSx}>
             <TextField
               size="small"
               placeholder="Filter by site name or code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              inputProps={{ 'aria-label': 'Filter physical sites' }}
-              slotProps={{
-                input: {
-                  sx: { ...pillInputSx, minWidth: 260 },
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon
-                        sx={{
-                          fontSize: iconSizes.inline,
-                          color: fleetColors.textTertiary,
-                        }}
-                      />
-                    </InputAdornment>
-                  ),
-                  endAdornment: searchQuery ? (
-                    <InputAdornment position="end">
-                      <IconButton
-                        size="small"
-                        aria-label="Clear site filter"
-                        onClick={() => setSearchQuery('')}
-                        sx={iconButtonSx}
-                      >
-                        <ClearIcon sx={{ fontSize: iconSizes.control }} />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : undefined,
-                },
-              }}
+              inputProps={filterAriaProps}
+              slotProps={searchSlotProps}
             />
             <Button
-              variant="toolbar"
-              startIcon={<AddIcon sx={{ fontSize: iconSizes.control }} />}
-              onClick={handleOpenCreate}
+              variant="contained"
+              startIcon={<AddIcon sx={ctrlIconSx} />}
+              onClick={() => openForm(null)}
             >
               Add site
             </Button>
@@ -283,14 +225,7 @@ export const SitesPage = () => {
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          p: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-        }}
-      >
+      <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
         {isError ? (
           <Alert severity="error">
             {getErrorMessage(error, 'load physical sites')}
@@ -300,23 +235,17 @@ export const SitesPage = () => {
             <CircularProgress size={28} aria-label="Loading physical sites" />
           </Box>
         ) : sites.length === 0 ? (
-          <Box sx={{ ...surfaceCardSx, p: 4, textAlign: 'center' }}>
-            <Typography variant="body1" color="text.secondary">
+          <Box sx={emptyMatchSx}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
               No physical sites registered yet.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Add a lab or datacenter to track device counts and health across
+              platforms.
             </Typography>
           </Box>
         ) : filteredSites.length === 0 ? (
-          <Box
-            sx={{
-              ...surfaceCardSx,
-              p: 4,
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 1.5,
-            }}
-          >
+          <Box sx={emptyMatchSx}>
             <Typography variant="body1" color="text.secondary">
               {`No sites match "${searchQuery.trim()}".`}
             </Typography>
@@ -329,18 +258,12 @@ export const SitesPage = () => {
             </Button>
           </Box>
         ) : (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: 2,
-            }}
-          >
+          <Box sx={gridSx}>
             {filteredSites.map((site) => (
               <SiteCard
                 key={site.id}
                 site={site}
-                onEdit={handleOpenEdit}
+                onEdit={openForm}
                 onDelete={handleOpenDelete}
               />
             ))}
@@ -349,33 +272,25 @@ export const SitesPage = () => {
       </Box>
 
       <SiteFormDialog
-        key={
-          editingSite
-            ? `edit-${editingSite.id}`
-            : isFormOpen
-              ? 'create-open'
-              : 'create-closed'
-        }
+        key={formKey}
         open={isFormOpen}
         editingSite={editingSite}
         existingSites={sites}
         isSaving={isSaving}
-        error={formError}
-        onClose={handleCloseForm}
+        error={saveErr}
+        onClose={closeForm}
         onSave={handleSaveSite}
       />
-
       <DeleteSiteDialog
         site={deletingSite}
         isDeleting={deleteSiteMutation.isPending}
         error={deleteSiteMutation.error}
-        onClose={handleCloseDelete}
+        onClose={() => !deleteSiteMutation.isPending && setDeletingSite(null)}
         onConfirmDelete={handleConfirmDelete}
       />
-
       <AdminAccessRequiredDialog
-        open={isAdminAccessDialogOpen}
-        onClose={() => setIsAdminAccessDialogOpen(false)}
+        open={isAdminDialogOpen}
+        onClose={() => setIsAdminDialogOpen(false)}
       />
     </Box>
   );
@@ -383,10 +298,7 @@ export const SitesPage = () => {
 
 export function Component() {
   const showPhysicalSites = useFeatureFlag(enablePhysicalSites);
-  if (!showPhysicalSites) {
-    return <PageNotFoundPage />;
-  }
-
+  if (!showPhysicalSites) return <PageNotFoundPage />;
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-sites">
       <FleetHelmet pageTitle="Sites" />

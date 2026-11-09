@@ -14,6 +14,7 @@
 
 import {
   Alert,
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -21,11 +22,17 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
+import { KeyboardEvent, useState } from 'react';
 
 import { fontFamilies } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
-import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  PhysicalSite,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
+import { buildPlatformFilters, platformFiltersToMap } from './site_helpers';
+import { SitePlatformFilterEditor } from './site_platform_rollup';
 
 export interface SiteFormDialogProps {
   readonly open: boolean;
@@ -37,121 +44,124 @@ export interface SiteFormDialogProps {
   readonly onSave: (site: PhysicalSite) => void;
 }
 
-export const SiteFormDialog = ({
-  open,
-  editingSite,
-  existingSites,
-  isSaving,
-  error,
-  onClose,
-  onSave,
-}: SiteFormDialogProps) => {
+const monoSlotProps = {
+  htmlInput: { style: { fontFamily: fontFamilies.mono } },
+} as const;
+const zeroTimeout = { timeout: 0 } as const;
+const dialogPaperProps = { sx: { maxWidth: 760 } } as const;
+const contentSx = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2.25,
+  '&&': { pt: 1.5 },
+} as const;
+const topFieldsGridSx = {
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: '240px 1fr' },
+  gap: 2,
+  alignItems: 'flex-start',
+} as const;
+
+export const SiteFormDialog = (p: SiteFormDialogProps) => {
+  const { open, editingSite, existingSites, isSaving, error, onClose, onSave } =
+    p;
   const [siteId, setSiteId] = useState(editingSite?.id ?? '');
   const [siteName, setSiteName] = useState(editingSite?.name ?? '');
+  const [filterByPlatform, setFilterByPlatform] = useState<
+    Partial<Record<Platform, string>>
+  >(() => platformFiltersToMap(editingSite?.platformFilters));
 
   const isEditing = Boolean(editingSite);
-  const trimmedId = siteId.trim();
-  const trimmedName = siteName.trim();
-
-  const isDuplicateId = useMemo(() => {
-    if (isEditing || !trimmedId) {
-      return false;
-    }
-    const target = trimmedId.toLowerCase();
-    return existingSites.some((s) => s.id.trim().toLowerCase() === target);
-  }, [existingSites, isEditing, trimmedId]);
-
-  const isDuplicateName = useMemo(() => {
-    if (!trimmedName) {
-      return false;
-    }
-    const target = trimmedName.toLowerCase();
-    return existingSites.some(
-      (s) => s.id !== editingSite?.id && s.name.trim().toLowerCase() === target,
+  const [trimmedId, trimmedName] = [siteId.trim(), siteName.trim()];
+  const eqCI = (a: string, b: string) =>
+    a.trim().toLowerCase() === b.toLowerCase();
+  const isDuplicateId =
+    !isEditing &&
+    Boolean(trimmedId) &&
+    existingSites.some((s) => eqCI(s.id, trimmedId));
+  const isDuplicateName =
+    Boolean(trimmedName) &&
+    existingSites.some(
+      (s) => s.id !== editingSite?.id && eqCI(s.name, trimmedName),
     );
-  }, [editingSite, existingSites, trimmedName]);
+  const canSave = Boolean(
+    trimmedId && trimmedName && !isDuplicateId && !isDuplicateName && !isSaving,
+  );
 
-  const canSave =
-    trimmedId !== '' &&
-    trimmedName !== '' &&
-    !isDuplicateId &&
-    !isDuplicateName &&
-    !isSaving;
-
-  const handleSave = useCallback(() => {
-    if (!canSave) {
-      return;
-    }
+  const handleSave = () => {
+    if (!canSave) return;
     onSave(
       PhysicalSite.fromPartial({
+        ...editingSite,
         id: isEditing ? editingSite!.id : trimmedId,
         name: trimmedName,
+        platformFilters: buildPlatformFilters(filterByPlatform),
       }),
     );
-  }, [canSave, editingSite, isEditing, onSave, trimmedId, trimmedName]);
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && canSave) {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
+  const idHelper = isDuplicateId
+    ? 'A site with this code already exists.'
+    : isEditing
+      ? undefined
+      : 'Building code (e.g. US-PAO-EM25).';
+  const nameHelper = isDuplicateName
+    ? 'A site with this display name already exists.'
+    : undefined;
+  const tfBase = {
+    required: true,
+    fullWidth: true,
+    size: 'small' as const,
+    onKeyDown,
+  };
 
   return (
     <Dialog
       open={open}
       onClose={isSaving ? undefined : onClose}
-      maxWidth="xs"
+      maxWidth="md"
       fullWidth
-      TransitionProps={{ timeout: 0 }}
+      PaperProps={dialogPaperProps}
+      TransitionProps={zeroTimeout}
     >
       <DialogTitle sx={{ pb: 1 }}>
         {isEditing ? 'Edit physical site' : 'Add physical site'}
       </DialogTitle>
-      <DialogContent
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && canSave) {
-            e.preventDefault();
-            handleSave();
-          }
-        }}
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          '&&': { pt: 1.5 },
-        }}
-      >
-        <TextField
-          label="Site code (ID)"
-          required
-          fullWidth
-          size="small"
-          placeholder="e.g. US-PAO-EM25"
-          value={siteId}
-          onChange={(e) => setSiteId(e.target.value)}
-          disabled={isEditing || isSaving}
-          error={isDuplicateId}
-          helperText={
-            isEditing
-              ? 'Site code is the primary identifier and cannot be changed.'
-              : isDuplicateId
-                ? 'A site with this code already exists.'
-                : 'Building or site code used in URLs (e.g. US-PAO-EM25, US-ATL-DAT3).'
-          }
-          slotProps={{
-            htmlInput: {
-              style: { fontFamily: fontFamilies.mono },
-            },
-          }}
-        />
-        <TextField
-          label="Display name"
-          required
-          fullWidth
-          size="small"
-          placeholder="e.g. Palo Alto EM25"
-          value={siteName}
-          onChange={(e) => setSiteName(e.target.value)}
-          disabled={isSaving}
-          error={isDuplicateName}
-          helperText={
-            isDuplicateName
-              ? 'A site with this display name already exists.'
-              : 'Human-readable name shown across Fleet Console.'
+      <DialogContent sx={contentSx}>
+        <Box sx={topFieldsGridSx}>
+          <TextField
+            {...tfBase}
+            label="Site code (ID)"
+            placeholder="e.g. US-PAO-EM25"
+            value={siteId}
+            onChange={(e) => setSiteId(e.target.value)}
+            disabled={isEditing || isSaving}
+            error={isDuplicateId}
+            helperText={idHelper}
+            slotProps={monoSlotProps}
+          />
+          <TextField
+            {...tfBase}
+            label="Display name"
+            placeholder="e.g. Palo Alto EM25"
+            value={siteName}
+            onChange={(e) => setSiteName(e.target.value)}
+            disabled={isSaving}
+            error={isDuplicateName}
+            helperText={nameHelper}
+          />
+        </Box>
+        <SitePlatformFilterEditor
+          filterByPlatform={filterByPlatform}
+          onChangeFilter={(plat, val) =>
+            setFilterByPlatform((prev) => ({ ...prev, [plat]: val }))
           }
         />
         {Boolean(error) && (

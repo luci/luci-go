@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+
 import { given } from './sites_page_given';
 import { then } from './sites_page_then';
 import { when } from './sites_page_when';
@@ -26,12 +28,29 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.textIsVisible('No physical sites registered yet.');
   });
 
-  it('renders physical site cards ordered deterministically by name and id', async () => {
+  it('renders physical site cards with multi-platform rollup counts, weighted health, device links, and Campus Maps links', async () => {
+    given.platformCounts({
+      chromeos: { total: 300, ready: 270 },
+      android: { totalDevices: 100, inService: 70 },
+    });
     given.sites([
       { id: 'MTV', name: 'Mountain View MTV' },
       { id: 'LAB2', name: 'Central Lab' },
       { id: 'LAB1', name: 'Central Lab' },
-      { id: 'EM25', name: 'Palo Alto EM25' },
+      {
+        id: 'US-PAO-EM25',
+        name: 'Palo Alto EM25',
+        platformFilters: [
+          {
+            platform: Platform.CHROMEOS,
+            filter: '(labels."zone" = "ZONE_SFO36_OS")',
+          },
+          {
+            platform: Platform.ANDROID,
+            filter: '("lab_name" = "sjc-mdpt9")',
+          },
+        ],
+      },
     ]);
 
     when.pageIsRendered();
@@ -39,13 +58,23 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.siteCardIsVisible('Central Lab', 'LAB1');
     await then.siteCardIsVisible('Central Lab', 'LAB2');
     await then.siteCardIsVisible('Mountain View MTV', 'MTV');
-    await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
-    await then.siteCardHasLink(
-      'EM25',
-      'Open EM25 in Campus Maps',
-      'https://goto.google.com/where/?id=EM25',
+    await then.siteCardIsVisible('Palo Alto EM25', 'US-PAO-EM25');
+    await then.siteCardHasCampusMapsLink(
+      'US-PAO-EM25',
+      'https://goto.google.com/where/?id=US-PAO-EM25',
     );
-    await then.siteCardIdOrderIs(['LAB1', 'LAB2', 'MTV', 'EM25']);
+    await then.siteCardShowsRollupTotal('US-PAO-EM25', '400', '85.0%');
+    await then.siteCardHasLink(
+      'US-PAO-EM25',
+      'ChromeOS devices',
+      '/ui/fleet/p/chromeos/devices?filters=%28labels.%22zone%22+%3D+%22ZONE_SFO36_OS%22%29',
+    );
+    await then.siteCardHasLink(
+      'US-PAO-EM25',
+      'Android devices',
+      '/ui/fleet/p/android/devices?filters=%28%22lab_name%22+%3D+%22sjc-mdpt9%22%29',
+    );
+    await then.siteCardIdOrderIs(['LAB1', 'LAB2', 'MTV', 'US-PAO-EM25']);
     await then.textIsVisible('4 sites');
   });
 
@@ -73,36 +102,58 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
   });
 
-  it('creates a new physical site and refreshes the sorted card grid', async () => {
+  it('creates a new physical site with platform filters via the unified FilterBar and refreshes the sorted card grid', async () => {
     given.sites([{ id: 'MTV', name: 'Mountain View MTV' }]);
 
     when.pageIsRendered();
     await then.siteCardIsVisible('Mountain View MTV', 'MTV');
 
     await when.userOpensAddSiteDialog();
-    await when.userFillsSiteForm({ id: 'EM25', name: 'Palo Alto EM25' });
+    await when.userFillsSiteForm({
+      id: 'EM25',
+      name: 'Palo Alto EM25',
+      chromeosFilter: 'labels.zone:ZONE_SFO36_OS',
+    });
     await when.userSubmitsSiteForm();
 
     then.rpcWasCalledWith('CreatePhysicalSite', {
-      physicalSite: { id: 'EM25', name: 'Palo Alto EM25' },
+      physicalSite: {
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        platformFilters: [
+          {
+            platform: 'CHROMEOS',
+            filter: '(labels."zone" = "ZONE_SFO36_OS")',
+          },
+        ],
+      },
     });
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
     await then.siteCardOrderIs(['Mountain View MTV', 'Palo Alto EM25']);
   });
 
-  it('updates an existing physical site name while keeping site code immutable', async () => {
+  it('opens the edit dialog from Add filters on an unconfigured card and saves updated filters', async () => {
     given.sites([{ id: 'EM25', name: 'Palo Alto' }]);
 
     when.pageIsRendered();
     await then.siteCardIsVisible('Palo Alto', 'EM25');
 
-    await when.userOpensEditSiteDialog('Palo Alto');
+    await when.userClicksAddFiltersOnCard('EM25');
     await then.siteIdInputIsDisabled();
-    await when.userFillsSiteForm({ name: 'Palo Alto EM25' });
+    await when.userFillsSiteForm({
+      name: 'Palo Alto EM25',
+      androidFilter: 'lab_name:sjc-mdpt9',
+    });
     await when.userSubmitsSiteForm();
 
     then.rpcWasCalledWith('UpdatePhysicalSite', {
-      physicalSite: { id: 'EM25', name: 'Palo Alto EM25' },
+      physicalSite: {
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        platformFilters: [
+          { platform: 'ANDROID', filter: '("lab_name" = "sjc-mdpt9")' },
+        ],
+      },
     });
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
   });

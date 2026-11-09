@@ -27,6 +27,9 @@ export interface MockHealthSlice {
 export interface MockPhysicalSite {
   id: string;
   name: string;
+  platformFilters?: Array<{ platform: number | string; filter: string }>;
+  imageUrls?: string[];
+  updatedAt?: string;
 }
 
 const MODEL_TREND_SPECS = [
@@ -582,8 +585,10 @@ export function applyHealthSliceMutation(
     const incoming = (reqPayload.physicalSite ||
       {}) as Partial<MockPhysicalSite>;
     const created: MockPhysicalSite = {
+      ...incoming,
       id: incoming.id?.trim() || `SITE-${currentSites.length + 1}`,
       name: incoming.name?.trim() || 'New Site',
+      updatedAt: incoming.updatedAt || new Date().toISOString(),
     };
     const nextSites = [
       ...currentSites.filter((s) => s.id !== created.id),
@@ -599,8 +604,11 @@ export function applyHealthSliceMutation(
     const id = incoming.id?.trim() || 'MTV';
     const existing = currentSites.find((s) => s.id === id);
     const updated: MockPhysicalSite = {
+      ...existing,
+      ...incoming,
       id,
       name: incoming.name?.trim() || existing?.name || 'Updated Site',
+      updatedAt: incoming.updatedAt || new Date().toISOString(),
     };
     const nextSites = (
       existing
@@ -619,9 +627,32 @@ export function applyHealthSliceMutation(
 }
 
 const INITIAL_PHYSICAL_SITES: MockPhysicalSite[] = [
-  { id: 'LAB1', name: 'Central Lab 1' },
-  { id: 'MTV', name: 'Mountain View MTV' },
-  { id: 'EM25', name: 'Palo Alto EM25' },
+  {
+    id: 'LAB1',
+    name: 'Central Lab 1',
+    platformFilters: [
+      { platform: 'CHROMEOS', filter: 'labels."label-pool" = "mock-pool-dev"' },
+    ],
+    updatedAt: '2026-11-06T18:00:00Z',
+  },
+  {
+    id: 'MTV',
+    name: 'Mountain View MTV',
+    platformFilters: [
+      { platform: 'CHROMEOS', filter: 'labels."label-pool" = "mock-pool-dev"' },
+      { platform: 'ANDROID', filter: '"lab_name" = "mtv"' },
+    ],
+    updatedAt: '2026-11-06T18:00:00Z',
+  },
+  {
+    id: 'EM25',
+    name: 'Palo Alto EM25',
+    platformFilters: [
+      { platform: 'CHROMEOS', filter: 'labels."label-pool" = "mock-pool-dev"' },
+      { platform: 'CHROMIUM', filter: 'ufs."zone" = "SFO36_BROWSER"' },
+    ],
+    updatedAt: '2026-11-06T18:00:00Z',
+  },
 ];
 
 const INITIAL_HEALTH_SLICES: MockHealthSlice[] = [
