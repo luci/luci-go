@@ -16,6 +16,8 @@ package memstore
 
 import (
 	"context"
+	"iter"
+	"maps"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
@@ -27,8 +29,7 @@ import (
 	"go.chromium.org/luci/server/module"
 )
 
-// Store implements a [cfgcache.Store] which supports in-memory refreshes
-// backed by an in-memory map.
+// Store implements [cfgcache.GettableStore] backed by an in-memory map.
 //
 // This is intended for writing tests.
 type Store[StoreMsg proto.Message] struct {
@@ -94,4 +95,26 @@ func (s *Store[StoreMsg]) Delete(ctx context.Context, pipelineID string, sets []
 	}
 
 	return nil
+}
+
+// Get implements [cfgcache.GettableStore].
+func (s *Store[StoreMsg]) Get(ctx context.Context, pipelineID string, sets map[config.Set]*cfgcachepb.Meta) iter.Seq2[*cfgcachecommon.StoredConfig[StoreMsg], error] {
+	return func(yield func(*cfgcachecommon.StoredConfig[StoreMsg], error) bool) {
+		s.mu.Lock()
+		pipeline := maps.Clone(s.data[pipelineID])
+		s.mu.Unlock()
+
+		for cs, sc := range pipeline {
+			if _, ok := sets[cs]; ok {
+				newSC := &cfgcachecommon.StoredConfig[StoreMsg]{
+					ConfigSet: cs,
+					Meta:      sc.Meta,
+					Config:    proto.CloneOf(sc.Config),
+				}
+				if !yield(newSC, nil) {
+					return
+				}
+			}
+		}
+	}
 }

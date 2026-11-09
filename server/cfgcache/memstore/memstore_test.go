@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/config"
 
+	cfgcachecommon "go.chromium.org/luci/server/cfgcache/common"
 	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 )
 
@@ -78,4 +79,30 @@ func TestMemstore(t *testing.T) {
 			TransformedSize:  100,
 		},
 	}))
+
+	sets := map[config.Set]*cfgcachepb.Meta{
+		"services/whatever": {},
+		"something/else":    {},
+	}
+	var pipe1Got []*cfgcachecommon.StoredConfig[*durationpb.Duration]
+	for sc, err := range s.Get(t.Context(), "pipe1", sets) {
+		assert.NoErr(t, err)
+		pipe1Got = append(pipe1Got, sc)
+	}
+	assert.That(t, pipe1Got, should.Match([]*cfgcachecommon.StoredConfig[*durationpb.Duration]{{
+		ConfigSet: "services/whatever",
+		Meta: &cfgcachepb.Meta{
+			InputHash:        "potato",
+			TransformVersion: 7,
+			TransformedSize:  100,
+		},
+		Config: &durationpb.Duration{Seconds: 10},
+	}}))
+
+	var pipe2Got []*cfgcachecommon.StoredConfig[*durationpb.Duration]
+	for sc, err := range s.Get(t.Context(), "pipe2", sets) {
+		assert.NoErr(t, err)
+		pipe2Got = append(pipe2Got, sc)
+	}
+	assert.Loosely(t, pipe2Got, should.BeEmpty)
 }
