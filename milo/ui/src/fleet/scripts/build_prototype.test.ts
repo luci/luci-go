@@ -28,8 +28,20 @@ import {
   stripProtoBinaryWireMethods,
   validateOutDir,
 } from './build_prototype';
+import {
+  installPrototypeNavigationInterceptor,
+  normalizePrototypeRoute,
+  resolveInitialPrototypeUrl,
+  rewritePrototypeHref,
+  rewritePrototypeNavigationUrl,
+} from './prototype_routing';
 
 describe('build_prototype utilities', () => {
+  afterEach(() => {
+    window.history.replaceState(null, '', '/');
+    jest.restoreAllMocks();
+  });
+
   it('renders prototype_index.html with inlined boot settings and no external CDN scripts', () => {
     const html = buildPrototypeIndexHtml('/ui/fleet/catalog');
 
@@ -220,5 +232,123 @@ describe('build_prototype utilities', () => {
     expect(opts.title).toBe('Demo Title');
     expect(opts.liveData).toBe(true);
     expect(opts.outDir).toBe('/workspace/ui/.tmp/dist_proto');
+  });
+
+  it('normalizes and rewrites internal Fleet Console links to hash routes across edge cases', () => {
+    const hostUrl =
+      'https://example.com/asset/7daae9f6-8f77-5f12-948f-85e8fbe051d6/?fcon_data=live#/ui/fleet/p/chromeos/health?filters=labels.%22label-board%22+%3D+%22brya%22';
+
+    expect(
+      normalizePrototypeRoute(
+        '/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+      ),
+    ).toBe(
+      '/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+    );
+    expect(normalizePrototypeRoute('ui/fleet/p/chromeos/devices')).toBe(
+      '/ui/fleet/p/chromeos/devices',
+    );
+    expect(normalizePrototypeRoute('/fleet/p/chromeos/repairs')).toBe(
+      '/ui/fleet/p/chromeos/repairs',
+    );
+    expect(normalizePrototypeRoute('/ui/fleet/labs/requests')).toBe(
+      '/ui/fleet/requests',
+    );
+    expect(normalizePrototypeRoute('/ui/fleet/labs/devices')).toBe(
+      '/ui/fleet/p/chromeos/devices',
+    );
+    expect(normalizePrototypeRoute('/auth/openid/login')).toBeNull();
+
+    // Root-relative and same-origin absolute /ui/fleet/... links rewrite to #/ui/fleet/...
+    expect(
+      rewritePrototypeHref(
+        '/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+        hostUrl,
+      ),
+    ).toBe(
+      '#/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+    );
+    expect(
+      rewritePrototypeHref(
+        'https://example.com/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+        hostUrl,
+      ),
+    ).toBe(
+      '#/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+    );
+
+    // Host query param switches (?fcon_data=mock) and external origins are preserved
+    expect(
+      rewritePrototypeHref(
+        'https://example.com/asset/7daae9f6-8f77-5f12-948f-85e8fbe051d6/?fcon_data=mock#/ui/fleet/p/chromeos/health',
+        hostUrl,
+      ),
+    ).toBe(
+      'https://example.com/asset/7daae9f6-8f77-5f12-948f-85e8fbe051d6/?fcon_data=mock#/ui/fleet/p/chromeos/health',
+    );
+    expect(
+      rewritePrototypeHref(
+        'https://ci.chromium.org/ui/fleet/p/chromeos/devices',
+        hostUrl,
+      ),
+    ).toBe('https://ci.chromium.org/ui/fleet/p/chromeos/devices');
+    expect(rewritePrototypeHref('#section-anchor', hostUrl)).toBe(
+      '#section-anchor',
+    );
+
+    // Programmatic navigation preserves asset pathname and host search params
+    expect(
+      rewritePrototypeNavigationUrl(
+        '/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+        hostUrl,
+      ),
+    ).toBe(
+      'https://example.com/asset/7daae9f6-8f77-5f12-948f-85e8fbe051d6/?fcon_data=live#/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+    );
+
+    // Initial URL resolution forwards non-host query params into the hash route
+    const resolved = resolveInitialPrototypeUrl(
+      'https://example.com/asset/7daae9f6/?fcon_data=live&route=/ui/fleet/labs/devices&filters=model%3Dnissa',
+    );
+    expect(resolved.route).toBe(
+      '/ui/fleet/p/chromeos/devices?filters=model%3Dnissa',
+    );
+    expect(resolved.cleanHref).toBe(
+      'https://example.com/asset/7daae9f6/?fcon_data=live#/ui/fleet/p/chromeos/devices?filters=model%3Dnissa',
+    );
+  });
+
+  it('intercepts anchor setAttribute, href setter, window.open, and history.pushState in DOM', () => {
+    window.history.replaceState(
+      null,
+      '',
+      '/asset/7daae9f6/#/ui/fleet/p/chromeos/health?filters=labels.%22label-board%22+%3D+%22brya%22',
+    );
+    const cleanup = installPrototypeNavigationInterceptor(window);
+    try {
+      const anchor = document.createElement('a');
+      anchor.setAttribute(
+        'href',
+        '/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+      );
+      anchor.setAttribute('target', '_blank');
+      document.body.appendChild(anchor);
+
+      expect(anchor.getAttribute('href')).toBe(
+        '#/ui/fleet/p/chromeos/devices?filters=%28labels.%22label-model%22+%3D+%22nissa%22%29',
+      );
+
+      anchor.href = '/ui/fleet/labs/requests';
+      anchor.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      expect(anchor.getAttribute('href')).toBe('#/ui/fleet/requests');
+
+      window.history.pushState(null, '', '/ui/fleet/p/chromeos/repairs');
+      expect(window.location.pathname).toBe('/asset/7daae9f6/');
+      expect(window.location.hash).toBe('#/ui/fleet/p/chromeos/repairs');
+
+      anchor.remove();
+    } finally {
+      cleanup();
+    }
   });
 });

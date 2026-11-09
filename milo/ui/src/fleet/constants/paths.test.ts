@@ -16,6 +16,8 @@ import { Platform } from '../../proto/go.chromium.org/infra/fleetconsole/api/fle
 
 import {
   generateAnotherPlatformCorrespondingURL,
+  getCurrentFleetPathname,
+  getCurrentFleetPathnameWithParams,
   platformToURL,
 } from './paths';
 
@@ -106,5 +108,29 @@ describe('generateAnotherPlatformCorrespondingURL', () => {
     expect(platformToURL(Platform.ANDROID)).toBe('android');
     expect(platformToURL(Platform.CHROMIUM)).toBe('chromium');
     expect(platformToURL(Platform.PIXEL)).toBe('pixel');
+  });
+
+  it('resolves hash-routed prototype URLs for platform switching and back-links', () => {
+    setUrl(
+      '/asset/7daae9f6-8f77-5f12-948f-85e8fbe051d6/#/ui/fleet/p/chromeos/health?filters=labels.%22label-board%22+%3D+%22brya%22',
+    );
+    expect(getCurrentFleetPathname()).toBe('/ui/fleet/p/chromeos/health');
+    expect(getCurrentFleetPathnameWithParams()).toBe(
+      '/ui/fleet/p/chromeos/health?filters=labels.%22label-board%22+%3D+%22brya%22',
+    );
+    expect(
+      generateAnotherPlatformCorrespondingURL(
+        Platform.CHROMEOS,
+        Platform.ANDROID,
+      ),
+    ).toBe('/ui/fleet/p/android/devices');
+
+    setUrl('/asset/7daae9f6/#/ui/fleet/p/chromeos/custom-view');
+    expect(
+      generateAnotherPlatformCorrespondingURL(
+        Platform.CHROMEOS,
+        Platform.ANDROID,
+      ),
+    ).toBe('/ui/fleet/p/android/custom-view');
   });
 });

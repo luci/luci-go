@@ -78,11 +78,18 @@ export const generateDeviceDetailsURL = (platform: string, id: string) => {
   return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${DEVICES_SUBROUTE}/${id}`;
 };
 
+export const getCurrentFleetPathnameWithParams = () =>
+  location.hash.startsWith('#/ui/')
+    ? location.hash.slice(1)
+    : location.pathname + location.search;
+export const getCurrentFleetPathname = () =>
+  getCurrentFleetPathnameWithParams().split(/[?#]/)[0];
+
 export const generateAnotherPlatformCorrespondingURL = (
   platform: Platform,
   newPlatform: Platform,
 ) => {
-  const currentPathname = window.location.pathname;
+  const currentPathname = getCurrentFleetPathname();
   const targetPlatformUrl = platformToURL(newPlatform);
 
   if (
@@ -125,7 +132,7 @@ export const generateAnotherPlatformCorrespondingURL = (
     return generateDeviceListURL(targetPlatformUrl);
   }
 
-  return location.pathname.replace(
+  return currentPathname.replace(
     'p/' + platformToURL(platform),
     'p/' + targetPlatformUrl,
   );

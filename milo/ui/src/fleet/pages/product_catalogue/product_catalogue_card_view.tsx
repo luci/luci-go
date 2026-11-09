@@ -32,6 +32,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
+import { getCurrentFleetPathnameWithParams } from '@/fleet/constants/paths';
 import { useProductCatalogRevamp } from '@/fleet/features';
 import { colors } from '@/fleet/theme/colors';
 import {
@@ -121,10 +122,6 @@ interface ProductCatalogueCardViewProps {
   totalCount: number;
 }
 
-const getPathnameWithParams = () => {
-  return window.location.href.toString().split(window.location.host)[1];
-};
-
 interface CatalogEntryCardProps {
   readonly entry: UnifiedProductCatalogEntry;
 }
@@ -191,7 +188,7 @@ const CatalogEntryCard = ({ entry }: CatalogEntryCardProps) => {
       <Link
         to={`/ui/fleet/catalog/${entry.productCatalogId}`}
         state={{
-          navigatedFromLink: getPathnameWithParams(),
+          navigatedFromLink: getCurrentFleetPathnameWithParams(),
         }}
         style={{
           textDecoration: 'none',
@@ -607,7 +604,7 @@ const LegacyProductCatalogueCardView = ({
             <Link
               to={`/ui/fleet/catalog/${entry.productCatalogId}`}
               state={{
-                navigatedFromLink: getPathnameWithParams(),
+                navigatedFromLink: getCurrentFleetPathnameWithParams(),
               }}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >

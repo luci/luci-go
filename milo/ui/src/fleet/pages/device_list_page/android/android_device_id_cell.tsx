@@ -17,13 +17,12 @@ import { Tooltip } from '@mui/material';
 import { Link } from 'react-router';
 
 import { BuganizerLink } from '@/fleet/components/table/buganizer_link';
-import { generateDeviceDetailsURL } from '@/fleet/constants/paths';
+import {
+  generateDeviceDetailsURL,
+  getCurrentFleetPathnameWithParams,
+} from '@/fleet/constants/paths';
 import { getMobileHarnessDeviceListLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
-
-const getPathnameWithParams = () => {
-  return window.location.pathname + window.location.search;
-};
 
 export interface AndroidDeviceIdCellProps {
   readonly deviceId: string;
@@ -65,7 +64,7 @@ export const AndroidDeviceIdCell = ({
       <Link
         to={internalLink}
         state={{
-          navigatedFromLink: getPathnameWithParams(),
+          navigatedFromLink: getCurrentFleetPathnameWithParams(),
         }}
         style={{
           whiteSpace: 'nowrap',

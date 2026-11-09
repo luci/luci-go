@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -19,36 +19,7 @@
             : fconDataParam === 'mock'
               ? false
               : Boolean(window.__FCON_LIVE_DATA__ || defaultLiveData);
-        var rawHash = location.hash ? location.hash.slice(1) : '';
-        var hashRoute =
-          rawHash.indexOf('/ui/') === 0
-            ? rawHash
-            : rawHash.indexOf('ui/') === 0
-              ? '/' + rawHash
-              : '';
-        var route =
-          hashRoute ||
-          params.get('route') ||
-          params.get('target_route') ||
-          window.__FCON_INITIAL_ROUTE__ ||
-          defaultRoute;
-        var normalized = route
-          .replace(/^\/ui\/fleet\/labs\/home\b/, '/ui/fleet')
-          .replace(
-            /^\/ui\/fleet\/labs\/devices\b/,
-            '/ui/fleet/p/chromeos/devices',
-          )
-          .replace(/^\/ui\/fleet\/labs\//, '/ui/fleet/');
-        window.__FCON_INITIAL_ROUTE__ = normalized;
-        try {
-          var cleanUrl = new URL(location.href);
-          cleanUrl.searchParams.delete('route');
-          cleanUrl.searchParams.delete('target_route');
-          cleanUrl.hash = '#' + normalized;
-          if (location.href !== cleanUrl.toString()) {
-            history.replaceState(null, '', cleanUrl.toString());
-          }
-        } catch (err) {}
+        window.__FCON_INITIAL_ROUTE__ ||= defaultRoute;
       })();
       window.dataLayer = window.dataLayer || [];
       window.gtag =

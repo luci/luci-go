@@ -18,15 +18,12 @@ import { Link } from 'react-router';
 
 import { sortLabelValues } from '@/fleet/components/device_table/dimensions';
 import { DIMENSION_SEPARATOR } from '@/fleet/constants/dimension_separator';
+import { getCurrentFleetPathnameWithParams } from '@/fleet/constants/paths';
 import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { FC_CellProps } from '@/fleet/types/table';
 import { EventPayload } from '@/generic_libs/components/google_analytics';
 
 import { CellWithTooltip } from './cell_with_tooltip';
-
-const getPathnameWithParams = () => {
-  return window.location.href.toString().split(window.location.host)[1];
-};
 
 /**
  * Helper that generates a `renderCell` function based on link generation and optional value extraction configurations.
@@ -85,7 +82,7 @@ const LinkCell = <R extends MRT_RowData>(props: LinkCellProps<R>) => {
             <Link
               to={url}
               state={{
-                navigatedFromLink: getPathnameWithParams(),
+                navigatedFromLink: getCurrentFleetPathnameWithParams(),
               }}
               target={newTab ? '_blank' : '_self'}
               onClick={

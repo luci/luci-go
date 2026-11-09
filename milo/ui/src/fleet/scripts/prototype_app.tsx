@@ -20,7 +20,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { JSX, useEffect, useState } from 'react';
-import { createMemoryRouter, redirect, RouterProvider } from 'react-router';
+import { createHashRouter, redirect, RouterProvider } from 'react-router';
 
 import {
   AuthStateContext,
@@ -41,6 +41,11 @@ import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
 import { SingletonStoreProvider } from '@/generic_libs/hooks/singleton';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 
+import {
+  installPrototypeNavigationInterceptor,
+  resolveInitialPrototypeUrl,
+} from './prototype_routing';
+
 const MOCK_AUTH_STATE = {
   email: 'user@google.com',
   identity: 'user:user@google.com',
@@ -52,8 +57,6 @@ const MOCK_AUTH_CTX: AuthStateContextValue = {
   getAccessToken: () => Promise.resolve('prototype-mock-access-token'),
   getIdToken: () => Promise.resolve('prototype-mock-id-token'),
 };
-
-const DEFAULT_FLEET_ROUTE = '/ui/fleet/p/chromeos/devices';
 
 interface PrototypeWindow extends Window {
   __FCON_INITIAL_ROUTE__?: string;
@@ -88,7 +91,7 @@ function getPrototypeAuthContext(): AuthStateContextValue {
 
 /**
  * Renders the standalone Fleet Console application shell for offline prototype
- * bundles, syncing the in-memory router state with `window.location.hash`.
+ * bundles using hash routing (`#/ui/fleet/...`) and intercepting internal links.
  */
 export function App(): JSX.Element {
   const [queryClient] = useState(
@@ -101,9 +104,9 @@ export function App(): JSX.Element {
   }
   const authCtx = getPrototypeAuthContext();
 
-  const initialRoute = getInitialRoute();
-  const [router] = useState(() =>
-    createMemoryRouter(
+  const [router] = useState(() => {
+    const initialRoute = getInitialRoute();
+    return createHashRouter(
       [
         { index: true, loader: () => redirect(initialRoute) },
         {
@@ -132,37 +135,11 @@ export function App(): JSX.Element {
         },
         { path: '*', loader: () => redirect(initialRoute) },
       ],
-      { initialEntries: [initialRoute] },
-    ),
-  );
+      { window },
+    );
+  });
 
-  useEffect(() => {
-    const unsubscribe = router.subscribe((state) => {
-      const nextHash =
-        '#' +
-        state.location.pathname +
-        state.location.search +
-        state.location.hash;
-      if (window.location.hash !== nextHash) {
-        const url = new URL(window.location.href);
-        url.hash = nextHash;
-        window.history.replaceState(null, '', url.toString());
-      }
-    });
-    const onHashChange = () => {
-      const hashRoute = window.location.hash.slice(1);
-      if (hashRoute.startsWith('/ui/')) {
-        void router.navigate(hashRoute, { replace: true });
-      }
-    };
-    window.addEventListener('hashchange', onHashChange);
-    window.addEventListener('popstate', onHashChange);
-    return () => {
-      unsubscribe();
-      window.removeEventListener('hashchange', onHashChange);
-      window.removeEventListener('popstate', onHashChange);
-    };
-  }, [router]);
+  useEffect(() => installPrototypeNavigationInterceptor(window), []);
 
   return (
     <LocalizationProvider dateAdapter={AdapterLuxon}>
@@ -184,13 +161,9 @@ export function App(): JSX.Element {
 }
 
 function getInitialRoute(): string {
-  const hashRoute = window.location.hash.slice(1);
-  if (hashRoute.startsWith('/ui/')) {
-    return hashRoute;
-  }
   const configuredRoute = (window as { __FCON_INITIAL_ROUTE__?: string })
     .__FCON_INITIAL_ROUTE__;
-  return configuredRoute && configuredRoute.startsWith('/ui/')
-    ? configuredRoute
-    : DEFAULT_FLEET_ROUTE;
+  const res = resolveInitialPrototypeUrl(location.href, '', configuredRoute);
+  history.replaceState(null, '', res.cleanHref);
+  return res.route;
 }
