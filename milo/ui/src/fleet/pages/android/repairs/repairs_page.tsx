@@ -36,10 +36,7 @@ import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { generateDeviceListURL } from '@/fleet/constants/paths';
-import {
-  enableAndroidHealthMetrics,
-  enableAndroidRepairQueue,
-} from '@/fleet/features';
+import { enableAndroidRepairQueue } from '@/fleet/features';
 import { ORDER_BY_PARAM_KEY } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
@@ -166,7 +163,6 @@ function Metrics({
 }) {
   const client = useFleetConsoleClient();
   const [searchParams] = useSyncedSearchParams();
-  const showHealthMetrics = useFeatureFlag(enableAndroidHealthMetrics);
   const countQuery = useQuery({
     ...client.CountRepairMetrics.query({
       platform: Platform.ANDROID,
@@ -253,7 +249,7 @@ function Metrics({
           css={{
             display: 'flex',
             flexDirection: 'column',
-            flexGrow: showHealthMetrics ? 2 : 1,
+            flexGrow: 2,
             borderRight: `1px solid ${colors.grey[300]}`,
             marginRight: 15,
             paddingRight: 15,
@@ -269,110 +265,70 @@ function Metrics({
               justifyContent: 'space-between',
             }}
           >
-            {showHealthMetrics ? (
-              <>
-                <SingleMetric
-                  name="Total"
-                  value={countQuery.data?.totalDevices}
-                  loading={countQuery.isPending}
-                  filterUrl={generateFilterURL({ fc_machine_type: ['device'] })}
-                />
-                <SingleMetric
-                  name="In Service"
-                  value={countQuery.data?.inServiceDevices}
-                  total={countQuery.data?.totalDevices}
-                  Icon={<DoneIcon sx={{ color: colors.green[600] }} />}
-                  loading={countQuery.isPending}
-                  filterUrl={generateFilterURL({
-                    fc_machine_type: ['device'],
-                    health_category: ['HEALTH_CATEGORY_IN_SERVICE'],
-                  })}
-                  infoTooltip={
-                    <InfoTooltip>
-                      Healthy devices actively serving test capacity. These
-                      devices are either running a test or immediately available
-                      to accept one.
-                    </InfoTooltip>
-                  }
-                />
-                <SingleMetric
-                  name="Need Manual Repair"
-                  value={countQuery.data?.needManualRepairDevices}
-                  total={countQuery.data?.totalDevices}
-                  Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-                  loading={countQuery.isPending}
-                  filterUrl={generateFilterURL({
-                    fc_machine_type: ['device'],
-                    health_category: ['HEALTH_CATEGORY_NEED_MANUAL_REPAIR'],
-                  })}
-                  infoTooltip={
-                    <InfoTooltip>
-                      Devices requiring physical human intervention from Lab
-                      Ops. These devices cannot recover automatically.
-                    </InfoTooltip>
-                  }
-                />
-                <SingleMetric
-                  name="In Automated Maintenance"
-                  value={countQuery.data?.inAutomatedMaintenanceDevices}
-                  total={countQuery.data?.totalDevices}
-                  Icon={<WarningIcon sx={{ color: colors.yellow[900] }} />}
-                  loading={countQuery.isPending}
-                  filterUrl={generateFilterURL({
-                    fc_machine_type: ['device'],
-                    health_category: [
-                      'HEALTH_CATEGORY_IN_TRANSITION',
-                      'HEALTH_CATEGORY_IN_AUTO_RECOVERY',
-                      BLANK_VALUE,
-                    ],
-                  })}
-                  infoTooltip={
-                    <InfoTooltip>
-                      Temporarily unavailable devices undergoing automatic
-                      software remediation, provisioning, or state transitions.
-                      They do not require human intervention and are expected to
-                      self-recover to In Service.
-                    </InfoTooltip>
-                  }
-                />
-              </>
-            ) : (
-              <>
-                <SingleMetric
-                  name="Total"
-                  value={countQuery.data?.totalDevices}
-                  loading={countQuery.isPending}
-                  filterUrl={generateFilterURL({ fc_machine_type: ['device'] })}
-                />
-                <SingleMetric
-                  name="Distinct Devices Online"
-                  value={
-                    countQuery.data?.totalDevices
-                      ? countQuery.data?.totalDevices -
-                        (countQuery.data?.offlineDevices || 0)
-                      : undefined
-                  }
-                  total={countQuery.data?.totalDevices}
-                  Icon={<DoneIcon sx={{ color: colors.green[600] }} />}
-                  loading={countQuery.isPending}
-                  filterUrl={generateFilterURL({
-                    fc_machine_type: ['device'],
-                    fc_is_offline: ['false'],
-                  })}
-                />
-                <SingleMetric
-                  name="Distinct Devices Offline"
-                  value={countQuery.data?.offlineDevices}
-                  total={countQuery.data?.totalDevices}
-                  Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
-                  loading={countQuery.isPending}
-                  filterUrl={generateFilterURL({
-                    fc_machine_type: ['device'],
-                    fc_is_offline: ['true'],
-                  })}
-                />
-              </>
-            )}
+            <SingleMetric
+              name="Total"
+              value={countQuery.data?.totalDevices}
+              loading={countQuery.isPending}
+              filterUrl={generateFilterURL({ fc_machine_type: ['device'] })}
+            />
+            <SingleMetric
+              name="In Service"
+              value={countQuery.data?.inServiceDevices}
+              total={countQuery.data?.totalDevices}
+              Icon={<DoneIcon sx={{ color: colors.green[600] }} />}
+              loading={countQuery.isPending}
+              filterUrl={generateFilterURL({
+                fc_machine_type: ['device'],
+                health_category: ['HEALTH_CATEGORY_IN_SERVICE'],
+              })}
+              infoTooltip={
+                <InfoTooltip>
+                  Healthy devices actively serving test capacity. These devices
+                  are either running a test or immediately available to accept
+                  one.
+                </InfoTooltip>
+              }
+            />
+            <SingleMetric
+              name="Need Manual Repair"
+              value={countQuery.data?.needManualRepairDevices}
+              total={countQuery.data?.totalDevices}
+              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
+              loading={countQuery.isPending}
+              filterUrl={generateFilterURL({
+                fc_machine_type: ['device'],
+                health_category: ['HEALTH_CATEGORY_NEED_MANUAL_REPAIR'],
+              })}
+              infoTooltip={
+                <InfoTooltip>
+                  Devices requiring physical human intervention from Lab Ops.
+                  These devices cannot recover automatically.
+                </InfoTooltip>
+              }
+            />
+            <SingleMetric
+              name="In Automated Maintenance"
+              value={countQuery.data?.inAutomatedMaintenanceDevices}
+              total={countQuery.data?.totalDevices}
+              Icon={<WarningIcon sx={{ color: colors.yellow[900] }} />}
+              loading={countQuery.isPending}
+              filterUrl={generateFilterURL({
+                fc_machine_type: ['device'],
+                health_category: [
+                  'HEALTH_CATEGORY_IN_TRANSITION',
+                  'HEALTH_CATEGORY_IN_AUTO_RECOVERY',
+                  BLANK_VALUE,
+                ],
+              })}
+              infoTooltip={
+                <InfoTooltip>
+                  Temporarily unavailable devices undergoing automatic software
+                  remediation, provisioning, or state transitions. They do not
+                  require human intervention and are expected to self-recover to
+                  In Service.
+                </InfoTooltip>
+              }
+            />
             {/* needed to left align content while keeping the correct right spacing*/}
             <div />
           </div>

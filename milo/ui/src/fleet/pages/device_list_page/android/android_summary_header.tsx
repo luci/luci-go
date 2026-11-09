@@ -12,29 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useFeatureFlag } from '@/common/feature_flags';
-import { enableAndroidHealthMetrics } from '@/fleet/features';
-
 import {
   AndroidHealthSummaryHeader,
   AndroidHealthSummaryHeaderProps,
 } from './android_health_summary_header';
-import {
-  AndroidLegacySummaryHeader,
-  AndroidLegacySummaryHeaderProps,
-} from './android_legacy_summary_header';
 
-export type AndroidSummaryHeaderProps = AndroidHealthSummaryHeaderProps &
-  AndroidLegacySummaryHeaderProps;
+export type AndroidSummaryHeaderProps = AndroidHealthSummaryHeaderProps;
 
 export function AndroidSummaryHeader(props: AndroidSummaryHeaderProps) {
-  const isAndroidHealthMetricsEnabled = useFeatureFlag(
-    enableAndroidHealthMetrics,
-  );
-
-  if (isAndroidHealthMetricsEnabled) {
-    return <AndroidHealthSummaryHeader {...props} />;
-  }
-
-  return <AndroidLegacySummaryHeader {...props} />;
+  return <AndroidHealthSummaryHeader {...props} />;
 }

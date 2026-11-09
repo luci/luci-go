@@ -24,54 +24,13 @@ jest.mock('@/generic_libs/components/google_analytics', () => ({
   useGoogleAnalytics: () => ({ trackEvent: jest.fn() }),
 }));
 
-describe('AndroidSummaryHeader (Switcher)', () => {
+describe('AndroidSummaryHeader', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
   });
 
-  it('renders AndroidLegacySummaryHeader when feature flag is disabled', async () => {
-    localStorage.setItem(
-      'featureFlag:fleet-console:android-health-metrics',
-      'off',
-    );
-
-    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
-    mockUseFleetConsoleClient.mockReturnValue({
-      CountDevices: {
-        query: () => ({
-          queryKey: ['CountDevices'],
-          queryFn: async () => ({
-            androidCount: {
-              totalDevices: 100,
-              totalHosts: 10,
-              idleDevices: 50,
-              busyDevices: 30,
-              labRunningHosts: 8,
-              labMissingHosts: 2,
-            },
-          }),
-        }),
-      },
-    });
-
-    render(
-      <FakeContextProvider>
-        <AndroidSummaryHeader aip160="" setFiltersBatch={jest.fn()} />
-      </FakeContextProvider>,
-    );
-
-    expect(screen.getByText('Device Health Metrics')).toBeInTheDocument();
-    expect(await screen.findByText('Online')).toBeInTheDocument();
-    expect(screen.getByText('Offline')).toBeInTheDocument();
-  });
-
-  it('renders AndroidHealthSummaryHeader when feature flag is enabled', async () => {
-    localStorage.setItem(
-      'featureFlag:fleet-console:android-health-metrics',
-      'on',
-    );
-
+  it('renders AndroidHealthSummaryHeader', async () => {
     const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
     mockUseFleetConsoleClient.mockReturnValue({
       CountAndroidDevices: {

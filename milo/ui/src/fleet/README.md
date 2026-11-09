@@ -159,9 +159,9 @@ Fleet Console feature flags can be overridden by developers via URL parameters f
 
 ### Developer URL Overrides
 You can override any feature flag state via URL query parameters:
-- `?ff=<flag_name>:<on|off>` (e.g. `?ff=android-health-metrics:on`)
-- `?ff=<namespace>:<flag_name>:<on|off>` (e.g. `?ff=fleet-console:android-health-metrics:on`)
-- `?ff:<flag_name>=<on|off>` (e.g. `?ff:android-health-metrics=on`)
+- `?ff=<flag_name>:<on|off>` (e.g. `?ff=product-catalog-revamp:on`)
+- `?ff=<namespace>:<flag_name>:<on|off>` (e.g. `?ff=fleet-console:product-catalog-revamp:on`)
+- `?ff:<flag_name>=<on|off>` (e.g. `?ff:product-catalog-revamp=on`)
 
 URL parameter overrides take precedence over `localStorage` settings and environment percentage rollouts, and persist automatically across page navigation for your current browser session via `sessionStorage`.
 

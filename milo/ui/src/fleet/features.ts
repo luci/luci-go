@@ -76,15 +76,6 @@ export const enablePhysicalSites = createFleetFeatureFlag({
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enableAndroidHealthMetrics = createFleetFeatureFlag({
-  description:
-    'Displays unified Android device health metrics based on health categories.',
-  name: 'android-health-metrics',
-  percentage: 100,
-  trackingBug: '537412303',
-  allowedEnvironments: ['dev', 'prod'],
-});
-
 export const enableWorkforcePickupRank = createFleetFeatureFlag({
   description:
     'Displays the Avg Queue Pickup Rank metric and table column in ChromeOS Workforce Activity.',

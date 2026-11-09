@@ -38,65 +38,15 @@ describe('<HomePage />', () => {
       picture: undefined,
     });
 
-    FleetConsoleMockAPI.setFixture(
-      'CountDevices',
-      (
-        reqPayload: { platform?: unknown; filter?: string } | null | undefined,
-      ) => {
-        if (
-          reqPayload?.filter ===
-          `${workspaces.Android.baseFilter} AND fc_is_offline = "true"`
-        ) {
-          return {
-            androidCount: {
-              totalDevices: 300,
-            },
-          };
-        }
-        if (reqPayload?.filter === workspaces.Android.baseFilter) {
-          return {
-            androidCount: {
-              totalDevices: 500,
-              idleDevices: 250,
-              busyDevices: 100,
-            },
-          };
-        }
-        if (
-          reqPayload?.filter ===
-          `${workspaces.Pixel.baseFilter} AND fc_is_offline = "true"`
-        ) {
-          return {
-            androidCount: {
-              totalDevices: 30,
-            },
-          };
-        }
-        if (reqPayload?.filter === workspaces.Pixel.baseFilter) {
-          return {
-            androidCount: {
-              totalDevices: 50,
-              idleDevices: 25,
-              busyDevices: 10,
-            },
-          };
-        }
-        return {
-          total: 1000,
-          deviceState: {
-            ready: 800,
-            needRepair: 50,
-            repairFailed: 50,
-            needManualRepair: 100,
-          },
-          androidCount: {
-            totalDevices: 500,
-            idleDevices: 250,
-            busyDevices: 100,
-          },
-        };
+    FleetConsoleMockAPI.setFixture('CountDevices', () => ({
+      total: 1000,
+      deviceState: {
+        ready: 800,
+        needRepair: 50,
+        repairFailed: 50,
+        needManualRepair: 100,
       },
-    );
+    }));
 
     FleetConsoleMockAPI.setFixture('CountBrowserDevices', {
       total: 200,
@@ -294,12 +244,7 @@ describe('<HomePage />', () => {
     expect(errorMessages.length).toBe(4); // One for each platform
   });
 
-  it('displays the error state on Android and Pixel cards when android-health-metrics is enabled and health query fails', async () => {
-    localStorage.setItem(
-      'featureFlag:fleet-console:android-health-metrics',
-      'on',
-    );
-
+  it('displays the error state on Android and Pixel cards when health query fails', async () => {
     FleetConsoleMockAPI.setFixture('CountDevices', {
       total: 1000,
       deviceState: { ready: 800 },
@@ -398,12 +343,7 @@ describe('<HomePage />', () => {
     expect(chip).toBeInTheDocument();
   });
 
-  it('renders Android and Pixel cards with health category metrics when android-health-metrics feature flag is enabled', async () => {
-    localStorage.setItem(
-      'featureFlag:fleet-console:android-health-metrics',
-      'on',
-    );
-
+  it('renders Android and Pixel cards with health category metrics', async () => {
     render(
       <FakeContextProvider>
         <HomePage />

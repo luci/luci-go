@@ -151,12 +151,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
     window.history.pushState({}, '', '/');
   });
 
-  it('renders page with AndroidHealthSummaryHeader when feature flag is enabled', async () => {
-    localStorage.setItem(
-      'featureFlag:fleet-console:android-health-metrics',
-      'on',
-    );
-
+  it('renders page with AndroidHealthSummaryHeader', async () => {
     render(
       <FakeContextProvider
         mountedPath="/p/:platform/devices"
@@ -179,10 +174,6 @@ describe('<AndroidDevicesPage /> Integration', () => {
   });
 
   it('renders utilization metrics when utilization flag is enabled', async () => {
-    localStorage.setItem(
-      'featureFlag:fleet-console:android-health-metrics',
-      'on',
-    );
     localStorage.setItem(
       'featureFlag:fleet-console:android-utilization-metrics',
       'on',
@@ -209,38 +200,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
     expect(screen.getByText('81.50%')).toBeInTheDocument();
   });
 
-  it('renders legacy summary header when android-health-metrics flag is disabled', async () => {
-    localStorage.setItem(
-      'featureFlag:fleet-console:android-health-metrics',
-      'off',
-    );
-
-    render(
-      <FakeContextProvider
-        mountedPath="/p/:platform/devices"
-        routerOptions={{
-          initialEntries: ['/p/android/devices'],
-        }}
-      >
-        <SettingsProvider>
-          <ShortcutProvider>
-            <AndroidDevicesPage workspace="Android" />
-          </ShortcutProvider>
-        </SettingsProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(screen.getByText('Device Health Metrics')).toBeInTheDocument();
-    expect(await screen.findByText('Online')).toBeInTheDocument();
-    expect(screen.getByText('Offline')).toBeInTheDocument();
-  });
-
   it('filters by category when clicking In Service metric on health header', async () => {
-    localStorage.setItem(
-      'featureFlag:fleet-console:android-health-metrics',
-      'on',
-    );
-
     render(
       <FakeContextProvider
         mountedPath="/p/:platform/devices"

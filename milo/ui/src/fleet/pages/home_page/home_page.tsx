@@ -20,7 +20,6 @@ import FeedbackIcon from '@mui/icons-material/Feedback';
 import { Box, Button, Grid2, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 
-import { useFeatureFlag } from '@/common/feature_flags';
 import { useUserProfile } from '@/common/hooks/use_user_profile';
 import { genFeedbackUrl } from '@/common/tools/utils';
 import androidLogo from '@/fleet/assets/logos/android.png';
@@ -29,11 +28,9 @@ import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
 import pixelLogo from '@/fleet/assets/logos/pixel.png';
 import { NotSignedInPage } from '@/fleet/components/logged_in_boundary';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
-import { enableAndroidHealthMetrics } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
-import { combineAipFilters } from '@/fleet/utils/search_param';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 import {
   ListRepairQueueRequest,
@@ -47,9 +44,6 @@ import { PlatformSummaryCard } from './platform_summary_card';
 export const HomePage = () => {
   const client = useFleetConsoleClient();
   const { displayFirstName, isAnonymous } = useUserProfile();
-  const isAndroidHealthMetricsEnabled = useFeatureFlag(
-    enableAndroidHealthMetrics,
-  );
 
   const chromeosQuery = useQuery({
     ...client.CountDevices.query({
@@ -75,56 +69,18 @@ export const HomePage = () => {
     enabled: !isAnonymous,
   });
 
-  const androidQuery = useQuery({
-    ...client.CountDevices.query({
-      filter: workspaces.Android.baseFilter,
-      platform: Platform.ANDROID,
-    }),
-    enabled: !isAnonymous && !isAndroidHealthMetricsEnabled,
-  });
-
-  const androidOfflineQuery = useQuery({
-    ...client.CountDevices.query({
-      filter: combineAipFilters(
-        workspaces.Android.baseFilter,
-        'fc_is_offline = "true"',
-      ),
-      platform: Platform.ANDROID,
-    }),
-    enabled: !isAnonymous && !isAndroidHealthMetricsEnabled,
-  });
-
   const androidHealthQuery = useQuery({
     ...client.CountAndroidDevices.query({
       filter: workspaces.Android.baseFilter,
     }),
-    enabled: !isAnonymous && isAndroidHealthMetricsEnabled,
-  });
-
-  const pixelQuery = useQuery({
-    ...client.CountDevices.query({
-      filter: workspaces.Pixel.baseFilter,
-      platform: Platform.ANDROID,
-    }),
-    enabled: !isAnonymous && !isAndroidHealthMetricsEnabled,
-  });
-
-  const pixelOfflineQuery = useQuery({
-    ...client.CountDevices.query({
-      filter: combineAipFilters(
-        workspaces.Pixel.baseFilter,
-        'fc_is_offline = "true"',
-      ),
-      platform: Platform.ANDROID,
-    }),
-    enabled: !isAnonymous && !isAndroidHealthMetricsEnabled,
+    enabled: !isAnonymous,
   });
 
   const pixelHealthQuery = useQuery({
     ...client.CountAndroidDevices.query({
       filter: workspaces.Pixel.baseFilter,
     }),
-    enabled: !isAnonymous && isAndroidHealthMetricsEnabled,
+    enabled: !isAnonymous,
   });
 
   const chromeosTotal = chromeosQuery.data?.total ?? 0;
@@ -148,62 +104,33 @@ export const HomePage = () => {
 
   const browserTotal = browserQuery.data?.total ?? 0;
 
-  const androidTotal = isAndroidHealthMetricsEnabled
-    ? (androidHealthQuery.data?.totalDevices ?? 0)
-    : (androidQuery.data?.androidCount?.totalDevices ?? 0);
-  const androidOffline =
-    androidOfflineQuery.data?.androidCount?.totalDevices ?? 0;
+  const androidTotal = androidHealthQuery.data?.totalDevices ?? 0;
   const androidInService =
     androidHealthQuery.data?.healthCategoryInService?.total ?? 0;
   const androidNeedManualRepair =
     androidHealthQuery.data?.healthCategoryNeedManualRepair?.total ?? 0;
 
-  const androidHealthy = isAndroidHealthMetricsEnabled
-    ? androidTotal > 0 && androidHealthQuery.data
+  const androidHealthy =
+    androidTotal > 0 && androidHealthQuery.data
       ? Math.min(100, Math.max(0, (androidInService / androidTotal) * 100))
-      : undefined
-    : androidTotal > 0 && androidOfflineQuery.data
-      ? Math.min(
-          100,
-          (Math.max(0, androidTotal - androidOffline) / androidTotal) * 100,
-        )
       : undefined;
 
-  const androidIsLoading = isAndroidHealthMetricsEnabled
-    ? androidHealthQuery.isPending
-    : androidQuery.isPending || androidOfflineQuery.isPending;
+  const androidIsLoading = androidHealthQuery.isPending;
+  const androidIsError = androidHealthQuery.isError;
 
-  const androidIsError = isAndroidHealthMetricsEnabled
-    ? androidHealthQuery.isError
-    : androidQuery.isError || androidOfflineQuery.isError;
-
-  const pixelTotal = isAndroidHealthMetricsEnabled
-    ? (pixelHealthQuery.data?.totalDevices ?? 0)
-    : (pixelQuery.data?.androidCount?.totalDevices ?? 0);
-  const pixelOffline = pixelOfflineQuery.data?.androidCount?.totalDevices ?? 0;
+  const pixelTotal = pixelHealthQuery.data?.totalDevices ?? 0;
   const pixelInService =
     pixelHealthQuery.data?.healthCategoryInService?.total ?? 0;
   const pixelNeedManualRepair =
     pixelHealthQuery.data?.healthCategoryNeedManualRepair?.total ?? 0;
 
-  const pixelHealthy = isAndroidHealthMetricsEnabled
-    ? pixelTotal > 0 && pixelHealthQuery.data
+  const pixelHealthy =
+    pixelTotal > 0 && pixelHealthQuery.data
       ? Math.min(100, Math.max(0, (pixelInService / pixelTotal) * 100))
-      : undefined
-    : pixelTotal > 0 && pixelOfflineQuery.data
-      ? Math.min(
-          100,
-          (Math.max(0, pixelTotal - pixelOffline) / pixelTotal) * 100,
-        )
       : undefined;
 
-  const pixelIsLoading = isAndroidHealthMetricsEnabled
-    ? pixelHealthQuery.isPending
-    : pixelQuery.isPending || pixelOfflineQuery.isPending;
-
-  const pixelIsError = isAndroidHealthMetricsEnabled
-    ? pixelHealthQuery.isError
-    : pixelQuery.isError || pixelOfflineQuery.isError;
+  const pixelIsLoading = pixelHealthQuery.isPending;
+  const pixelIsError = pixelHealthQuery.isError;
 
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-home">
@@ -283,9 +210,7 @@ export const HomePage = () => {
                   logoSrc={androidLogo}
                   total={androidTotal}
                   healthyPercentage={androidHealthy}
-                  healthChipSuffix={
-                    isAndroidHealthMetricsEnabled ? 'In Service' : undefined
-                  }
+                  healthChipSuffix="In Service"
                   isLoading={androidIsLoading}
                   isError={androidIsError}
                   linkTo="/ui/fleet/p/android/devices"
@@ -294,16 +219,8 @@ export const HomePage = () => {
                   secondaryLinkTo="/ui/fleet/p/android/repairs"
                   secondaryLinkText="View all repairs"
                   secondaryLinkIcon={<ConstructionIcon />}
-                  secondTotalText={
-                    isAndroidHealthMetricsEnabled
-                      ? 'Need manual repair'
-                      : 'Devices offline'
-                  }
-                  secondTotal={
-                    isAndroidHealthMetricsEnabled
-                      ? androidNeedManualRepair
-                      : androidOffline
-                  }
+                  secondTotalText="Need manual repair"
+                  secondTotal={androidNeedManualRepair}
                 />
               </Grid2>
               {/* Pixel Card */}
@@ -313,9 +230,7 @@ export const HomePage = () => {
                   logoSrc={pixelLogo}
                   total={pixelTotal}
                   healthyPercentage={pixelHealthy}
-                  healthChipSuffix={
-                    isAndroidHealthMetricsEnabled ? 'In Service' : undefined
-                  }
+                  healthChipSuffix="In Service"
                   isLoading={pixelIsLoading}
                   isError={pixelIsError}
                   linkTo="/ui/fleet/p/pixel/devices"
@@ -324,16 +239,8 @@ export const HomePage = () => {
                   secondaryLinkTo="/ui/fleet/p/pixel/repairs"
                   secondaryLinkText="View all repairs"
                   secondaryLinkIcon={<ConstructionIcon />}
-                  secondTotalText={
-                    isAndroidHealthMetricsEnabled
-                      ? 'Need manual repair'
-                      : 'Devices offline'
-                  }
-                  secondTotal={
-                    isAndroidHealthMetricsEnabled
-                      ? pixelNeedManualRepair
-                      : pixelOffline
-                  }
+                  secondTotalText="Need manual repair"
+                  secondTotal={pixelNeedManualRepair}
                 />
               </Grid2>
             </Grid2>
