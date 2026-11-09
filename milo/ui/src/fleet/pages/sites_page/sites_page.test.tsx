@@ -78,13 +78,35 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.textIsVisible('4 sites');
   });
 
-  it('filters physical site cards by name or building code and supports clearing the filter', async () => {
+  it('filters physical site cards by name, building code, or platform chip and supports clearing the filter', async () => {
     given.sites([
-      { id: 'MTV', name: 'Mountain View MTV' },
-      { id: 'EM25', name: 'Palo Alto EM25' },
+      {
+        id: 'MTV',
+        name: 'Mountain View MTV',
+        platformFilters: [
+          { platform: Platform.ANDROID, filter: '("lab_name" = "mtv")' },
+        ],
+      },
+      {
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        platformFilters: [
+          {
+            platform: Platform.CHROMEOS,
+            filter: '(labels."zone" = "ZONE_SFO36_OS")',
+          },
+        ],
+      },
     ]);
 
     when.pageIsRendered();
+    await then.siteCardIsVisible('Mountain View MTV', 'MTV');
+
+    await when.userSelectsPlatformFilter('ChromeOS');
+    await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
+    then.siteCardIsNotVisible('Mountain View MTV');
+
+    await when.userSelectsPlatformFilter('Platform: All');
     await then.siteCardIsVisible('Mountain View MTV', 'MTV');
 
     await when.userSearchesSites('EM25');

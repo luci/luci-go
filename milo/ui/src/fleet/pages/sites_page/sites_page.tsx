@@ -19,6 +19,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   IconButton,
   InputAdornment,
@@ -38,6 +39,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { PageNotFoundPage } from '@/fleet/pages/not_found_page';
 import {
   actionRowSx,
+  datePresetChipSx,
   iconButtonSx,
   pageHeaderSx,
   pillInputSx,
@@ -46,12 +48,16 @@ import {
 import { borders, fleetColors, iconSizes } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
-import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  PhysicalSite,
+  Platform,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { DeleteSiteDialog } from './delete_site_dialog';
 import { SiteCard } from './site_card';
 import { SiteFormDialog } from './site_form_dialog';
-import { usePhysicalSites } from './use_physical_sites';
+import { filterAndSortSites, SUPPORTED_SITE_PLATFORMS } from './site_helpers';
+import { PLATFORM_LOGOS, usePhysicalSites } from './use_physical_sites';
 
 const headerWrapSx = {
   ...actionRowSx,
@@ -75,7 +81,7 @@ const emptyMatchSx = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: 1.5,
+  gap: 1.25,
 } as const;
 const searchIconSx = {
   fontSize: iconSizes.inline,
@@ -83,6 +89,7 @@ const searchIconSx = {
 } as const;
 const filterAriaProps = { 'aria-label': 'Filter physical sites' } as const;
 const ctrlIconSx = { fontSize: iconSizes.control } as const;
+const chipLogoSx = { width: 14, height: 14, ml: 0.75 } as const;
 
 export const SitesPage = () => {
   const api = usePhysicalSites();
@@ -90,23 +97,16 @@ export const SitesPage = () => {
   const { createSiteMutation, updateSiteMutation, deleteSiteMutation } = api;
   const { hasPermission, fetchPermissions } = useAdminTaskPermission();
   const [searchQuery, setSearchQuery] = useState('');
+  const [platformFilter, setPlatformFilter] = useState<Platform | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<PhysicalSite | null>(null);
   const [deletingSite, setDeletingSite] = useState<PhysicalSite | null>(null);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
 
-  const q = searchQuery.trim().toLowerCase();
-  const filteredSites = useMemo(() => {
-    const sorted = [...sites].sort(
-      (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
-    );
-    return q
-      ? sorted.filter(
-          (s) =>
-            s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q),
-        )
-      : sorted;
-  }, [sites, q]);
+  const filteredSites = useMemo(
+    () => filterAndSortSites(sites, searchQuery, platformFilter),
+    [platformFilter, searchQuery, sites],
+  );
 
   const runWithAdmin = async (action: () => void) => {
     if (hasPermission === true) return action();
@@ -206,6 +206,47 @@ export const SitesPage = () => {
             )}
           </Box>
           <Box sx={actionRowSx}>
+            <Box
+              role="group"
+              aria-label="Filter sites by platform"
+              sx={{ ...actionRowSx, gap: 0.75 }}
+            >
+              <Chip
+                variant="outlined"
+                size="small"
+                label="Platform: All"
+                aria-pressed={platformFilter === null}
+                onClick={() => setPlatformFilter(null)}
+                sx={{ ...datePresetChipSx, px: 1 }}
+              />
+              {SUPPORTED_SITE_PLATFORMS.map((cfg) => {
+                const selected = platformFilter === cfg.platform;
+                const logo = PLATFORM_LOGOS[cfg.platform];
+                return (
+                  <Chip
+                    key={cfg.platform}
+                    variant="outlined"
+                    size="small"
+                    icon={
+                      logo ? (
+                        <Box
+                          component="img"
+                          src={logo}
+                          alt=""
+                          sx={chipLogoSx}
+                        />
+                      ) : undefined
+                    }
+                    label={cfg.label}
+                    aria-pressed={selected}
+                    onClick={() =>
+                      setPlatformFilter(selected ? null : cfg.platform)
+                    }
+                    sx={{ ...datePresetChipSx, px: 1 }}
+                  />
+                );
+              })}
+            </Box>
             <TextField
               size="small"
               placeholder="Filter by site name or code..."
@@ -225,7 +266,7 @@ export const SitesPage = () => {
         </Box>
       </Box>
 
-      <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         {isError ? (
           <Alert severity="error">
             {getErrorMessage(error, 'load physical sites')}
@@ -236,7 +277,7 @@ export const SitesPage = () => {
           </Box>
         ) : sites.length === 0 ? (
           <Box sx={emptyMatchSx}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            <Typography variant="subtitle1" fontWeight={600}>
               No physical sites registered yet.
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -247,12 +288,17 @@ export const SitesPage = () => {
         ) : filteredSites.length === 0 ? (
           <Box sx={emptyMatchSx}>
             <Typography variant="body1" color="text.secondary">
-              {`No sites match "${searchQuery.trim()}".`}
+              {searchQuery.trim()
+                ? `No sites match "${searchQuery.trim()}".`
+                : 'No sites match the selected platform filter.'}
             </Typography>
             <Button
               variant="toolbar"
               color="inherit"
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setSearchQuery('');
+                setPlatformFilter(null);
+              }}
             >
               Clear filter
             </Button>

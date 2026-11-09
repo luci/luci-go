@@ -44,6 +44,14 @@ export const when = {
     }
   },
 
+  async userSelectsPlatformFilter(label: string) {
+    const group = await screen.findByRole('group', {
+      name: 'Filter sites by platform',
+    });
+    const chip = within(group).getByRole('button', { name: label });
+    await getUser().click(chip);
+  },
+
   async userOpensAddSiteDialog() {
     await genericWhen.userClicksButton('Add site');
   },

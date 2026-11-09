@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import {
+  PhysicalSite,
   Platform,
   PlatformDeviceFilter,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -20,6 +21,7 @@ import {
 import {
   buildPlatformFilters,
   computeSitePlatformRollup,
+  filterAndSortSites,
   formatHealthyPercentage,
   formatSiteUpdatedAt,
   getCampusMapsUrl,
@@ -138,5 +140,30 @@ describe('site_helpers', () => {
         filter: 'ufs_zone = "ATL97"',
       }),
     ]);
+  });
+
+  it('filters sites by platform filter and fuzzy query', () => {
+    const sites = [
+      PhysicalSite.fromPartial({
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        platformFilters: [
+          { platform: Platform.CHROMEOS, filter: 'labels.zone = "EM25"' },
+        ],
+      }),
+      PhysicalSite.fromPartial({
+        id: 'MTV',
+        name: 'Mountain View MTV',
+        platformFilters: [
+          { platform: Platform.ANDROID, filter: 'lab_name = "mtv"' },
+        ],
+      }),
+    ];
+    expect(
+      filterAndSortSites(sites, '', Platform.CHROMEOS).map((s) => s.id),
+    ).toEqual(['EM25']);
+    expect(
+      filterAndSortSites(sites, '', Platform.ANDROID).map((s) => s.id),
+    ).toEqual(['MTV']);
   });
 });

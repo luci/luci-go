@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import * as paths from '@/fleet/constants/paths';
+import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import {
+  PhysicalSite,
   Platform,
   PlatformDeviceFilter,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -148,4 +150,29 @@ export function buildPlatformFilters(
       ? [PlatformDeviceFilter.fromPartial({ platform, filter })]
       : [];
   });
+}
+
+export function filterAndSortSites(
+  sites: readonly PhysicalSite[],
+  searchQuery: string,
+  platformFilter: Platform | null = null,
+): PhysicalSite[] {
+  const sorted = [...sites].sort(
+    (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+  );
+  const byPlat =
+    platformFilter === null
+      ? sorted
+      : sorted.filter((s) =>
+          (s.platformFilters ?? []).some(
+            (e) => e.platform === platformFilter && Boolean(e.filter.trim()),
+          ),
+        );
+  const q = searchQuery.trim();
+  return q
+    ? byPlat.filter(
+        (s) =>
+          fuzzySubstring(q, s.name)[0] >= 0 || fuzzySubstring(q, s.id)[0] >= 0,
+      )
+    : byPlat;
 }
