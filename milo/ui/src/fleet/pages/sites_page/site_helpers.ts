@@ -20,6 +20,8 @@ import {
   PlatformDeviceFilter,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+export const SNIPIT_UPLOAD_URL = 'https://screenshot.googleplex.com/';
+
 export interface SitePlatformConfig {
   readonly platform: Platform;
   readonly label: string;
@@ -175,4 +177,41 @@ export function filterAndSortSites(
           fuzzySubstring(q, s.name)[0] >= 0 || fuzzySubstring(q, s.id)[0] >= 0,
       )
     : byPlat;
+}
+
+const SNIPIT_SHORTLINK_RE =
+  /^(?:https?:\/\/)?(?:screen|screenshot|screenshot-v2)\/([A-Za-z0-9_-]+)\/?$/i;
+const SNIPIT_GOOGLEPLEX_RE =
+  /^https?:\/\/screenshot\.googleplex\.com\/([A-Za-z0-9_-]+?)(?:\.(?:png|jpe?g|webp|gif))?(?:[?#].*)?$/i;
+
+export function normalizeSiteImageUrl(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const shortMatch = SNIPIT_SHORTLINK_RE.exec(trimmed);
+  if (shortMatch) {
+    return `https://screenshot.googleplex.com/${shortMatch[1]}.png`;
+  }
+  const gplexMatch = SNIPIT_GOOGLEPLEX_RE.exec(trimmed);
+  if (gplexMatch) {
+    return `https://screenshot.googleplex.com/${gplexMatch[1]}.png`;
+  }
+  return /^https?:\/\/\S+$/i.test(trimmed) ? trimmed : null;
+}
+
+export function parseSiteImageUrlsInput(rawInput: string): string[] {
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const part of rawInput.split(/[\n,]+/)) {
+    const normalized = normalizeSiteImageUrl(part);
+    if (normalized && !seen.has(normalized)) {
+      seen.add(normalized);
+      urls.push(normalized);
+    }
+  }
+  return urls;
+}
+
+export function getSnipItShortlinkLabel(url: string): string {
+  const m = SNIPIT_GOOGLEPLEX_RE.exec(url.trim());
+  return m ? `screen/${m[1]}` : url.trim();
 }

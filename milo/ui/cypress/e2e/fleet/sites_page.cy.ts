@@ -19,6 +19,9 @@ import { mockCypressAuth, mockPrpcEndpoint } from './common/utils';
 describe('Physical Sites Directory Page', () => {
   beforeEach(() => {
     cy.clearLocalStorage();
+    cy.on('window:before:load', (win) => {
+      win.localStorage.setItem('fleet_console_shortcuts_tip_dismissed', 'true');
+    });
 
     mockCypressAuth();
     mockPrpcEndpoint(

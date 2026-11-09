@@ -113,4 +113,30 @@ export const then = {
     });
     expect(submitBtn).toBeDisabled();
   },
+
+  async siteCardShowsFacilityPhoto(id: string, expectedSrc: string) {
+    const carousel = await screen.findByTestId(`site-photo-carousel-${id}`);
+    const img = within(carousel).getByRole('img');
+    expect(img).toHaveAttribute('src', expectedSrc);
+  },
+
+  async siteCardShowsPhotoBadge(id: string, expectedBadge: string) {
+    const carousel = await screen.findByTestId(`site-photo-carousel-${id}`);
+    expect(within(carousel).getByText(expectedBadge)).toBeInTheDocument();
+  },
+
+  async siteCardShowsPhotoPlaceholder(id: string) {
+    const placeholder = await screen.findByTestId(
+      `site-photo-placeholder-${id}`,
+    );
+    expect(
+      within(placeholder).getByText('No facility photo'),
+    ).toBeInTheDocument();
+  },
+
+  async dialogAddPhotoButtonIsDisabled() {
+    const dialog = await screen.findByRole('dialog');
+    const addBtn = within(dialog).getByRole('button', { name: 'Add photo' });
+    expect(addBtn).toBeDisabled();
+  },
 };

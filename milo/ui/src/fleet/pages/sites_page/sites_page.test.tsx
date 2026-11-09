@@ -135,6 +135,7 @@ describe('<SitesPage /> (Full Page Integration)', () => {
       id: 'EM25',
       name: 'Palo Alto EM25',
       chromeosFilter: 'labels.zone:ZONE_SFO36_OS',
+      snipItPhotoLink: 'screen/ddNrsT8xfFq4nJa',
     });
     await when.userSubmitsSiteForm();
 
@@ -148,10 +149,115 @@ describe('<SitesPage /> (Full Page Integration)', () => {
             filter: '(labels."zone" = "ZONE_SFO36_OS")',
           },
         ],
+        imageUrls: ['https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png'],
       },
     });
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
     await then.siteCardOrderIs(['Mountain View MTV', 'Palo Alto EM25']);
+    await then.siteCardShowsFacilityPhoto(
+      'EM25',
+      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+    );
+  });
+
+  it('navigates across multiple facility photos in the site card carousel', async () => {
+    given.sites([
+      {
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        imageUrls: [
+          'screen/ddNrsT8xfFq4nJa',
+          'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+          'https://example.com/lab-2.png',
+        ],
+      },
+    ]);
+
+    when.pageIsRendered();
+
+    await then.siteCardShowsPhotoBadge('EM25', '1 / 2');
+    await then.siteCardShowsFacilityPhoto(
+      'EM25',
+      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+    );
+
+    await when.userClicksButton('Next photo for Palo Alto EM25');
+    await then.siteCardShowsPhotoBadge('EM25', '2 / 2');
+    await then.siteCardShowsFacilityPhoto(
+      'EM25',
+      'https://example.com/lab-2.png',
+    );
+
+    await when.userClicksButton('Previous photo for Palo Alto EM25');
+    await then.siteCardShowsPhotoBadge('EM25', '1 / 2');
+    await then.siteCardShowsFacilityPhoto(
+      'EM25',
+      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+    );
+  });
+
+  it('displays the facility photo placeholder when no photos exist or an image fails to load', async () => {
+    given.sites([
+      { id: 'MTV', name: 'Mountain View MTV' },
+      {
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        imageUrls: ['https://example.com/broken.png'],
+      },
+    ]);
+
+    when.pageIsRendered();
+
+    await then.siteCardShowsPhotoPlaceholder('MTV');
+    await then.siteCardShowsFacilityPhoto(
+      'EM25',
+      'https://example.com/broken.png',
+    );
+
+    await when.facilityPhotoFailsToLoad('EM25');
+
+    await then.siteCardShowsPhotoPlaceholder('EM25');
+  });
+
+  it('adds, removes, and validates facility photo links in the site form dialog', async () => {
+    given.sites([
+      {
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        imageUrls: [
+          'screen/ddNrsT8xfFq4nJa',
+          'https://example.com/keep-lab.png',
+        ],
+      },
+    ]);
+
+    when.pageIsRendered();
+    await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
+
+    await when.userOpensEditSiteDialog('Palo Alto EM25');
+    await when.userRemovesPhotoInDialog('screen/ddNrsT8xfFq4nJa');
+
+    await when.userTypesPhotoInput('screen/YLwMYTzGAfHLEXf, invalid-token');
+    await then.textIsVisible(
+      'Enter a SnipIt link (screen/ID) or https:// image URL.',
+    );
+    await then.dialogAddPhotoButtonIsDisabled();
+    await then.siteFormSubmitIsDisabled();
+
+    await when.userTypesPhotoInput('screen/YLwMYTzGAfHLEXf/');
+    await when.userClicksAddPhotoInDialog();
+    await when.userSubmitsSiteForm();
+
+    then.rpcWasCalledWith('UpdatePhysicalSite', {
+      physicalSite: {
+        id: 'EM25',
+        name: 'Palo Alto EM25',
+        imageUrls: [
+          'https://example.com/keep-lab.png',
+          'https://screenshot.googleplex.com/YLwMYTzGAfHLEXf.png',
+        ],
+      },
+    });
   });
 
   it('opens the edit dialog from Add filters on an unconfigured card and saves updated filters', async () => {

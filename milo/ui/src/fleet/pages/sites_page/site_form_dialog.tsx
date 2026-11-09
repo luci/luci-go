@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import AddPhotoAlternateOutlinedIcon from '@mui/icons-material/AddPhotoAlternateOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Alert,
   Box,
@@ -20,18 +23,30 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  Link,
   TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import { KeyboardEvent, useState } from 'react';
 
-import { fontFamilies } from '@/fleet/theme/tokens';
+import { actionRowSx, iconButtonSx } from '@/fleet/theme/recipes';
+import * as tk from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import {
   PhysicalSite,
   Platform,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { buildPlatformFilters, platformFiltersToMap } from './site_helpers';
+import {
+  buildPlatformFilters,
+  getSnipItShortlinkLabel,
+  normalizeSiteImageUrl,
+  parseSiteImageUrlsInput,
+  platformFiltersToMap,
+  SNIPIT_UPLOAD_URL,
+} from './site_helpers';
 import { SitePlatformFilterEditor } from './site_platform_rollup';
 
 export interface SiteFormDialogProps {
@@ -45,7 +60,7 @@ export interface SiteFormDialogProps {
 }
 
 const monoSlotProps = {
-  htmlInput: { style: { fontFamily: fontFamilies.mono } },
+  htmlInput: { style: { fontFamily: tk.fontFamilies.mono } },
 } as const;
 const zeroTimeout = { timeout: 0 } as const;
 const dialogPaperProps = { sx: { maxWidth: 760 } } as const;
@@ -53,6 +68,7 @@ const contentSx = {
   display: 'flex',
   flexDirection: 'column',
   gap: 2.25,
+  maxHeight: '55vh',
   '&&': { pt: 1.5 },
 } as const;
 const topFieldsGridSx = {
@@ -60,6 +76,24 @@ const topFieldsGridSx = {
   gridTemplateColumns: { xs: '1fr', sm: '240px 1fr' },
   gap: 2,
   alignItems: 'flex-start',
+} as const;
+const photoRowSx = {
+  ...actionRowSx,
+  justifyContent: 'space-between',
+  px: 1.25,
+  py: 0.5,
+  borderRadius: tk.radii.sm,
+  border: tk.borders.divider,
+  backgroundColor: tk.fleetColors.surfaceTonal,
+} as const;
+const photoThumbSx = {
+  width: 36,
+  height: 24,
+  objectFit: 'cover',
+  borderRadius: tk.radii.sm,
+  border: tk.borders.default,
+  backgroundColor: tk.fleetColors.surface,
+  flexShrink: 0,
 } as const;
 
 export const SiteFormDialog = (p: SiteFormDialogProps) => {
@@ -70,9 +104,30 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
   const [filterByPlatform, setFilterByPlatform] = useState<
     Partial<Record<Platform, string>>
   >(() => platformFiltersToMap(editingSite?.platformFilters));
+  const [imageUrls, setImageUrls] = useState<string[]>(() =>
+    Array.from(
+      new Set(
+        (editingSite?.imageUrls ?? [])
+          .map(normalizeSiteImageUrl)
+          .filter((u): u is string => u !== null),
+      ),
+    ),
+  );
+  const [photoInput, setPhotoInput] = useState('');
 
   const isEditing = Boolean(editingSite);
-  const [trimmedId, trimmedName] = [siteId.trim(), siteName.trim()];
+  const [trimmedId, trimmedName, trimmedPhoto] = [
+    siteId.trim(),
+    siteName.trim(),
+    photoInput.trim(),
+  ];
+  const rawPhotoTokens = trimmedPhoto
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const isInvalidPhoto = rawPhotoTokens.some(
+    (token) => normalizeSiteImageUrl(token) === null,
+  );
   const eqCI = (a: string, b: string) =>
     a.trim().toLowerCase() === b.toLowerCase();
   const isDuplicateId =
@@ -85,17 +140,34 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
       (s) => s.id !== editingSite?.id && eqCI(s.name, trimmedName),
     );
   const canSave = Boolean(
-    trimmedId && trimmedName && !isDuplicateId && !isDuplicateName && !isSaving,
+    trimmedId &&
+      trimmedName &&
+      !isDuplicateId &&
+      !isDuplicateName &&
+      !isInvalidPhoto &&
+      !isSaving,
   );
+
+  const handleAddPhoto = () => {
+    if (isInvalidPhoto) return;
+    const parsed = parseSiteImageUrlsInput(photoInput);
+    if (parsed.length === 0) return;
+    setImageUrls((prev) => Array.from(new Set([...prev, ...parsed])));
+    setPhotoInput('');
+  };
 
   const handleSave = () => {
     if (!canSave) return;
+    const finalPhotos = Array.from(
+      new Set([...imageUrls, ...parseSiteImageUrlsInput(photoInput)]),
+    );
     onSave(
       PhysicalSite.fromPartial({
         ...editingSite,
         id: isEditing ? editingSite!.id : trimmedId,
         name: trimmedName,
         platformFilters: buildPlatformFilters(filterByPlatform),
+        imageUrls: finalPhotos,
       }),
     );
   };
@@ -164,6 +236,115 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
             setFilterByPlatform((prev) => ({ ...prev, [plat]: val }))
           }
         />
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ ...actionRowSx, justifyContent: 'space-between' }}>
+            <Typography variant="subtitle2">
+              Facility photos (SnipIt)
+            </Typography>
+            <Link
+              href={SNIPIT_UPLOAD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="hover"
+              sx={{
+                ...actionRowSx,
+                gap: 0.5,
+                fontSize: tk.fontSizes.caption,
+                fontWeight: 500,
+              }}
+            >
+              Open SnipIt upload page
+              <OpenInNewIcon sx={{ fontSize: tk.fontSizes.caption }} />
+            </Link>
+          </Box>
+          <Typography variant="caption" color="text.secondary">
+            Upload photos on SnipIt, then paste each screenshot link (e.g.
+            screen/ID) or image URL below.
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <TextField
+              label="SnipIt screenshot link or URL"
+              fullWidth
+              size="small"
+              placeholder="e.g. screen/ddNrsT8xfFq4nJa"
+              value={photoInput}
+              onChange={(e) => setPhotoInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && trimmedPhoto) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleAddPhoto();
+                }
+              }}
+              disabled={isSaving}
+              error={isInvalidPhoto}
+              helperText={
+                isInvalidPhoto
+                  ? 'Enter a SnipIt link (screen/ID) or https:// image URL.'
+                  : undefined
+              }
+              slotProps={monoSlotProps}
+            />
+            <Button
+              variant="toolbar"
+              startIcon={
+                <AddPhotoAlternateOutlinedIcon
+                  sx={{ fontSize: tk.iconSizes.control }}
+                />
+              }
+              onClick={handleAddPhoto}
+              disabled={!trimmedPhoto || isInvalidPhoto || isSaving}
+              sx={{ flexShrink: 0, height: 40 }}
+            >
+              Add photo
+            </Button>
+          </Box>
+          {imageUrls.length > 0 && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.75,
+                mt: 0.5,
+              }}
+            >
+              {imageUrls.map((url) => {
+                const label = getSnipItShortlinkLabel(url);
+                return (
+                  <Box key={url} sx={photoRowSx}>
+                    <Box sx={{ ...actionRowSx, gap: 1, minWidth: 0 }}>
+                      <Box component="img" src={url} alt="" sx={photoThumbSx} />
+                      <Typography
+                        variant="caption"
+                        noWrap
+                        sx={{ fontFamily: tk.fontFamilies.mono }}
+                      >
+                        {label}
+                      </Typography>
+                    </Box>
+                    <Tooltip title="Remove photo">
+                      <IconButton
+                        size="small"
+                        aria-label={`Remove photo ${label}`}
+                        onClick={() =>
+                          setImageUrls((prev) => prev.filter((u) => u !== url))
+                        }
+                        disabled={isSaving}
+                        sx={iconButtonSx}
+                      >
+                        <DeleteOutlineIcon
+                          sx={{ fontSize: tk.iconSizes.control }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+        </Box>
+
         {Boolean(error) && (
           <Alert severity="error">
             {getErrorMessage(

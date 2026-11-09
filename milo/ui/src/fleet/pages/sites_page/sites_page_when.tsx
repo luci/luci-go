@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 
 import {
   fleetFilterBar,
@@ -62,6 +62,7 @@ export const when = {
     chromeosFilter?: string;
     androidFilter?: string;
     browserFilter?: string;
+    snipItPhotoLink?: string;
   }) {
     const dialog = await screen.findByRole('dialog');
     const user = getUser();
@@ -93,6 +94,16 @@ export const when = {
         container: bar,
       });
     }
+    if (fields.snipItPhotoLink) {
+      const photoInput = within(dialog).getByLabelText(
+        /SnipIt screenshot link or URL/i,
+      );
+      await user.clear(photoInput);
+      await user.type(photoInput, fields.snipItPhotoLink);
+      await user.click(
+        within(dialog).getByRole('button', { name: 'Add photo' }),
+      );
+    }
   },
 
   async userSubmitsSiteForm() {
@@ -123,5 +134,37 @@ export const when = {
       name: 'Delete site',
     });
     await getUser().click(deleteBtn);
+  },
+
+  async facilityPhotoFailsToLoad(siteId: string) {
+    const carousel = await screen.findByTestId(`site-photo-carousel-${siteId}`);
+    const img = within(carousel).getByRole('img');
+    fireEvent.error(img);
+  },
+
+  async userTypesPhotoInput(value: string) {
+    const dialog = await screen.findByRole('dialog');
+    const photoInput = within(dialog).getByLabelText(
+      /SnipIt screenshot link or URL/i,
+    );
+    const user = getUser();
+    await user.clear(photoInput);
+    if (value) {
+      await user.type(photoInput, value);
+    }
+  },
+
+  async userClicksAddPhotoInDialog() {
+    const dialog = await screen.findByRole('dialog');
+    await getUser().click(
+      within(dialog).getByRole('button', { name: 'Add photo' }),
+    );
+  },
+
+  async userRemovesPhotoInDialog(label: string) {
+    const dialog = await screen.findByRole('dialog');
+    await getUser().click(
+      within(dialog).getByRole('button', { name: `Remove photo ${label}` }),
+    );
   },
 };

@@ -26,6 +26,9 @@ import {
   formatSiteUpdatedAt,
   getCampusMapsUrl,
   getPlatformDevicesUrl,
+  getSnipItShortlinkLabel,
+  normalizeSiteImageUrl,
+  parseSiteImageUrlsInput,
   platformFiltersToMap,
 } from './site_helpers';
 
@@ -165,5 +168,30 @@ describe('site_helpers', () => {
     expect(
       filterAndSortSites(sites, '', Platform.ANDROID).map((s) => s.id),
     ).toEqual(['MTV']);
+  });
+
+  it('normalizes SnipIt shortlinks and URLs for facility photos', () => {
+    expect(normalizeSiteImageUrl('screen/ddNrsT8xfFq4nJa')).toBe(
+      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+    );
+    expect(normalizeSiteImageUrl('screen/ddNrsT8xfFq4nJa/')).toBe(
+      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+    );
+    expect(normalizeSiteImageUrl('http://screen/ddNrsT8xfFq4nJa/')).toBe(
+      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+    );
+    expect(
+      normalizeSiteImageUrl('https://screenshot.googleplex.com/abc123_XY'),
+    ).toBe('https://screenshot.googleplex.com/abc123_XY.png');
+    expect(normalizeSiteImageUrl('not-a-url')).toBeNull();
+    expect(
+      parseSiteImageUrlsInput('screen/imgOne, https://example.com/lab.jpg'),
+    ).toEqual([
+      'https://screenshot.googleplex.com/imgOne.png',
+      'https://example.com/lab.jpg',
+    ]);
+    expect(
+      getSnipItShortlinkLabel('https://screenshot.googleplex.com/imgOne.png'),
+    ).toBe('screen/imgOne');
   });
 });
