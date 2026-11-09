@@ -70,7 +70,7 @@ func TestIngestToStorage(t *testing.T) {
 		ctx, ts := TestingContext(t.Context())
 		s := &memstore.Store[*durationpb.Duration]{}
 
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "svc",
 			Store: s,
 			Files: []File{&SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
@@ -86,7 +86,7 @@ func TestIngestToStorage(t *testing.T) {
 
 		var svcTransforms atomic.Int32
 		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "svc-settings",
 			Store: s,
 			Files: []File{svcFile},
@@ -110,7 +110,7 @@ func TestIngestToStorage(t *testing.T) {
 		var svcTransforms, projTransforms atomic.Int32
 		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
 		projFile := &SingleFile[*durationpb.Duration]{Path: "${appid}.cfg"}
-		(&ServicePipeline[*durationpb.Duration]{
+		(&ServicePipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:    "svc-settings",
 			Store: sd,
 			Files: []File{svcFile},
@@ -120,7 +120,7 @@ func TestIngestToStorage(t *testing.T) {
 				return &durationpb.Duration{Seconds: msg.Seconds * 10}, nil
 			},
 		}).Register(ts.Registry)
-		(&ProjectPipeline[*timestamppb.Timestamp]{
+		(&ProjectPipeline[*timestamppb.Timestamp, NoMemoryRefresh]{
 			ID:               "proj-cfg",
 			Store:            st,
 			Files:            []File{projFile},
@@ -176,7 +176,7 @@ func TestIngestToStorage(t *testing.T) {
 
 		var transforms atomic.Int32
 		projFile := &SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "proj-cfg",
 			Store:            s,
 			Files:            []File{projFile},
@@ -195,7 +195,7 @@ func TestIngestToStorage(t *testing.T) {
 
 		// New Registry with TransformVersion bumped to 2 against the same store/cfgclient.
 		_, tsV2 := TestingContext(ctx)
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "proj-cfg",
 			Store:            s,
 			Files:            []File{projFile},
@@ -220,7 +220,7 @@ func TestIngestToStorage(t *testing.T) {
 		s := &memstore.Store[*durationpb.Duration]{}
 
 		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "svc",
 			Store: s,
 			Files: []File{svcFile},
@@ -246,7 +246,7 @@ func TestIngestToStorage(t *testing.T) {
 
 		fA := &SingleFile[*durationpb.Duration]{Path: "a.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{Seconds: 1} }}
 		fB := &SingleFile[*durationpb.Duration]{Path: "b.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{Seconds: 2} }}
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "proj-ab",
 			Store:            s,
 			Files:            []File{fA, fB},
@@ -278,7 +278,7 @@ func TestIngestToStorage(t *testing.T) {
 		s := &memstore.Store[*durationpb.Duration]{}
 
 		rxF := &RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "proj-rx",
 			Store:            s,
 			Files:            []File{rxF},
@@ -314,12 +314,12 @@ func TestIngestToStorage(t *testing.T) {
 
 			fShared := &SingleFile[*durationpb.Duration]{Path: "shared.cfg"}
 			fOnly2 := &SingleFile[*durationpb.Duration]{Path: "only2.cfg", NewDefault: func() *durationpb.Duration { return &durationpb.Duration{} }}
-			(&ProjectPipeline[*durationpb.Duration]{
+			(&PassthroughProjectPipeline[*durationpb.Duration]{
 				ID:    "proj-1",
 				Store: s1,
 				Files: []File{fShared},
 			}).Register(ts.Registry)
-			(&ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 				ID:               "proj-2",
 				Store:            s2,
 				Files:            []File{fShared, fOnly2},
@@ -370,7 +370,7 @@ func TestIngestToStorage(t *testing.T) {
 
 			rxF := &RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}
 			singleF := &SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
-			(&ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 				ID:               "proj-rx",
 				Store:            s1,
 				Files:            []File{rxF},
@@ -383,7 +383,7 @@ func TestIngestToStorage(t *testing.T) {
 					return &durationpb.Duration{Seconds: sum}, nil
 				},
 			}).Register(ts.Registry)
-			(&ProjectPipeline[*durationpb.Duration]{
+			(&PassthroughProjectPipeline[*durationpb.Duration]{
 				ID:    "proj-single",
 				Store: s2,
 				Files: []File{singleF},
@@ -430,7 +430,7 @@ func TestIngestToStorage(t *testing.T) {
 
 		var transforms int
 		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "svc",
 			Store: s,
 			Files: []File{svcFile},
@@ -471,7 +471,7 @@ func TestIngestToStorage(t *testing.T) {
 
 		var transforms int
 		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "svc",
 			Store: s,
 			Files: []File{svcFile},
@@ -506,7 +506,7 @@ func TestIngestToStorage(t *testing.T) {
 
 		var active, maxActive atomic.Int32
 		projFile := &SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "proj",
 			Store:            s,
 			Files:            []File{projFile},
@@ -553,7 +553,7 @@ func TestIngestToStorage(t *testing.T) {
 			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
 			svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
-			(&ServicePipeline[*durationpb.Duration]{
+			(&PassthroughServicePipeline[*durationpb.Duration]{
 				ID:    "svc",
 				Store: s,
 				Files: []File{svcFile},
@@ -570,7 +570,7 @@ func TestIngestToStorage(t *testing.T) {
 		t.Run("service GetConfigs metaOnly=true error", func(t *testing.T) {
 			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&ServicePipeline[*durationpb.Duration]{
+			(&PassthroughServicePipeline[*durationpb.Duration]{
 				ID:    "svc",
 				Store: s,
 				Files: []File{&SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},
@@ -588,7 +588,7 @@ func TestIngestToStorage(t *testing.T) {
 		t.Run("single-file project GetProjectConfigs error", func(t *testing.T) {
 			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&ProjectPipeline[*durationpb.Duration]{
+			(&PassthroughProjectPipeline[*durationpb.Duration]{
 				ID:    "proj",
 				Store: s,
 				Files: []File{&SingleFile[*durationpb.Duration]{Path: "proj.cfg"}},
@@ -606,7 +606,7 @@ func TestIngestToStorage(t *testing.T) {
 		t.Run("RegexFile project GetProjects error", func(t *testing.T) {
 			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 				ID:               "proj-rx",
 				Store:            s,
 				Files:            []File{&RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}},
@@ -628,7 +628,7 @@ func TestIngestToStorage(t *testing.T) {
 		t.Run("RegexFile project GetConfigs metaOnly=true error", func(t *testing.T) {
 			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&ProjectPipeline[*durationpb.Duration]{
+			(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 				ID:               "proj-rx",
 				Store:            s,
 				Files:            []File{&RegexFile[*durationpb.Duration]{PathRegex: `shards/.*\.cfg`}},
@@ -651,7 +651,7 @@ func TestIngestToStorage(t *testing.T) {
 		t.Run("full fetch GetConfigs metaOnly=false error", func(t *testing.T) {
 			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&ServicePipeline[*durationpb.Duration]{
+			(&PassthroughServicePipeline[*durationpb.Duration]{
 				ID:    "svc",
 				Store: s,
 				Files: []File{&SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},
@@ -674,7 +674,7 @@ func TestIngestToStorage(t *testing.T) {
 		t.Run("context canceled before semaphore acquire", func(t *testing.T) {
 			ctx, ts := TestingContext(t.Context())
 			s := &memstore.Store[*durationpb.Duration]{}
-			(&ServicePipeline[*durationpb.Duration]{
+			(&PassthroughServicePipeline[*durationpb.Duration]{
 				ID:    "svc",
 				Store: s,
 				Files: []File{&SingleFile[*durationpb.Duration]{Path: "settings.cfg"}},

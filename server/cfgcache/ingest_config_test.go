@@ -36,7 +36,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 		{
 			name: "empty ID",
 			register: func(reg *Registry) {
-				(&ServicePipeline[*durationpb.Duration]{
+				(&PassthroughServicePipeline[*durationpb.Duration]{
 					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{&SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
 				}).Register(reg)
@@ -46,7 +46,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 		{
 			name: "negative TransformVersion",
 			register: func(reg *Registry) {
-				(&ServicePipeline[*durationpb.Duration]{
+				(&PassthroughServicePipeline[*durationpb.Duration]{
 					ID:               "svc",
 					Store:            &noopStore[*durationpb.Duration]{},
 					Files:            []File{&SingleFile[*durationpb.Duration]{Path: "some.cfg"}},
@@ -58,12 +58,12 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 		{
 			name: "duplicate ID",
 			register: func(reg *Registry) {
-				(&ServicePipeline[*durationpb.Duration]{
+				(&PassthroughServicePipeline[*durationpb.Duration]{
 					ID:    "dup",
 					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{&SingleFile[*durationpb.Duration]{Path: "a.cfg"}},
 				}).Register(reg)
-				(&ProjectPipeline[*durationpb.Duration]{
+				(&PassthroughProjectPipeline[*durationpb.Duration]{
 					ID:    "dup",
 					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{&SingleFile[*durationpb.Duration]{Path: "b.cfg"}},
@@ -74,7 +74,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 		{
 			name: "invalid RegexFile pattern",
 			register: func(reg *Registry) {
-				(&ServicePipeline[*durationpb.Duration]{
+				(&ServicePipeline[*durationpb.Duration, NoMemoryRefresh]{
 					ID:    "svc",
 					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{
@@ -91,7 +91,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 		{
 			name: "unresolvable variable in ServiceName",
 			register: func(reg *Registry) {
-				(&ServicePipeline[*durationpb.Duration]{
+				(&PassthroughServicePipeline[*durationpb.Duration]{
 					ID:          "svc",
 					Store:       &noopStore[*durationpb.Duration]{},
 					ServiceName: "${bad_svc}",
@@ -103,7 +103,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 		{
 			name: "unresolvable variable in Files path",
 			register: func(reg *Registry) {
-				(&ServicePipeline[*durationpb.Duration]{
+				(&PassthroughServicePipeline[*durationpb.Duration]{
 					ID:    "svc",
 					Store: &noopStore[*durationpb.Duration]{},
 					Files: []File{&SingleFile[*durationpb.Duration]{Path: "${bad_path}.cfg"}},
@@ -114,7 +114,7 @@ func TestIngestConfigRegistrationErrors(t *testing.T) {
 		{
 			name: "invalid ServiceName",
 			register: func(reg *Registry) {
-				(&ServicePipeline[*durationpb.Duration]{
+				(&PassthroughServicePipeline[*durationpb.Duration]{
 					ID:          "svc",
 					Store:       &noopStore[*durationpb.Duration]{},
 					ServiceName: "Bad/Service",
@@ -144,25 +144,25 @@ func TestTestingStateSetConfig(t *testing.T) {
 		name    string
 		path    string
 		val     any
-		wantSub string
+		wantGet string
 	}{
 		{
 			name:    "string",
 			path:    "str.txt",
 			val:     "hello",
-			wantSub: "hello",
+			wantGet: "hello",
 		},
 		{
 			name:    "[]byte",
 			path:    "raw.bin",
 			val:     []byte("world"),
-			wantSub: "world",
+			wantGet: "world",
 		},
 		{
 			name:    "proto.Message",
 			path:    "msg.cfg",
 			val:     &durationpb.Duration{Seconds: 42},
-			wantSub: "seconds",
+			wantGet: "seconds",
 		},
 	}
 
@@ -171,7 +171,7 @@ func TestTestingStateSetConfig(t *testing.T) {
 			t.Parallel()
 			_, ts := TestingContext(t.Context())
 			ts.SetConfig(cs, tc.path, tc.val)
-			assert.That(t, ts.CfgFiles[cs][tc.path], should.ContainSubstring(tc.wantSub))
+			assert.That(t, ts.CfgFiles[cs][tc.path], should.ContainSubstring(tc.wantGet))
 		})
 	}
 
@@ -198,8 +198,8 @@ func TestRegistryLifecycle(t *testing.T) {
 	t.Run("stateless descriptors can be registered across multiple registries", func(t *testing.T) {
 		t.Parallel()
 		f := &SingleFile[*durationpb.Duration]{Path: "${appid}.cfg"}
-		svcCfg := &ServicePipeline[*durationpb.Duration]{ID: "svc", Store: &noopStore[*durationpb.Duration]{}, Files: []File{f}}
-		projCfg := &ProjectPipeline[*durationpb.Duration]{ID: "proj", Store: &noopStore[*durationpb.Duration]{}, Files: []File{f}}
+		svcCfg := &PassthroughServicePipeline[*durationpb.Duration]{ID: "svc", Store: &noopStore[*durationpb.Duration]{}, Files: []File{f}}
+		projCfg := &PassthroughProjectPipeline[*durationpb.Duration]{ID: "proj", Store: &noopStore[*durationpb.Duration]{}, Files: []File{f}}
 
 		ctx1, ts1 := TestingContext(t.Context())
 		svcCfg.Register(ts1.Registry)
@@ -215,8 +215,8 @@ func TestRegistryLifecycle(t *testing.T) {
 	t.Run("String formatting", func(t *testing.T) {
 		t.Parallel()
 		f := &SingleFile[*durationpb.Duration]{Path: "neat.cfg"}
-		svcDesc := &ServicePipeline[*durationpb.Duration]{ID: "svc-neat", Files: []File{f}}
-		projDesc := &ProjectPipeline[*durationpb.Duration]{ID: "proj-multi", Files: []File{f}}
+		svcDesc := &PassthroughServicePipeline[*durationpb.Duration]{ID: "svc-neat", Files: []File{f}}
+		projDesc := &PassthroughProjectPipeline[*durationpb.Duration]{ID: "proj-multi", Files: []File{f}}
 		assert.That(t, svcDesc.String(), should.Equal(`ServicePipeline{ID: "svc-neat", ServiceName: "${appid}"}`))
 		assert.That(t, projDesc.String(), should.Equal(`ProjectPipeline{ID: "proj-multi"}`))
 	})
@@ -229,7 +229,7 @@ func TestMultiFile(t *testing.T) {
 		t.Parallel()
 
 		ctx, ts := TestingContext(t.Context())
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&PassthroughProjectPipeline[*durationpb.Duration]{
 			ID:    "the-pipeline",
 			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{
@@ -244,7 +244,7 @@ func TestMultiFile(t *testing.T) {
 		t.Parallel()
 
 		ctx, ts := TestingContext(t.Context())
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "the-pipeline",
 			Store:            &noopStore[*durationpb.Duration]{},
 			TransformVersion: 1,
@@ -263,7 +263,7 @@ func TestMultiFile(t *testing.T) {
 		t.Parallel()
 
 		ctx, ts := TestingContext(t.Context())
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "the-pipeline",
 			Store:            &noopStore[*durationpb.Duration]{},
 			TransformVersion: 1,

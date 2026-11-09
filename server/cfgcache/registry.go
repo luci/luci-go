@@ -149,7 +149,7 @@ func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformF
 			return errors.New("Storage is required")
 		}
 
-		ic.store = storeAdapter[StoreMsg]{store}
+		ic.store = storeAdapter[StoreMsg]{store, nil}
 		return nil
 	}()
 	if err != nil {

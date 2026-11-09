@@ -47,7 +47,7 @@ func TestValidationAndTransform(t *testing.T) {
 	t.Run("SingleFile Path ignores magical pattern forms", func(t *testing.T) {
 		t.Parallel()
 		reg := &Registry{}
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "svc-colon",
 			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{&SingleFile[*durationpb.Duration]{
@@ -82,7 +82,7 @@ func TestValidationAndTransform(t *testing.T) {
 		noDefault := &SingleFile[string]{Path: "label.txt"}
 		trigger := &SingleFile[string]{Path: "trigger.txt"}
 
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "proj-defaults",
 			Store:            &noopStore[*durationpb.Duration]{},
 			Files:            []File{noDefault, trigger},
@@ -119,7 +119,7 @@ func TestValidationAndTransform(t *testing.T) {
 		}
 		trigger := &SingleFile[string]{Path: "trigger.txt"}
 
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "proj-defaults",
 			Store:            &noopStore[*durationpb.Duration]{},
 			Files:            []File{defaulted, trigger},
@@ -156,7 +156,7 @@ func TestValidationAndTransform(t *testing.T) {
 			},
 		}
 		var gotSum int
-		(&ProjectPipeline[*timestamppb.Timestamp]{
+		(&ProjectPipeline[*timestamppb.Timestamp, NoMemoryRefresh]{
 			ID:               "proj-silly",
 			Store:            &noopStore[*timestamppb.Timestamp]{},
 			Files:            []File{projShards},
@@ -202,7 +202,7 @@ func TestValidationAndTransform(t *testing.T) {
 				return strconv.Atoi(string(raw))
 			},
 		}
-		(&ServicePipeline[*durationpb.Duration]{
+		(&ServicePipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "svc-overlap",
 			Store:            &noopStore[*durationpb.Duration]{},
 			Files:            []File{strLike, intLike},
@@ -226,7 +226,7 @@ func TestValidationAndTransform(t *testing.T) {
 		reg := &Registry{}
 
 		f := &SingleFile[*durationpb.Duration]{Path: "proj.cfg"}
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&PassthroughProjectPipeline[*durationpb.Duration]{
 			ID:    "proj-fatal",
 			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{f},
@@ -251,7 +251,7 @@ func TestValidationAndTransform(t *testing.T) {
 		aHandle := &SingleFile[*durationpb.Duration]{Path: "a.cfg"}
 		bHandle := &SingleFile[*durationpb.Duration]{Path: "b.cfg"}
 
-		(&ServicePipeline[*durationpb.Duration]{
+		(&ServicePipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "svc-colon",
 			Store:            &noopStore[*durationpb.Duration]{},
 			TransformVersion: 1,
@@ -285,14 +285,14 @@ func TestCompileFileRegex(t *testing.T) {
 		t.Parallel()
 
 		ctx, ts := TestingContext(t.Context())
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "svc-pipeline",
 			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{
 				&SingleFile[*durationpb.Duration]{Path: "afile"},
 			},
 		}).Register(ts.Registry)
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&PassthroughProjectPipeline[*durationpb.Duration]{
 			ID:    "proj-pipeline",
 			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{
@@ -311,7 +311,7 @@ func TestCompileFileRegex(t *testing.T) {
 		t.Parallel()
 
 		ctx, ts := TestingContext(t.Context())
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "the-pipeline",
 			Store:            &noopStore[*durationpb.Duration]{},
 			TransformVersion: 1,
@@ -337,7 +337,7 @@ func TestCompileFileRegex(t *testing.T) {
 		t.Parallel()
 
 		ctx, ts := TestingContext(t.Context())
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "the-pipeline",
 			Store:            &noopStore[*durationpb.Duration]{},
 			TransformVersion: 1,

@@ -41,12 +41,12 @@ func TestServerModule(t *testing.T) {
 		return &ModuleOptions{Registry: &Registry{}, Vars: v, Rules: rules, CronDispatcher: disp}
 	}
 
-	t.Run("default options install validation rules and cron handler", func(t *testing.T) {
+	t.Run("default options install validation rules, cron handler, and background refresh", func(t *testing.T) {
 		t.Parallel()
 		ctx := t.Context()
 		opts := newTestOpts()
 
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "service-cfg",
 			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{
@@ -74,7 +74,7 @@ func TestServerModule(t *testing.T) {
 		ctx := t.Context()
 		opts := newTestOpts()
 
-		(&ServicePipeline[*durationpb.Duration]{
+		(&PassthroughServicePipeline[*durationpb.Duration]{
 			ID:    "flag-cfg",
 			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{
@@ -109,7 +109,7 @@ func TestServerModule(t *testing.T) {
 		ctx := t.Context()
 		opts := newTestOpts()
 
-		(&ServicePipeline[*durationpb.Duration]{ID: "bad"}).Register(opts.Registry)
+		(&PassthroughServicePipeline[*durationpb.Duration]{ID: "bad"}).Register(opts.Registry)
 		badMod := NewModule(opts)
 		_, err := badMod.Initialize(ctx, nil, module.HostOptions{})
 		assert.ErrIsLike(t, err, "Files must not be empty")
@@ -120,7 +120,7 @@ func TestModuleDependencies(t *testing.T) {
 	t.Parallel()
 
 	reg := &Registry{}
-	(&ServicePipeline[*durationpb.Duration]{
+	(&PassthroughServicePipeline[*durationpb.Duration]{
 		ID:    "dep-1",
 		Files: []File{&SingleFile[*durationpb.Duration]{Path: "dep.cfg"}},
 		Store: &noopStore[*durationpb.Duration]{},

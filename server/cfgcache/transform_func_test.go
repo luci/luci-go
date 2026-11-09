@@ -88,7 +88,7 @@ func TestTransformFunc(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Parallel()
 				reg := &Registry{}
-				(&ServicePipeline[*timestamppb.Timestamp]{
+				(&ServicePipeline[*timestamppb.Timestamp, NoMemoryRefresh]{
 					ID:               "test",
 					ServiceName:      "my-app",
 					Files:            tc.files,
@@ -106,7 +106,7 @@ func TestTransformFunc(t *testing.T) {
 		t.Parallel()
 		reg := &Registry{}
 		f := &SingleFile[*durationpb.Duration]{Path: "some.cfg"}
-		(&ServicePipeline[*durationpb.Duration]{
+		(&ServicePipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:          "test",
 			Store:       &noopStore[*durationpb.Duration]{},
 			ServiceName: "my-app",
@@ -125,7 +125,7 @@ func TestTransformFunc(t *testing.T) {
 		t.Parallel()
 		reg := &Registry{}
 		f := &SingleFile[*durationpb.Duration]{Path: "some.cfg"}
-		(&ServicePipeline[*timestamppb.Timestamp]{
+		(&ServicePipeline[*timestamppb.Timestamp, NoMemoryRefresh]{
 			ID:               "test",
 			Store:            &noopStore[*timestamppb.Timestamp]{},
 			ServiceName:      "my-app",

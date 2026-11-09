@@ -21,6 +21,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// PassthroughServicePipeline is a shorthand for a [ServicePipeline] whose
+// stored and in-memory types are identical.
+type PassthroughServicePipeline[T proto.Message] = ServicePipeline[T, T]
+
 // ServicePipeline describes a pipeline to consume a snapshot of one or more
 // config files for a single service, usually the current one.
 //
@@ -29,7 +33,7 @@ import (
 // This specifically uses the config set pattern of
 // `exact:services/{ServiceName}`, with the service name defaulting to
 // `${appid}`.
-type ServicePipeline[StoreMsg proto.Message] struct {
+type ServicePipeline[StoreMsg proto.Message, InMemory any] struct {
 	// ID uniquely identifies this pipeline within a [Registry] and in storage.
 	//
 	// Required.
@@ -87,9 +91,49 @@ type ServicePipeline[StoreMsg proto.Message] struct {
 	// StoreMsg, the parsed message is passed through unchanged. Otherwise this
 	// is Required.
 	Transform TransformFunc[StoreMsg]
+
+	// ToMemoryMinVersion and ToMemoryMaxVersion supply the bounds on
+	// `TransformVersion` that `ToMemory` is compatible with, and must satisfy
+	// `0 <= ToMemoryMinVersion <= TransformVersion <= ToMemoryMaxVersion`.
+	//
+	// To roll out a new `Transform` / `ToMemory` version without breaking active
+	// frontend or cron processes:
+	//  1. Increment `ToMemoryMaxVersion` and update `ToMemory` to support both
+	//     old and new versions.
+	//  2. Increment `TransformVersion` and update `Transform`.
+	//  3. Increment `ToMemoryMinVersion` and drop old version support from
+	//     `ToMemory`.
+	//
+	// If the stored StoreMsg has a TransformVersion > ToMemoryMaxVersion, the
+	// in-memory refresh loop will log a warning, and will not invoke ToMemory.
+	//
+	// If the stored StoreMsg has a TransformVersion < ToMemoryMinVersion, the
+	// in-memory refresh loop will log an error, and will not invoke ToMemory.
+	ToMemoryMinVersion int64
+	ToMemoryMaxVersion int64
+
+	// ToMemory, if supplied, transforms `StoreMsg` to `InMemory` any time the
+	// transformed config is updated in storage.
+	//
+	// The returned value is cached (returned from [RegisteredService.GetData]).
+	// If the config is deleted from storage, the cached value will be cleared
+	// (causing [RegisteredService.GetData] to return `MemoryDefault()`).
+	//
+	// The underlying store for the pipeline must implement [GettableStore], or
+	// this config cannot be registered.
+	//
+	// If StoreMsg == InMemory, a default implementation will be provided which
+	// passes through StoreMsg.
+	ToMemory ToMemoryFunc[StoreMsg, InMemory]
+
+	// MemoryDefault will be used when returning data without a loaded config
+	// (e.g. if the config does not exist yet).
+	//
+	// If omitted, then the default value will be the zero value of InMemory.
+	MemoryDefault func() InMemory
 }
 
-func (s *ServicePipeline[StoreMsg]) String() string {
+func (s *ServicePipeline[StoreMsg, InMemory]) String() string {
 	return fmt.Sprintf("ServicePipeline{ID: %q, ServiceName: %q}", s.ID, cmp.Or(s.ServiceName, "${appid}"))
 }
 
@@ -103,7 +147,7 @@ func (s *ServicePipeline[StoreMsg]) String() string {
 // Registering enables the pipeline when the Registry is used with the server:
 //   - Validation handlers will call TransformFunc.
 //   - Cron job will fetch and transform committed configs.
-func (s *ServicePipeline[StoreMsg]) Register(r *Registry) {
+func (s *ServicePipeline[StoreMsg, InMemory]) Register(r *Registry) {
 	register(r, s.Files, s.Transform, s.Store, &ingestConfig{
 		id:                 s.ID,
 		desc:               s.String(),

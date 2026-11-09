@@ -20,6 +20,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// PassthroughProjectPipeline is a shorthand for a [ProjectPipeline] whose
+// stored and in-memory types are identical.
+type PassthroughProjectPipeline[T proto.Message] = ProjectPipeline[T, T]
+
 // ProjectPipeline describes a pipeline to consume a snapshot of one or more
 // config files across all LUCI projects (one snapshot per project).
 //
@@ -27,7 +31,7 @@ import (
 // `StoreMsg`.
 //
 // This specifically uses the config set pattern of `regex:projects/.+`.
-type ProjectPipeline[StoreMsg proto.Message] struct {
+type ProjectPipeline[StoreMsg proto.Message, InMemory any] struct {
 	// ID uniquely identifies this pipeline within a [Registry] and in storage.
 	//
 	// Required.
@@ -75,9 +79,49 @@ type ProjectPipeline[StoreMsg proto.Message] struct {
 	// StoreMsg, the parsed message is passed through unchanged. Otherwise this
 	// is Required.
 	Transform TransformFunc[StoreMsg]
+
+	// ToMemoryMinVersion and ToMemoryMaxVersion supply the bounds on
+	// `TransformVersion` that `ToMemory` is compatible with, and must satisfy
+	// `0 <= ToMemoryMinVersion <= TransformVersion <= ToMemoryMaxVersion`.
+	//
+	// To roll out a new `Transform` / `ToMemory` version without breaking active
+	// frontend or cron processes:
+	//  1. Increment `ToMemoryMaxVersion` and update `ToMemory` to support both
+	//     old and new versions.
+	//  2. Increment `TransformVersion` and update `Transform`.
+	//  3. Increment `ToMemoryMinVersion` and drop old version support from
+	//     `ToMemory`.
+	//
+	// If the stored StoreMsg has a TransformVersion > ToMemoryMaxVersion, the
+	// in-memory refresh loop will log a warning, and will not invoke ToMemory.
+	//
+	// If the stored StoreMsg has a TransformVersion < ToMemoryMinVersion, the
+	// in-memory refresh loop will log an error, and will not invoke ToMemory.
+	ToMemoryMinVersion int64
+	ToMemoryMaxVersion int64
+
+	// ToMemory, if supplied, transforms `StoreMsg` to `InMemory` any time a
+	// project's transformed config is updated in storage.
+	//
+	// When a project's config is deleted from storage, the project's entry is
+	// deleted from the in-memory map (causing [RegisteredProjects.GetData] to
+	// return `MemoryDefault(project)`).
+	//
+	// The underlying store for the pipeline must implement [GettableStore], or
+	// this config cannot be registered.
+	//
+	// If StoreMsg == InMemory, a default implementation will be provided which
+	// passes through StoreMsg.
+	ToMemory ToMemoryFunc[StoreMsg, InMemory]
+
+	// MemoryDefault will be used when returning data for projects which have
+	// no loaded config.
+	//
+	// If omitted, then the default value will be the zero value of InMemory.
+	MemoryDefault func(project string) InMemory
 }
 
-func (pp *ProjectPipeline[StoreMsg]) String() string {
+func (pp *ProjectPipeline[StoreMsg, InMemory]) String() string {
 	return fmt.Sprintf("ProjectPipeline{ID: %q}", pp.ID)
 }
 
@@ -91,7 +135,7 @@ func (pp *ProjectPipeline[StoreMsg]) String() string {
 // Registering enables the pipeline when the Registry is used with the server:
 //   - Validation handlers will call TransformFunc.
 //   - Cron job will fetch and transform committed configs.
-func (pp *ProjectPipeline[StoreMsg]) Register(r *Registry) {
+func (pp *ProjectPipeline[StoreMsg, InMemory]) Register(r *Registry) {
 	register(r, pp.Files, pp.Transform, pp.Store, &ingestConfig{
 		id:               pp.ID,
 		desc:             pp.String(),

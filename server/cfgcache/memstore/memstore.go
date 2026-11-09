@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/server/module"
 )
 
-// Store implements a [cfgcache.Store] which supports in-memory subscription
+// Store implements a [cfgcache.Store] which supports in-memory refreshes
 // backed by an in-memory map.
 //
 // This is intended for writing tests.

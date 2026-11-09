@@ -35,7 +35,7 @@ func TestRegistryFetchConfigMeta(t *testing.T) {
 	setup := func(t testing.TB) (context.Context, *TestingState) {
 		ctx, ts := TestingContext(t.Context())
 
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&ProjectPipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "proj",
 			Store:            &noopStore[*durationpb.Duration]{},
 			TransformVersion: 1,
@@ -52,7 +52,7 @@ func TestRegistryFetchConfigMeta(t *testing.T) {
 			},
 		}).Register(ts.Registry)
 
-		(&ServicePipeline[*durationpb.Duration]{
+		(&ServicePipeline[*durationpb.Duration, NoMemoryRefresh]{
 			ID:               "service",
 			Store:            &noopStore[*durationpb.Duration]{},
 			TransformVersion: 1,
@@ -173,7 +173,7 @@ func TestRegistryFetchConfigMetaSingleProject(t *testing.T) {
 	setup := func(t testing.TB) (context.Context, *TestingState) {
 		ctx, ts := TestingContext(t.Context())
 
-		(&ProjectPipeline[*durationpb.Duration]{
+		(&PassthroughProjectPipeline[*durationpb.Duration]{
 			ID:    "proj-single",
 			Store: &noopStore[*durationpb.Duration]{},
 			Files: []File{
