@@ -272,17 +272,31 @@ func computeAttemptBuilds(ctx context.Context, r *run.Run) ([]*cvbqpb.Build, err
 				return nil, err
 			}
 			origin := cvbqpb.Build_NOT_REUSED
+			reuse := &cvbqpb.Build_Reuse{
+				Outcome: cvbqpb.Build_Reuse_OUTCOME_NOT_REUSED,
+			}
 			switch {
 			case executionAttempt.GetReused():
 				origin = cvbqpb.Build_REUSED
+				if executionAttempt.ReusedCommitDistance != nil {
+					reuse.Outcome = cvbqpb.Build_Reuse_OUTCOME_REUSE_COMMIT_WINDOW
+					reuse.CommitWindow = &cvbqpb.Build_Reuse_CommitWindow{
+						MaxCommitDistance: definition.GetReuseWindow().GetMaxCommitDistance(),
+						CommitDistance:    executionAttempt.GetReusedCommitDistance(),
+					}
+				} else {
+					reuse.Outcome = cvbqpb.Build_Reuse_OUTCOME_REUSE_TIME_WINDOW
+				}
 			case definition.GetDisableReuse():
 				origin = cvbqpb.Build_NOT_REUSABLE
+				reuse.Outcome = cvbqpb.Build_Reuse_OUTCOME_NOT_REUSABLE
 			}
 			ret = append(ret, &cvbqpb.Build{
 				Host:     host,
 				Id:       buildID,
 				Critical: definition.GetCritical(),
 				Origin:   origin,
+				Reuse:    reuse,
 			})
 		}
 	}

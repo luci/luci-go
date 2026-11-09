@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -57,6 +58,7 @@ func TestMakeAttempt(t *testing.T) {
 			gBuildID2     = 100002
 			gBuildID3     = 100003
 			gBuildID4     = 100004
+			gBuildID5     = 100005
 		)
 
 		plainBuilder := &buildbucketpb.BuilderID{
@@ -84,6 +86,9 @@ func TestMakeAttempt(t *testing.T) {
 							Builders: []*cfgpb.Verifiers_Tryjob_Builder{
 								{
 									Name: bbutil.FormatBuilderID(plainBuilder),
+									ReuseWindow: &cfgpb.ReuseWindow{
+										MaxCommitDistance: 800,
+									},
 								},
 								{
 									Name:         bbutil.FormatBuilderID(reuseDisabledBuilder),
@@ -151,6 +156,9 @@ func TestMakeAttempt(t *testing.T) {
 										Builder: plainBuilder,
 									},
 								},
+								ReuseWindow: &cfgpb.ReuseWindow{
+									MaxCommitDistance: 800,
+								},
 								Critical: true,
 							},
 							{
@@ -179,7 +187,13 @@ func TestMakeAttempt(t *testing.T) {
 						{
 							Attempts: []*tryjob.ExecutionState_Execution_Attempt{
 								{
-									ExternalId: string(tryjob.MustBuildbucketID(bbHost, gBuildID4)),
+									ExternalId:           string(tryjob.MustBuildbucketID(bbHost, gBuildID4)),
+									Status:               tryjob.Status_ENDED,
+									Reused:               true,
+									ReusedCommitDistance: proto.Int64(420),
+								},
+								{
+									ExternalId: string(tryjob.MustBuildbucketID(bbHost, gBuildID5)),
 									Status:     tryjob.Status_ENDED,
 									Reused:     true,
 								},
@@ -250,24 +264,49 @@ func TestMakeAttempt(t *testing.T) {
 						Id:       gBuildID1,
 						Origin:   cvbqpb.Build_NOT_REUSED,
 						Critical: true,
+						Reuse: &cvbqpb.Build_Reuse{
+							Outcome: cvbqpb.Build_Reuse_OUTCOME_NOT_REUSED,
+						},
 					},
 					{
 						Host:     bbHost,
 						Id:       gBuildID2,
 						Origin:   cvbqpb.Build_NOT_REUSABLE,
 						Critical: true,
+						Reuse: &cvbqpb.Build_Reuse{
+							Outcome: cvbqpb.Build_Reuse_OUTCOME_NOT_REUSABLE,
+						},
 					},
 					{
 						Host:     bbHost,
 						Id:       gBuildID3,
 						Origin:   cvbqpb.Build_NOT_REUSED,
 						Critical: false,
+						Reuse: &cvbqpb.Build_Reuse{
+							Outcome: cvbqpb.Build_Reuse_OUTCOME_NOT_REUSED,
+						},
 					},
 					{
 						Host:     bbHost,
 						Id:       gBuildID4,
 						Origin:   cvbqpb.Build_REUSED,
 						Critical: true,
+						Reuse: &cvbqpb.Build_Reuse{
+							Outcome: cvbqpb.Build_Reuse_OUTCOME_REUSE_COMMIT_WINDOW,
+							CommitWindow: &cvbqpb.Build_Reuse_CommitWindow{
+								MaxCommitDistance: 800,
+								CommitDistance:    420,
+							},
+						},
+					},
+					{
+						Host:     bbHost,
+						Id:       gBuildID5,
+						Origin:   cvbqpb.Build_REUSED,
+						Critical: true,
+						Reuse: &cvbqpb.Build_Reuse{
+							Outcome: cvbqpb.Build_Reuse_OUTCOME_REUSE_TIME_WINDOW,
+						},
 					},
 				},
 			}))
