@@ -17,6 +17,7 @@ package projectconfig
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -355,15 +356,31 @@ func fetchProject(c context.Context, cfg *configInterface.Config) (*Project, *pr
 	return &project, &miloCfg, &miloCfgMeta, nil
 }
 
-// prepareConsolesUpdate is called in a transaction to evaluate which Console
-// entities should be updated for a given project.
-//
-// Returns a list of entities to store to apply the update.
-func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[string]*projectconfigpb.Console,
-	project *Project, cfg *projectconfigpb.Project, meta *configInterface.Meta) ([]any, error) {
-	// If no Milo config was loaded, there are no consoles to update.
-	if cfg == nil {
-		return []any{}, nil
+const (
+	// maxConsolesPerBatch bounds the number of Console entities updated in a
+	// single Datastore transaction so projects with many consoles stay well
+	// under Cloud Datastore's 500-entity transaction limit.
+	maxConsolesPerBatch = 64
+
+	// maxBuildersPerBatch bounds the total number of builder references across
+	// Console entities updated in a single Datastore transaction. Each builder
+	// reference adds ~220 bytes to Console entities and ~1.8 KB of single-field
+	// and composite (Builders, Ordinal) index mutations when ordinals shift, so
+	// 4,000 builders keeps each transaction around ~8 MB (well under Cloud
+	// Datastore's 10 MiB RPC and 64 MiB internal transaction limits).
+	maxBuildersPerBatch = 4000
+)
+
+type resolvedConsole struct {
+	ordinal int
+	def     *projectconfigpb.Console
+}
+
+// resolveConsoles resolves external console references and header_id
+// references for all consoles in cfg upfront before applying Datastore updates.
+func resolveConsoles(knownProjects map[string]map[string]*projectconfigpb.Console, cfg *projectconfigpb.Project) ([]resolvedConsole, error) {
+	if cfg == nil || len(cfg.Consoles) == 0 {
+		return nil, nil
 	}
 
 	// Extract the headers into a map for convenience.
@@ -372,10 +389,9 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 		headers[header.Id] = header
 	}
 
-	// Iterate through all the proto consoles, adding and replacing the
-	// known ones if needed.
-	toPut := make([]any, 0, len(cfg.Consoles))
+	resolved := make([]resolvedConsole, 0, len(cfg.Consoles))
 	for i, pc := range cfg.Consoles {
+		cloned := false
 		// Resolve the console if it refers to one from a different project.
 		if pc.ExternalProject != "" {
 			// If ExternalProject is set, validation ensures ExternalId is also set.
@@ -395,35 +411,162 @@ func prepareConsolesUpdate(c context.Context, knownProjects map[string]map[strin
 			mergedPc.ExternalProject = pc.ExternalProject
 			mergedPc.ExternalId = pc.ExternalId
 			pc = mergedPc
+			cloned = true
 		}
 		if header, ok := headers[pc.HeaderId]; pc.Header == nil && ok {
 			// Inject a header if HeaderId is specified, and it doesn't already have one.
+			if !cloned {
+				pc = proto.Clone(pc).(*projectconfigpb.Console)
+			}
 			pc.Header = header
 		}
-		switch con, err := GetConsole(c, project.ID, pc.Id); {
-		case err == ErrConsoleNotFound:
-			// continue
-		case err != nil:
-			return nil, errors.Fmt("checking %s: %w", pc.Id, err)
-		case con.ConfigRevision == meta.Revision && con.Ordinal == i:
-			logging.Debugf(c, "skipping updates")
-			// Check if revisions match; if so just skip it.
-			// TODO(jchinlee): remove Ordinal check when Version field is added to Console.
-			continue
+		resolved = append(resolved, resolvedConsole{
+			ordinal: i,
+			def:     pc,
+		})
+	}
+	return resolved, nil
+}
+
+// batchConsoles partitions consoles into batches bounded by maxConsoles and
+// maxBuilders (always placing at least one console in each batch even if a
+// single console exceeds maxBuilders).
+func batchConsoles(consoles []resolvedConsole, maxConsoles, maxBuilders int) [][]resolvedConsole {
+	if len(consoles) == 0 {
+		return nil
+	}
+	var batches [][]resolvedConsole
+	var cur []resolvedConsole
+	curBuilders := 0
+	for _, con := range consoles {
+		nBuilders := len(con.def.Builders)
+		if len(cur) > 0 && (len(cur) >= maxConsoles || curBuilders+nBuilders > maxBuilders) {
+			batches = append(batches, cur)
+			cur = nil
+			curBuilders = 0
+		}
+		cur = append(cur, con)
+		curBuilders += nBuilders
+	}
+	if len(cur) > 0 {
+		batches = append(batches, cur)
+	}
+	return batches
+}
+
+// prepareConsolesBatchUpdate is called in a transaction to evaluate which
+// Console entities in batch should be updated for a given project.
+//
+// Returns a list of Console entities to store to apply the batch update.
+func prepareConsolesBatchUpdate(c context.Context, project *Project, batch []resolvedConsole, meta *configInterface.Meta) ([]any, error) {
+	if len(batch) == 0 {
+		return nil, nil
+	}
+
+	parentKey := datastore.KeyForObj(c, project)
+	existing := make([]*Console, len(batch))
+	for i, rc := range batch {
+		existing[i] = &Console{
+			Parent: parentKey,
+			ID:     rc.def.Id,
+		}
+	}
+
+	var getErrs errors.MultiError
+	if err := datastore.Get(c, existing); err != nil {
+		var ok bool
+		getErrs, ok = err.(errors.MultiError)
+		if !ok || len(getErrs) != len(existing) {
+			return nil, errors.Fmt("checking consoles for %s: %w", project.ID, err)
+		}
+	}
+
+	cfgURL := configURL(c, meta)
+	toPut := make([]any, 0, len(batch))
+	for i, rc := range batch {
+		pc := rc.def
+		found := true
+		if getErrs != nil {
+			switch err := getErrs[i]; {
+			case err == nil:
+				// Found in Datastore.
+			case err == datastore.ErrNoSuchEntity:
+				found = false
+			default:
+				return nil, errors.Fmt("checking %s: %w", pc.Id, err)
+			}
+		}
+
+		var builders []string
+		if found {
+			con := existing[i]
+			// Fast path for non-external consoles when the file revision and
+			// ordinal match.
+			if pc.GetExternalProject() == "" && con.ConfigRevision == meta.Revision && con.Ordinal == rc.ordinal {
+				logging.Debugf(c, "skipping updates")
+				continue
+			}
+			builders = pc.AllLegacyBuilderIDs()
+			if con.Ordinal == rc.ordinal &&
+				con.ConfigURL == cfgURL &&
+				con.Realm == pc.Realm &&
+				slices.Equal(con.Builders, builders) &&
+				proto.Equal(con.Def, pc) {
+				logging.Debugf(c, "skipping unchanged console %s/%s", project.ID, pc.Id)
+				continue
+			}
+		} else {
+			builders = pc.AllLegacyBuilderIDs()
 		}
 
 		toPut = append(toPut, &Console{
-			Parent:         datastore.KeyForObj(c, project),
+			Parent:         parentKey,
 			ID:             pc.Id,
-			Ordinal:        i,
-			ConfigURL:      configURL(c, meta),
+			Ordinal:        rc.ordinal,
+			ConfigURL:      cfgURL,
 			ConfigRevision: meta.Revision,
-			Builders:       pc.AllLegacyBuilderIDs(),
+			Builders:       builders,
 			Def:            proto.Clone(pc).(*projectconfigpb.Console),
 			Realm:          pc.Realm,
 		})
 	}
 	return toPut, nil
+}
+
+// applyProjectUpdate resolves and writes the Project and Console entities for a
+// single LUCI project across bounded Datastore transactions.
+func applyProjectUpdate(c context.Context, knownProjects map[string]map[string]*projectconfigpb.Console,
+	project *Project, cfg *projectconfigpb.Project, meta *configInterface.Meta) error {
+	resolved, err := resolveConsoles(knownProjects, cfg)
+	if err != nil {
+		return err
+	}
+	batches := batchConsoles(resolved, maxConsolesPerBatch, maxBuildersPerBatch)
+	if len(batches) == 0 {
+		return datastore.RunInTransaction(c, func(c context.Context) error {
+			return datastore.Put(c, project)
+		}, nil)
+	}
+	for i, batch := range batches {
+		isLastBatch := i == len(batches)-1
+		err := datastore.RunInTransaction(c, func(c context.Context) error {
+			toPut, err := prepareConsolesBatchUpdate(c, project, batch, meta)
+			if err != nil {
+				return err
+			}
+			if isLastBatch {
+				toPut = append(toPut, project)
+			}
+			if len(toPut) == 0 {
+				return nil
+			}
+			return datastore.Put(c, toPut)
+		}, nil)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // parseProjectACL parses project.cfg and extracts project ACL from it.
@@ -545,15 +688,7 @@ func UpdateProjects(c context.Context) error {
 				continue
 			}
 			tasks <- func() error {
-				// Apply datastore changes in a single transaction per project.
-				err := datastore.RunInTransaction(c, func(c context.Context) error {
-					toPut, err := prepareConsolesUpdate(c, knownProjects, res.project, res.miloCfg, res.miloCfgMeta)
-					if err != nil {
-						return err
-					}
-					toPut = append(toPut, res.project)
-					return datastore.Put(c, toPut)
-				}, nil)
+				err := applyProjectUpdate(c, knownProjects, res.project, res.miloCfg, res.miloCfgMeta)
 				if res.miloCfgMeta != nil {
 					return errors.WrapIf(err, "when applying config rev %q of %q", res.miloCfgMeta.Revision, res.miloCfgMeta.ConfigSet)
 				} else {

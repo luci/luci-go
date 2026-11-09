@@ -16,6 +16,8 @@ package projectconfig
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -29,6 +31,7 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/cfgclient"
 	memcfg "go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth"
@@ -571,4 +574,271 @@ func TestOldProtosStillReadable(t *testing.T) {
 	}
 
 	assert.That(t, actual, should.Match(expected))
+}
+
+func makeConsoleCfgText(id string, numBuilders int) string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "consoles: {\n\tid: %q\n\tbuilder_view_only: true\n", id)
+	for i := range numBuilders {
+		fmt.Fprintf(&sb, "\tbuilders: {\n\t\tname: \"buildbucket/luci.large.ci/builder-%s-%d\"\n\t}\n", id, i)
+	}
+	sb.WriteString("}\n")
+	return sb.String()
+}
+
+func TestBatchConsoles(t *testing.T) {
+	t.Parallel()
+
+	makeResolved := func(builderCounts ...int) []resolvedConsole {
+		out := make([]resolvedConsole, len(builderCounts))
+		for i, n := range builderCounts {
+			builders := make([]*projectconfigpb.Builder, n)
+			for j := range n {
+				builders[j] = &projectconfigpb.Builder{Name: fmt.Sprintf("b-%d", j)}
+			}
+			out[i] = resolvedConsole{
+				ordinal: i,
+				def: &projectconfigpb.Console{
+					Id:       fmt.Sprintf("c-%d", i),
+					Builders: builders,
+				},
+			}
+		}
+		return out
+	}
+
+	ftt.Run("batchConsoles", t, func(t *ftt.Test) {
+		t.Run("Empty input returns nil", func(t *ftt.Test) {
+			assert.Loosely(t, batchConsoles(nil, 64, 4000), should.BeNil)
+		})
+
+		t.Run("Splits by maxConsoles", func(t *ftt.Test) {
+			counts := make([]int, 150)
+			for i := range counts {
+				counts[i] = 1
+			}
+			batches := batchConsoles(makeResolved(counts...), 64, 4000)
+			assert.Loosely(t, batches, should.HaveLength(3))
+			assert.Loosely(t, batches[0], should.HaveLength(64))
+			assert.Loosely(t, batches[1], should.HaveLength(64))
+			assert.Loosely(t, batches[2], should.HaveLength(22))
+		})
+
+		t.Run("Splits by maxBuilders", func(t *ftt.Test) {
+			batches := batchConsoles(makeResolved(1500, 1500, 1500, 1500), 64, 4000)
+			assert.Loosely(t, batches, should.HaveLength(2))
+			assert.Loosely(t, batches[0], should.HaveLength(2))
+			assert.Loosely(t, batches[1], should.HaveLength(2))
+		})
+
+		t.Run("Isolates single console exceeding maxBuilders", func(t *ftt.Test) {
+			batches := batchConsoles(makeResolved(5000, 500), 64, 4000)
+			assert.Loosely(t, batches, should.HaveLength(2))
+			assert.Loosely(t, batches[0], should.HaveLength(1))
+			assert.Loosely(t, batches[0][0].ordinal, should.Equal(0))
+			assert.Loosely(t, batches[1], should.HaveLength(1))
+			assert.Loosely(t, batches[1][0].ordinal, should.Equal(1))
+		})
+	})
+}
+
+func TestUpdateProjectsBatching(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("UpdateProjects batching", t, func(t *ftt.Test) {
+		t.Run("Batches large builder counts and skips unchanged consoles on update", func(t *ftt.Test) {
+			c := gaetesting.TestingContext()
+			datastore.GetTestable(c).Consistent(true)
+
+			// 5 consoles * 1,500 builders = 7,500 builders (> maxBuildersPerBatch = 4,000),
+			// partitioning into 3 batches: [c0, c1], [c2, c3], [c4].
+			var initialCfg strings.Builder
+			for i := range 5 {
+				initialCfg.WriteString(makeConsoleCfgText(fmt.Sprintf("c%d", i), 1500))
+			}
+
+			cInitial, counterInitial := count.FilterRDS(cfgclient.Use(c, memcfg.New(map[config.Set]memcfg.Files{
+				"projects/large": {
+					"${appid}.cfg": initialCfg.String(),
+					"project.cfg":  `access: "a@example.com"`,
+				},
+			})))
+			assert.Loosely(t, UpdateProjects(cInitial), should.BeNil)
+			assert.Loosely(t, counterInitial.RunInTransaction.Successes(), should.Equal(3))
+
+			c0Before, err := GetConsole(c, "large", "c0")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, c0Before.Ordinal, should.Equal(0))
+			assert.Loosely(t, c0Before.Builders, should.HaveLength(1500))
+			initialRev := c0Before.ConfigRevision
+
+			// Insert a new console at index 1, shifting c1..c4 to ordinals 2..5
+			// while keeping c0 unchanged at ordinal 0.
+			var shiftedCfg strings.Builder
+			shiftedCfg.WriteString(makeConsoleCfgText("c0", 1500))
+			shiftedCfg.WriteString(makeConsoleCfgText("c_inserted", 1500))
+			for i := 1; i < 5; i++ {
+				shiftedCfg.WriteString(makeConsoleCfgText(fmt.Sprintf("c%d", i), 1500))
+			}
+
+			cShifted, counterShifted := count.FilterRDS(cfgclient.Use(c, memcfg.New(map[config.Set]memcfg.Files{
+				"projects/large": {
+					"${appid}.cfg": shiftedCfg.String(),
+					"project.cfg":  `access: "a@example.com"`,
+				},
+			})))
+			assert.Loosely(t, UpdateProjects(cShifted), should.BeNil)
+			assert.Loosely(t, counterShifted.RunInTransaction.Successes(), should.Equal(3))
+
+			// c0 did not change definition or ordinal, so it was not rewritten.
+			c0After, err := GetConsole(c, "large", "c0")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, c0After.Ordinal, should.Equal(0))
+			assert.Loosely(t, c0After.ConfigRevision, should.Equal(initialRev))
+
+			// c_inserted and shifted consoles c1..c4 were written with updated ordinals.
+			inserted, err := GetConsole(c, "large", "c_inserted")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inserted.Ordinal, should.Equal(1))
+			assert.Loosely(t, inserted.ConfigRevision, should.NotEqual(initialRev))
+
+			for i := 1; i < 5; i++ {
+				con, err := GetConsole(c, "large", fmt.Sprintf("c%d", i))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, con.Ordinal, should.Equal(i+1))
+				assert.Loosely(t, con.ConfigRevision, should.Equal(inserted.ConfigRevision))
+			}
+
+			// Modify only the last console (c4 at ordinal 5); batches 0 and 1 have
+			// zero changed consoles and issue no PutMulti calls.
+			var tailEditCfg strings.Builder
+			tailEditCfg.WriteString(makeConsoleCfgText("c0", 1500))
+			tailEditCfg.WriteString(makeConsoleCfgText("c_inserted", 1500))
+			for i := 1; i < 4; i++ {
+				tailEditCfg.WriteString(makeConsoleCfgText(fmt.Sprintf("c%d", i), 1500))
+			}
+			tailEditCfg.WriteString(makeConsoleCfgText("c4", 1501))
+
+			cTail, counterTail := count.FilterRDS(cfgclient.Use(c, memcfg.New(map[config.Set]memcfg.Files{
+				"projects/large": {
+					"${appid}.cfg": tailEditCfg.String(),
+					"project.cfg":  `access: "a@example.com"`,
+				},
+			})))
+			assert.Loosely(t, UpdateProjects(cTail), should.BeNil)
+			assert.Loosely(t, counterTail.RunInTransaction.Successes(), should.Equal(3))
+			assert.Loosely(t, counterTail.PutMulti.Successes(), should.Equal(1))
+
+			c4After, err := GetConsole(c, "large", "c4")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, c4After.Builders, should.HaveLength(1501))
+		})
+
+		t.Run("Batches large console counts (> maxConsolesPerBatch)", func(t *ftt.Test) {
+			c := gaetesting.TestingContext()
+			datastore.GetTestable(c).Consistent(true)
+
+			// 130 consoles (> 2 * 64) -> 3 batches (64, 64, 2).
+			var manyCfg strings.Builder
+			wantIDs := make([]string, 130)
+			for i := range 130 {
+				id := fmt.Sprintf("con-%03d", i)
+				wantIDs[i] = id
+				manyCfg.WriteString(makeConsoleCfgText(id, 1))
+			}
+
+			cMany, counter := count.FilterRDS(cfgclient.Use(c, memcfg.New(map[config.Set]memcfg.Files{
+				"projects/many": {
+					"${appid}.cfg": manyCfg.String(),
+					"project.cfg":  `access: "a@example.com"`,
+				},
+			})))
+			assert.Loosely(t, UpdateProjects(cMany), should.BeNil)
+			assert.Loosely(t, counter.RunInTransaction.Successes(), should.Equal(3))
+
+			cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:a@example.com"})
+			consoles, err := GetProjectConsoles(cUser, "many")
+			assert.Loosely(t, err, should.BeNil)
+			gotIDs := make([]string, len(consoles))
+			for i, con := range consoles {
+				gotIDs[i] = con.ID
+			}
+			assert.Loosely(t, gotIDs, should.Match(wantIDs))
+		})
+
+		t.Run("Updates external console when upstream project changes", func(t *ftt.Test) {
+			c := gaetesting.TestingContext()
+			datastore.GetTestable(c).Consistent(true)
+
+			downstreamCfg := `
+consoles: {
+	id: "ext"
+	name: "ext"
+	external_project: "upstream"
+	external_id: "main"
+}
+`
+			c1 := cfgclient.Use(c, memcfg.New(map[config.Set]memcfg.Files{
+				"projects/upstream": {
+					"${appid}.cfg": makeConsoleCfgText("main", 1),
+					"project.cfg":  `access: "a@example.com"`,
+				},
+				"projects/downstream": {
+					"${appid}.cfg": downstreamCfg,
+					"project.cfg":  `access: "a@example.com"`,
+				},
+			}))
+			assert.Loosely(t, UpdateProjects(c1), should.BeNil)
+
+			extBefore, err := GetConsole(c, "downstream", "ext")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, extBefore.Builders, should.HaveLength(1))
+
+			// Update upstream without changing downstream's config revision.
+			c2 := cfgclient.Use(c, memcfg.New(map[config.Set]memcfg.Files{
+				"projects/upstream": {
+					"${appid}.cfg": makeConsoleCfgText("main", 2),
+					"project.cfg":  `access: "a@example.com"`,
+				},
+				"projects/downstream": {
+					"${appid}.cfg": downstreamCfg,
+					"project.cfg":  `access: "a@example.com"`,
+				},
+			}))
+			assert.Loosely(t, UpdateProjects(c2), should.BeNil)
+
+			extAfter, err := GetConsole(c, "downstream", "ext")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, extAfter.Builders, should.HaveLength(2))
+		})
+
+		t.Run("Fails upfront without partial writes if later batch has invalid external console", func(t *ftt.Test) {
+			c := gaetesting.TestingContext()
+			datastore.GetTestable(c).Consistent(true)
+
+			var brokenCfg strings.Builder
+			for i := range 65 {
+				brokenCfg.WriteString(makeConsoleCfgText(fmt.Sprintf("con-%03d", i), 1))
+			}
+			brokenCfg.WriteString(`
+consoles: {
+	id: "bad-ext"
+	name: "bad-ext"
+	external_project: "nonexistent"
+	external_id: "main"
+}
+`)
+			cBroken := cfgclient.Use(c, memcfg.New(map[config.Set]memcfg.Files{
+				"projects/broken": {
+					"${appid}.cfg": brokenCfg.String(),
+					"project.cfg":  `access: "a@example.com"`,
+				},
+			}))
+			assert.Loosely(t, UpdateProjects(cBroken), should.NotBeNil)
+
+			// First batch must not have been partially committed.
+			_, err := GetConsole(c, "broken", "con-000")
+			assert.Loosely(t, err, should.Equal(ErrConsoleNotFound))
+		})
+	})
 }
