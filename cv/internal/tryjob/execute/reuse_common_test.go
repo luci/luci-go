@@ -188,7 +188,8 @@ func TestCanReuse(t *testing.T) {
 			}
 			makeGitilesTryjob := func(pos uint32, age time.Duration) *tryjob.Tryjob {
 				return &tryjob.Tryjob{
-					Status: tryjob.Status_ENDED,
+					ExternalID: tryjob.MustBuildbucketID("cr-buildbucket.appspot.com", 100001),
+					Status:     tryjob.Status_ENDED,
 					Result: &tryjob.Result{
 						CreateTime: timestamppb.New(ct.Clock.Now().Add(-age)),
 						Status:     tryjob.Result_SUCCEEDED,
@@ -209,6 +210,7 @@ func TestCanReuse(t *testing.T) {
 			t.Run("within commit-distance reuse window (older than 24h)", func(t *ftt.Test) {
 				tj := makeGitilesTryjob(950, 26*time.Hour)
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+				assert.Loosely(t, w.reusedCommitDistances[tj.ExternalID], should.Equal(int64(50)))
 				assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowCommitPosition, true), should.Equal(1))
 			})
 

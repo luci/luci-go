@@ -27,6 +27,7 @@ import (
 	bbpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -731,6 +732,79 @@ func TestExecutePlan(t *testing.T) {
 						},
 					}))
 				assert.Loosely(t, executor.stagedMetricReportFns, should.BeEmpty)
+			})
+
+			t.Run("Tryjob reused with commit-distance window", func(t *ftt.Test) {
+				defWithDistance := proto.Clone(def).(*tryjob.Definition)
+				defWithDistance.ReuseWindow = &cfgpb.ReuseWindow{
+					MaxCommitDistance: 800,
+				}
+				tj := tryjob.MustBuildbucketID(bbHost, buildID).MustCreateIfNotExists(ctx)
+				tj.EVersion = 1
+				tj.EntityCreateTime = now.Add(-staleTryjobAge * 2) // older than 24h
+				tj.EntityUpdateTime = now.Add(-1 * time.Minute)
+				tj.ReuseKey = computeReuseKey([]*run.RunCL{runCL}, nil)
+				tj.CLPatchsets = tryjob.CLPatchsets{tryjob.MakeCLPatchset(runCL.ID, gPatchset)}
+				tj.Definition = defWithDistance
+				tj.Status = tryjob.Status_ENDED
+				tj.LaunchedBy = common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh"))
+				tj.Result = &tryjob.Result{
+					CreateTime: timestamppb.New(now.Add(-staleTryjobAge * 2)),
+					Backend: &tryjob.Result_Buildbucket_{
+						Buildbucket: &tryjob.Result_Buildbucket{
+							Id:      buildID,
+							Builder: builder,
+							OutputGitilesCommit: &bbpb.GitilesCommit{
+								Host:     "chromium.googlesource.com",
+								Project:  "chromium/src",
+								Ref:      "refs/heads/main",
+								Position: 10000,
+							},
+						},
+					},
+					Status: tryjob.Result_SUCCEEDED,
+				}
+				assert.NoErr(t, datastore.Put(ctx, tj))
+
+				executor.GitilesFactory = ct.GitilesFactory()
+				ct.GitilesFake.SetRepository("chromium.googlesource.com", "chromium/src", map[string]string{
+					"refs/heads/main": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+				}, []*git.Commit{
+					{
+						Id:      "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+						Message: "Branch tip\n\nCr-Commit-Position: refs/heads/main@{#10420}",
+					},
+				})
+
+				exec := &tryjob.ExecutionState_Execution{}
+				state := &tryjob.ExecutionState{
+					Executions: []*tryjob.ExecutionState_Execution{exec},
+					Requirement: &tryjob.Requirement{
+						Definitions: []*tryjob.Definition{defWithDistance},
+					},
+					Status: tryjob.ExecutionState_RUNNING,
+				}
+				state, err := executor.executePlan(ctx, &plan{
+					triggerNewAttempt: []planItem{
+						{
+							definition: defWithDistance,
+							execution:  exec,
+						},
+					},
+				}, r, state)
+				assert.NoErr(t, err)
+				assert.That(t, state.GetStatus(), should.Equal(tryjob.ExecutionState_RUNNING))
+				assert.That(t, state.GetExecutions()[0].GetAttempts(), should.Match(
+					[]*tryjob.ExecutionState_Execution_Attempt{
+						{
+							TryjobId:             int64(tj.ID),
+							ExternalId:           string(tryjob.MustBuildbucketID(bbHost, buildID)),
+							Status:               tryjob.Status_ENDED,
+							Result:               tj.Result,
+							Reused:               true,
+							ReusedCommitDistance: proto.Int64(420),
+						},
+					}))
 			})
 
 			t.Run("When Tryjob can't be reused, thus launch a new Tryjob", func(t *ftt.Test) {

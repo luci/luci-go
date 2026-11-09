@@ -20,6 +20,7 @@ import (
 	"slices"
 	"sort"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock"
@@ -32,9 +33,19 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
+// startedTryjob represents a Tryjob triggered or reused by startTryjobs along
+// with any per-attempt reuse metadata evaluated during reuse discovery.
+type startedTryjob struct {
+	tryjob *tryjob.Tryjob
+	// reusedCommitDistance is the commit distance evaluated when reusing a
+	// Tryjob via the commit-distance window. Nil if the Tryjob was not reused
+	// via the commit-distance window (as 0 is a valid commit distance).
+	reusedCommitDistance *int64
+}
+
 // startTryjobs triggers Tryjobs for the given Definitions by either reusing
 // existing Tryjobs or launching new ones.
-func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*tryjob.Definition, executions []*tryjob.ExecutionState_Execution) ([]*tryjob.Tryjob, error) {
+func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*tryjob.Definition, executions []*tryjob.ExecutionState_Execution) ([]startedTryjob, error) {
 	cls, err := run.LoadRunCLs(ctx, r.ID, r.CLs)
 	if err != nil {
 		return nil, err
@@ -65,12 +76,20 @@ func (e *Executor) startTryjobs(ctx context.Context, r *run.Run, definitions []*
 	sort.Sort(w.clPatchsets)
 	w.findReuseFns = append(w.findReuseFns, w.findReuseInCV, w.findReuseInBackend)
 
-	ret, err := w.start(ctx, definitions)
+	tryjobs, err := w.start(ctx, definitions)
 	for _, le := range w.logEntries {
 		e.log(le)
 	}
 	if err != nil {
 		return nil, err
+	}
+	ret := make([]startedTryjob, len(tryjobs))
+	for i, tj := range tryjobs {
+		st := startedTryjob{tryjob: tj}
+		if dist, ok := w.reusedCommitDistances[tj.ExternalID]; ok {
+			st.reusedCommitDistance = proto.Int64(dist)
+		}
+		ret[i] = st
 	}
 	return ret, nil
 }
@@ -90,8 +109,9 @@ type worker struct {
 	gitilesFactory gitiles.Factory
 	mutator        *tryjob.Mutator
 
-	findReuseFns []findReuseFn
-	logEntries   []*tryjob.ExecutionLogEntry
+	findReuseFns          []findReuseFn
+	logEntries            []*tryjob.ExecutionLogEntry
+	reusedCommitDistances map[tryjob.ExternalID]int64
 }
 
 func (w *worker) makeBaseTryjob(ctx context.Context, def *tryjob.Definition) *tryjob.Tryjob {

@@ -507,16 +507,17 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 			executions[i] = item.execution
 		}
 
-		tryjobs, err := e.startTryjobs(ctx, r, definitions, executions)
+		startedTryjobs, err := e.startTryjobs(ctx, r, definitions, executions)
 		if err != nil {
 			return nil, err
 		}
 
 		project, configGroup := r.ID.LUCIProject(), r.ConfigGroupID.Name()
 		var earliestCreated time.Time
-		for i, tj := range tryjobs {
+		for i, st := range startedTryjobs {
+			tj := st.tryjob
 			def, exec := definitions[i], executions[i]
-			attempt := convertToAttempt(tj, r.ID)
+			attempt := convertToAttempt(st, r.ID)
 			exec.Attempts = append(exec.Attempts, attempt)
 			if !attempt.Reused && attempt.Status != tryjob.Status_UNTRIGGERED {
 				isRetry := len(exec.Attempts) > 1
@@ -563,7 +564,8 @@ func (e *Executor) executePlan(ctx context.Context, p *plan, r *run.Run, execSta
 	return execState, nil
 }
 
-func convertToAttempt(tj *tryjob.Tryjob, id common.RunID) *tryjob.ExecutionState_Execution_Attempt {
+func convertToAttempt(st startedTryjob, id common.RunID) *tryjob.ExecutionState_Execution_Attempt {
+	tj := st.tryjob
 	ret := &tryjob.ExecutionState_Execution_Attempt{
 		TryjobId:   int64(tj.ID),
 		ExternalId: string(tj.ExternalID),
@@ -572,6 +574,7 @@ func convertToAttempt(tj *tryjob.Tryjob, id common.RunID) *tryjob.ExecutionState
 	}
 	if slices.Contains(tj.ReusedBy, id) {
 		ret.Reused = true
+		ret.ReusedCommitDistance = st.reusedCommitDistance
 	}
 	return ret
 }

@@ -193,6 +193,10 @@ func (w *worker) verifyCommitDistance(ctx context.Context, tj *tryjob.Tryjob, ma
 	if dist > int64(maxDist) {
 		return false, nil
 	}
+	if w.reusedCommitDistances == nil {
+		w.reusedCommitDistances = make(map[tryjob.ExternalID]int64)
+	}
+	w.reusedCommitDistances[tj.ExternalID] = dist
 	return true, nil
 }
 
