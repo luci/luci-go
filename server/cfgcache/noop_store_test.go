@@ -16,32 +16,42 @@ package cfgcache
 
 import (
 	"context"
+	"iter"
 
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/config"
 
+	cfgcachecommon "go.chromium.org/luci/server/cfgcache/common"
 	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 	"go.chromium.org/luci/server/module"
 )
 
-type noopStore[T proto.Message] struct {
+type noGetNoopStore[T proto.Message] struct {
 	lastPut T
 }
 
-func (*noopStore[T]) ModuleDependencies() []module.Dependency {
+func (*noGetNoopStore[T]) ModuleDependencies() []module.Dependency {
 	return []module.Dependency{module.OptionalDependency(ModuleName)}
 }
 
-func (*noopStore[T]) LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]*cfgcachepb.Meta, error) {
+func (*noGetNoopStore[T]) LoadMeta(ctx context.Context, pipelineID string) (map[config.Set]*cfgcachepb.Meta, error) {
 	return nil, nil
 }
 
-func (s *noopStore[T]) Put(ctx context.Context, pipelineID string, cs config.Set, m *cfgcachepb.Meta, out T) error {
+func (s *noGetNoopStore[T]) Put(ctx context.Context, pipelineID string, cs config.Set, m *cfgcachepb.Meta, out T) error {
 	s.lastPut = out
 	return nil
 }
 
-func (*noopStore[T]) Delete(ctx context.Context, pipelineID string, sets []config.Set) error {
+func (*noGetNoopStore[T]) Delete(ctx context.Context, pipelineID string, sets []config.Set) error {
 	return nil
+}
+
+type noopStore[T proto.Message] struct {
+	noGetNoopStore[T]
+}
+
+func (*noopStore[T]) Get(ctx context.Context, pipelineID string, sets map[config.Set]*cfgcachepb.Meta) iter.Seq2[*cfgcachecommon.StoredConfig[T], error] {
+	return func(yield func(*cfgcachecommon.StoredConfig[T], error) bool) {}
 }
