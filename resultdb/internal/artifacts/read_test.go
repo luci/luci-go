@@ -76,6 +76,7 @@ func TestListFuzzyMatches(t *testing.T) {
 			insert.Artifact(invID, parentID, "adb-connect-logs_123.txt", nil),
 			insert.Artifact(invID, parentID, "adb-connect-logs_456.txt", nil),
 			insert.Artifact(invID, parentID, "other-log.txt", nil),
+			insert.Artifact(invID, "", "14361234/target_a/inv_987/host_log_222.txt", nil),
 		)
 
 		t.Run(`Matches with digits removed`, func(t *ftt.Test) {
@@ -87,6 +88,15 @@ func TestListFuzzyMatches(t *testing.T) {
 			ids := []string{arts[0].ArtifactId, arts[1].ArtifactId}
 			sort.Strings(ids)
 			assert.Loosely(t, ids, should.Match([]string{"adb-connect-logs_123.txt", "adb-connect-logs_456.txt"}))
+		})
+
+		t.Run(`Matches basename across different directory prefixes`, func(t *ftt.Test) {
+			ctx, cancel := span.ReadOnlyTransaction(ctx)
+			defer cancel()
+			arts, err := ListFuzzyMatches(ctx, invID, "", "P143639465/presubmit_target/inv_123/host_log_999.txt", 10)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, arts, should.HaveLength(1))
+			assert.Loosely(t, arts[0].ArtifactId, should.Equal("14361234/target_a/inv_987/host_log_222.txt"))
 		})
 
 		t.Run(`Does not match different base names`, func(t *ftt.Test) {

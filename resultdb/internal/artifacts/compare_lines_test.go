@@ -66,10 +66,30 @@ func TestProcessComparisonReader(t *testing.T) {
 			assert.Loosely(t, err, should.Equal(errBinaryFileDetected))
 		})
 
-		t.Run("detects invalid utf8", func(t *ftt.Test) {
-			reader := bytes.NewReader(append([]byte("valid line\n"), 0xff, 0xfe, 0xfd))
+		t.Run("detects nul bytes", func(t *ftt.Test) {
+			reader := bytes.NewReader(append([]byte("valid line\n"), 0x00, 0x01, 0x02))
 			_, err := ProcessComparisonReader(context.Background(), reader)
 			assert.Loosely(t, err, should.Equal(errBinaryFileDetected))
+		})
+
+		t.Run("tolerates invalid utf8 bytes without nul bytes", func(t *ftt.Test) {
+			lineWithInvalidUTF8 := append([]byte("text line "), 0xff, 0xfe)
+			reader := bytes.NewReader(append([]byte("valid line\n"), lineWithInvalidUTF8...))
+			hashes, err := ProcessComparisonReader(context.Background(), reader)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(hashes), should.Equal(2))
+
+			failReader := bytes.NewReader(lineWithInvalidUTF8)
+			resp, err := ProcessFailingReader(
+				context.Background(),
+				failReader,
+				make(map[int64]struct{}),
+				pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT,
+				1000, 0, 0,
+			)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp.FailureOnlyRanges, should.HaveLength(1))
+			assert.Loosely(t, resp.FailureOnlyRanges[0].Lines, should.Match([]string{"text line \uFFFD"}))
 		})
 
 		t.Run("normalizes logcat lines across varying PID/TID widths and numeric UID columns", func(t *ftt.Test) {

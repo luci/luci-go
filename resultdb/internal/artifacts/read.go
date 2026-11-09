@@ -71,15 +71,15 @@ func FilterHasArtifacts(ctx context.Context, invIDs invocations.IDSet) (invocati
 	return hasArtifacts, nil
 }
 
-// ListFuzzyMatches returns artifacts that match the given artifact ID after
-// removing digits.
+// ListFuzzyMatches returns artifacts that match the basename of the given
+// artifact ID after removing digits.
 func ListFuzzyMatches(ctx context.Context, invID invocations.ID, parentID string, artifactID string, limit int) ([]*Artifact, error) {
 	st := spanner.NewStatement(`
 		SELECT InvocationId, ParentId, ArtifactId, ContentType, ArtifactType, Size, RBECASHash, GcsURI, RBEURI
 		FROM Artifacts
 		WHERE InvocationId = @invID
 			AND ParentId = @parentID
-			AND REGEXP_REPLACE(ArtifactId, r'[0-9]', '') = REGEXP_REPLACE(@artifactId, r'[0-9]', '')
+			AND REGEXP_REPLACE(IFNULL(REGEXP_EXTRACT(ArtifactId, r'[^/]+$'), ArtifactId), r'[0-9]', '') = REGEXP_REPLACE(IFNULL(REGEXP_EXTRACT(@artifactId, r'[^/]+$'), @artifactId), r'[0-9]', '')
 		LIMIT @limit
 	`)
 	st.Params = map[string]any{

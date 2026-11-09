@@ -22,7 +22,6 @@ import (
 	"io"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 
 	farm "github.com/leemcloughlin/gofarmhash"
 	"google.golang.org/api/iterator"
@@ -39,7 +38,7 @@ const (
 )
 
 var (
-	errBinaryFileDetected = appstatus.Errorf(codes.InvalidArgument, "artifact appears to be a binary file (contains lines over %d KB or invalid UTF-8 sequences)", maxLineLengthBytes/1024)
+	errBinaryFileDetected = appstatus.Errorf(codes.InvalidArgument, "artifact appears to be a binary file (contains lines over %d KB or NUL bytes)", maxLineLengthBytes/1024)
 	normalizePattern      = `(?:(?:(Sat|Sun|Mon|Tue|Wed|Thu|Fri|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|UTC|PDT|PST)[,\s]+))|(?:(?:([A-fa-f0-9]{1,4}::?){1,7}[A-fa-f0-9]{1,4}))|(?:(?:([A-fa-f0-9]{2}[:-]){5}[A-fa-f0-9]{2}))|(?:(?:https?\:\S*))|(?:(?:\/[user|usr|tmp|dev|home|run|devices|lib|root]+\/\S*))|(?:(?:chromeos\d+-row\d+-\S*|chrome-bot@S*))|(?:(?:SSID=\S*))|(?:(?:hexdump\(len=.*))|(?:(?:\w{32,}))|(?:(?:0x[A-fa-f0-9]+|[A-fa-f0-9x]{8,}|[A-fa-f0-9]{4,}[\-\_\'\]+|\:[A-fa-f0-9]{4,}))|(?:(?:(-)?[0-9]+))`
 	normalizeRegex        = regexp.MustCompile(normalizePattern)
 )
@@ -261,10 +260,11 @@ func ProcessFailingReader(ctx context.Context, r io.Reader, comparisonHashes map
 }
 
 func hashLine(line []byte) (int64, error) {
-	if !utf8.Valid(line) {
+	if bytes.IndexByte(line, 0) != -1 {
 		return 0, errBinaryFileDetected
 	}
-	normalized := normalizeRegex.ReplaceAllString(string(line), "")
+	validLine := strings.ToValidUTF8(string(line), "\uFFFD")
+	normalized := normalizeRegex.ReplaceAllString(validLine, "")
 	normalized = strings.Join(strings.Fields(normalized), " ")
 	return int64(farm.FingerPrint64([]byte(normalized))), nil
 }
@@ -273,7 +273,7 @@ func linesFromBytes(b []byte) []string {
 	byteLines := bytes.Split(b, []byte("\n"))
 	lines := make([]string, len(byteLines))
 	for i, l := range byteLines {
-		lines[i] = string(l)
+		lines[i] = strings.ToValidUTF8(string(l), "\uFFFD")
 	}
 	return lines
 }

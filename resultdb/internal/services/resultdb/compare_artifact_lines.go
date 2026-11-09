@@ -178,7 +178,8 @@ func (s *resultDBServer) CompareArtifactLines(ctx context.Context, request *pb.C
 						hashes, err := s.hashArtifact(ctx, artifactName, getGSClient)
 						if err != nil {
 							code := appstatus.Code(err)
-							if code == codes.PermissionDenied || code == codes.Unauthenticated || code == codes.NotFound {
+							if code == codes.PermissionDenied || code == codes.Unauthenticated || code == codes.NotFound ||
+								(code == codes.InvalidArgument && len(request.Artifacts) == 0) {
 								return nil
 							}
 							return err
@@ -238,7 +239,7 @@ func (s *resultDBServer) hashArtifact(ctx context.Context, artifactName string, 
 
 	hashes, err := artifacts.ProcessComparisonReader(ctx, reader)
 	if err != nil {
-		return nil, fmt.Errorf("processing reader for comparison artifact %s: %w", artifactName, err)
+		return nil, errors.Fmt("processing reader for comparison artifact %s: %w", artifactName, err)
 	}
 	return hashes, nil
 }
