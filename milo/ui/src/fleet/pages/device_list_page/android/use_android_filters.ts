@@ -14,7 +14,6 @@
 
 import { useMemo } from 'react';
 
-import { useFeatureFlag } from '@/common/feature_flags';
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
 import {
@@ -24,7 +23,6 @@ import {
   FilterCategoryBuilder,
 } from '@/fleet/components/filters/use_filters';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { enablePTE } from '@/fleet/features';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -46,7 +44,6 @@ export const useAndroidFilters = (
 
   const onFilterChangeCallback = useTrackedFilterChange(onFilterChange);
 
-  const isPTEEnabled = useFeatureFlag(enablePTE);
   const filterOptions = useMemo(() => {
     const extraFilters: Record<
       string,
@@ -88,7 +85,7 @@ export const useAndroidFilters = (
       ...Object.entries(mergedLabels),
     ]) {
       let values = value.values;
-      if (key === 'host_group' && isPTEEnabled) {
+      if (key === 'host_group') {
         values = values.filter((v) => v !== 'pte_labs');
       }
       if (values.length === 0) continue;
@@ -119,7 +116,6 @@ export const useAndroidFilters = (
     showAvgUtilization,
     isDimensionsQueryProperlyLoaded,
     dimensionsQuery.data,
-    isPTEEnabled,
     workspace,
   ]);
 

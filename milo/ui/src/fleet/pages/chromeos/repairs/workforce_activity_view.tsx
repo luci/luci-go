@@ -53,14 +53,12 @@ import {
   platformToURL,
 } from '@/fleet/constants/paths';
 import {
-  enableChromeOsWorkforceActivity,
   enableWorkforceInProgressRepairs,
   enableWorkforcePickupRank,
   enableWorkforceTimeframeFilter,
 } from '@/fleet/features';
 import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
-import { PageNotFoundPage } from '@/fleet/pages/not_found_page';
 import { colors } from '@/fleet/theme/colors';
 import { prettySeconds } from '@/fleet/utils/dates';
 import { getErrorMessage } from '@/fleet/utils/errors';
@@ -856,12 +854,6 @@ export const WorkforceActivityView = ({
 };
 
 export function Component() {
-  const isEnabled = useFeatureFlag(enableChromeOsWorkforceActivity);
-
-  if (!isEnabled) {
-    return <PageNotFoundPage />;
-  }
-
   return (
     <TrackLeafRoutePageView contentGroup="fleet-console-chromeos-repairs-workforce">
       <FleetHelmet pageTitle="ChromeOS Workforce Activity" />

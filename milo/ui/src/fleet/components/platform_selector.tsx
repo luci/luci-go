@@ -27,7 +27,6 @@ import {
 import _ from 'lodash';
 import { useState } from 'react';
 
-import { useFeatureFlag } from '@/common/feature_flags';
 import androidLogo from '@/fleet/assets/logos/android.png';
 import browserLogo from '@/fleet/assets/logos/browser.png';
 import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
@@ -42,8 +41,6 @@ import {
   radii,
 } from '@/fleet/theme/tokens';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-
-import { enablePTE } from '../features';
 
 import { useShortcut } from './shortcut_provider';
 
@@ -74,16 +71,16 @@ function PlatformLogo({ platform }: { platform?: Platform }) {
   );
 }
 
+const PLATFORMS: Platform[] = [
+  Platform.CHROMEOS,
+  Platform.CHROMIUM,
+  Platform.ANDROID,
+  Platform.PIXEL,
+];
+
 export function PlatformSelector() {
   const platform = usePlatform();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
-
-  const PLATFORMS: Platform[] = [
-    Platform.CHROMEOS,
-    Platform.CHROMIUM,
-    Platform.ANDROID,
-    ...(useFeatureFlag(enablePTE) ? [Platform.PIXEL] : []),
-  ];
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -120,7 +117,7 @@ export function PlatformSelector() {
     'Switch to Pixel',
     'g x',
     () => handlePlatformSelect(Platform.PIXEL),
-    { category: 'Navigation', enabled: useFeatureFlag(enablePTE) },
+    { category: 'Navigation' },
   );
 
   return (

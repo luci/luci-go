@@ -60,14 +60,6 @@ export const enableAndroidUtilizationMetrics = createFleetFeatureFlag({
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enablePTE = createFleetFeatureFlag({
-  description: 'Enables PTE support in the fleet console.',
-  name: 'pte-support',
-  percentage: 100,
-  trackingBug: '503760268',
-  allowedEnvironments: ['dev', 'prod'],
-});
-
 // Gates the Physical Sites directory at /ui/fleet/sites
 // (http://goto.google.com/fcon-labs-directory-design). Named "Physical Sites" (/sites) over
 // "Physical Labs" via a 6-candidate naming tournament to match FLOPS site
@@ -84,29 +76,12 @@ export const enablePhysicalSites = createFleetFeatureFlag({
   allowedEnvironments: ['dev', 'prod'],
 });
 
-export const enableChromeOsRepairsDashboard = createFleetFeatureFlag({
-  description: 'Displays the ChromeOS Repair Dashboard shell.',
-  name: 'chromeos-repairs-dashboard',
-  percentage: 100,
-  trackingBug: '542600108',
-  allowedEnvironments: ['dev', 'prod'],
-});
-
 export const enableAndroidHealthMetrics = createFleetFeatureFlag({
   description:
     'Displays unified Android device health metrics based on health categories.',
   name: 'android-health-metrics',
   percentage: 100,
   trackingBug: '537412303',
-  allowedEnvironments: ['dev', 'prod'],
-});
-
-export const enableChromeOsWorkforceActivity = createFleetFeatureFlag({
-  description:
-    'Displays the ChromeOS Workforce Activity monitoring view in repairs.',
-  name: 'chromeos-workforce-activity',
-  percentage: 100,
-  trackingBug: '565724356',
   allowedEnvironments: ['dev', 'prod'],
 });
 
@@ -143,17 +118,6 @@ export const enableUnifiedTaskHistory = createFleetFeatureFlag({
     prod: 100,
   },
   trackingBug: '537908463',
-  allowedEnvironments: ['dev', 'prod'],
-});
-
-export const enablePixelDeviceRestoration = createFleetFeatureFlag({
-  description: 'Enables creating restoration bugs for Pixel devices.',
-  name: 'pixel-device-restoration',
-  percentage: {
-    dev: 100,
-    prod: 100,
-  },
-  trackingBug: '564815043',
   allowedEnvironments: ['dev', 'prod'],
 });
 

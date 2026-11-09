@@ -182,8 +182,7 @@ describe('<ChromeOSRepairDashboard /> (Repair Queue & Claiming)', () => {
     await then.repairTaskHasRank('chromeos15-row2-rack3-host52', 52);
   });
 
-  it('renders Workforce Activity button with In-Progress chip and navigates when feature flag is enabled', async () => {
-    given.workforceActivityEnabled();
+  it('renders Workforce Activity button with In-Progress chip and navigates', async () => {
     given.repairQueue([
       aRepairQueueItem(1).unclaimed(),
       aRepairQueueItem(2).claimedBy('user@example.com'),
@@ -194,14 +193,6 @@ describe('<ChromeOSRepairDashboard /> (Repair Queue & Claiming)', () => {
 
     await when.userOpensWorkforceActivity();
     then.navigatedTo('/ui/fleet/p/chromeos/repairs/workforce');
-  });
-
-  it('hides Workforce Activity button when feature flag is disabled', () => {
-    given.workforceActivityDisabled();
-    given.repairQueue([aRepairQueueItem(1).unclaimed()]);
-
-    when.dashboardIsRendered();
-    then.workforceActivityIsNotVisible();
   });
 
   it('automatically polls backend every 10s (refetchInterval) and reflects updated repair queue & IRM incidents', async () => {
@@ -254,7 +245,6 @@ describe('<ChromeOSRepairDashboard /> (Repair Queue & Claiming)', () => {
   });
 
   it('allows taking over a repair task claimed by another engineer without incrementing In-Progress', async () => {
-    given.workforceActivityEnabled();
     given.repairQueue([
       aRepairQueueItem(1)
         .withDutId('chromeos15-row2-rack3-host4')

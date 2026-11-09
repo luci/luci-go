@@ -19,9 +19,6 @@ import { mockPrpc } from './common/utils';
 describe('Pixel Devices Page', () => {
   beforeEach(() => {
     cy.clearLocalStorage();
-    cy.on('window:before:load', (win) => {
-      win.localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
-    });
 
     // Mock auth state to be a Googler so that protected routes are accessible.
     cy.intercept('GET', '**/auth/openid/state', {

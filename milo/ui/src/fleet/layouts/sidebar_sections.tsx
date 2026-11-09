@@ -27,10 +27,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import React from 'react';
 
 import { getFeatureFlagValue } from '@/common/feature_flags';
-import {
-  enableChromeOsRepairsDashboard,
-  enablePhysicalSites,
-} from '@/fleet/features';
+import { enablePhysicalSites } from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
@@ -102,14 +99,11 @@ function generateLabHealthSection(
   platform?: Platform,
   pendingAdminTasksCount?: number,
 ): SidebarSection {
-  const showChromeOsRepairs = getFeatureFlagValue(
-    enableChromeOsRepairsDashboard,
-  );
   const isRepairsEnabled =
     !platform ||
     platform === Platform.ANDROID ||
     platform === Platform.PIXEL ||
-    (platform === Platform.CHROMEOS && showChromeOsRepairs);
+    platform === Platform.CHROMEOS;
   const isAdminTasksEnabled = !platform || platform === Platform.CHROMEOS;
   const isHealthEnabled = !platform || platform === Platform.CHROMEOS;
   return {

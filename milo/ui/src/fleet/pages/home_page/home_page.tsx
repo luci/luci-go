@@ -29,11 +29,7 @@ import chromeosLogo from '@/fleet/assets/logos/chromeos.png';
 import pixelLogo from '@/fleet/assets/logos/pixel.png';
 import { NotSignedInPage } from '@/fleet/components/logged_in_boundary';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
-import {
-  enableAndroidHealthMetrics,
-  enableChromeOsRepairsDashboard,
-  enablePTE,
-} from '@/fleet/features';
+import { enableAndroidHealthMetrics } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
@@ -51,12 +47,8 @@ import { PlatformSummaryCard } from './platform_summary_card';
 export const HomePage = () => {
   const client = useFleetConsoleClient();
   const { displayFirstName, isAnonymous } = useUserProfile();
-  const isPTEEnabled = useFeatureFlag(enablePTE);
   const isAndroidHealthMetricsEnabled = useFeatureFlag(
     enableAndroidHealthMetrics,
-  );
-  const isChromeOsRepairsEnabled = useFeatureFlag(
-    enableChromeOsRepairsDashboard,
   );
 
   const chromeosQuery = useQuery({
@@ -73,7 +65,7 @@ export const HomePage = () => {
         pageSize: 1,
       }),
     ),
-    enabled: !isAnonymous && isChromeOsRepairsEnabled,
+    enabled: !isAnonymous,
   });
 
   const browserQuery = useQuery({
@@ -114,7 +106,7 @@ export const HomePage = () => {
       filter: workspaces.Pixel.baseFilter,
       platform: Platform.ANDROID,
     }),
-    enabled: !isAnonymous && isPTEEnabled && !isAndroidHealthMetricsEnabled,
+    enabled: !isAnonymous && !isAndroidHealthMetricsEnabled,
   });
 
   const pixelOfflineQuery = useQuery({
@@ -125,14 +117,14 @@ export const HomePage = () => {
       ),
       platform: Platform.ANDROID,
     }),
-    enabled: !isAnonymous && isPTEEnabled && !isAndroidHealthMetricsEnabled,
+    enabled: !isAnonymous && !isAndroidHealthMetricsEnabled,
   });
 
   const pixelHealthQuery = useQuery({
     ...client.CountAndroidDevices.query({
       filter: workspaces.Pixel.baseFilter,
     }),
-    enabled: !isAnonymous && isPTEEnabled && isAndroidHealthMetricsEnabled,
+    enabled: !isAnonymous && isAndroidHealthMetricsEnabled,
   });
 
   const chromeosTotal = chromeosQuery.data?.total ?? 0;
@@ -149,12 +141,10 @@ export const HomePage = () => {
       : undefined;
   const chromeosRepairQueueTotal =
     chromeosRepairQueueQuery.data?.totalSize ?? 0;
-  const chromeosIsLoading = isChromeOsRepairsEnabled
-    ? chromeosQuery.isPending || chromeosRepairQueueQuery.isPending
-    : chromeosQuery.isPending;
-  const chromeosIsError = isChromeOsRepairsEnabled
-    ? chromeosQuery.isError || chromeosRepairQueueQuery.isError
-    : chromeosQuery.isError;
+  const chromeosIsLoading =
+    chromeosQuery.isPending || chromeosRepairQueueQuery.isPending;
+  const chromeosIsError =
+    chromeosQuery.isError || chromeosRepairQueueQuery.isError;
 
   const browserTotal = browserQuery.data?.total ?? 0;
 
@@ -187,7 +177,6 @@ export const HomePage = () => {
     ? androidHealthQuery.isError
     : androidQuery.isError || androidOfflineQuery.isError;
 
-  // There is no need to check the isPTEEnabled because the query checks it itself and returns null.
   const pixelTotal = isAndroidHealthMetricsEnabled
     ? (pixelHealthQuery.data?.totalDevices ?? 0)
     : (pixelQuery.data?.androidCount?.totalDevices ?? 0);
@@ -267,15 +256,11 @@ export const HomePage = () => {
                   linkTo="/ui/fleet/p/chromeos/devices"
                   linkText="View all devices"
                   linkIcon={<DevicesIcon />}
-                  {...(isChromeOsRepairsEnabled
-                    ? {
-                        secondaryLinkTo: '/ui/fleet/p/chromeos/repairs',
-                        secondaryLinkText: 'View all repairs',
-                        secondaryLinkIcon: <ConstructionIcon />,
-                        secondTotalText: 'Need manual repair',
-                        secondTotal: chromeosRepairQueueTotal,
-                      }
-                    : {})}
+                  secondaryLinkTo="/ui/fleet/p/chromeos/repairs"
+                  secondaryLinkText="View all repairs"
+                  secondaryLinkIcon={<ConstructionIcon />}
+                  secondTotalText="Need manual repair"
+                  secondTotal={chromeosRepairQueueTotal}
                 />
               </Grid2>
               {/* Browser Card */}
@@ -321,40 +306,36 @@ export const HomePage = () => {
                   }
                 />
               </Grid2>
-              {isPTEEnabled && (
-                <>
-                  {/* Pixel Card */}
-                  <Grid2 size={{ xs: 12, md: 6, lg: 4 }}>
-                    <PlatformSummaryCard
-                      title="Pixel"
-                      logoSrc={pixelLogo}
-                      total={pixelTotal}
-                      healthyPercentage={pixelHealthy}
-                      healthChipSuffix={
-                        isAndroidHealthMetricsEnabled ? 'In Service' : undefined
-                      }
-                      isLoading={pixelIsLoading}
-                      isError={pixelIsError}
-                      linkTo="/ui/fleet/p/pixel/devices"
-                      linkText="View all devices"
-                      linkIcon={<DevicesIcon />}
-                      secondaryLinkTo="/ui/fleet/p/pixel/repairs"
-                      secondaryLinkText="View all repairs"
-                      secondaryLinkIcon={<ConstructionIcon />}
-                      secondTotalText={
-                        isAndroidHealthMetricsEnabled
-                          ? 'Need manual repair'
-                          : 'Devices offline'
-                      }
-                      secondTotal={
-                        isAndroidHealthMetricsEnabled
-                          ? pixelNeedManualRepair
-                          : pixelOffline
-                      }
-                    />
-                  </Grid2>
-                </>
-              )}
+              {/* Pixel Card */}
+              <Grid2 size={{ xs: 12, md: 6, lg: 4 }}>
+                <PlatformSummaryCard
+                  title="Pixel"
+                  logoSrc={pixelLogo}
+                  total={pixelTotal}
+                  healthyPercentage={pixelHealthy}
+                  healthChipSuffix={
+                    isAndroidHealthMetricsEnabled ? 'In Service' : undefined
+                  }
+                  isLoading={pixelIsLoading}
+                  isError={pixelIsError}
+                  linkTo="/ui/fleet/p/pixel/devices"
+                  linkText="View all devices"
+                  linkIcon={<DevicesIcon />}
+                  secondaryLinkTo="/ui/fleet/p/pixel/repairs"
+                  secondaryLinkText="View all repairs"
+                  secondaryLinkIcon={<ConstructionIcon />}
+                  secondTotalText={
+                    isAndroidHealthMetricsEnabled
+                      ? 'Need manual repair'
+                      : 'Devices offline'
+                  }
+                  secondTotal={
+                    isAndroidHealthMetricsEnabled
+                      ? pixelNeedManualRepair
+                      : pixelOffline
+                  }
+                />
+              </Grid2>
             </Grid2>
           )}
 

@@ -153,13 +153,11 @@ describe('<HomePage />', () => {
   });
 
   it('renders home page correctly', async () => {
-    localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
     render(
       <FakeContextProvider>
         <HomePage />
       </FakeContextProvider>,
     );
-    localStorage.removeItem('featureFlag:fleet-console:pte-support');
 
     expect(
       screen.getByText('Welcome to Fleet Console (FCon), Test!'),
@@ -266,13 +264,11 @@ describe('<HomePage />', () => {
   });
 
   it('displays the loaded data and calculates healthy percentages', async () => {
-    localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
     render(
       <FakeContextProvider>
         <HomePage />
       </FakeContextProvider>,
     );
-    localStorage.removeItem('featureFlag:fleet-console:pte-support');
 
     expect(await screen.findByText('1,000')).toBeInTheDocument();
     expect(await screen.findByText('125')).toBeInTheDocument();
@@ -303,7 +299,6 @@ describe('<HomePage />', () => {
       'featureFlag:fleet-console:android-health-metrics',
       'on',
     );
-    localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
 
     FleetConsoleMockAPI.setFixture('CountDevices', {
       total: 1000,
@@ -408,7 +403,6 @@ describe('<HomePage />', () => {
       'featureFlag:fleet-console:android-health-metrics',
       'on',
     );
-    localStorage.setItem('featureFlag:fleet-console:pte-support', 'on');
 
     render(
       <FakeContextProvider>
@@ -442,37 +436,6 @@ describe('<HomePage />', () => {
     expect(
       within(pixelCard).getByText('Need manual repair').closest('a'),
     ).toHaveAttribute('href', '/ui/fleet/p/pixel/repairs');
-  });
-
-  it('hides ChromeOS manual repair option when chromeos-repairs-dashboard feature flag is disabled', async () => {
-    const listRepairQueueSpy = jest.fn();
-    FleetConsoleMockAPI.setFixture('ListRepairQueue', listRepairQueueSpy);
-    localStorage.setItem(
-      'featureFlag:fleet-console:chromeos-repairs-dashboard',
-      'off',
-    );
-
-    render(
-      <FakeContextProvider>
-        <HomePage />
-      </FakeContextProvider>,
-    );
-
-    expect(await screen.findByText('1,000')).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', {
-        name: 'View all devices in ChromeOS platform',
-      }),
-    ).toHaveAttribute('href', '/ui/fleet/p/chromeos/devices');
-    expect(
-      screen.queryByRole('link', {
-        name: 'View all repairs in ChromeOS platform',
-      }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText('Need manual repair in ChromeOS platform'),
-    ).not.toBeInTheDocument();
-    expect(listRepairQueueSpy).not.toHaveBeenCalled();
   });
 
   it('displays the error state on ChromeOS card when ListRepairQueue fails', async () => {

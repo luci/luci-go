@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {
-  enableChromeOsWorkforceActivity,
   enableWorkforceInProgressRepairs,
   enableWorkforcePickupRank,
   enableWorkforceTimeframeFilter,
@@ -104,14 +103,6 @@ export const given = {
 
   timeframeFilterEnabled(enabled = true) {
     genericGiven.featureFlag(enableWorkforceTimeframeFilter, enabled);
-  },
-
-  workforceActivityEnabled(enabled = true) {
-    genericGiven.featureFlag(enableChromeOsWorkforceActivity, enabled);
-  },
-
-  workforceActivityDisabled() {
-    genericGiven.featureFlag(enableChromeOsWorkforceActivity, false);
   },
 
   storedRepairLab(lab: RepairLab) {

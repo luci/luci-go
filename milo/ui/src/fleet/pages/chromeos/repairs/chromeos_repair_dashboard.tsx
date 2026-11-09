@@ -18,7 +18,6 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
-import { useFeatureFlag } from '@/common/feature_flags';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
 import {
@@ -26,7 +25,6 @@ import {
   generateRepairsWorkforceURL,
   platformToURL,
 } from '@/fleet/constants/paths';
-import { enableChromeOsWorkforceActivity } from '@/fleet/features';
 import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { surfaceCardSx } from '@/fleet/theme/recipes';
@@ -43,7 +41,6 @@ import { useRepairQueue } from './use_repair_queue';
 export const ChromeOSRepairDashboard = () => {
   const navigate = useNavigate();
   const currentPlatform = useCurrentPlatform();
-  const isWorkforceEnabled = useFeatureFlag(enableChromeOsWorkforceActivity);
   const { lab } = useRepairLab();
 
   const request = useMemo(
@@ -94,28 +91,26 @@ export const ChromeOSRepairDashboard = () => {
           }}
         >
           <LabSelector />
-          {isWorkforceEnabled && (
-            <Button
-              variant="toolbar"
-              onClick={() =>
-                navigate(
-                  generateRepairsWorkforceURL(
-                    currentPlatform
-                      ? platformToURL(currentPlatform)
-                      : CHROMEOS_PLATFORM,
-                  ) + `?lab=${lab}`,
-                )
-              }
-              startIcon={<GroupIcon />}
-            >
-              Workforce Activity
-              <Box component="span" sx={{ ml: 1 }}>
-                <StatusPill tone="info" dot={false} size="compact">
-                  {`${inProgressCount} In-Progress`}
-                </StatusPill>
-              </Box>
-            </Button>
-          )}
+          <Button
+            variant="toolbar"
+            onClick={() =>
+              navigate(
+                generateRepairsWorkforceURL(
+                  currentPlatform
+                    ? platformToURL(currentPlatform)
+                    : CHROMEOS_PLATFORM,
+                ) + `?lab=${lab}`,
+              )
+            }
+            startIcon={<GroupIcon />}
+          >
+            Workforce Activity
+            <Box component="span" sx={{ ml: 1 }}>
+              <StatusPill tone="info" dot={false} size="compact">
+                {`${inProgressCount} In-Progress`}
+              </StatusPill>
+            </Box>
+          </Button>
         </Box>
       </Box>
 

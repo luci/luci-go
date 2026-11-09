@@ -462,8 +462,7 @@ describe('<WorkforceActivityView /> (Full Page Integration with Fake pRPC Backen
     await then.emptyTableIsVisible('1D');
   });
 
-  it('renders page Component wrapper when feature flag is enabled', async () => {
-    given.workforceActivityEnabled();
+  it('renders page Component wrapper', async () => {
     given.workforceActivity({
       technicians: [aTechnicianActivity({ name: 'Andrew Miller' })],
     });
@@ -472,13 +471,5 @@ describe('<WorkforceActivityView /> (Full Page Integration with Fake pRPC Backen
 
     then.headerIsVisible();
     await then.technicianIsVisible('Andrew Miller');
-  });
-
-  it('renders PageNotFoundPage in Component wrapper when feature flag is disabled', async () => {
-    given.workforceActivityDisabled();
-
-    when.routeComponentIsRendered();
-
-    await then.textIsVisible('Page not found');
   });
 });

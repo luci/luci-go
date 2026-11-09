@@ -20,7 +20,6 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { usePagerContext } from '@/common/components/params_pager';
-import { useFeatureFlag } from '@/common/feature_flags';
 import { RequestRepair } from '@/fleet/components/actions/request_repair/request_repair';
 import {
   getColumnId,
@@ -38,7 +37,6 @@ import {
   ANDROID_DEVICES_LOCAL_STORAGE_KEY,
   PIXEL_DEVICES_LOCAL_STORAGE_KEY,
 } from '@/fleet/constants/local_storage_keys';
-import { enablePixelDeviceRestoration } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { useAndroidDevices } from '@/fleet/hooks/use_android_devices';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
@@ -74,9 +72,6 @@ export const AndroidDevicesTable = ({
   filterValues,
   combinedAip160,
 }: AndroidTableProps) => {
-  const isPixelRestorationEnabled = useFeatureFlag(
-    enablePixelDeviceRestoration,
-  );
   const client = useFleetConsoleClient();
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100, 500, 1000],
@@ -162,7 +157,7 @@ export const AndroidDevicesTable = ({
             resetDefaultColumns={mrtColumnManager.resetDefaultColumns}
             resetColumnWidths={resetColumnWidths}
           >
-            {workspace === 'Pixel' && isPixelRestorationEnabled && (
+            {workspace === 'Pixel' && (
               <RequestRepair
                 selectedItems={selectedDevices}
                 platform={Platform.PIXEL}
@@ -238,7 +233,6 @@ export const AndroidDevicesTable = ({
       client,
       orderByParam,
       workspace,
-      isPixelRestorationEnabled,
     ],
   );
 

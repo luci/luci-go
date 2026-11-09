@@ -14,10 +14,8 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 
-import { getFeatureFlagLocalStorageKey } from '@/common/feature_flags';
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
 import { SettingsProvider } from '@/fleet/context/providers';
-import { enablePixelDeviceRestoration } from '@/fleet/features';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -285,7 +283,7 @@ describe('<AndroidDevicesPage /> Integration', () => {
     expect(await screen.findByText('Location Tag')).toBeInTheDocument();
   });
 
-  it('renders Request Restoration button when devices are selected in Pixel workspace (enabled by default in dev)', async () => {
+  it('renders Request Restoration button when devices are selected in Pixel workspace', async () => {
     render(
       <FakeContextProvider
         mountedPath="/p/:platform/devices"
@@ -312,99 +310,6 @@ describe('<AndroidDevicesPage /> Integration', () => {
     const button = await screen.findByTestId('file-restoration-bug-button');
     expect(button).toBeInTheDocument();
     expect(button).toHaveTextContent('Request restoration');
-  });
-
-  it('renders Request Restoration button when feature flag is explicitly enabled via localStorage', async () => {
-    localStorage.setItem(
-      getFeatureFlagLocalStorageKey(enablePixelDeviceRestoration),
-      'on',
-    );
-
-    render(
-      <FakeContextProvider
-        mountedPath="/p/:platform/devices"
-        routerOptions={{
-          initialEntries: ['/p/pixel/devices'],
-        }}
-      >
-        <SettingsProvider>
-          <ShortcutProvider>
-            <AndroidDevicesPage workspace="Pixel" />
-          </ShortcutProvider>
-        </SettingsProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(await screen.findByText('dev-1')).toBeInTheDocument();
-
-    const checkbox = screen.getByTestId('select-checkbox-dev-1');
-    fireEvent.click(checkbox);
-
-    const button = await screen.findByTestId('file-restoration-bug-button');
-    expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent('Request restoration');
-  });
-
-  it('does not render Request Restoration button when feature flag is disabled', async () => {
-    localStorage.setItem(
-      getFeatureFlagLocalStorageKey(enablePixelDeviceRestoration),
-      'off',
-    );
-
-    render(
-      <FakeContextProvider
-        mountedPath="/p/:platform/devices"
-        routerOptions={{
-          initialEntries: ['/p/pixel/devices'],
-        }}
-      >
-        <SettingsProvider>
-          <ShortcutProvider>
-            <AndroidDevicesPage workspace="Pixel" />
-          </ShortcutProvider>
-        </SettingsProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(await screen.findByText('dev-1')).toBeInTheDocument();
-
-    const checkbox = screen.getByTestId('select-checkbox-dev-1');
-    fireEvent.click(checkbox);
-
-    expect(
-      screen.queryByTestId('file-restoration-bug-button'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('does not render Request Restoration button in Android workspace even if feature flag is enabled', async () => {
-    localStorage.setItem(
-      getFeatureFlagLocalStorageKey(enablePixelDeviceRestoration),
-      'on',
-    );
-
-    render(
-      <FakeContextProvider
-        mountedPath="/p/:platform/devices"
-        routerOptions={{
-          initialEntries: ['/p/android/devices'],
-        }}
-      >
-        <SettingsProvider>
-          <ShortcutProvider>
-            <AndroidDevicesPage workspace="Android" />
-          </ShortcutProvider>
-        </SettingsProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(await screen.findByText('dev-1')).toBeInTheDocument();
-
-    const checkbox = screen.getByTestId('select-checkbox-dev-1');
-    fireEvent.click(checkbox);
-
-    expect(
-      screen.queryByTestId('file-restoration-bug-button'),
-    ).not.toBeInTheDocument();
   });
 
   it('does not render Request Restoration button when devices are selected in Android workspace', async () => {
@@ -418,38 +323,6 @@ describe('<AndroidDevicesPage /> Integration', () => {
         <SettingsProvider>
           <ShortcutProvider>
             <AndroidDevicesPage workspace="Android" />
-          </ShortcutProvider>
-        </SettingsProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(await screen.findByText('dev-1')).toBeInTheDocument();
-
-    const checkbox = screen.getByTestId('select-checkbox-dev-1');
-    fireEvent.click(checkbox);
-
-    expect(
-      screen.queryByTestId('file-restoration-bug-button'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('does not render Request Restoration button when feature flag is disabled via URL query param', async () => {
-    window.history.pushState(
-      {},
-      '',
-      '/p/pixel/devices?ff=pixel-device-restoration:off',
-    );
-
-    render(
-      <FakeContextProvider
-        mountedPath="/p/:platform/devices"
-        routerOptions={{
-          initialEntries: ['/p/pixel/devices?ff=pixel-device-restoration:off'],
-        }}
-      >
-        <SettingsProvider>
-          <ShortcutProvider>
-            <AndroidDevicesPage workspace="Pixel" />
           </ShortcutProvider>
         </SettingsProvider>
       </FakeContextProvider>,

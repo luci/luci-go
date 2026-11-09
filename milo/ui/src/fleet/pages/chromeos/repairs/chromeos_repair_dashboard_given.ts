@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { RepairIrmIncident } from '@/fleet/components/repair_queue/active_irm_table';
-import { enableChromeOsWorkforceActivity } from '@/fleet/features';
 import {
   REPAIR_LAB_LOCAL_STORAGE_KEY,
   RepairLab,
@@ -98,13 +97,5 @@ export const given = {
 
   irmIncidentsError(grpcCode: number, message: string) {
     genericGiven.rpcError('ListIrmIncidents', grpcCode, message);
-  },
-
-  workforceActivityEnabled() {
-    genericGiven.featureFlag(enableChromeOsWorkforceActivity, true);
-  },
-
-  workforceActivityDisabled() {
-    genericGiven.featureFlag(enableChromeOsWorkforceActivity, false);
   },
 };

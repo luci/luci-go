@@ -14,8 +14,6 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { useFeatureFlag } from '@/common/feature_flags';
-import { enablePTE } from '@/fleet/features';
 import {
   useAndroidDevices,
   useListAndroidDevicesQueryKey,
@@ -46,13 +44,10 @@ export const useAndroidDeviceData = (
     queryKey: listDevicesQueryKey,
   });
 
-  const isPTEEnabled = useFeatureFlag(enablePTE);
   const idFilter = `id = "${escapeAipValue(deviceId)}"`;
   const request = ListAndroidDevicesRequest.fromPartial({
     pageSize: 1,
-    filter: isPTEEnabled
-      ? combineAipFilters(workspaces[workspace].baseFilter, idFilter)
-      : idFilter,
+    filter: combineAipFilters(workspaces[workspace].baseFilter, idFilter),
   });
   const { data, error, isError, isLoading } = useAndroidDevices(
     request,

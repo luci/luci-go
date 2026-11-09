@@ -193,12 +193,7 @@ describe('platformRoutes', () => {
       sessionStorage.clear();
     });
 
-    it('renders ChromeOS repairs page when repairs flag is enabled', async () => {
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-repairs-dashboard',
-        'on',
-      );
-
+    it('renders ChromeOS repairs page', async () => {
       render(
         <FakeContextProvider
           siblingRoutes={[
@@ -220,16 +215,7 @@ describe('platformRoutes', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders ChromeOS workforce page when both repairs and workforce flags are enabled', async () => {
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-repairs-dashboard',
-        'on',
-      );
-      localStorage.setItem(
-        'featureFlag:fleet-console:chromeos-workforce-activity',
-        'on',
-      );
-
+    it('renders ChromeOS workforce page', async () => {
       render(
         <FakeContextProvider
           siblingRoutes={[

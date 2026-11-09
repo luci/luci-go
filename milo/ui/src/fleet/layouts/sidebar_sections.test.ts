@@ -13,10 +13,7 @@
 // limitations under the License.
 
 import { getFeatureFlagValue } from '@/common/feature_flags';
-import {
-  enableChromeOsRepairsDashboard,
-  enablePhysicalSites,
-} from '@/fleet/features';
+import { enablePhysicalSites } from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { generateSidebarSections } from './sidebar_sections';
@@ -31,10 +28,7 @@ const mockGetFeatureFlagValue = getFeatureFlagValue as jest.Mock;
 describe('generateSidebarSections', () => {
   beforeEach(() => {
     mockGetFeatureFlagValue.mockReset();
-    mockGetFeatureFlagValue.mockImplementation((flag) => {
-      if (flag === enableChromeOsRepairsDashboard) return true;
-      return false;
-    });
+    mockGetFeatureFlagValue.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -173,20 +167,7 @@ describe('generateSidebarSections', () => {
       expect(repairsPage?.disabled).toBeFalsy();
     });
 
-    it('is disabled for ChromeOS when feature flag is off', () => {
-      mockGetFeatureFlagValue.mockReturnValue(false);
-      const sections = generateSidebarSections(Platform.CHROMEOS);
-      const labHealth = sections.find((s) => s.title === 'Lab Health');
-      const repairsPage = labHealth?.pages.find((p) => p.label === 'Repairs');
-      expect(repairsPage).toBeDefined();
-      expect(repairsPage?.disabled).toBeTruthy();
-    });
-
-    it('is enabled for ChromeOS when feature flag is on', () => {
-      mockGetFeatureFlagValue.mockImplementation((flag) => {
-        if (flag === enableChromeOsRepairsDashboard) return true;
-        return false;
-      });
+    it('is enabled for ChromeOS by default', () => {
       const sections = generateSidebarSections(Platform.CHROMEOS);
       const labHealth = sections.find((s) => s.title === 'Lab Health');
       const repairsPage = labHealth?.pages.find((p) => p.label === 'Repairs');

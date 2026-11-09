@@ -318,12 +318,6 @@ export const then = {
     ).toBeInTheDocument();
   },
 
-  workforceActivityIsNotVisible() {
-    expect(
-      screen.queryByRole('button', { name: /Workforce Activity/i }),
-    ).not.toBeInTheDocument();
-  },
-
   async irmIncidentIsSyncing(bugId: string) {
     const link = await screen.findByRole('link', { name: `b/${bugId}` });
     const row = link.closest('tr');

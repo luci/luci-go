@@ -18,7 +18,6 @@ import { Outlet, useNavigate } from 'react-router';
 import { useLocalStorage } from 'react-use';
 
 import bassFavicon from '@/common/assets/favicons/bass-32.png';
-import { useFeatureFlag } from '@/common/feature_flags';
 import { SIDE_BAR_OPEN_CACHE_KEY } from '@/common/layouts/base_layout';
 import { CookieConsentBar } from '@/common/layouts/cookie_consent_bar';
 import { PrivacyFooter } from '@/common/layouts/privacy_footer';
@@ -32,7 +31,6 @@ import {
   generateRepairsURL,
   platformToURL,
 } from '@/fleet/constants/paths';
-import { enableChromeOsRepairsDashboard } from '@/fleet/features';
 import { useCurrentPlatform } from '@/fleet/hooks/usePlatform';
 import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import {
@@ -68,7 +66,6 @@ const FleetLayoutContent = () => {
   const navigate = useNavigate();
   const currentPlatform = useCurrentPlatform();
   const { trackExternalLinkClick } = useFleetAnalytics();
-  const chromeOsRepairsEnabled = useFeatureFlag(enableChromeOsRepairsDashboard);
 
   Settings.defaultLocale = 'en';
 
@@ -90,7 +87,7 @@ const FleetLayoutContent = () => {
         !currentPlatform ||
         platformStr === ANDROID_PLATFORM ||
         platformStr === PIXEL_PLATFORM ||
-        (chromeOsRepairsEnabled && platformStr === CHROMEOS_PLATFORM),
+        platformStr === CHROMEOS_PLATFORM,
     },
   );
   useShortcut(

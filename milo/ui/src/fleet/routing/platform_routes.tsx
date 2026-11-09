@@ -16,11 +16,6 @@
 import { lazy, ReactElement } from 'react';
 import { Navigate, RouteObject } from 'react-router';
 
-import { useFeatureFlag } from '@/common/feature_flags';
-import {
-  enableChromeOsRepairsDashboard,
-  enableChromeOsWorkforceActivity,
-} from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { initiateSurvey } from '../utils/survey';
@@ -55,33 +50,22 @@ const AndroidDeviceDetailsPage = lazy(() =>
 );
 
 const RepairsRouteElement = () => {
-  const showChromeOsRepairs = useFeatureFlag(enableChromeOsRepairsDashboard);
   return (
     <PlatformDependentPage
       pageComponentMap={{
         [Platform.ANDROID]: <AndroidRepairsPage workspace="Android" />,
         [Platform.PIXEL]: <AndroidRepairsPage workspace="Pixel" />,
-        ...(showChromeOsRepairs
-          ? {
-              [Platform.CHROMEOS]: ChromeOsRepairsPage,
-            }
-          : {}),
+        [Platform.CHROMEOS]: ChromeOsRepairsPage,
       }}
     />
   );
 };
 
 const WorkforceRouteElement = () => {
-  const showChromeOsRepairs = useFeatureFlag(enableChromeOsRepairsDashboard);
-  const showWorkforce = useFeatureFlag(enableChromeOsWorkforceActivity);
   return (
     <PlatformDependentPage
       pageComponentMap={{
-        ...(showChromeOsRepairs && showWorkforce
-          ? {
-              [Platform.CHROMEOS]: WorkforceActivityPage,
-            }
-          : {}),
+        [Platform.CHROMEOS]: WorkforceActivityPage,
       }}
     />
   );
