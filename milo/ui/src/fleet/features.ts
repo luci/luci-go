@@ -140,9 +140,9 @@ export const enableUnifiedTaskHistory = createFleetFeatureFlag({
   name: 'unified-task-history',
   percentage: {
     dev: 100,
-    prod: 0,
+    prod: 100,
   },
-  trackingBug: '542600108',
+  trackingBug: '537908463',
   allowedEnvironments: ['dev', 'prod'],
 });
 
