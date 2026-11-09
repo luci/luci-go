@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
@@ -65,7 +66,7 @@ func (p *rootInvocationPublisher) handleRootInvocationPublisher(ctx context.Cont
 
 	// 3. Construct the notification.
 	notification := &pb.RootInvocationFinalizedNotification{
-		RootInvocation: masking.RootInvocation(rootInv, cfg),
+		RootInvocation: masking.RootInvocation(rootInv, permissions.FullAccess, cfg),
 		ResultdbHost:   p.resultDBHostname,
 	}
 

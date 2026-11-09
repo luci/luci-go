@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks"
 	"go.chromium.org/luci/resultdb/internal/workunits"
@@ -128,7 +129,7 @@ func (s *recorderServer) UpdateRootInvocation(ctx context.Context, in *pb.Update
 		updatedRootInvRow.LastUpdated = ct
 	}
 
-	return masking.RootInvocation(updatedRootInvRow, cfg), nil
+	return masking.RootInvocation(updatedRootInvRow, permissions.FullAccess, cfg), nil
 }
 
 func updateRootInvocationInternal(in *pb.UpdateRootInvocationRequest, originalRootInvRow *rootinvocations.RootInvocationRow) (updateMutations []*spanner.Mutation, updatedRow *rootinvocations.RootInvocationRow, err error) {

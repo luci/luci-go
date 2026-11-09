@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/tasks/taskspb"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -85,7 +86,7 @@ func TestHandleRootInvocationPublisher(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 
 			expectedMsg := &pb.RootInvocationFinalizedNotification{
-				RootInvocation: masking.RootInvocation(rootInv, compiledCfg),
+				RootInvocation: masking.RootInvocation(rootInv, permissions.FullAccess, compiledCfg),
 				ResultdbHost:   "resultdb.example.com",
 			}
 			assert.Loosely(t, task.Message, should.Match(expectedMsg))

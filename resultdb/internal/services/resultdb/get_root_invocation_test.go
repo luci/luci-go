@@ -15,6 +15,7 @@
 package resultdb
 
 import (
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -53,6 +54,7 @@ func TestGetRootInvocation(t *testing.T) {
 		// Insert a root invocation.
 		testData := rootinvocations.NewBuilder("root-inv-id").
 			WithFinalizationState(pb.RootInvocation_FINALIZED).
+			WithSummaryMarkdown(strings.Repeat("a", 200)).
 			WithRealm(realm).Build()
 		testutil.MustApply(ctx, t, insert.RootInvocationOnly(testData)...)
 
@@ -93,6 +95,7 @@ func TestGetRootInvocation(t *testing.T) {
 				Tags:                 testData.Tags,
 				Properties:           testData.Properties,
 				BaselineId:           testData.BaselineID,
+				IsMasked:             false,
 				Etag:                 `W/"2025-04-26T01:02:03.000004Z"`,
 			}
 			// URLs are populated according to service configuration.
@@ -100,9 +103,29 @@ func TestGetRootInvocation(t *testing.T) {
 			testData.PrimaryBuild.Url = "https://android-build.googleplex.com/build_explorer/build_details/P1234567890/some-target/"
 			testData.ExtraBuilds[0].Url = "https://android-build.googleplex.com/build_explorer/build_details/9876543210/second-target/"
 
-			rsp, err := srv.GetRootInvocation(ctx, req)
-			assert.Loosely(t, err, should.BeNil)
-			assert.That(t, rsp, should.Match(expectedRootInvocation))
+			t.Run("full access", func(t *ftt.Test) {
+				rsp, err := srv.GetRootInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, rsp, should.Match(expectedRootInvocation))
+			})
+
+			t.Run("limited access", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: realm, Permission: rdbperms.PermGetLimitedRootInvocation},
+				}
+				expectedRootInvocation.Etag = `W/"+l/2025-04-26T01:02:03.000004Z"`
+				expectedRootInvocation.SummaryMarkdown = strings.Repeat("a", 137) + "..."
+				expectedRootInvocation.Definition.Properties = nil
+				expectedRootInvocation.PrimaryBuild = nil
+				expectedRootInvocation.ExtraBuilds = nil
+				expectedRootInvocation.Tags = nil
+				expectedRootInvocation.Properties = nil
+				expectedRootInvocation.IsMasked = true
+
+				rsp, err := srv.GetRootInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, rsp, should.Match(expectedRootInvocation))
+			})
 		})
 
 		t.Run("does not exist", func(t *ftt.Test) {
@@ -117,7 +140,7 @@ func TestGetRootInvocation(t *testing.T) {
 
 			_, err := srv.GetRootInvocation(ctx, req)
 			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-			assert.That(t, err, should.ErrLike("caller does not have permission resultdb.rootInvocations.get"))
+			assert.That(t, err, should.ErrLike(`caller does not have permission resultdb.rootInvocations.get (or resultdb.rootInvocations.getLimited) in realm of root invocation "rootInvocations/root-inv-id"`))
 		})
 
 		t.Run("invalid request", func(t *ftt.Test) {

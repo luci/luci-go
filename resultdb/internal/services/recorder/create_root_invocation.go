@@ -114,7 +114,7 @@ func (s *recorderServer) CreateRootInvocation(ctx context.Context, in *pb.Create
 	grpc.SetHeader(ctx, md)
 
 	return &pb.CreateRootInvocationResponse{
-		RootInvocation: masking.RootInvocation(rootInvocation, cfg),
+		RootInvocation: masking.RootInvocation(rootInvocation, permissions.FullAccess, cfg),
 		RootWorkUnit:   masking.WorkUnit(workUnitRow, permissions.FullAccess, pb.WorkUnitView_WORK_UNIT_VIEW_FULL, cfg),
 	}, nil
 }

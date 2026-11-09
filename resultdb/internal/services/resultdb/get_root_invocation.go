@@ -27,7 +27,6 @@ import (
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
-	"go.chromium.org/luci/resultdb/rdbperms"
 )
 
 func (s *resultDBServer) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
@@ -37,7 +36,8 @@ func (s *resultDBServer) GetRootInvocation(ctx context.Context, in *pb.GetRootIn
 	ctx, cancel := span.ReadOnlyTransaction(ctx)
 	defer cancel()
 
-	if err := verifyGetRootInvocationPermissions(ctx, in); err != nil {
+	accessLevel, err := verifyGetRootInvocationPermissions(ctx, in)
+	if err != nil {
 		return nil, err
 	}
 
@@ -54,16 +54,16 @@ func (s *resultDBServer) GetRootInvocation(ctx context.Context, in *pb.GetRootIn
 		return nil, errors.Fmt("get service config: %w", err)
 	}
 
-	return masking.RootInvocation(row, cfg), nil
+	return masking.RootInvocation(row, accessLevel, cfg), nil
 }
 
 // verifyGetRootInvocationPermissions verifies the user has access to the
 // root invocation specified in the request.
-func verifyGetRootInvocationPermissions(ctx context.Context, req *pb.GetRootInvocationRequest) error {
+func verifyGetRootInvocationPermissions(ctx context.Context, req *pb.GetRootInvocationRequest) (permissions.AccessLevel, error) {
 	id, err := pbutil.ParseRootInvocationName(req.Name)
 	if err != nil {
-		return appstatus.BadRequest(errors.Fmt("name: %w", err))
+		return permissions.NoAccess, appstatus.BadRequest(errors.Fmt("name: %w", err))
 	}
 	// Lookup the root invocation and check permissions on its realm.
-	return permissions.VerifyRootInvocation(ctx, rootinvocations.ID(id), rdbperms.PermGetRootInvocation)
+	return permissions.VerifyRootInvocationAccess(ctx, rootinvocations.ID(id), permissions.GetRootInvocationAccessModel, permissions.LimitedAccess)
 }

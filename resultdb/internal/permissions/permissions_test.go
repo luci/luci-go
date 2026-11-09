@@ -134,6 +134,83 @@ func TestVerifyInvocations(t *testing.T) {
 	})
 }
 
+func TestVerifyRootInvocationAccess(t *testing.T) {
+	ftt.Run(`VerifyRootInvocationAccess`, t, func(t *ftt.Test) {
+		ctx := testutil.SpannerTestContext(t)
+
+		rootInvID := rootinvocations.ID("root-inv")
+		testutil.MustApply(
+			ctx, t,
+			insert.RootInvocationOnly(
+				rootinvocations.NewBuilder(rootInvID).WithRealm("testproject:root").Build(),
+			)...,
+		)
+
+		authState := &authtest.FakeState{
+			Identity: "user:someone@example.com",
+		}
+		ctx = auth.WithState(ctx, authState)
+
+		ctx, cancel := span.ReadOnlyTransaction(ctx)
+		defer cancel()
+
+		t.Run("root invocation not found", func(t *ftt.Test) {
+			_, err := VerifyRootInvocationAccess(ctx, rootinvocations.ID("not-exists"), GetRootInvocationAccessModel, NoAccess)
+			st, ok := appstatus.Get(err)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, st.Code(), should.Equal(codes.NotFound))
+			assert.That(t, st.Message(), should.ContainSubstring(`"rootInvocations/not-exists" not found`))
+		})
+		t.Run("no access", func(t *ftt.Test) {
+			authState.IdentityPermissions = nil
+			level, err := VerifyRootInvocationAccess(ctx, rootInvID, GetRootInvocationAccessModel, NoAccess)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, level, should.Equal(NoAccess))
+		})
+		t.Run("full access", func(t *ftt.Test) {
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{Realm: "testproject:root", Permission: rdbperms.PermGetRootInvocation},
+			}
+			level, err := VerifyRootInvocationAccess(ctx, rootInvID, GetRootInvocationAccessModel, LimitedAccess)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, level, should.Equal(FullAccess))
+		})
+		t.Run("limited access", func(t *ftt.Test) {
+			authState.IdentityPermissions = []authtest.RealmPermission{
+				{Realm: "testproject:root", Permission: rdbperms.PermGetLimitedRootInvocation},
+			}
+			level, err := VerifyRootInvocationAccess(ctx, rootInvID, GetRootInvocationAccessModel, LimitedAccess)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, level, should.Equal(LimitedAccess))
+		})
+		t.Run("minimum access level enforcement", func(t *ftt.Test) {
+			t.Run("required FullAccess, have LimitedAccess", func(t *ftt.Test) {
+				authState.IdentityPermissions = []authtest.RealmPermission{
+					{Realm: "testproject:root", Permission: rdbperms.PermGetLimitedRootInvocation},
+				}
+				_, err := VerifyRootInvocationAccess(ctx, rootInvID, GetRootInvocationAccessModel, FullAccess)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.rootInvocations.get in realm of root invocation "rootInvocations/root-inv" (project "testproject")`))
+			})
+			t.Run("required LimitedAccess, have NoAccess", func(t *ftt.Test) {
+				authState.IdentityPermissions = nil
+				_, err := VerifyRootInvocationAccess(ctx, rootInvID, GetRootInvocationAccessModel, LimitedAccess)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`caller does not have permission resultdb.rootInvocations.get (or resultdb.rootInvocations.getLimited) in realm of root invocation "rootInvocations/root-inv" (project "testproject")`))
+				st, ok := appstatus.Get(err)
+				assert.That(t, ok, should.BeTrue)
+				assert.Loosely(t, st.Details(), should.Match([]any{
+					&errdetails.ErrorInfo{
+						Reason:   "PERMISSION_DENIED",
+						Domain:   "resultdb.api.luci.app",
+						Metadata: map[string]string{"project": "testproject"},
+					},
+				}))
+			})
+		})
+	})
+}
+
 func TestVerifyWorkUnitAccess(t *testing.T) {
 	ftt.Run(`VerifyWorkUnitAccess`, t, func(t *ftt.Test) {
 		ctx := testutil.SpannerTestContext(t)

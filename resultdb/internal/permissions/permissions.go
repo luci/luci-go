@@ -115,33 +115,6 @@ func VerifyInvocations(ctx context.Context, ids invocations.IDSet, permissions .
 	return nil
 }
 
-// VerifyRootInvocation verifies the caller has the given permissions in
-// the realm of the given root invocation. If the root invocation is not
-// found, a NotFound appstatus error is returned (thus disclosing the
-// non-existence of the root invocation to all callers).
-func VerifyRootInvocation(ctx context.Context, id rootinvocations.ID, permissions ...realms.Permission) (err error) {
-	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.VerifyRootInvocation")
-	defer func() { tracing.End(ts, err) }()
-
-	realm, err := rootinvocations.ReadRealm(ctx, id)
-	if err != nil {
-		// If the root invocation is not found, returns NotFound appstatus error.
-		return err
-	}
-
-	project, _ := realms.Split(realm)
-	// Note: HasPermission does not make RPCs.
-	for _, permission := range permissions {
-		switch allowed, err := auth.HasPermission(ctx, permission, realm, nil); {
-		case err != nil:
-			return err
-		case !allowed:
-			return permissionDeniedMinimumErrorf(project, `caller does not have permission %s in realm of root invocation %q (project %q)`, permission, id.Name(), project)
-		}
-	}
-	return nil
-}
-
 type AccessLevel int
 
 const (
@@ -152,6 +125,74 @@ const (
 	// The user has full access to the resource.
 	FullAccess
 )
+
+// VerifyRootInvocationAccessOptions defines the permissions required to reach
+// a certain access level on a root invocation.
+type VerifyRootInvocationAccessOptions struct {
+	// The permission(s) required on the root invocation's realm to reach
+	// FullAccess access level.
+	Full []realms.Permission
+	// The permission(s) required on the root invocation's realm to reach
+	// LimitedAccess access level.
+	Limited []realms.Permission
+}
+
+// GetRootInvocationAccessModel defines the permissions used to authorize access
+// when getting a root invocation (e.g. GetRootInvocation).
+var GetRootInvocationAccessModel = VerifyRootInvocationAccessOptions{
+	Full:    []realms.Permission{rdbperms.PermGetRootInvocation},
+	Limited: []realms.Permission{rdbperms.PermGetLimitedRootInvocation},
+}
+
+// VerifyRootInvocationAccess determines the access the user has to a root
+// invocation. It further verifies that the user has at least the
+// `minimumAccessLevel` specified.
+//
+// If the root invocation is not found, a NotFound appstatus error is returned
+// (thus disclosing the non-existence of the root invocation to all callers).
+//
+// If the required permission level is not attained, a PermissionDenied
+// appstatus error is returned.
+func VerifyRootInvocationAccess(ctx context.Context, id rootinvocations.ID, opts VerifyRootInvocationAccessOptions, minimumAccessLevel AccessLevel) (accessLevel AccessLevel, err error) {
+	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/resultdb/internal/permissions.VerifyRootInvocationAccess")
+	defer func() { tracing.End(ts, err) }()
+
+	rootInvRealm, err := rootinvocations.ReadRealm(ctx, id)
+	if err != nil {
+		// If the root invocation is not found, returns NotFound appstatus error.
+		return NoAccess, err
+	}
+
+	// Note: HasPermission does not make RPCs.
+	allowed, err := hasAllPermissions(ctx, rootInvRealm, opts.Full...)
+	if err != nil {
+		return NoAccess, err
+	}
+	if allowed {
+		return FullAccess, nil
+	}
+	if minimumAccessLevel == FullAccess {
+		return NoAccess, noFullRootInvocationAccessError(id, rootInvRealm, VerifyWorkUnitAccessOptions{
+			Full:    opts.Full,
+			Limited: opts.Limited,
+		})
+	}
+
+	allowed, err = hasAllPermissions(ctx, rootInvRealm, opts.Limited...)
+	if err != nil {
+		return NoAccess, err
+	}
+	if allowed {
+		return LimitedAccess, nil
+	}
+	if minimumAccessLevel != NoAccess {
+		return NoAccess, NoRootInvocationAccessError(id, rootInvRealm, VerifyWorkUnitAccessOptions{
+			Full:    opts.Full,
+			Limited: opts.Limited,
+		})
+	}
+	return NoAccess, nil
+}
 
 // VerifyWorkUnitAccessOptions defines the permissions required to reach a certain access level
 // on the work unit.

@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 )
 
@@ -32,13 +33,30 @@ func TestRootInvocationEtag(t *testing.T) {
 		ri := &rootinvocations.RootInvocationRow{LastUpdated: lastUpdatedTime}
 
 		t.Run("RootInvocationEtag", func(t *ftt.Test) {
-			etag := RootInvocationEtag(ri)
-			assert.That(t, etag, should.Equal(`W/"2025-04-26T01:02:03.000004Z"`))
+			t.Run("FullAccess", func(t *ftt.Test) {
+				etag := RootInvocationEtag(ri, permissions.FullAccess)
+				assert.That(t, etag, should.Equal(`W/"2025-04-26T01:02:03.000004Z"`))
+			})
+			t.Run("LimitedAccess", func(t *ftt.Test) {
+				etag := RootInvocationEtag(ri, permissions.LimitedAccess)
+				assert.That(t, etag, should.Equal(`W/"+l/2025-04-26T01:02:03.000004Z"`))
+			})
+			t.Run("NoAccess panics", func(t *ftt.Test) {
+				assert.That(t, func() {
+					RootInvocationEtag(ri, permissions.NoAccess)
+				}, should.Panic)
+			})
 		})
 
 		t.Run("ParseRootInvocationEtag", func(t *ftt.Test) {
-			t.Run("valid", func(t *ftt.Test) {
+			t.Run("valid full access", func(t *ftt.Test) {
 				etag := `W/"2025-04-26T01:02:03.000004Z"`
+				lastUpdated, err := ParseRootInvocationEtag(etag)
+				assert.Loosely(t, err, should.BeNil)
+				assert.That(t, lastUpdated, should.Equal("2025-04-26T01:02:03.000004Z"))
+			})
+			t.Run("valid limited access", func(t *ftt.Test) {
+				etag := `W/"+l/2025-04-26T01:02:03.000004Z"`
 				lastUpdated, err := ParseRootInvocationEtag(etag)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, lastUpdated, should.Equal("2025-04-26T01:02:03.000004Z"))
@@ -52,13 +70,13 @@ func TestRootInvocationEtag(t *testing.T) {
 
 		t.Run("IsRootInvocationEtagMatch", func(t *ftt.Test) {
 			t.Run("round-trip", func(t *ftt.Test) {
-				etag := RootInvocationEtag(ri)
+				etag := RootInvocationEtag(ri, permissions.FullAccess)
 				match, err := IsRootInvocationEtagMatch(ri, etag)
 				assert.Loosely(t, err, should.BeNil)
 				assert.That(t, match, should.BeTrue)
 			})
 			t.Run("not match", func(t *ftt.Test) {
-				etag := RootInvocationEtag(ri)
+				etag := RootInvocationEtag(ri, permissions.FullAccess)
 				ri.LastUpdated = ri.LastUpdated.Add(time.Second)
 
 				match, err := IsRootInvocationEtagMatch(ri, etag)

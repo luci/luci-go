@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/resultdb/internal/config"
 	"go.chromium.org/luci/resultdb/internal/invocations"
 	"go.chromium.org/luci/resultdb/internal/masking"
+	"go.chromium.org/luci/resultdb/internal/permissions"
 	"go.chromium.org/luci/resultdb/internal/rootinvocations"
 	"go.chromium.org/luci/resultdb/internal/spanutil"
 	"go.chromium.org/luci/resultdb/internal/testutil"
@@ -356,7 +357,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 		compiledCfg, err := config.NewCompiledServiceConfig(cfg, "revision")
 		assert.NoErr(t, err)
-		expectedRootInv := masking.RootInvocation(expectedRootInvRow, compiledCfg)
+		expectedRootInv := masking.RootInvocation(expectedRootInvRow, permissions.FullAccess, compiledCfg)
 
 		// Attach a valid update token for the root work unit.
 		rootWorkUnitID := workunits.ID{RootInvocationID: rootInvID, WorkUnitID: workunits.RootWorkUnitID}
@@ -487,7 +488,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 			})
 
 			t.Run("match etag", func(t *ftt.Test) {
-				req.RootInvocation.Etag = masking.RootInvocationEtag(expectedRootInvRow)
+				req.RootInvocation.Etag = masking.RootInvocationEtag(expectedRootInvRow, permissions.FullAccess)
 
 				_, err := recorder.UpdateRootInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
