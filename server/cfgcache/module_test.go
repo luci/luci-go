@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"testing"
+	"time"
 
 	"google.golang.org/protobuf/types/known/durationpb"
 
@@ -29,6 +30,15 @@ import (
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
 )
+
+type fakeModuleHost struct {
+	module.Host
+	bgActivity string
+}
+
+func (f *fakeModuleHost) RunInBackground(activity string, fn func(context.Context)) {
+	f.bgActivity = activity
+}
 
 func TestServerModule(t *testing.T) {
 	t.Parallel()
@@ -58,9 +68,11 @@ func TestServerModule(t *testing.T) {
 		assert.That(t, mod.Name(), should.Equal(ModuleName))
 		assert.That(t, len(mod.Dependencies()), should.Equal(3))
 
-		outCtx, err := mod.Initialize(ctx, nil, module.HostOptions{})
+		host := &fakeModuleHost{}
+		outCtx, err := mod.Initialize(ctx, host, module.HostOptions{})
 		assert.NoErr(t, err)
 		assert.That(t, outCtx, should.Equal(ctx))
+		assert.That(t, host.bgActivity, should.Equal(memoryRefreshID))
 
 		patterns, err := opts.Rules.ConfigPatterns(ctx)
 		assert.NoErr(t, err)
@@ -88,13 +100,21 @@ func TestServerModule(t *testing.T) {
 			"-cfgcache-disable-validation",
 			"-cfgcache-disable-cron",
 			"-cfgcache-max-ingest-memory-mb=128",
+			"-cfgcache-disable-in-memory",
+			"-cfgcache-max-memory-staleness=35s",
+			"-cfgcache-memory-refresh-timeout=45s",
+			"-cfgcache-memory-refresh-every=30s",
 		}))
 
 		mod := NewModule(opts)
-		outCtx, err := mod.Initialize(ctx, nil, module.HostOptions{})
+		host := &fakeModuleHost{}
+		outCtx, err := mod.Initialize(ctx, host, module.HostOptions{})
 		assert.NoErr(t, err)
 		assert.That(t, outCtx, should.Equal(ctx))
 		assert.That(t, opts.Registry.MaxIngestMemoryMB, should.Equal(int64(128)))
+		assert.That(t, opts.Registry.MaxMemoryStaleness, should.Equal(35*time.Second))
+		assert.That(t, opts.Registry.MemoryRefreshTimeout, should.Equal(45*time.Second))
+		assert.That(t, host.bgActivity, should.Equal(""))
 
 		patterns, err := opts.Rules.ConfigPatterns(ctx)
 		assert.NoErr(t, err)
@@ -111,7 +131,7 @@ func TestServerModule(t *testing.T) {
 
 		(&PassthroughServicePipeline[*durationpb.Duration]{ID: "bad"}).Register(opts.Registry)
 		badMod := NewModule(opts)
-		_, err := badMod.Initialize(ctx, nil, module.HostOptions{})
+		_, err := badMod.Initialize(ctx, &fakeModuleHost{}, module.HostOptions{})
 		assert.ErrIsLike(t, err, "Files must not be empty")
 	})
 }

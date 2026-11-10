@@ -19,7 +19,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/config/vars"
@@ -28,8 +31,14 @@ import (
 	"go.chromium.org/luci/server/module"
 )
 
-// CronHandlerID is the server/cron handler ID registered by this module.
-const CronHandlerID = "cfgcache"
+const (
+	// CronHandlerID is the server/cron handler ID registered by this module.
+	CronHandlerID = "cfgcache"
+
+	// memoryRefreshID is the RunInBackground activity name for refreshing in-memory
+	// configs.
+	memoryRefreshID = "cfgcache"
+)
 
 // ModuleName can be used to refer to this module when declaring dependencies.
 var ModuleName = module.RegisterName("go.chromium.org/luci/server/cfgcache")
@@ -83,6 +92,35 @@ type ModuleOptions struct {
 	//
 	// If <= 0, defaults to 64.
 	MaxIngestMemoryMB int64
+
+	// DisableInMemory, if true, causes the module initialization to skip the
+	// background refresh loop which loads all configs from storage into
+	// memory.
+	//
+	// You can use this for backend deployments (e.g. cron) which don't need the
+	// in-memory form of the config.
+	//
+	// If this is `true` and your service tries to read the data anyway via
+	// [RegisteredProjects.GetData], [RegisteredProjects.GetAllData], or
+	// [RegisteredService.GetData], they will return an error saying that the
+	// data was never refreshed.
+	DisableInMemory bool
+
+	// MemoryRefreshTimeout is how long to allow one in-memory refresh to take.
+	//
+	// If <= 0, defaults to 1 minute.
+	MemoryRefreshTimeout time.Duration
+
+	// MaxMemoryStaleness is how long to allow in-memory config data to become
+	// stale before returning errors when the service code tries to read it.
+	//
+	// If <= 0, defaults to 10 minutes.
+	MaxMemoryStaleness time.Duration
+
+	// MemoryRefreshEvery is the duration between refresh periods.
+	//
+	// If <= 0, defaults to 60s.
+	MemoryRefreshEvery time.Duration
 }
 
 // Register registers the command line flags.
@@ -93,13 +131,21 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		fmt.Sprintf("Disables the %q cron handler.", CronHandlerID))
 	f.Int64Var(&o.MaxIngestMemoryMB, "cfgcache-max-ingest-memory-mb", defaultMaxIngestMemoryMB,
 		"Maximum total memory (in MiB) of raw config snapshots to ingest concurrently in the cron handler.")
+	f.BoolVar(&o.DisableInMemory, "cfgcache-disable-in-memory", false,
+		"Disables the in-memory refresh routine to load configs into memory.")
+	f.DurationVar(&o.MemoryRefreshTimeout, "cfgcache-memory-refresh-timeout", time.Minute,
+		"How long to allow one in-memory config refresh to take.")
+	f.DurationVar(&o.MaxMemoryStaleness, "cfgcache-max-memory-staleness", 10*time.Minute,
+		"How long to allow in-memory configs to be stale before returning errors.")
+	f.DurationVar(&o.MemoryRefreshEvery, "cfgcache-memory-refresh-every", time.Minute,
+		"How frequently to refresh in-memory configs.")
 }
 
-// NewModule returns a server module that registers cfgcache validation rules
-// and the [CronHandlerID] cron handler.
+// NewModule returns a server module that registers cfgcache validation rules,
+// the [CronHandlerID] cron handler, and the in-memory refresh background loop.
 //
-// `reg` is required! Remember to explicitly register all your
-// [ServicePipeline] and [ProjectPipeline] configs with `reg` before
+// Remember to explicitly register all your [ServicePipeline] and
+// [ProjectPipeline] configs with `opts.Registry` (or [Default]) before
 // `server.Main` initializes modules.
 func NewModule(opts *ModuleOptions) module.Module {
 	if opts == nil {
@@ -164,7 +210,9 @@ func (m *serverModule) Dependencies() []module.Dependency {
 // Initialize is part of module.Module interface.
 func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts module.HostOptions) (context.Context, error) {
 	reg := m.registry()
-	reg.MaxIngestMemoryMB = cmp.Or(m.opts.MaxIngestMemoryMB, reg.MaxIngestMemoryMB, int64(defaultMaxIngestMemoryMB))
+	reg.MaxIngestMemoryMB = cmp.Or(m.opts.MaxIngestMemoryMB, reg.MaxIngestMemoryMB)
+	reg.MaxMemoryStaleness = cmp.Or(m.opts.MaxMemoryStaleness, reg.MaxMemoryStaleness)
+	reg.MemoryRefreshTimeout = cmp.Or(m.opts.MemoryRefreshTimeout, reg.MemoryRefreshTimeout)
 
 	if m.vars() != cmp.Or(m.rules().Vars, &vars.Vars) {
 		panic("ModuleOptions: Vars != Rules.Vars")
@@ -179,6 +227,15 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	}
 	if !m.opts.DisableCron {
 		m.cron().RegisterHandler(CronHandlerID, reg.IngestToStorage)
+	}
+	if !m.opts.DisableInMemory {
+		if m.opts.MemoryRefreshEvery <= 0 {
+			m.opts.MemoryRefreshEvery = time.Minute
+		}
+		if err := reg.RefreshInMemory(ctx); err != nil {
+			return nil, err
+		}
+		host.RunInBackground(memoryRefreshID, m.refreshLoop)
 	}
 	return ctx, nil
 }
@@ -197,4 +254,26 @@ func (m *serverModule) vars() *vars.VarSet {
 
 func (m *serverModule) cron() *cron.Dispatcher {
 	return cmp.Or(m.opts.CronDispatcher, &cron.Default)
+}
+
+// refreshLoop periodically refreshes all gettable configs in the registry
+// until ctx is done.
+func (m *serverModule) refreshLoop(ctx context.Context) {
+	reg := m.registry()
+
+	// Randomly widen our refresh window (early or late) by 20%.
+	//
+	// Although we always refresh the configs right away in Initialize, this will
+	// help quickly spread out instances's pings against the stored configs.
+	jitterWindow := int64(float64(m.opts.MemoryRefreshEvery) * 0.2)
+
+	for {
+		jitter := time.Duration(rand.Int63n(jitterWindow))
+		if r := <-clock.After(ctx, m.opts.MemoryRefreshEvery+jitter); r.Err != nil {
+			return // the context is canceled
+		}
+		// Note that RefreshInMemory internally logs errors, so we don't need to
+		// log them again here.
+		_ = reg.RefreshInMemory(ctx)
+	}
 }
