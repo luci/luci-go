@@ -91,6 +91,13 @@ export const MAX_PAGE_SIZE = 1000;
 export const MAX_SUGGEST_RESULTS = 10;
 
 /**
+ * How long (in milliseconds) uncached filter suggestions stay fresh before
+ * react-query refetches them (e.g. on window focus). These requests bypass the
+ * server-side cache and can take tens of seconds, so avoid refetching them.
+ */
+export const UNCACHED_SUGGEST_STALE_TIME_MS = 5 * 60 * 1000;
+
+/**
  * Key for the number of aggregated rows in chart data points.
  */
 export const NUM_AGGREGATED_ROWS = 'num_aggregated_rows';

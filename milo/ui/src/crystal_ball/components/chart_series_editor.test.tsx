@@ -27,6 +27,7 @@ import {
   Column,
   COMMON_MESSAGES,
   RAW_DATA_STAT_LABEL,
+  UNCACHED_SUGGEST_STALE_TIME_MS,
 } from '@/crystal_ball/constants';
 import { FiltersClipboardProvider } from '@/crystal_ball/context';
 import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
@@ -680,6 +681,33 @@ describe('ChartSeriesItem', () => {
     expect(itemProps.onUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         matchType: PerfChartSeries_MatchType.REGEX,
+      }),
+    );
+  });
+
+  it('only fetches statistical key suggestions once the dropdown is opened', async () => {
+    const lastStatKeyOptions = () =>
+      mockedSuggestValues.mock.calls
+        .filter(([request]) => request?.column === 'statistical_key')
+        .at(-1)?.[1];
+
+    mockedSuggestValues.mockClear();
+    render(<ChartSeriesItem {...itemProps} />);
+    fireEvent.click(screen.getByText('Item 1'));
+    const statKeyInput = await screen.findByLabelText('Precomputed Statistic');
+
+    expect(lastStatKeyOptions()).toEqual(
+      expect.objectContaining({ enabled: false }),
+    );
+
+    fireEvent.focus(statKeyInput);
+    fireEvent.keyDown(statKeyInput, { key: 'ArrowDown' });
+    await screen.findByRole('option', { name: 'suggest1' });
+
+    expect(lastStatKeyOptions()).toEqual(
+      expect.objectContaining({
+        enabled: true,
+        staleTime: UNCACHED_SUGGEST_STALE_TIME_MS,
       }),
     );
   });

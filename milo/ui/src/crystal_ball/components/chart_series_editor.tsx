@@ -72,6 +72,7 @@ import {
   OPERATOR_DISPLAY_NAMES,
   RAW_DATA_STAT_LABEL,
   STATISTICAL_KEY_COLUMN,
+  UNCACHED_SUGGEST_STALE_TIME_MS,
 } from '@/crystal_ball/constants';
 import { EditorUiContext } from '@/crystal_ball/context';
 import {
@@ -1005,6 +1006,12 @@ export function ChartSeriesItem({
     ]);
   }, [globalFilters, widgetFilters, effectiveMetricField, series.matchType]);
 
+  // Statistical keys are fetched with skipCache (the server-side cache is not
+  // scoped by metric), which makes each request a slow, uncached F1 query.
+  // Only fetch them once the user opens the Precomputed Statistic dropdown,
+  // rather than for every mounted series (including collapsed ones) on load.
+  const [statKeysRequested, setStatKeysRequested] = useState(false);
+
   const {
     data: statKeySuggestionData,
     isLoading: isLoadingStatKeysQuery,
@@ -1019,8 +1026,9 @@ export function ChartSeriesItem({
       skipCache: true,
     },
     {
-      enabled: !!parent && effectiveMetricField !== '',
+      enabled: !!parent && effectiveMetricField !== '' && statKeysRequested,
       retry: false,
+      staleTime: UNCACHED_SUGGEST_STALE_TIME_MS,
     },
   );
   const isLoadingStatKeys =
@@ -1722,6 +1730,7 @@ export function ChartSeriesItem({
                     }
                     options={statKeyOptions}
                     inputValue={statInputValue}
+                    onOpen={() => setStatKeysRequested(true)}
                     onInputChange={(_event, newInputValue, reason) => {
                       if (reason === 'reset') {
                         setStatInputValue(

@@ -207,6 +207,51 @@ describe('buildFilterString', () => {
     );
   });
 
+  describe('IN_PAST timestamp stability', () => {
+    const inPastFilters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'build_creation_timestamp',
+        displayName: 'Time Range',
+        dataSpecId: 'data-spec-id',
+        range: {
+          defaultValue: {
+            values: ['7d'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN_PAST,
+          },
+        },
+      },
+    ];
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('truncates IN_PAST timestamps to the minute', () => {
+      jest.setSystemTime(new Date('2026-11-08T12:34:56.789Z'));
+
+      expect(buildFilterString(inPastFilters)).toBe(
+        'build_creation_timestamp >= "2026-11-01T12:34:00Z"',
+      );
+    });
+
+    it('produces identical IN_PAST filter strings within the same minute', () => {
+      jest.setSystemTime(new Date('2026-11-08T12:34:01.000Z'));
+      const first = buildFilterString(inPastFilters);
+      jest.setSystemTime(new Date('2026-11-08T12:34:59.999Z'));
+      const second = buildFilterString(inPastFilters);
+      jest.setSystemTime(new Date('2026-11-08T12:35:00.000Z'));
+      const nextMinute = buildFilterString(inPastFilters);
+
+      expect(second).toBe(first);
+      expect(nextMinute).not.toBe(first);
+    });
+  });
+
   it('handles BETWEEN range filters', () => {
     const filters: PerfFilter[] = [
       {

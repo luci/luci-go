@@ -133,10 +133,14 @@ const expandRangeOperator = (
     }
     const amount = parseInt(match[1], 10);
     const luxonUnit = RELATIVE_DURATION_UNITS[match[2]] ?? 'days';
+    // Truncate to the minute so that filter strings (and therefore react-query
+    // keys) stay stable across re-renders. A millisecond-precision timestamp
+    // makes every recomputation a brand-new, uncached backend query.
     const computedDate = DateTime.now()
       .minus({ [luxonUnit]: amount })
       .toUTC()
-      .toISO();
+      .startOf('minute')
+      .toISO({ suppressMilliseconds: true });
     return computedDate
       ? [
           {
