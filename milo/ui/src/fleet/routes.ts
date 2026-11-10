@@ -16,7 +16,11 @@ import type { RouteObject } from 'react-router';
 
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { obtainAuthState } from '../common/api/auth_state';
+import {
+  obtainAuthState,
+  queryAuthState,
+  setAuthStateCache,
+} from '../common/api/auth_state';
 import { trackedRedirect } from '../generic_libs/tools/react_router_utils/route_utils';
 
 import {
@@ -48,9 +52,18 @@ export const loadRouteForGooglersOnly = (
   onFail: () => LazyModule = loadNotFoundRoute,
 ) => {
   return async () => {
-    const isGoogler = await obtainAuthState()
-      .then((s) => s.email?.endsWith('@google.com') ?? false)
-      .catch(() => false);
+    let authState = await obtainAuthState().catch(() => null);
+    if (!authState?.email?.endsWith('@google.com')) {
+      // Cached auth state in IndexedDB can be stale (e.g. anonymous:anonymous
+      // cached with msToExpire() === Infinity before the user logged in).
+      // Verify against the server before falling back to onFail.
+      const freshState = await queryAuthState().catch(() => null);
+      if (freshState) {
+        setAuthStateCache(freshState);
+        authState = freshState;
+      }
+    }
+    const isGoogler = authState?.email?.endsWith('@google.com') ?? false;
     if (isGoogler) {
       return onSuccess();
     }

@@ -14,12 +14,51 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
+import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
+
 import { PageNotFoundPage } from './not_found_page';
 
 describe('<PageNotFoundPage />', () => {
-  it('should render', async () => {
-    render(<PageNotFoundPage />);
+  it('shows the sign-in notice when the user is not signed in', async () => {
+    render(
+      <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
+        <PageNotFoundPage />
+      </FakeAuthStateProvider>,
+    );
 
     expect(screen.getByText(/Page not found/)).toBeVisible();
+    expect(
+      screen.getByText(
+        'Some pages require sign-in or access permissions to view. Sign in to continue.',
+      ),
+    ).toBeVisible();
+
+    const signInButton = screen.getByRole('link', { name: /Sign in/i });
+    expect(signInButton).toBeVisible();
+    expect(signInButton).toHaveAttribute(
+      'href',
+      expect.stringContaining('/auth/openid/login'),
+    );
+  });
+
+  it('hides the sign-in notice when the user is already signed in', async () => {
+    render(
+      <FakeAuthStateProvider
+        value={{
+          identity: 'user:tester@google.com',
+          email: 'tester@google.com',
+        }}
+      >
+        <PageNotFoundPage />
+      </FakeAuthStateProvider>,
+    );
+
+    expect(screen.getByText(/Page not found/)).toBeVisible();
+    expect(
+      screen.queryByText(
+        /Some pages require sign-in or access permissions to view/i,
+      ),
+    ).not.toBeInTheDocument();
   });
 });

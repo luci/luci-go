@@ -12,41 +12,76 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Typography } from '@mui/material';
+import { Alert, Box, Button, Typography } from '@mui/material';
 
+import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
+import { useAuthState } from '@/common/components/auth_state_provider';
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
+import { getLoginUrl } from '@/common/tools/url_utils';
 import sadBass from '@/fleet/assets/pngs/sad_bass.png';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
 
 import { FleetHelmet } from '../layouts/fleet_helmet';
 
 export const PageNotFoundPage = () => {
+  const auth = useAuthState();
+  const isAnonymous = !auth.identity || auth.identity === ANONYMOUS_IDENTITY;
+  const target =
+    typeof window !== 'undefined'
+      ? window.location.pathname + window.location.search + window.location.hash
+      : '';
+  const redirectTarget = target && target !== '/' ? target : '/ui/fleet';
+
   return (
-    <div
-      css={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        margin: 50,
-      }}
-    >
-      <Typography variant="h1" sx={{ fontSize: 50, letterSpacing: '10.5px' }}>
-        404
-      </Typography>
-      <img
-        alt="logo"
-        id="luci-icon"
-        src={sadBass}
+    <Box sx={{ width: '100%' }}>
+      {isAnonymous && (
+        <Box sx={{ px: 3, pt: 2.5 }}>
+          <Alert
+            severity="info"
+            sx={{ alignItems: 'center' }}
+            action={
+              <Button
+                href={getLoginUrl(redirectTarget)}
+                variant="text"
+                color="primary"
+                size="small"
+                sx={{ flexShrink: 0, ml: 2 }}
+              >
+                Sign in
+              </Button>
+            }
+          >
+            Some pages require sign-in or access permissions to view. Sign in to
+            continue.
+          </Alert>
+        </Box>
+      )}
+      <div
         css={{
-          width: '50%',
-          maxWidth: 400,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          margin: 50,
         }}
-      />
-      <Typography variant="h1" sx={{ fontSize: 50 }}>
-        Page not found
-      </Typography>
-    </div>
+      >
+        <Typography variant="h1" sx={{ fontSize: 50, letterSpacing: '10.5px' }}>
+          404
+        </Typography>
+        <img
+          alt="logo"
+          id="luci-icon"
+          src={sadBass}
+          css={{
+            width: '50%',
+            maxWidth: 400,
+          }}
+        />
+        <Typography variant="h1" sx={{ fontSize: 50 }}>
+          Page not found
+        </Typography>
+      </div>
+    </Box>
   );
 };
 

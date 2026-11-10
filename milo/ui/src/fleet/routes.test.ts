@@ -14,7 +14,11 @@
 
 import { LoaderFunction, LoaderFunctionArgs } from 'react-router';
 
-import { obtainAuthState } from '@/common/api/auth_state';
+import {
+  obtainAuthState,
+  queryAuthState,
+  setAuthStateCache,
+} from '@/common/api/auth_state';
 import * as surveyUtils from '@/fleet/utils/survey';
 import { trackedRedirect } from '@/generic_libs/tools/react_router_utils/route_utils';
 
@@ -25,6 +29,8 @@ const mockedTrackedRedirect = jest.mocked(trackedRedirect);
 
 jest.mock('@/common/api/auth_state');
 const mockedObtainAuthState = jest.mocked(obtainAuthState);
+const mockedQueryAuthState = jest.mocked(queryAuthState);
+const mockedSetAuthStateCache = jest.mocked(setAuthStateCache);
 
 jest.mock('@/fleet/utils/survey');
 const mockedInitiateSurvey = jest.mocked(surveyUtils.initiateSurvey);
@@ -50,10 +56,15 @@ describe('loadRouteForGooglersOnly', () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onFail).not.toHaveBeenCalled();
     expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
+    expect(mockedQueryAuthState).not.toHaveBeenCalled();
   });
 
-  it('should call onFail for a non-Googler', async () => {
+  it('should call onFail for a non-Googler even after queryAuthState', async () => {
     mockedObtainAuthState.mockResolvedValue({
+      identity: 'user:test@example.com',
+      email: 'test@example.com',
+    });
+    mockedQueryAuthState.mockResolvedValue({
       identity: 'user:test@example.com',
       email: 'test@example.com',
     });
@@ -63,10 +74,19 @@ describe('loadRouteForGooglersOnly', () => {
     expect(onFail).toHaveBeenCalledTimes(1);
     expect(onSuccess).not.toHaveBeenCalled();
     expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
+    expect(mockedQueryAuthState).toHaveBeenCalledTimes(1);
+    expect(mockedSetAuthStateCache).toHaveBeenCalledWith({
+      identity: 'user:test@example.com',
+      email: 'test@example.com',
+    });
   });
 
-  it('should call onFail for an anonymous user', async () => {
+  it('should call onFail for an anonymous user when queryAuthState remains anonymous', async () => {
     mockedObtainAuthState.mockResolvedValue({
+      identity: 'anonymous:anonymous',
+      email: undefined,
+    });
+    mockedQueryAuthState.mockResolvedValue({
       identity: 'anonymous:anonymous',
       email: undefined,
     });
@@ -76,6 +96,29 @@ describe('loadRouteForGooglersOnly', () => {
     expect(onFail).toHaveBeenCalledTimes(1);
     expect(onSuccess).not.toHaveBeenCalled();
     expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
+    expect(mockedQueryAuthState).toHaveBeenCalledTimes(1);
+  });
+
+  it('should refresh stale anonymous cache and call onSuccess if queryAuthState returns a Googler', async () => {
+    mockedObtainAuthState.mockResolvedValue({
+      identity: 'anonymous:anonymous',
+      email: undefined,
+    });
+    mockedQueryAuthState.mockResolvedValue({
+      identity: 'user:fresh@google.com',
+      email: 'fresh@google.com',
+    });
+    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail);
+    await expect(lazyLoader()).resolves.toEqual({ component: 'Success' });
+
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onFail).not.toHaveBeenCalled();
+    expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
+    expect(mockedQueryAuthState).toHaveBeenCalledTimes(1);
+    expect(mockedSetAuthStateCache).toHaveBeenCalledWith({
+      identity: 'user:fresh@google.com',
+      email: 'fresh@google.com',
+    });
   });
 });
 
