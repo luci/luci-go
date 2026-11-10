@@ -1,6 +1,16 @@
-// Copyright 2019 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import "./task-mass-cancel";
 import fetchMock from "fetch-mock";
@@ -105,6 +115,36 @@ describe("task-mass-cancel", function () {
           end: Timestamp.fromMilliseconds(20).toJSON(),
         };
         expect(payload).toEqual(expected);
+        done();
+      });
+
+      ele._readyToCancel = true;
+      ele.render();
+      const button = $$("button.cancel", ele);
+      button.click();
+    });
+  });
+
+  it("pages cancellation calls and picks up refreshed authHeader", function (done) {
+    createElement((ele) => {
+      let first = true;
+      mockPrpc(fetchMock, "swarming.v2.Tasks", "CancelTasks", (_req) => {
+        if (first) {
+          first = false;
+          ele.authHeader = "Bearer refreshed-token";
+          return { matched: 100, cursor: "page-2" };
+        }
+        return { matched: 22 };
+      });
+
+      ele.addEventListener("tasks-canceling-finished", () => {
+        expectNoUnmatchedCalls(fetchMock);
+        const calls = fetchMock.calls(MATCHED, "POST");
+        expect(calls).toHaveSize(2, "2 paginated cancel calls");
+        expect(calls[0][1].headers.authorization).toBe("fake");
+        expect(calls[1][1].headers.authorization).toBe(
+          "Bearer refreshed-token"
+        );
         done();
       });
 

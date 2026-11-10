@@ -1,6 +1,16 @@
-// Copyright 2019 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2019 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import "./bot-mass-delete";
 import fetchMock from "fetch-mock";
@@ -154,6 +164,7 @@ describe("bot-mass-delete", function () {
         (_req) => {
           if (first) {
             first = false;
+            ele.authHeader = "Bearer refreshed-token";
             return {
               items: [{ botId: "bot-1" }],
               cursor: "alpha",
@@ -190,6 +201,10 @@ describe("bot-mass-delete", function () {
         expectNoUnmatchedCalls(fetchMock);
         const calls = fetchMock.calls(MATCHED, "POST");
         expect(calls).toHaveSize(3 + 2, "3 to delete, 2 from list");
+        expect(calls[0][1].headers.authorization).toBe("fake");
+        calls.slice(1).forEach((c) => {
+          expect(c[1].headers.authorization).toBe("Bearer refreshed-token");
+        });
         done();
       });
 

@@ -201,10 +201,13 @@ export default class SwarmingAppBoilerplate extends HTMLElement {
   }
 
   _createTasksService() {
-    return new TasksService(this.authHeader, this._fetchController.signal);
+    return new TasksService(
+      () => this.authHeader,
+      this._fetchController.signal
+    );
   }
 
   _createBotService() {
-    return new BotsService(this.authHeader, this._fetchController.signal);
+    return new BotsService(() => this.authHeader, this._fetchController.signal);
   }
 }
