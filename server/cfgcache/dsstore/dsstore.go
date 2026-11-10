@@ -43,6 +43,11 @@ type cachedConfig[StoreMsg proto.Message] struct {
 	Meta   contentMetaProperty
 }
 
+// size implements [sizer] for batching.
+func (c *cachedConfig[StoreMsg]) size() int64 {
+	return c.Meta.TransformedSize
+}
+
 // Store implements [cfgcache.Store] using the `gae/service/datastore` library.
 //
 // Each stored config is stored in its own datastore entity root, and the
