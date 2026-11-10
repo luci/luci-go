@@ -211,6 +211,10 @@ func compileLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin s
 	env := environ.System()
 	env.Set("UV_PYTHON_DOWNLOADS", "never")
 	env.Set("UV_NO_WORKSPACE", "1")
+	// Ignore user, project, and system uv configuration files (e.g.
+	// ~/.config/uv/uv.toml) so custom index-url or keyring settings on a
+	// developer workstation do not leak into lockfile compilation.
+	env.Set("UV_NO_CONFIG", "1")
 	if pythonBin != "" {
 		env.Set("UV_PYTHON", pythonBin)
 	} else {

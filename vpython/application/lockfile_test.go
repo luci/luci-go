@@ -93,7 +93,7 @@ func TestCompileLockfileBoundsPythonVersion(t *testing.T) {
 		mockUV := filepath.Join(tempDir, "mock_uv.sh")
 		mockScript := "#!/bin/sh\n" +
 			"printf '%s\\n' \"$@\" > \"" + argsLog + "\"\n" +
-			"printf 'UV_PYTHON=%s\\n' \"$UV_PYTHON\" > \"" + envLog + "\"\n" +
+			"printf 'UV_PYTHON=%s\\nUV_NO_CONFIG=%s\\n' \"$UV_PYTHON\" \"$UV_NO_CONFIG\" > \"" + envLog + "\"\n" +
 			"while [ $# -gt 0 ]; do\n" +
 			"  if [ \"$1\" = \"--project\" ]; then\n" +
 			"    cp \"$2/pyproject.toml\" \"" + pyprojectLog + "\"\n" +
@@ -126,6 +126,7 @@ func TestCompileLockfileBoundsPythonVersion(t *testing.T) {
 			envData, err := os.ReadFile(envLog)
 			assert.NoErr(t, err)
 			assert.Loosely(t, string(envData), should.ContainSubstring("UV_PYTHON=\n"))
+			assert.That(t, string(envData), should.ContainSubstring("UV_NO_CONFIG=1\n"))
 
 			pyprojectData, err := os.ReadFile(pyprojectLog)
 			assert.NoErr(t, err)
