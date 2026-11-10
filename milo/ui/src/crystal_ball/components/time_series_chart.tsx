@@ -198,6 +198,13 @@ function formatLargeNumber(num: number): string {
   return `${Math.sign(num) * parseFloat(value.toFixed(1))}${name}`;
 }
 
+/**
+ * Maximum width in pixels of a single legend item label. Longer labels are
+ * truncated with an ellipsis (the full name is shown in a tooltip on hover) so
+ * that they do not overlap neighbouring legend items.
+ */
+const LEGEND_LABEL_MAX_WIDTH_PX = 300;
+
 const BASE_OPTION: Partial<EChartsOption> = {
   title: {
     left: 'left',
@@ -218,7 +225,14 @@ const BASE_OPTION: Partial<EChartsOption> = {
     show: true,
     type: 'scroll',
     bottom: 0,
-    textStyle: { fontSize: 12 },
+    left: 10,
+    right: 10,
+    textStyle: {
+      fontSize: 12,
+      overflow: 'truncate',
+      width: LEGEND_LABEL_MAX_WIDTH_PX,
+    },
+    tooltip: { show: true },
   },
   grid: {
     top: 40,

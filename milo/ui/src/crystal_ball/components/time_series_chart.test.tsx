@@ -65,6 +65,13 @@ interface MockEChartsProps
   option: {
     legend: {
       data?: string[];
+      textStyle?: {
+        overflow?: string;
+        width?: number;
+      };
+      tooltip?: {
+        show?: boolean;
+      };
     };
     series: {
       name: string;
@@ -150,6 +157,19 @@ describe('TimeSeriesChart', () => {
     render(<TimeSeriesChart series={[]} />);
 
     expect(screen.getByTestId('echarts-canvas')).toBeInTheDocument();
+  });
+
+  test('truncates long legend labels to prevent overlap', () => {
+    render(
+      <TimeSeriesChart series={mockSeries} useResponsiveContainer={false} />,
+    );
+
+    const lastCallProps: MockEChartsProps = MockECharts.mock.lastCall![0];
+    const { legend } = lastCallProps.option;
+
+    expect(legend.textStyle?.overflow).toBe('truncate');
+    expect(legend.textStyle?.width).toBeGreaterThan(0);
+    expect(legend.tooltip?.show).toBe(true);
   });
 
   test('renders with value xAxisType when specified', () => {
