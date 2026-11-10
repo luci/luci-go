@@ -128,6 +128,7 @@ type DiscoveryCache struct {
 	workUnits       map[string]*pb.WorkUnit
 	ancestors       map[string][]*pb.WorkUnit
 	artifacts       map[string][]*pb.Artifact
+	artifactsMore   map[string]bool
 	xmlReasons      map[string]*XMLReason
 	hasXMLChecked   map[string]bool
 	rootInvocations map[string]*pb.RootInvocation
@@ -141,6 +142,7 @@ func NewDiscoveryCache() *DiscoveryCache {
 		workUnits:       make(map[string]*pb.WorkUnit),
 		ancestors:       make(map[string][]*pb.WorkUnit),
 		artifacts:       make(map[string][]*pb.Artifact),
+		artifactsMore:   make(map[string]bool),
 		xmlReasons:      make(map[string]*XMLReason),
 		hasXMLChecked:   make(map[string]bool),
 		rootInvocations: make(map[string]*pb.RootInvocation),
@@ -211,6 +213,15 @@ func FetchRootInvocation(ctx context.Context, client pb.ResultDBClient, invID st
 	}
 	name := "rootInvocations/" + base.NormalizeInvocation(invID)
 	return getRootInvocationWithCache(ctx, client, name, cacheFromContext(ctx))
+}
+
+// FetchWorkUnit returns the WorkUnit for name, using the context's
+// DiscoveryCache if available to avoid duplicate RPCs.
+func FetchWorkUnit(ctx context.Context, client pb.ResultDBClient, name string) *pb.WorkUnit {
+	if name == "" || client == nil {
+		return nil
+	}
+	return getWorkUnitWithCache(ctx, client, name, cacheFromContext(ctx))
 }
 
 func getWorkUnitWithCache(ctx context.Context, client pb.ResultDBClient, name string, cache *DiscoveryCache) *pb.WorkUnit {
@@ -338,12 +349,26 @@ func QueryAncestorWorkUnits(ctx context.Context, client pb.ResultDBClient, targe
 	return ancestors
 }
 
+// QueryArtifactsForParent lists up to 1000 artifacts for parent, using the
+// context's DiscoveryCache if available to avoid duplicate ListArtifacts RPCs.
+// It returns the artifacts, whether additional pages exist (NextPageToken != ""),
+// and any RPC error.
+func QueryArtifactsForParent(ctx context.Context, client pb.ResultDBClient, parent string) ([]*pb.Artifact, bool, error) {
+	return queryArtifactsForParentWithMore(ctx, client, parent, cacheFromContext(ctx))
+}
+
 func queryArtifactsForParent(ctx context.Context, client pb.ResultDBClient, parent string, cache *DiscoveryCache) ([]*pb.Artifact, error) {
+	arts, _, err := queryArtifactsForParentWithMore(ctx, client, parent, cache)
+	return arts, err
+}
+
+func queryArtifactsForParentWithMore(ctx context.Context, client pb.ResultDBClient, parent string, cache *DiscoveryCache) ([]*pb.Artifact, bool, error) {
 	if cache != nil {
 		cache.mu.RLock()
 		if arts, ok := cache.artifacts[parent]; ok {
+			more := cache.artifactsMore[parent]
 			cache.mu.RUnlock()
-			return arts, nil
+			return arts, more, nil
 		}
 		cache.mu.RUnlock()
 	}
@@ -352,14 +377,16 @@ func queryArtifactsForParent(ctx context.Context, client pb.ResultDBClient, pare
 		PageSize: 1000,
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
+	more := res.NextPageToken != ""
 	if cache != nil {
 		cache.mu.Lock()
 		cache.artifacts[parent] = res.Artifacts
+		cache.artifactsMore[parent] = more
 		cache.mu.Unlock()
 	}
-	return res.Artifacts, nil
+	return res.Artifacts, more, nil
 }
 
 func fetchAndParseXMLReasonWithCache(ctx context.Context, httpClient *http.Client, art *pb.Artifact, cache *DiscoveryCache) (*XMLReason, error) {
@@ -817,7 +844,14 @@ func FprintFirstLevelWorkUnitFailures(out io.Writer, invID string, failures []*W
 		if len(meta) > 0 {
 			suffix = " (" + strings.Join(meta, ", ") + ")"
 		}
-		fmt.Fprintf(out, "%sFailed Child Work Unit: %s%s\n", indent, f.WorkUnitID, suffix)
+		heading := "Failed Child Work Unit"
+		switch f.State {
+		case pb.WorkUnit_SKIPPED:
+			heading = "Skipped Child Work Unit"
+		case pb.WorkUnit_CANCELLED:
+			heading = "Cancelled Child Work Unit"
+		}
+		fmt.Fprintf(out, "%s%s: %s%s\n", indent, heading, f.WorkUnitID, suffix)
 		summary := f.FullSummaryText
 		if summary == "" {
 			summary = f.SummaryMarkdown
@@ -869,6 +903,8 @@ var interestingArtifactRules = []failureArtifactRule{
 
 func isFailedOrSkippedWorkUnit(wu *pb.WorkUnit) bool {
 	switch wu.GetState() {
+	case pb.WorkUnit_SUCCEEDED:
+		return false
 	case pb.WorkUnit_FAILED, pb.WorkUnit_SKIPPED, pb.WorkUnit_CANCELLED:
 		return true
 	default:

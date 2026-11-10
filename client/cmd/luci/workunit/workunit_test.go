@@ -645,5 +645,65 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("host_log_123.txt"))
 			assert.Loosely(t, out, should.ContainSubstring("To fetch an ancestor work unit artifact:\n  luci artifact <get|head|tail> -invocationid=ants-i77100010600769898 -workunitid=ants-wu505 -artifactid=<ARTIFACT_ID>"))
 		})
+
+		t.Run(`surfaces failed child TFC_COMMAND_TASK summary and invocationFailed_* artifacts on root and child work-unit get`, func(t *ftt.Test) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/trace" {
+					_, _ = w.Write([]byte("com.android.tradefed.device.DeviceNotAvailableException: Device lost"))
+				} else {
+					_, _ = w.Write([]byte("Full summary from invocationFailed_summary_markdown"))
+				}
+			}))
+			defer srv.Close()
+
+			rootName := "rootInvocations/ants-i11400010573721720/workUnits/root"
+			childName := "rootInvocations/ants-i11400010573721720/workUnits/ants-wu11400010573721720"
+			passChildName := "rootInvocations/ants-i11400010573721720/workUnits/ants-wu11400010573721721"
+
+			var childListArtCalls int
+			client := &mockWorkUnitResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					switch in.Name {
+					case rootName:
+						return &pb.WorkUnit{Name: rootName, WorkUnitId: "root", State: pb.WorkUnit_FAILED, SummaryMarkdown: "stack trace:", ChildWorkUnits: []string{childName, passChildName}}, nil
+					case passChildName:
+						return &pb.WorkUnit{Name: passChildName, WorkUnitId: "ants-wu11400010573721721", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_SUCCEEDED, SummaryMarkdown: "ok"}, nil
+					default:
+						return &pb.WorkUnit{Name: childName, WorkUnitId: "ants-wu11400010573721720", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_FAILED, SummaryMarkdown: "truncated"}, nil
+					}
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == childName {
+						childListArtCalls++
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{Name: childName + "/artifacts/invocationFailed_summary_markdown", ArtifactId: "invocationFailed_summary_markdown", FetchUrl: srv.URL + "/summary"},
+								{Name: childName + "/artifacts/invocationFailed_trace", ArtifactId: "invocationFailed_trace", FetchUrl: srv.URL + "/trace"},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			rRoot := &workUnitGetRun{client: client, httpClient: srv.Client(), invocationID: "ants-i11400010573721720", workUnitID: "root"}
+			outRoot := testutil.CaptureStdout(func() {
+				assert.Loosely(t, rRoot.Run(nil, nil, nil), should.Equal(0))
+			})
+			assert.Loosely(t, outRoot, should.ContainSubstring("Failed Child Work Unit: ants-wu11400010573721720 (kind: TFC_COMMAND_TASK, state: FAILED)\n"))
+			assert.Loosely(t, outRoot, should.NotContainSubstring("Failed Child Work Unit: ants-wu11400010573721721"))
+			assert.Loosely(t, outRoot, should.ContainSubstring("Full summary from invocationFailed_summary_markdown"))
+			assert.Loosely(t, outRoot, should.ContainSubstring("DeviceNotAvailableException: Device lost"))
+			assert.Loosely(t, outRoot, should.ContainSubstring("luci artifact get -invocationid=ants-i11400010573721720 -workunitid=ants-wu11400010573721720 -artifactid=invocationFailed_trace"))
+
+			childListArtCalls = 0
+			rChild := &workUnitGetRun{client: client, httpClient: srv.Client(), invocationID: "ants-i11400010573721720", workUnitID: "ants-wu11400010573721720"}
+			outChild := testutil.CaptureStdout(func() {
+				assert.Loosely(t, rChild.Run(nil, nil, nil), should.Equal(0))
+			})
+			assert.Loosely(t, childListArtCalls, should.Equal(1))
+			assert.Loosely(t, outChild, should.ContainSubstring("Full summary from invocationFailed_summary_markdown"))
+			assert.Loosely(t, outChild, should.ContainSubstring("luci artifact get -invocationid=ants-i11400010573721720 -workunitid=ants-wu11400010573721720 -artifactid=invocationFailed_summary_markdown"))
+		})
 	})
 }

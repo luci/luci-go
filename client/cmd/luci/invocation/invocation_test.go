@@ -17,6 +17,8 @@ package invocation
 import (
 	"bytes"
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -35,6 +37,9 @@ type mockInvocationResultDBClient struct {
 	pb.ResultDBClient
 	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
 	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
+	getWorkUnit           func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
+	batchGetWorkUnits     func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error)
+	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
 	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
 }
 
@@ -50,6 +55,27 @@ func (m *mockInvocationResultDBClient) GetInvocation(ctx context.Context, in *pb
 		return m.getInvocation(ctx, in)
 	}
 	return &pb.Invocation{Name: in.Name}, nil
+}
+
+func (m *mockInvocationResultDBClient) GetWorkUnit(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+	if m.getWorkUnit != nil {
+		return m.getWorkUnit(ctx, in)
+	}
+	return nil, nil
+}
+
+func (m *mockInvocationResultDBClient) BatchGetWorkUnits(ctx context.Context, in *pb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*pb.BatchGetWorkUnitsResponse, error) {
+	if m.batchGetWorkUnits != nil {
+		return m.batchGetWorkUnits(ctx, in)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
+}
+
+func (m *mockInvocationResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+	if m.listArtifacts != nil {
+		return m.listArtifacts(ctx, in)
+	}
+	return &pb.ListArtifactsResponse{}, nil
 }
 
 func (m *mockInvocationResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
@@ -181,7 +207,7 @@ func TestInvocationGet(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printInvocationDetails(ctx, &buf, client, resolved, true)
+			printInvocationDetails(ctx, &buf, client, nil, resolved, true)
 			out := buf.String()
 			assert.Loosely(t, out, should.ContainSubstring("Invocation:    rootInvocations/ants-i14600010609614895 [2 failed, 40 passed]\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Inv State:     SUCCEEDED (FINALIZED)\n"))
@@ -194,6 +220,62 @@ func TestInvocationGet(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Invocation Tags:\n  test_type: mts\n"))
 			assert.Loosely(t, out, should.ContainSubstring(`"runner"`))
 			assert.Loosely(t, out, should.ContainSubstring(`"tradefed"`))
+		})
+
+		t.Run(`surfaces root and failed child TFC_COMMAND_TASK work unit summaries and invocationFailed_trace artifacts`, func(t *ftt.Test) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/root-summary":
+					_, _ = w.Write([]byte("Full root summary from invocationFailed_summary_markdown."))
+				default:
+					_, _ = w.Write([]byte("com.android.tradefed.device.DeviceNotAvailableException: Device 127.0.0.1:41235 offline"))
+				}
+			}))
+			defer srv.Close()
+
+			rootName := "rootInvocations/ants-i11700010583257168/workUnits/root"
+			childName := "rootInvocations/ants-i11700010583257168/workUnits/ants-wu11700010583257168"
+			passChildName := "rootInvocations/ants-i11700010583257168/workUnits/ants-wu11700010583257169"
+
+			client := &mockInvocationResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{Name: in.Name, State: pb.RootInvocation_FAILED, SummaryMarkdown: "Test command failed (truncated)."}, nil
+				},
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{Name: rootName, WorkUnitId: "root", State: pb.WorkUnit_FAILED, SummaryMarkdown: "Test command failed (truncated).", ChildWorkUnits: []string{childName, passChildName}}, nil
+				},
+				batchGetWorkUnits: func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error) {
+					return &pb.BatchGetWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{Name: childName, WorkUnitId: "ants-wu11700010583257168", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_FAILED, SummaryMarkdown: "- **error_name**: DEVICE_UNAVAILABLE"},
+							{Name: passChildName, WorkUnitId: "ants-wu11700010583257169", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_SUCCEEDED, SummaryMarkdown: "ok"},
+						},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == rootName {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{{ArtifactId: "invocationFailed_summary_markdown", FetchUrl: srv.URL + "/root-summary"}},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{
+						Artifacts: []*pb.Artifact{{ArtifactId: "invocationFailed_trace", FetchUrl: srv.URL + "/trace"}},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			r := &invocationGetRun{client: client, httpClient: srv.Client(), out: &buf, invocationID: "ants-i11700010583257168"}
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, out, should.ContainSubstring("Summary:\n  Full root summary from invocationFailed_summary_markdown.\n"))
+			assert.Loosely(t, out, should.ContainSubstring("luci artifact get -invocationid=ants-i11700010583257168 -workunitid=root -artifactid=invocationFailed_summary_markdown"))
+			assert.Loosely(t, out, should.ContainSubstring("Failed Child Work Unit: ants-wu11700010583257168 (kind: TFC_COMMAND_TASK, state: FAILED)\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("ants-wu11700010583257169"))
+			assert.Loosely(t, out, should.ContainSubstring("- **error_name**: DEVICE_UNAVAILABLE"))
+			assert.Loosely(t, out, should.ContainSubstring("DeviceNotAvailableException: Device 127.0.0.1:41235 offline"))
+			assert.Loosely(t, out, should.ContainSubstring("luci artifact get -invocationid=ants-i11700010583257168 -workunitid=ants-wu11700010583257168 -artifactid=invocationFailed_trace"))
 		})
 
 		t.Run(`fails immediately on PermissionDenied`, func(t *ftt.Test) {

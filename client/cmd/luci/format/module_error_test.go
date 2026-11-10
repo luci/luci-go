@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -335,7 +336,9 @@ func TestDiscoverFirstLevelWorkUnitFailures(t *testing.T) {
 		rootName := "rootInvocations/ants-i11700010583257168/workUnits/root"
 		childFailName := "rootInvocations/ants-i11700010583257168/workUnits/ants-wu11700010583257168"
 		childPassName := "rootInvocations/ants-i11700010583257168/workUnits/ants-wu11700010583257169"
+		childSkipName := "rootInvocations/ants-i11700010583257168/workUnits/ants-wu11700010583257170"
 
+		var mu sync.Mutex
 		var listedParents []string
 		fakeClient := &fakeDiscoveryRDBClient{
 			getWorkUnitFunc: func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
@@ -343,19 +346,25 @@ func TestDiscoverFirstLevelWorkUnitFailures(t *testing.T) {
 					Name:           rootName,
 					WorkUnitId:     "root",
 					State:          pb.WorkUnit_FAILED,
-					ChildWorkUnits: []string{childFailName, childPassName},
+					ChildWorkUnits: []string{childFailName, childPassName, childSkipName},
 				}, nil
 			},
 			batchGetWorkUnitsFunc: func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest, opts ...grpc.CallOption) (*pb.BatchGetWorkUnitsResponse, error) {
 				return &pb.BatchGetWorkUnitsResponse{
 					WorkUnits: []*pb.WorkUnit{
 						{Name: childFailName, WorkUnitId: "ants-wu11700010583257168", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_FAILED, SummaryMarkdown: "truncated"},
-						{Name: childPassName, WorkUnitId: "ants-wu11700010583257169", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_SUCCEEDED},
+						{Name: childPassName, WorkUnitId: "ants-wu11700010583257169", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_SUCCEEDED, SummaryMarkdown: "ok"},
+						{Name: childSkipName, WorkUnitId: "ants-wu11700010583257170", Kind: "TFC_COMMAND_TASK", State: pb.WorkUnit_SKIPPED, SummaryMarkdown: "Skipped by shard filter"},
 					},
 				}, nil
 			},
 			listArtifactsFunc: func(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+				mu.Lock()
 				listedParents = append(listedParents, in.Parent)
+				mu.Unlock()
+				if in.Parent == childSkipName {
+					return &pb.ListArtifactsResponse{}, nil
+				}
 				return &pb.ListArtifactsResponse{
 					Artifacts: []*pb.Artifact{
 						{ArtifactId: "invocationFailed_trace", FetchUrl: srv.URL + "/trace"},
@@ -368,7 +377,7 @@ func TestDiscoverFirstLevelWorkUnitFailures(t *testing.T) {
 
 		failures := DiscoverFirstLevelWorkUnitFailures(ctx, fakeClient, srv.Client(), "ants-i11700010583257168", nil)
 		assert.Loosely(t, listedParents, should.NotContain(childPassName))
-		assert.Loosely(t, len(failures), should.Equal(1))
+		assert.Loosely(t, len(failures), should.Equal(2))
 		assert.Loosely(t, failures[0].FullSummaryText, should.Equal(fullSummary))
 		assert.Loosely(t, len(failures[0].Artifacts), should.Equal(3))
 		assert.Loosely(t, failures[0].Artifacts[0].ID, should.Equal("invocationFailed_summary_markdown"))
@@ -380,6 +389,8 @@ func TestDiscoverFirstLevelWorkUnitFailures(t *testing.T) {
 		out := buf.String()
 
 		assert.Loosely(t, out, should.ContainSubstring("Failed Child Work Unit: ants-wu11700010583257168 (kind: TFC_COMMAND_TASK, state: FAILED)"))
+		assert.Loosely(t, out, should.ContainSubstring("Skipped Child Work Unit: ants-wu11700010583257170 (kind: TFC_COMMAND_TASK, state: SKIPPED)"))
+		assert.Loosely(t, out, should.NotContainSubstring("ants-wu11700010583257169"))
 		assert.Loosely(t, out, should.ContainSubstring("Full untruncated failure summary"))
 		assert.Loosely(t, out, should.ContainSubstring("luci artifact get -invocationid=ants-i11700010583257168 -workunitid=ants-wu11700010583257168 -artifactid=invocationFailed_summary_markdown"))
 		assert.Loosely(t, out, should.ContainSubstring("Invocation Failure Trace (invocationFailed_trace):"))

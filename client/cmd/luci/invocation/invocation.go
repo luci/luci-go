@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -88,6 +89,7 @@ type invocationGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
 	client       pb.ResultDBClient
+	httpClient   *http.Client
 	out          io.Writer
 	host         string
 	invocationID string
@@ -113,13 +115,14 @@ func (r *invocationGetRun) Run(a subcommands.Application, args []string, env sub
 	ctx := cli.GetContext(a, r, env)
 	ctx = format.WithDiscoveryCache(ctx)
 	client := r.client
+	httpClient := r.httpClient
 	if client == nil && r.af != nil {
 		if err := r.af.Parse(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
 			return 1
 		}
 		var err error
-		client, _, _, err = r.af.NewResultDBClient(ctx, r.host)
+		client, _, httpClient, err = r.af.NewResultDBClient(ctx, r.host)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
 			return 1
@@ -171,11 +174,11 @@ func (r *invocationGetRun) Run(a subcommands.Application, args []string, env sub
 	}
 
 	ids.PrintDerivedIDs(out, extracted)
-	printInvocationDetails(ctx, out, client, resolved, r.showMetadata)
+	printInvocationDetails(ctx, out, client, httpClient, resolved, r.showMetadata)
 	return 0
 }
 
-func printInvocationDetails(ctx context.Context, out io.Writer, client pb.ResultDBClient, resolved *base.ResolvedInvocation, showMetadata bool) {
+func printInvocationDetails(ctx context.Context, out io.Writer, client pb.ResultDBClient, httpClient *http.Client, resolved *base.ResolvedInvocation, showMetadata bool) {
 	if resolved == nil {
 		return
 	}
@@ -248,9 +251,24 @@ func printInvocationDetails(ctx context.Context, out io.Writer, client pb.Result
 		if rootInv.GetFinalizeTime() != nil {
 			fmt.Fprintf(out, "Finalized:     %s\n", rootInv.GetFinalizeTime().AsTime().UTC().Format(time.RFC3339))
 		}
-		if summary := strings.TrimSpace(rootInv.GetSummaryMarkdown()); summary != "" {
+		var rootFailure *format.WorkUnitFailure
+		var failures []*format.WorkUnitFailure
+		if client != nil && rootInv.GetState() != pb.RootInvocation_SUCCEEDED {
+			rootWU := format.FetchWorkUnit(ctx, client, base.FormatWorkUnitResourceName(resolved.ID, "root"))
+			rootFailure = format.DiscoverSingleWorkUnitFailure(ctx, client, httpClient, rootWU)
+			failures = format.DiscoverFirstLevelWorkUnitFailures(ctx, client, httpClient, resolved.ID, rootWU)
+		}
+		summary := strings.TrimSpace(rootInv.GetSummaryMarkdown())
+		if rootFailure != nil && rootFailure.FullSummaryText != "" {
+			summary = strings.TrimSpace(rootFailure.FullSummaryText)
+		}
+		if summary != "" {
 			fmt.Fprintf(out, "Summary:\n  %s\n", strings.ReplaceAll(summary, "\n", "\n  "))
 		}
+		if rootFailure != nil {
+			format.FprintWorkUnitFailureArtifacts(out, resolved.ID, rootFailure, "")
+		}
+		format.FprintFirstLevelWorkUnitFailures(out, resolved.ID, failures, "")
 		if showMetadata {
 			fmt.Fprintln(out)
 			format.FprintRootInvocationAdditionalMetadata(out, rootInv)

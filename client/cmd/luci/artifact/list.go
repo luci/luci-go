@@ -504,15 +504,12 @@ func fetchAncestorWorkUnitArtifacts(ctx context.Context, client rdbpb.ResultDBCl
 
 	var withArtifacts []ancestorWUInfo
 	for _, wuName := range wuToCheck {
-		res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
-			Parent:   wuName,
-			PageSize: 1000,
-		})
-		if err == nil && len(res.Artifacts) > 0 {
+		arts, more, err := format.QueryArtifactsForParent(ctx, client, wuName)
+		if err == nil && len(arts) > 0 {
 			withArtifacts = append(withArtifacts, ancestorWUInfo{
 				name:      wuName,
-				artifacts: res.Artifacts,
-				more:      res.NextPageToken != "",
+				artifacts: arts,
+				more:      more,
 			})
 		}
 	}
@@ -607,18 +604,15 @@ func FetchWorkUnitAndAncestorNoticeFormatter(ctx context.Context, client rdbpb.R
 	directArtifactIDs := make(map[string][]string)
 
 	for _, wuName := range inspectedTargets {
-		res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
-			Parent:   wuName,
-			PageSize: 1000,
-		})
-		if err == nil && len(res.Artifacts) > 0 {
+		arts, more, err := format.QueryArtifactsForParent(ctx, client, wuName)
+		if err == nil && len(arts) > 0 {
 			directWithArtifacts = append(directWithArtifacts, ancestorWUInfo{
 				name:      wuName,
-				artifacts: res.Artifacts,
-				more:      res.NextPageToken != "",
+				artifacts: arts,
+				more:      more,
 			})
-			artIDs := make([]string, 0, len(res.Artifacts))
-			for _, a := range res.Artifacts {
+			artIDs := make([]string, 0, len(arts))
+			for _, a := range arts {
 				if a.GetArtifactId() != "" {
 					artIDs = append(artIDs, a.GetArtifactId())
 				}
@@ -639,15 +633,12 @@ func FetchWorkUnitAndAncestorNoticeFormatter(ctx context.Context, client rdbpb.R
 
 	var ancestorsWithArtifacts []ancestorWUInfo
 	for _, ancName := range ancToCheck {
-		res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
-			Parent:   ancName,
-			PageSize: 1000,
-		})
-		if err == nil && len(res.Artifacts) > 0 {
+		arts, more, err := format.QueryArtifactsForParent(ctx, client, ancName)
+		if err == nil && len(arts) > 0 {
 			ancestorsWithArtifacts = append(ancestorsWithArtifacts, ancestorWUInfo{
 				name:      ancName,
-				artifacts: res.Artifacts,
-				more:      res.NextPageToken != "",
+				artifacts: arts,
+				more:      more,
 			})
 		}
 	}

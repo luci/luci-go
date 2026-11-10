@@ -90,6 +90,7 @@ type workUnitGetRun struct {
 	subcommands.CommandRunBase
 	af           *base.AuthFlags
 	client       pb.ResultDBClient
+	httpClient   *http.Client
 	host         string
 	invocationID string
 	workUnitID   string
@@ -123,7 +124,7 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	ctx := cli.GetContext(a, r, env)
 	ctx = format.WithDiscoveryCache(ctx)
 	client := r.client
-	var httpClient *http.Client
+	httpClient := r.httpClient
 	if client == nil && r.af != nil {
 		if err := r.af.Parse(); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
@@ -265,13 +266,28 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 			fmt.Printf("  - %s\n", childWUID)
 		}
 	}
-	if wu.SummaryMarkdown != "" {
-		fmt.Printf("Summary:\n%s\n", wu.SummaryMarkdown)
-	} else {
+	wuFailure := format.DiscoverSingleWorkUnitFailure(rpcCtx, client, httpClient, wu)
+	var childFailures []*format.WorkUnitFailure
+	if isRoot && wu.GetState() != pb.WorkUnit_SUCCEEDED {
+		childFailures = format.DiscoverFirstLevelWorkUnitFailures(rpcCtx, client, httpClient, invID, wu)
+	}
+	summaryToPrint := wu.SummaryMarkdown
+	if wuFailure != nil && wuFailure.FullSummaryText != "" {
+		summaryToPrint = wuFailure.FullSummaryText
+	}
+	if summaryToPrint != "" {
+		fmt.Printf("Summary:\n%s\n", summaryToPrint)
+	} else if len(childFailures) == 0 {
 		discErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, clean)
 		if discErr != nil {
 			format.PrintModuleErrorForTarget(discErr, clean, "")
 		}
+	}
+	if wuFailure != nil {
+		format.FprintWorkUnitFailureArtifacts(os.Stdout, invID, wuFailure, "")
+	}
+	if len(childFailures) > 0 {
+		format.FprintFirstLevelWorkUnitFailures(os.Stdout, invID, childFailures, "")
 	}
 	if r.showMetadata {
 		fmt.Println()
