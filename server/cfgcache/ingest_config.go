@@ -62,10 +62,18 @@ type ingestConfig struct {
 	transformVersion int64
 	transformFunc    genericTransformFunc
 	store            genericStore
+	reg              *Registry
+
+	toMemory           genericToMemoryFunc
+	toMemoryMaxVersion int64
+	toMemoryMinVersion int64
 
 	// serviceName is the *resolved* serviceNamePattern. Set in
 	// [Registry.Initialize].
 	serviceName string
+
+	// Used by in-memory refreshes.
+	state stateRecord
 }
 
 func (ic *ingestConfig) String() string {
@@ -218,4 +226,11 @@ func (ic *ingestConfig) validateAndTransform(ctx *validation.Context, configSet 
 
 	ctx.SetFile(baseName)
 	return ic.transformFunc(ctx, snap)
+}
+
+func (ic *ingestConfig) checkInitialized() {
+	if ic.reg == nil {
+		panic("config not registered")
+	}
+	ic.reg.checkInitialized()
 }

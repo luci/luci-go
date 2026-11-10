@@ -15,9 +15,16 @@
 package cfgcache
 
 import (
+	"context"
 	"fmt"
+	"reflect"
+	"sync"
 
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config"
 )
 
 // PassthroughProjectPipeline is a shorthand for a [ProjectPipeline] whose
@@ -92,11 +99,12 @@ type ProjectPipeline[StoreMsg proto.Message, InMemory any] struct {
 	//  3. Increment `ToMemoryMinVersion` and drop old version support from
 	//     `ToMemory`.
 	//
-	// If the stored StoreMsg has a TransformVersion > ToMemoryMaxVersion, the
-	// in-memory refresh loop will log a warning, and will not invoke ToMemory.
+	// NOTE: Failing to roll out the pipeline in this fashion will block server
+	// startup!
 	//
-	// If the stored StoreMsg has a TransformVersion < ToMemoryMinVersion, the
-	// in-memory refresh loop will log an error, and will not invoke ToMemory.
+	// If the stored StoreMsg has a TransformVersion not in the range
+	// [ToMemoryMinVersion, ToMemoryMaxVersion], the in-memory refresh will error
+	// and will not invoke ToMemory.
 	ToMemoryMinVersion int64
 	ToMemoryMaxVersion int64
 
@@ -128,17 +136,131 @@ func (pp *ProjectPipeline[StoreMsg, InMemory]) String() string {
 // Register registers this pipeline with the given registry.
 //
 // Errors are buffered until [Registry.Initialize] is called. Panics if r is
-// nil or already initialized. If using the Registry with the server Module,
-// this must be called before server.Main, because the registered config
-// implies module Dependencies.
+// already initialized. If using the Registry with the server Module, this must
+// be called before server.Main, because the registered config implies module
+// Dependencies.
+//
+// Returns nil if InMemory is [NoMemoryRefresh].
 //
 // Registering enables the pipeline when the Registry is used with the server:
 //   - Validation handlers will call TransformFunc.
 //   - Cron job will fetch and transform committed configs.
-func (pp *ProjectPipeline[StoreMsg, InMemory]) Register(r *Registry) {
-	register(r, pp.Files, pp.Transform, pp.Store, &ingestConfig{
-		id:               pp.ID,
-		desc:             pp.String(),
-		transformVersion: pp.TransformVersion,
-	})
+//   - In memory refresh will call ToMemory and cache accordingly.
+//
+// If `r` is nil, this uses [Default].
+func (pp *ProjectPipeline[StoreMsg, InMemory]) Register(r *Registry) *RegisteredProjects[InMemory] {
+	ret := &RegisteredProjects[InMemory]{
+		ingestConfig: &ingestConfig{
+			id:                 pp.ID,
+			desc:               pp.String(),
+			transformVersion:   pp.TransformVersion,
+			toMemoryMinVersion: pp.ToMemoryMinVersion,
+			toMemoryMaxVersion: pp.ToMemoryMaxVersion,
+		},
+		memoryDefault: pp.MemoryDefault,
+	}
+	store := func(cs config.Set, val *InMemory) {
+		proj := cs.Project()
+		if proj == "" {
+			panic(fmt.Sprintf("impossible: config.Set %q with no project", cs))
+		}
+		if val == nil {
+			ret.dataMap.Delete(proj)
+		} else {
+			ret.dataMap.Store(proj, *val)
+		}
+	}
+	register(r, pp.Files, pp.Transform, pp.Store, pp.ToMemory, store, ret.ingestConfig)
+	if reflect.TypeFor[InMemory]() == reflect.TypeFor[NoMemoryRefresh]() {
+		return nil
+	}
+	return ret
+}
+
+// RegisteredProjects is a [ProjectPipeline] registered with a specific
+// [Registry].
+type RegisteredProjects[InMemory any] struct {
+	ingestConfig *ingestConfig
+
+	memoryDefault func(string) InMemory
+
+	// dataMap maps project name (string) to InMemory, updated by the ToMemory
+	// callback.
+	dataMap sync.Map
+}
+
+// String returns the pipeline identifier description for this config.
+func (ap *RegisteredProjects[InMemory]) String() string {
+	if ap == nil {
+		return "RegisteredProjects[nil]"
+	}
+	return fmt.Sprintf("RegisteredProjects[%s]", ap.ingestConfig)
+}
+
+// GetData returns the in-memory representation of the config for `project`,
+// ensuring the in-memory data has been refreshed within
+// [Registry.MaxMemoryStaleness].
+//
+// If the project's config does not exist in storage, returns
+// `MemoryDefault(project)` (or the zero value of `InMemory` if `MemoryDefault`
+// is nil) and a nil error.
+//
+// Panics if `ap` is nil or `InMemory` is [NoMemoryRefresh].
+//
+// All errors are tagged as transient.
+func (ap *RegisteredProjects[InMemory]) GetData(ctx context.Context, project string) (InMemory, error) {
+	var zero InMemory
+
+	if err := ap.checkFresh(ctx, "GetData"); err != nil {
+		return zero, err
+	}
+
+	ret, ok := ap.dataMap.Load(project)
+	if !ok {
+		if ap.memoryDefault != nil {
+			return ap.memoryDefault(project), nil
+		}
+		return zero, nil
+	}
+	return ret.(InMemory), nil
+}
+
+// GetAllData returns the in-memory representation of the config for all given
+// projects ensuring the in-memory data has been refreshed within
+// [Registry.MaxMemoryStaleness].
+//
+// If a project's config does not exist in storage, populates
+// `MemoryDefault(project)` when `MemoryDefault` is non-nil, or omits the
+// project from the returned map when `MemoryDefault` is nil.
+//
+// Panics if `ap` is nil or `InMemory` is [NoMemoryRefresh].
+//
+// All errors are tagged as transient.
+func (ap *RegisteredProjects[InMemory]) GetAllData(ctx context.Context, projects []string) (map[string]InMemory, error) {
+	if err := ap.checkFresh(ctx, "GetAllData"); err != nil {
+		return nil, err
+	}
+
+	ret := make(map[string]InMemory, len(projects))
+	for _, project := range projects {
+		if item, ok := ap.dataMap.Load(project); ok {
+			ret[project] = item.(InMemory)
+		} else if ap.memoryDefault != nil {
+			ret[project] = ap.memoryDefault(project)
+		}
+	}
+	return ret, nil
+}
+
+// checkFresh panics if this RegisteredProjects is not initialized, or
+// returns an error if we couldn't get the data fresh enough for GetData or
+// GetAllData.
+func (ap *RegisteredProjects[InMemory]) checkFresh(ctx context.Context, method string) error {
+	if reflect.TypeFor[InMemory]() == reflect.TypeFor[NoMemoryRefresh]() {
+		panic(errors.Fmt("%s.%s not available: InMemory is NoMemoryRefresh", ap, method))
+	}
+	if ap == nil {
+		panic(errors.Fmt("%s.%s not available: receiver is nil", ap, method))
+	}
+	return transient.Tag.Apply(ap.ingestConfig.checkFresh(ctx))
 }

@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"regexp"
 	"sync"
+	"time"
 
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/text/pattern"
@@ -42,6 +44,19 @@ type Registry struct {
 	//
 	// If <= 0, defaults to 64.
 	MaxIngestMemoryMB int64
+
+	// MaxMemoryStaleness is the amount of time to tolerate before refusing to
+	// provide stale cached data to the service via [RegisteredProjects.GetData],
+	// [RegisteredProjects.GetAllData], or [RegisteredService.GetData].
+	//
+	// If <= 0, defaults to 10 minutes.
+	MaxMemoryStaleness time.Duration
+
+	// MemoryRefreshTimeout is the amount of time to allow a single memory refresh
+	// operation to take before timing out.
+	//
+	// If <= 0, defaults to 1 minute.
+	MemoryRefreshTimeout time.Duration
 
 	mu                   sync.Mutex
 	errs                 []error
@@ -67,14 +82,11 @@ type Registry struct {
 	singleProjectFile string
 }
 
-// register records `ingestConfig` into this Registry.
-//
-// Panics on a nil registry, but otherwise buffers all errors until
-// register adds ic to r, buffering any structural validation errors until
-// [Registry.Initialize] is called.
-func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformFunc[StoreMsg], store Store[StoreMsg], ic *ingestConfig) {
+// register adds ic to r (or &Default if r is nil), buffering any structural
+// validation errors until [Registry.Initialize] is called.
+func register[StoreMsg proto.Message, InMemory any](r *Registry, files []File, xfrm TransformFunc[StoreMsg], store Store[StoreMsg], toMem ToMemoryFunc[StoreMsg, InMemory], memStore func(config.Set, *InMemory), ic *ingestConfig) {
 	if r == nil {
-		panic("cannot call Register with a nil Registry")
+		r = &Default
 	}
 
 	r.mu.Lock()
@@ -86,6 +98,7 @@ func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformF
 	if r.finishedRegistration {
 		panic("cannot call Register after Module.Dependencies() have been gathered")
 	}
+	ic.reg = r
 
 	// Do all the common validation stuff between ServicePipeline and ProjectPipeline.
 	err := func() (err error) {
@@ -149,7 +162,33 @@ func register[StoreMsg proto.Message](r *Registry, files []File, xfrm TransformF
 			return errors.New("Storage is required")
 		}
 
-		ic.store = storeAdapter[StoreMsg]{store, nil}
+		gettable, isGettable := store.(GettableStore[StoreMsg])
+		ic.store = storeAdapter[StoreMsg]{store, gettable}
+
+		if ic.toMemory, err = toMem.asGeneric(memStore); err != nil {
+			return err
+		}
+		if ic.toMemory == nil {
+			if ic.toMemoryMinVersion != 0 || ic.toMemoryMaxVersion != 0 {
+				return errors.New("ToMemoryMinVersion and ToMemoryMaxVersion must not be set when InMemory is NoMemoryRefresh")
+			}
+		} else {
+			if !isGettable {
+				return errors.Fmt("in-memory refresh requires a GettableStore, got %T", store)
+			}
+			if ic.toMemoryMinVersion < 0 {
+				return errors.New("ToMemoryMinVersion must not be negative")
+			}
+			if ic.toMemoryMaxVersion < 0 {
+				return errors.New("ToMemoryMaxVersion must not be negative")
+			}
+			if ic.toMemoryMinVersion > ic.transformVersion {
+				return errors.Fmt("ToMemoryMinVersion (%d) must be <= TransformVersion (%d)", ic.toMemoryMinVersion, ic.transformVersion)
+			}
+			if ic.toMemoryMaxVersion < ic.transformVersion {
+				return errors.Fmt("ToMemoryMaxVersion (%d) must be >= TransformVersion (%d)", ic.toMemoryMaxVersion, ic.transformVersion)
+			}
+		}
 		return nil
 	}()
 	if err != nil {
@@ -196,6 +235,12 @@ func (r *Registry) Initialize(ctx context.Context, v *vars.VarSet) (err error) {
 	}
 	r.MaxIngestMemoryMB = max(1, r.MaxIngestMemoryMB)
 
+	if r.MaxMemoryStaleness <= 0 {
+		r.MaxMemoryStaleness = 10 * time.Minute
+	}
+	if r.MemoryRefreshTimeout <= 0 {
+		r.MemoryRefreshTimeout = 1 * time.Minute
+	}
 	v = cmp.Or(v, &vars.Vars)
 	csToIC := map[config.Set][]*ingestConfig{}
 	var projectICs []*ingestConfig
@@ -300,4 +345,37 @@ func (r *Registry) clampedSizeMB(contentSize int64) int64 {
 	const mib = 1 << 20
 	mb := (contentSize + mib - 1) / mib
 	return min(r.MaxIngestMemoryMB, max(1, mb))
+}
+
+// RefreshInMemory immediately attempts to refresh the in-memory
+// representation of ALL gettable configs in the registry.
+func (r *Registry) RefreshInMemory(ctx context.Context) error {
+	r.checkInitialized()
+
+	var wg errgroup.Group
+	wg.SetLimit(4)
+
+	// We accumulate all errors into `errs`, rather than returning them via
+	// errgroup, because errgroup only records the first error.
+	var mu sync.Mutex
+	var errs []error
+
+	for _, ic := range r.ingestConfigs {
+		if ic.toMemory == nil {
+			continue
+		}
+		wg.Go(func() error {
+			err := ic.refresh(ctx)
+			if err != nil {
+				mu.Lock()
+				defer mu.Unlock()
+				errs = append(errs, err)
+			}
+			return nil
+		})
+	}
+
+	_ = wg.Wait()
+
+	return errors.Join(errs...)
 }

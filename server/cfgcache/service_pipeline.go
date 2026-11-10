@@ -16,9 +16,16 @@ package cfgcache
 
 import (
 	"cmp"
+	"context"
 	"fmt"
+	"reflect"
+	"sync/atomic"
 
 	"google.golang.org/protobuf/proto"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/config"
 )
 
 // PassthroughServicePipeline is a shorthand for a [ServicePipeline] whose
@@ -104,11 +111,12 @@ type ServicePipeline[StoreMsg proto.Message, InMemory any] struct {
 	//  3. Increment `ToMemoryMinVersion` and drop old version support from
 	//     `ToMemory`.
 	//
-	// If the stored StoreMsg has a TransformVersion > ToMemoryMaxVersion, the
-	// in-memory refresh loop will log a warning, and will not invoke ToMemory.
+	// NOTE: Failing to roll out the pipeline in this fashion will block server
+	// startup!
 	//
-	// If the stored StoreMsg has a TransformVersion < ToMemoryMinVersion, the
-	// in-memory refresh loop will log an error, and will not invoke ToMemory.
+	// If the stored StoreMsg has a TransformVersion not in the range
+	// [ToMemoryMinVersion, ToMemoryMaxVersion], the in-memory refresh will error
+	// and will not invoke ToMemory.
 	ToMemoryMinVersion int64
 	ToMemoryMaxVersion int64
 
@@ -140,18 +148,88 @@ func (s *ServicePipeline[StoreMsg, InMemory]) String() string {
 // Register registers this pipeline with the given registry.
 //
 // Errors are buffered until [Registry.Initialize] is called. Panics if r is
-// nil or already initialized. If using the Registry with the server Module,
-// this must be called before server.Main, because the registered config
-// implies module Dependencies.
+// already initialized. If using the Registry with the server Module, this must
+// be called before server.Main, because the registered config implies module
+// Dependencies.
+//
+// Returns nil if InMemory is [NoMemoryRefresh].
 //
 // Registering enables the pipeline when the Registry is used with the server:
 //   - Validation handlers will call TransformFunc.
 //   - Cron job will fetch and transform committed configs.
-func (s *ServicePipeline[StoreMsg, InMemory]) Register(r *Registry) {
-	register(r, s.Files, s.Transform, s.Store, &ingestConfig{
-		id:                 s.ID,
-		desc:               s.String(),
-		serviceNamePattern: cmp.Or(s.ServiceName, "${appid}"),
-		transformVersion:   s.TransformVersion,
-	})
+//   - In memory refresh will call ToMemory and cache accordingly.
+//
+// If `r` is nil, this uses [Default].
+func (s *ServicePipeline[StoreMsg, InMemory]) Register(r *Registry) *RegisteredService[InMemory] {
+	ret := &RegisteredService[InMemory]{
+		ingestConfig: &ingestConfig{
+			id:                 s.ID,
+			desc:               s.String(),
+			serviceNamePattern: cmp.Or(s.ServiceName, "${appid}"),
+			transformVersion:   s.TransformVersion,
+			toMemoryMinVersion: s.ToMemoryMinVersion,
+			toMemoryMaxVersion: s.ToMemoryMaxVersion,
+		},
+		memoryDefault: s.MemoryDefault,
+	}
+
+	store := func(_ config.Set, val *InMemory) {
+		ret.data.Store(val)
+	}
+	register(r, s.Files, s.Transform, s.Store, s.ToMemory, store, ret.ingestConfig)
+	if reflect.TypeFor[InMemory]() == reflect.TypeFor[NoMemoryRefresh]() {
+		return nil
+	}
+	return ret
+}
+
+// RegisteredService is a [ServicePipeline] registered with a specific
+// [Registry].
+type RegisteredService[InMemory any] struct {
+	ingestConfig *ingestConfig
+
+	memoryDefault func() InMemory
+
+	// The refreshed data value (if any).
+	data atomic.Pointer[InMemory]
+}
+
+// String returns the pipeline identifier description for this config.
+func (rs *RegisteredService[InMemory]) String() string {
+	if rs == nil {
+		return "RegisteredService[nil]"
+	}
+	return fmt.Sprintf("RegisteredService[%s]", rs.ingestConfig)
+}
+
+// GetData returns the in-memory representation of the config, ensuring it has
+// been refreshed within [Registry.MaxMemoryStaleness].
+//
+// If the config does not exist in storage, returns `MemoryDefault` and a nil
+// error.
+//
+// Panics if `ic` is nil or `InMemory` is [NoMemoryRefresh].
+//
+// All errors are tagged as transient.
+func (rs *RegisteredService[InMemory]) GetData(ctx context.Context) (InMemory, error) {
+	if reflect.TypeFor[InMemory]() == reflect.TypeFor[NoMemoryRefresh]() {
+		panic(errors.Fmt("%s.GetData not available: InMemory is NoMemoryRefresh", rs))
+	}
+	if rs == nil {
+		panic(errors.Fmt("%s.GetData not available: receiver is nil", rs))
+	}
+
+	var zero InMemory
+	if err := rs.ingestConfig.checkFresh(ctx); err != nil {
+		return zero, transient.Tag.Apply(err)
+	}
+
+	ret := rs.data.Load()
+	if ret == nil {
+		if rs.memoryDefault != nil {
+			return rs.memoryDefault(), nil
+		}
+		return zero, nil
+	}
+	return *ret, nil
 }
