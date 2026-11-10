@@ -1621,6 +1621,20 @@ type Verifiers_GerritCQAbility struct {
 	// In turn, if Gerrit project config allows this, Gerrit will execute submit
 	// of all dependent CLs first and then this CL.
 	AllowSubmitWithOpenDeps bool `protobuf:"varint,3,opt,name=allow_submit_with_open_deps,json=allowSubmitWithOpenDeps,proto3" json:"allow_submit_with_open_deps,omitempty"`
+	// Optional. dep_aware_equi_patchset_calculation makes CV take git
+	// dependency changes into account when calculating which prior patchsets
+	// of a CL are code-equivalent to the latest one (MinEquivalentPatchset).
+	//
+	// If set, rebasing a CL onto or off a parent CL, changing its parent CL,
+	// or rebasing it onto a non-equivalent patchset of its parent CL makes
+	// the prior patchsets non-equivalent, even if Gerrit considers it a
+	// trivial rebase. As a side effect, tryjobs of such prior patchsets are no
+	// longer reused.
+	//
+	// Intended for projects whose CL stacks are kept rebased, i.e. each child
+	// CL is based on the latest (or a code-equivalent) patchset of its parent
+	// CL. Enforcing up-to-date stacks is a possible future addition.
+	DepAwareEquiPatchsetCalculation bool `protobuf:"varint,8,opt,name=dep_aware_equi_patchset_calculation,json=depAwareEquiPatchsetCalculation,proto3" json:"dep_aware_equi_patchset_calculation,omitempty"`
 	// Optional. Allow CL owner to trigger CQ dry or full run on their own CL,
 	// even if not a member of `committer_list` or `dry_run_access_list`.
 	// Defaults to no such allowance.
@@ -1706,6 +1720,13 @@ func (x *Verifiers_GerritCQAbility) GetNewPatchsetRunAccessList() []string {
 func (x *Verifiers_GerritCQAbility) GetAllowSubmitWithOpenDeps() bool {
 	if x != nil {
 		return x.AllowSubmitWithOpenDeps
+	}
+	return false
+}
+
+func (x *Verifiers_GerritCQAbility) GetDepAwareEquiPatchsetCalculation() bool {
+	if x != nil {
+		return x.DepAwareEquiPatchsetCalculation
 	}
 	return false
 }
@@ -3083,19 +3104,20 @@ const file_go_chromium_org_luci_cv_api_config_v2_config_proto_rawDesc = "" +
 	"\x10triggering_value\x18\x04 \x01(\x05B\a\xfaB\x04\x1a\x02 \x00R\x0ftriggeringValue\"X\n" +
 	"\n" +
 	"CombineCLs\x12J\n" +
-	"\x13stabilization_delay\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\x12stabilizationDelay\"\xf0\x14\n" +
+	"\x13stabilization_delay\x18\x01 \x01(\v2\x19.google.protobuf.DurationR\x12stabilizationDelay\"\xbe\x15\n" +
 	"\tVerifiers\x12P\n" +
 	"\x11gerrit_cq_ability\x18\x01 \x01(\v2$.cv.config.Verifiers.GerritCQAbilityR\x0fgerritCqAbility\x12@\n" +
 	"\vtree_status\x18\x02 \x01(\v2\x1f.cv.config.Verifiers.TreeStatusR\n" +
 	"treeStatus\x123\n" +
 	"\x06tryjob\x18\x03 \x01(\v2\x1b.cv.config.Verifiers.TryjobR\x06tryjob\x129\n" +
 	"\bcqlinter\x18\x04 \x01(\v2\x1d.cv.config.Verifiers.CQLinterR\bcqlinter\x12-\n" +
-	"\x04fake\x18\x05 \x01(\v2\x19.cv.config.Verifiers.FakeR\x04fake\x1a\xf0\x03\n" +
+	"\x04fake\x18\x05 \x01(\v2\x19.cv.config.Verifiers.FakeR\x04fake\x1a\xbe\x04\n" +
 	"\x0fGerritCQAbility\x12%\n" +
 	"\x0ecommitter_list\x18\x01 \x03(\tR\rcommitterList\x12-\n" +
 	"\x13dry_run_access_list\x18\x02 \x03(\tR\x10dryRunAccessList\x12>\n" +
 	"\x1cnew_patchset_run_access_list\x18\x05 \x03(\tR\x18newPatchsetRunAccessList\x12<\n" +
-	"\x1ballow_submit_with_open_deps\x18\x03 \x01(\bR\x17allowSubmitWithOpenDeps\x12j\n" +
+	"\x1ballow_submit_with_open_deps\x18\x03 \x01(\bR\x17allowSubmitWithOpenDeps\x12L\n" +
+	"#dep_aware_equi_patchset_calculation\x18\b \x01(\bR\x1fdepAwareEquiPatchsetCalculation\x12j\n" +
 	"\x1aallow_owner_if_submittable\x18\x04 \x01(\x0e2-.cv.config.Verifiers.GerritCQAbility.CQActionR\x17allowOwnerIfSubmittable\x121\n" +
 	"\x15trust_dry_runner_deps\x18\x06 \x01(\bR\x12trustDryRunnerDeps\x12:\n" +
 	"\x1aallow_non_owner_dry_runner\x18\a \x01(\bR\x16allowNonOwnerDryRunner\".\n" +

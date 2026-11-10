@@ -2756,6 +2756,8 @@ func (m *Verifiers_GerritCQAbility) validate(all bool) error {
 
 	// no validation rules for AllowSubmitWithOpenDeps
 
+	// no validation rules for DepAwareEquiPatchsetCalculation
+
 	// no validation rules for AllowOwnerIfSubmittable
 
 	// no validation rules for TrustDryRunnerDeps

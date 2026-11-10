@@ -511,6 +511,21 @@ message Verifiers {
     // of all dependent CLs first and then this CL.
     bool allow_submit_with_open_deps = 3;
 
+    // Optional. dep_aware_equi_patchset_calculation makes CV take git
+    // dependency changes into account when calculating which prior patchsets
+    // of a CL are code-equivalent to the latest one (MinEquivalentPatchset).
+    //
+    // If set, rebasing a CL onto or off a parent CL, changing its parent CL,
+    // or rebasing it onto a non-equivalent patchset of its parent CL makes
+    // the prior patchsets non-equivalent, even if Gerrit considers it a
+    // trivial rebase. As a side effect, tryjobs of such prior patchsets are no
+    // longer reused.
+    //
+    // Intended for projects whose CL stacks are kept rebased, i.e. each child
+    // CL is based on the latest (or a code-equivalent) patchset of its parent
+    // CL. Enforcing up-to-date stacks is a possible future addition.
+    bool dep_aware_equi_patchset_calculation = 8;
+
     // See `allow_owner_if_submittable` doc below.
     enum CQAction {
       UNSET = 0;
