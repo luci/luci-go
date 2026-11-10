@@ -303,11 +303,13 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, err e
 	}
 
 	var amt int32
-	switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, clock.Now(c)); {
-	case err != nil:
+	if len(cfg.Config.GetDuts()) > 0 {
+		amt = int32(len(cfg.Config.GetDuts()))
+	} else if amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, clock.Now(c)); err != nil {
 		err = errors.Fmt("failed to parse amount: %w", err)
 		return
-	case cfg.Config.CurrentAmount == amt:
+	}
+	if cfg.Config.CurrentAmount == amt {
 		return
 	}
 
@@ -317,10 +319,12 @@ func updateCurrentAmount(c context.Context, id string) (cfg *model.Config, err e
 			return errors.Fmt("failed to fetch config: %w", err)
 		}
 
-		switch amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, clock.Now(c)); {
-		case err != nil:
+		if len(cfg.Config.GetDuts()) > 0 {
+			amt = int32(len(cfg.Config.GetDuts()))
+		} else if amt, err = cfg.Config.ComputeAmount(cfg.Config.CurrentAmount, clock.Now(c)); err != nil {
 			return errors.Fmt("failed to parse amount: %w", err)
-		case cfg.Config.CurrentAmount == amt:
+		}
+		if cfg.Config.CurrentAmount == amt {
 			return nil
 		}
 		cfg.Config.CurrentAmount = amt

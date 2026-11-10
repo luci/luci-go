@@ -599,6 +599,7 @@ func TestQueues(t *testing.T) {
 						ID: "id",
 					}
 					assert.Loosely(t, datastore.Get(c, cfg), should.BeNil)
+					assert.Loosely(t, cfg.Config.CurrentAmount, should.Equal(3))
 					assert.Loosely(t, cfg.Config.Duts, should.Match(map[string]*emptypb.Empty{
 						"dut1": {},
 						"dut2": {},
