@@ -338,4 +338,118 @@ describe('OptionsDropdown', () => {
     // The parent's onClose should NOT have been called!
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  const mockRect = (top: number, bottom: number): DOMRect =>
+    ({
+      top,
+      bottom,
+      height: bottom - top,
+      left: 0,
+      right: 100,
+      width: 100,
+      x: 0,
+      y: top,
+      toJSON: () => ({}),
+    }) as DOMRect;
+
+  it('sets --fc-dropdown-available-height for bottom and side-placed menus', () => {
+    const anchorEl = document.createElement('div');
+    const rectSpy = jest
+      .spyOn(anchorEl, 'getBoundingClientRect')
+      .mockReturnValue(mockRect(340, 372));
+    jest.replaceProperty(window, 'innerHeight', 720);
+
+    const { rerender } = render(
+      <OptionsDropdown
+        open={true}
+        anchorEl={anchorEl}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        onClose={() => {}}
+        onApply={() => {}}
+        renderChild={() => <div>Child</div>}
+      />,
+    );
+
+    const container = document.querySelector('.fc-dropdown-container');
+    expect(container).toHaveStyle({
+      '--fc-dropdown-available-height': '348px',
+    });
+
+    // Side-placed menu in lower half of viewport uses rect.bottom so flipped menus are not squished.
+    rectSpy.mockReturnValue(mockRect(468, 504));
+    jest.replaceProperty(window, 'innerHeight', 768);
+    rerender(
+      <OptionsDropdown
+        open={true}
+        anchorEl={anchorEl}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        onClose={() => {}}
+        onApply={() => {}}
+        renderChild={() => <div>Child</div>}
+      />,
+    );
+
+    expect(container).toHaveStyle({
+      '--fc-dropdown-available-height': '504px',
+    });
+  });
+
+  it('follows anchor scroll within scrollable parent and clamps when scrolled out of view', () => {
+    const scrollParent = document.createElement('div');
+    scrollParent.style.overflowY = 'auto';
+    const anchorEl = document.createElement('div');
+    scrollParent.appendChild(anchorEl);
+    document.body.appendChild(scrollParent);
+
+    jest
+      .spyOn(scrollParent, 'getBoundingClientRect')
+      .mockReturnValue(mockRect(192, 608));
+    const anchorRectSpy = jest
+      .spyOn(anchorEl, 'getBoundingClientRect')
+      .mockReturnValue(mockRect(300, 336));
+    jest.replaceProperty(window, 'innerHeight', 768);
+
+    try {
+      render(
+        <OptionsDropdown
+          open={true}
+          anchorEl={anchorEl}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          onClose={() => {}}
+          onApply={() => {}}
+          renderChild={() => <div>Child</div>}
+        />,
+      );
+
+      const container = document.querySelector('.fc-dropdown-container');
+      expect(container).toHaveStyle({
+        '--fc-dropdown-available-height': '468px',
+      });
+
+      // Anchor scrolls within scrollable parent -> secondary menu follows anchor
+      anchorRectSpy.mockReturnValue(mockRect(368, 404));
+      fireEvent.scroll(scrollParent);
+      expect(container).toHaveStyle({
+        '--fc-dropdown-available-height': '400px',
+      });
+
+      // Anchor scrolls above scrollable parent -> clamps to parent top (192)
+      anchorRectSpy.mockReturnValue(mockRect(100, 136));
+      fireEvent.scroll(scrollParent);
+      expect(container).toHaveStyle({
+        '--fc-dropdown-available-height': '576px',
+      });
+
+      // Anchor scrolls below scrollable parent -> clamps to parent bottom (572..608)
+      anchorRectSpy.mockReturnValue(mockRect(900, 936));
+      fireEvent.scroll(scrollParent);
+      expect(container).toHaveStyle({
+        '--fc-dropdown-available-height': '608px',
+      });
+    } finally {
+      document.body.removeChild(scrollParent);
+    }
+  });
 });

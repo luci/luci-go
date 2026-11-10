@@ -676,7 +676,8 @@ const OptionComponent = function OptionComponent({
         ref={menuListRef}
         variant="selectedMenu"
         sx={{
-          maxHeight: 400,
+          maxHeight:
+            'min(400px, max(120px, calc(var(--fc-dropdown-available-height, 100vh) - 220px)))',
           minWidth: 300,
         }}
       >

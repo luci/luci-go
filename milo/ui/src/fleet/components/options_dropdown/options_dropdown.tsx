@@ -24,11 +24,13 @@ import {
 } from '@mui/material';
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
   type MouseEventHandler,
   type ReactNode,
+  type RefObject,
   CSSProperties,
 } from 'react';
 import { flushSync } from 'react-dom';
@@ -73,6 +75,98 @@ type OptionsDropdownProps = Omit<MenuProps, 'open' | 'maxHeight'> & {
   closeOnScroll?: boolean;
 };
 
+const MIN_DROPDOWN_HEIGHT_PX = 310;
+const SCROLLABLE_OVERFLOW_REGEX = /(auto|scroll|overlay)/;
+
+const getScrollableAncestor = (el: HTMLElement): HTMLElement | null => {
+  for (
+    let cur = el.parentElement;
+    cur && cur !== document.body && cur !== document.documentElement;
+    cur = cur.parentElement
+  ) {
+    const { overflow, overflowY } = window.getComputedStyle(cur);
+    if (SCROLLABLE_OVERFLOW_REGEX.test(overflow + overflowY)) return cur;
+  }
+  return null;
+};
+
+const getAvailableViewportHeight = (
+  anchor: { getBoundingClientRect: () => DOMRect } | null,
+  placement: PopperPlacementType,
+  minHeight = MIN_DROPDOWN_HEIGHT_PX,
+): number | undefined => {
+  if (!anchor || typeof window === 'undefined' || window.innerHeight <= 0) {
+    return undefined;
+  }
+  const rect = anchor.getBoundingClientRect();
+  if (rect.bottom === 0 && rect.height === 0) return undefined;
+  if (placement.startsWith('top')) return rect.top;
+
+  const isBottom = placement.startsWith('bottom');
+  const downwardSpace =
+    window.innerHeight - (isBottom ? rect.bottom : rect.top);
+  const upwardSpace = isBottom ? rect.top : rect.bottom;
+  return downwardSpace >= minHeight
+    ? downwardSpace
+    : Math.max(downwardSpace, upwardSpace);
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useDropdownViewportHeight(
+  open: boolean,
+  anchorEl:
+    | HTMLElement
+    | { getBoundingClientRect: () => DOMRect; contextElement: HTMLElement }
+    | null,
+  placement: PopperPlacementType,
+  paperRef: RefObject<HTMLElement | null>,
+  popperRef: RefObject<{ update: () => void } | null>,
+  minHeight = MIN_DROPDOWN_HEIGHT_PX,
+): number | undefined {
+  useEffect(() => {
+    if (!open || !anchorEl) return;
+    const updatePosition = () => {
+      const nextHeight = getAvailableViewportHeight(
+        anchorEl,
+        placement,
+        minHeight,
+      );
+      if (paperRef.current && nextHeight !== undefined) {
+        paperRef.current.style.setProperty(
+          '--fc-dropdown-available-height',
+          `${nextHeight}px`,
+        );
+      }
+      popperRef.current?.update();
+    };
+    const domAnchor =
+      anchorEl instanceof Element ? anchorEl : anchorEl.contextElement;
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(updatePosition)
+        : null;
+    resizeObserver?.observe(document.body);
+    resizeObserver?.observe(domAnchor);
+    if (domAnchor.parentElement) {
+      resizeObserver?.observe(domAnchor.parentElement);
+    }
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, {
+      capture: true,
+      passive: true,
+    });
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [open, anchorEl, placement, paperRef, popperRef, minHeight]);
+
+  return open
+    ? getAvailableViewportHeight(anchorEl, placement, minHeight)
+    : undefined;
+}
+
 const mapOriginToPlacement = (
   anchorOrigin: PopoverOrigin,
   transformOrigin?: PopoverOrigin,
@@ -99,6 +193,40 @@ const mapOriginToPlacement = (
     }
   }
   return 'bottom-start';
+};
+
+const getPopperAnchorEl = (
+  open: boolean,
+  anchorEl: HTMLElement | null,
+  placement: PopperPlacementType,
+) => {
+  const isSide = placement.startsWith('right') || placement.startsWith('left');
+  if (!open || !anchorEl || !isSide) return anchorEl;
+
+  const scrollParent = getScrollableAncestor(anchorEl);
+  if (!scrollParent) return anchorEl;
+
+  return {
+    contextElement: anchorEl,
+    getBoundingClientRect: (): DOMRect => {
+      const rect = anchorEl.getBoundingClientRect();
+      const parentRect = scrollParent.getBoundingClientRect();
+      if (!parentRect.height && !parentRect.bottom) return rect;
+      const maxTop = Math.max(parentRect.top, parentRect.bottom - rect.height);
+      const top = Math.min(Math.max(rect.top, parentRect.top), maxTop);
+      return {
+        ...rect,
+        top,
+        bottom: top + rect.height,
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        height: rect.height,
+        x: rect.left,
+        y: top,
+      };
+    },
+  };
 };
 
 export function OptionsDropdown({
@@ -142,6 +270,18 @@ export function OptionsDropdown({
   });
 
   const placement = mapOriginToPlacement(anchorOrigin, transformOrigin);
+  const popperAnchorEl = useMemo(
+    () => getPopperAnchorEl(open, anchorEl, placement),
+    [open, anchorEl, placement],
+  );
+
+  const availableViewportHeight = useDropdownViewportHeight(
+    open,
+    popperAnchorEl,
+    placement,
+    paperRef,
+    popperRef,
+  );
   const effectiveSearchQuery = controlledSearchQuery ?? searchQuery;
 
   const updateSearchQuery = (nextQuery: string) => {
@@ -211,19 +351,6 @@ export function OptionsDropdown({
   }, [open, resetKey]);
 
   useEffect(() => {
-    if (!open || !anchorEl || typeof ResizeObserver === 'undefined') return;
-    const updatePosition = () => {
-      popperRef.current?.update();
-    };
-    const resizeObserver = new ResizeObserver(updatePosition);
-    resizeObserver.observe(document.body);
-    if (anchorEl.parentElement) {
-      resizeObserver.observe(anchorEl.parentElement);
-    }
-    return () => resizeObserver.disconnect();
-  }, [open, anchorEl]);
-
-  useEffect(() => {
     if (enableSearchInput) {
       // Small timeout to allow the popover to mount and settle
       if (open) {
@@ -278,7 +405,7 @@ export function OptionsDropdown({
       popperRef={popperRef as PopperProps['popperRef']}
       disablePortal={disablePortal}
       open={open}
-      anchorEl={anchorEl}
+      anchorEl={popperAnchorEl}
       placement={placement}
       modifiers={[
         {
@@ -290,6 +417,7 @@ export function OptionsDropdown({
           enabled: !disableScrollUpdate,
           options: {
             boundary: 'viewport',
+            rootBoundary: 'viewport',
           },
         },
         {
@@ -297,6 +425,9 @@ export function OptionsDropdown({
           enabled: !disableScrollUpdate,
           options: {
             boundary: 'viewport',
+            rootBoundary: 'viewport',
+            tether: false,
+            altAxis: true,
           },
         },
         {
@@ -380,6 +511,9 @@ export function OptionsDropdown({
             overscrollBehavior: 'contain',
             width: '100%',
             minWidth: 360,
+            ...(availableViewportHeight !== undefined && {
+              '--fc-dropdown-available-height': `${availableViewportHeight}px`,
+            }),
           }}
         >
           {enableSearchInput && (

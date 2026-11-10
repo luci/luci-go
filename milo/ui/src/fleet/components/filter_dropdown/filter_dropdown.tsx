@@ -21,6 +21,7 @@ import {
   MenuList,
   Paper,
   Popper,
+  PopperProps,
   Skeleton,
   Typography,
 } from '@mui/material';
@@ -53,7 +54,10 @@ import { EllipsisTooltip } from '../ellipsis_tooltip';
 import { StringListFilterCategory } from '../filters/string_list_filter';
 import { FilterCategory } from '../filters/use_filters';
 import { HighlightCharacter } from '../highlight_character';
-import { OptionsDropdown } from '../options_dropdown/options_dropdown';
+import {
+  OptionsDropdown,
+  useDropdownViewportHeight,
+} from '../options_dropdown/options_dropdown';
 
 export interface OptionComponentHandle {
   focus: () => void;
@@ -122,6 +126,15 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
   const openCategoryRef = useRef<OptionComponentHandle>(null);
   const firstElementRef = useRef<HTMLLIElement>(null);
   const mainPaperRef = useRef<HTMLDivElement>(null);
+  const mainPopperRef = useRef<{ update: () => void } | null>(null);
+  const availableViewportHeight = useDropdownViewportHeight(
+    !!anchorEl,
+    anchorEl,
+    'bottom-start',
+    mainPaperRef,
+    mainPopperRef,
+    184,
+  );
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -493,11 +506,28 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
   return (
     <>
       <Popper
+        popperRef={mainPopperRef as PopperProps['popperRef']}
         open={!!anchorEl}
         anchorEl={anchorEl}
         placement="bottom-start"
         style={{ zIndex: 1300 }}
         modifiers={[
+          {
+            name: 'flip',
+            options: {
+              boundary: 'viewport',
+              rootBoundary: 'viewport',
+            },
+          },
+          {
+            name: 'preventOverflow',
+            options: {
+              boundary: 'viewport',
+              rootBoundary: 'viewport',
+              tether: false,
+              altAxis: true,
+            },
+          },
           {
             name: 'offset',
             options: {
@@ -528,11 +558,22 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
             closeMenu();
           }}
         >
-          <Paper ref={mainPaperRef} elevation={2}>
+          <Paper
+            ref={mainPaperRef}
+            elevation={2}
+            sx={
+              availableViewportHeight !== undefined
+                ? {
+                    '--fc-dropdown-available-height': `${availableViewportHeight}px`,
+                  }
+                : undefined
+            }
+          >
             <MenuList
               sx={{
                 minWidth: 300,
-                maxHeight: 400,
+                maxHeight:
+                  'min(400px, max(120px, calc(var(--fc-dropdown-available-height, 100vh) - 64px)))',
                 overflow: 'auto',
                 maxWidth: '700px',
               }}
