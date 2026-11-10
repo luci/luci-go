@@ -151,6 +151,11 @@ func (vd *projectConfigValidator) validateProjectConfig(cfg *cfgpb.Config) {
 			vd.ctx.Errorf("At most 1 config_group with fallback=YES allowed "+
 				"(already declared in config_group #%d", fallbackGroupIdx+1)
 		}
+		if g.GetDepAwareEquiPatchsetCalculation() != cfg.ConfigGroups[0].GetDepAwareEquiPatchsetCalculation() {
+			// The calculation for a CL relies on the equivalent patchset ranges of
+			// its git dependencies, so it must be done the same way project-wide.
+			vd.ctx.Errorf("dep_aware_equi_patchset_calculation must be set consistently across all config groups")
+		}
 		vd.ctx.Exit()
 	}
 }

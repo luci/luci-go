@@ -519,6 +519,8 @@ func (m *ConfigGroup) validate(all bool) error {
 
 	}
 
+	// no validation rules for DepAwareEquiPatchsetCalculation
+
 	if len(errors) > 0 {
 		return ConfigGroupMultiError(errors)
 	}
@@ -2755,8 +2757,6 @@ func (m *Verifiers_GerritCQAbility) validate(all bool) error {
 	var errors []error
 
 	// no validation rules for AllowSubmitWithOpenDeps
-
-	// no validation rules for DepAwareEquiPatchsetCalculation
 
 	// no validation rules for AllowOwnerIfSubmittable
 

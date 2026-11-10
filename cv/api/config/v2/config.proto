@@ -107,7 +107,7 @@ message Config {
 // ConfigGroup allows one to share single verifiers config across a set of
 // Gerrit repositories, which may be in different Gerrit installations.
 message ConfigGroup {
-  // Next field number: 10.
+  // Next field number: 13.
 
   reserved 3; // allow_cq_depend.
 
@@ -316,6 +316,23 @@ message ConfigGroup {
       items: {message: {required: true}}
     }
   ];
+
+  // Optional. dep_aware_equi_patchset_calculation makes CV take git
+  // dependency changes into account when calculating which prior patchsets
+  // of a CL are code-equivalent to the latest one (MinEquivalentPatchset).
+  //
+  // If set, rebasing a CL onto or off a parent CL, changing its parent CL,
+  // or rebasing it onto a non-equivalent patchset of its parent CL makes
+  // the prior patchsets non-equivalent, even if Gerrit considers it a
+  // trivial rebase. As a side effect, tryjobs of such prior patchsets are no
+  // longer reused.
+  //
+  // Intended for projects whose CL stacks are kept rebased, i.e. each child
+  // CL is based on the latest (or a code-equivalent) patchset of its parent
+  // CL. Enforcing up-to-date stacks is a possible future addition.
+  //
+  // Must be set consistently across all config groups of a project.
+  bool dep_aware_equi_patchset_calculation = 12;
 }
 
 // SubmitOptions control how CQ submits CLs.
@@ -510,21 +527,6 @@ message Verifiers {
     // In turn, if Gerrit project config allows this, Gerrit will execute submit
     // of all dependent CLs first and then this CL.
     bool allow_submit_with_open_deps = 3;
-
-    // Optional. dep_aware_equi_patchset_calculation makes CV take git
-    // dependency changes into account when calculating which prior patchsets
-    // of a CL are code-equivalent to the latest one (MinEquivalentPatchset).
-    //
-    // If set, rebasing a CL onto or off a parent CL, changing its parent CL,
-    // or rebasing it onto a non-equivalent patchset of its parent CL makes
-    // the prior patchsets non-equivalent, even if Gerrit considers it a
-    // trivial rebase. As a side effect, tryjobs of such prior patchsets are no
-    // longer reused.
-    //
-    // Intended for projects whose CL stacks are kept rebased, i.e. each child
-    // CL is based on the latest (or a code-equivalent) patchset of its parent
-    // CL. Enforcing up-to-date stacks is a possible future addition.
-    bool dep_aware_equi_patchset_calculation = 8;
 
     // See `allow_owner_if_submittable` doc below.
     enum CQAction {

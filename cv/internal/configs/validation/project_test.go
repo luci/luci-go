@@ -228,6 +228,30 @@ func TestValidateProjectDetailed(t *testing.T) {
 						assert.ErrIsLike(t, vctx.Finalize(), "duplicate config_group name \"bbb\" not allowed")
 					})
 				})
+
+				t.Run("dep_aware_equi_patchset_calculation", func(t *ftt.Test) {
+					cfg.ConfigGroups = nil
+					add("refs/heads/.+")
+					add("refs/branch-heads/.+")
+					add("refs/other-heads/.+")
+					t.Run("set consistently", func(t *ftt.Test) {
+						for _, cg := range cfg.ConfigGroups {
+							cg.DepAwareEquiPatchsetCalculation = true
+						}
+						validateProjectConfig(vctx, &cfg)
+						assert.NoErr(t, vctx.Finalize())
+					})
+					t.Run("unset consistently", func(t *ftt.Test) {
+						validateProjectConfig(vctx, &cfg)
+						assert.NoErr(t, vctx.Finalize())
+					})
+					t.Run("set inconsistently", func(t *ftt.Test) {
+						cfg.ConfigGroups[0].DepAwareEquiPatchsetCalculation = true
+						cfg.ConfigGroups[2].DepAwareEquiPatchsetCalculation = true
+						validateProjectConfig(vctx, &cfg)
+						assert.ErrIsLike(t, vctx.Finalize(), "dep_aware_equi_patchset_calculation must be set consistently across all config groups")
+					})
+				})
 			})
 		})
 
