@@ -505,7 +505,7 @@ func writeOKHeaders(ctx *router.Context, data logData) {
 	ctx.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 
 	if data.options.format == formatRAW {
-		ctx.Writer.Header().Set("Content-Disposition", `attachment; filename="log.txt"`)
+		ctx.Writer.Header().Set("Content-Disposition", `inline; filename="log.txt"`)
 	}
 
 	// Set the correct content type based off the log stream and format.

@@ -255,6 +255,6 @@ func TestHelperFunctions(t *testing.T) {
 
 		assert.Loosely(t, resp.Header().Get("Content-Type"), should.Equal("text/plain; charset=utf-8"))
 		assert.Loosely(t, resp.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
-		assert.Loosely(t, resp.Header().Get("Content-Disposition"), should.Equal(`attachment; filename="log.txt"`))
+		assert.Loosely(t, resp.Header().Get("Content-Disposition"), should.Equal(`inline; filename="log.txt"`))
 	})
 }
