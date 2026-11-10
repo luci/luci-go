@@ -25,13 +25,21 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/gae/service/info"
 
+	cfgcachecommon "go.chromium.org/luci/server/cfgcache/common"
 	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
 	"go.chromium.org/luci/server/gaeemulation"
 	"go.chromium.org/luci/server/module"
 )
 
-// cachedConfigKind is the Datastore entity kind used by [Store].
-const cachedConfigKind = "cfgcachev2.CachedConfig"
+const (
+	// cachedConfigKind is the Datastore entity kind used by [Store].
+	cachedConfigKind = "cfgcachev2.CachedConfig"
+
+	// defaultDatastoreStoreBatchSize is the 'ideal' batch size for Get.
+	//
+	// Get will try to make multi-Get requests which are less than this size.
+	defaultDatastoreStoreBatchSize = 16 * 1024 * 1024
+)
 
 type cachedConfig[StoreMsg proto.Message] struct {
 	_kind string                `gae:"$kind,cfgcachev2.CachedConfig"`
@@ -49,6 +57,16 @@ func (c *cachedConfig[StoreMsg]) size() int64 {
 }
 
 // Store implements [cfgcache.Store] using the `gae/service/datastore` library.
+func (c *cachedConfig[StoreMsg]) toStoredConfig() *cfgcachecommon.StoredConfig[StoreMsg] {
+	return &cfgcachecommon.StoredConfig[StoreMsg]{
+		ConfigSet: c.ID.ConfigSet,
+		Meta:      c.Meta.Meta,
+		Config:    c.Config,
+	}
+}
+
+// Store implements [cfgcache.GettableStore] using the `gae/service/datastore`
+// library.
 //
 // Each stored config is stored in its own datastore entity root, and the
 // stored config is compressed with `zstd`.

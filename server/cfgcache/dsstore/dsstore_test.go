@@ -38,7 +38,7 @@ func TestStore(t *testing.T) {
 	m := &cfgcachepb.Meta{TransformVersion: 1, InputHash: "abc123", TransformedSize: int64(proto.Size(msg))}
 	wantMeta := &cfgcachepb.Meta{TransformVersion: 1, TransformedSize: 2, InputHash: "abc123"}
 
-	t.Run("Put and LoadMeta round-trip and no-op rewrite", func(t *testing.T) {
+	t.Run("Put, LoadMeta, and Get round-trip and no-op rewrite", func(t *testing.T) {
 		t.Parallel()
 		ctx := memory.Use(t.Context())
 		c := Store[*durationpb.Duration]{}
@@ -52,6 +52,13 @@ func TestStore(t *testing.T) {
 		hashes, err := c.LoadMeta(ctx, pid)
 		assert.NoErr(t, err)
 		assert.That(t, hashes, should.Match(map[config.Set]*cfgcachepb.Meta{cs: wantMeta}))
+
+		for loaded, err := range c.Get(ctx, pid, hashes) {
+			assert.NoErr(t, err)
+			assert.That(t, loaded.ConfigSet, should.Equal(cs))
+			assert.That(t, loaded.Meta, should.Match(wantMeta))
+			assert.That(t, loaded.Config.GetSeconds(), should.Equal(int64(42)))
+		}
 	})
 
 	t.Run("LoadMeta isolates by pipelineID", func(t *testing.T) {

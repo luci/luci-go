@@ -19,10 +19,12 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
+
 	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
-	"google.golang.org/protobuf/proto"
 )
 
 // contentMetaProperty renders to:
