@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, Link, Tooltip, Typography } from '@mui/material';
+import { Box, Link, Tooltip, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router';
 
@@ -58,7 +58,6 @@ const logoSx = {
   objectFit: 'contain',
   flexShrink: 0,
 } as const;
-const bdrSx = { border: bdr, borderRadius: tk.radii.sm } as const;
 const cleanRowSx = {
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 1fr) auto 68px',
@@ -69,17 +68,13 @@ const cleanRowSx = {
 } as const;
 const emptyRowSx = {
   ...betweenSx,
-  ...bdrSx,
-  bgcolor: c.surfaceTonal,
-  px: 1.5,
-  py: 1,
-};
+  minHeight: 30,
+  py: 0.375,
+} as const;
 const filterCardSx = {
   ...colSx,
-  ...bdrSx,
-  bgcolor: c.surfaceTonal,
-  p: 1.25,
-  gap: 1,
+  py: 0.5,
+  gap: 0.75,
 } as const;
 
 export const HealthIndicator = ({ state }: { state: HealthStateLike }) => {
@@ -147,9 +142,16 @@ export const SitePlatformRollup = (p: SitePlatformRollupProps) => {
         <Typography variant="caption" color="text.secondary" noWrap>
           No device filters configured
         </Typography>
-        <Button size="small" variant="toolbar" onClick={onAddFilters}>
+        <Link
+          component="button"
+          type="button"
+          variant="caption"
+          underline="hover"
+          onClick={onAddFilters}
+          sx={linkSx}
+        >
           Add filters
-        </Button>
+        </Link>
       </Box>
     );
   }
