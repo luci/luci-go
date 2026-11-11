@@ -196,4 +196,9 @@ type Host interface {
 	// If there are multiple such schemes registered, the server will refuse to
 	// start.
 	RegisterCookieAuth(method auth.Method)
+
+	// CookieAuth returns an authentication method that delegates at request time
+	// to the cookie-based authentication scheme registered on the server, or
+	// passes through as inapplicable if cookie based auth is not enabled.
+	CookieAuth() auth.Method
 }

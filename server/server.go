@@ -1073,6 +1073,36 @@ func (h *moduleHostImpl) RegisterCookieAuth(method auth.Method) {
 	h.cookieAuth = method
 }
 
+func (h *moduleHostImpl) CookieAuth() auth.Method {
+	h.panicIfInvalid()
+	return cookieAuthMethod{srv: h.srv}
+}
+
+type cookieAuthMethod struct {
+	srv *Server
+}
+
+func (m cookieAuthMethod) Authenticate(ctx context.Context, r auth.RequestMetadata) (*auth.User, auth.Session, error) {
+	if m.srv.CookieAuth != nil {
+		return m.srv.CookieAuth.Authenticate(ctx, r)
+	}
+	return nil, nil, nil
+}
+
+func (m cookieAuthMethod) LoginURL(ctx context.Context, dest string) (string, error) {
+	if api, ok := m.srv.CookieAuth.(auth.UsersAPI); ok {
+		return api.LoginURL(ctx, dest)
+	}
+	return "", auth.ErrNoUsersAPI
+}
+
+func (m cookieAuthMethod) LogoutURL(ctx context.Context, dest string) (string, error) {
+	if api, ok := m.srv.CookieAuth.(auth.UsersAPI); ok {
+		return api.LogoutURL(ctx, dest)
+	}
+	return "", auth.ErrNoUsersAPI
+}
+
 // New constructs a new server instance.
 //
 // It hosts one or more HTTP servers and starts and stops them in unison. It is
