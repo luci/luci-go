@@ -15,6 +15,7 @@
 package ui
 
 import (
+	"net/http"
 	"strings"
 
 	"google.golang.org/grpc/codes"
@@ -55,13 +56,25 @@ func configSetPage(c *router.Context) error {
 	if err != nil {
 		return err
 	}
+
+	requestedPath := c.Request.URL.Query().Get("path")
+	if requestedPath != "" {
+		for _, config := range cs.GetConfigs() {
+			if config.Path == requestedPath && config.Url != "" {
+				http.Redirect(c.Writer, c.Request, config.Url, http.StatusFound)
+				return nil
+			}
+		}
+	}
+
 	var canReimport bool
 	if canReimport, err = acl.CanReimportConfigSet(ctx, csName); err != nil {
 		logging.Warningf(ctx, "failed to check reimport acl: %s. continue without rendering reimport button", err)
 	}
 	templates.MustRender(ctx, c.Writer, "pages/config_set.html", map[string]any{
-		"CanReimport": canReimport,
-		"ConfigSet":   cs,
+		"CanReimport":   canReimport,
+		"ConfigSet":     cs,
+		"RequestedPath": requestedPath,
 	})
 	return nil
 }
