@@ -44,7 +44,7 @@ const kRequirePatchset = true
 // Makes Gerrit RPCs if necessary, in parallel.
 func (f *clsFlag) retrieveCLs(ctx context.Context, httpClient *http.Client, requirePatchset bool) ([]*pb.GerritChange, error) {
 	ret := make([]*pb.GerritChange, len(f.cls))
-	return ret, parallel.FanOutIn(func(work chan<- func() error) {
+	return ret, parallel.WorkPool(10, func(work chan<- func() error) {
 		for i, cl := range f.cls {
 			work <- func() error {
 				change, err := f.retrieveCL(ctx, cl, httpClient, requirePatchset)
