@@ -196,7 +196,9 @@ type Prefix struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// ID of the customer LUCI project that nominally owns the prefix.
 	//
-	// Currently used to lookup what Cloud project to bill GCS calls to.
+	// Currently used to lookup what Cloud project to bill GCS calls to, and also
+	// which project's ProjectConfigFile applies to this prefix (notably for
+	// mapping prefix -> realm).
 	//
 	// If not set, gets inherited from the parent. If none of the ancestors set
 	// this, GCS calls are billed to CIPD's own project.
@@ -207,7 +209,7 @@ type Prefix struct {
 	// If empty, all writers are allowed.
 	AllowWritersFromRegexp []string `protobuf:"bytes,4,rep,name=allow_writers_from_regexp,json=allowWritersFromRegexp,proto3" json:"allow_writers_from_regexp,omitempty"`
 	// If true, the prefix and all its sub-prefixes are exempt from Verify Software
-	// Artifacts (VSA) checks.
+	// Artifacts checks.
 	ExemptFromVerifySoftwareArtifacts bool `protobuf:"varint,5,opt,name=exempt_from_verify_software_artifacts,json=exemptFromVerifySoftwareArtifacts,proto3" json:"exempt_from_verify_software_artifacts,omitempty"`
 	unknownFields                     protoimpl.UnknownFields
 	sizeCache                         protoimpl.SizeCache

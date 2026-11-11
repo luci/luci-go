@@ -59,7 +59,9 @@ message Prefix {
 
   // ID of the customer LUCI project that nominally owns the prefix.
   //
-  // Currently used to lookup what Cloud project to bill GCS calls to.
+  // Currently used to lookup what Cloud project to bill GCS calls to, and also
+  // which project's ProjectConfigFile applies to this prefix (notably for
+  // mapping prefix -> realm).
   //
   // If not set, gets inherited from the parent. If none of the ancestors set
   // this, GCS calls are billed to CIPD's own project.
