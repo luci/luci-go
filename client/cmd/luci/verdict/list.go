@@ -53,6 +53,7 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
 			r.Flags.StringVar(&r.invocationID, "invocation-id", "", "Alias for -invocationid")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Filter verdicts to a specific module name")
+			r.Flags.StringVar(&r.moduleName, "module-name", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.moduleName, "module", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.filter, "filter", "", "Filter verdicts by test result filter expression or substring (AIP-160)")
 			r.Flags.IntVar(&r.maxVerdicts, "max-verdicts", 100, "Maximum number of verdicts to display (default: 100, 0 for all)")

@@ -344,6 +344,12 @@ func TestBuildGetRun(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(0))
+
+			cmd2 := GetCmd(af)
+			run2 := cmd2.CommandRun().(*buildGetRun)
+			run2.client = mock
+			assert.Loosely(t, run2.Flags.Parse([]string{"-build-id", "8738491827364512345"}), should.BeNil)
+			assert.Loosely(t, run2.Run(nil, run2.Flags.Args(), nil), should.Equal(0))
 		})
 
 		t.Run(`Execution with mock client - json flag`, func(t *ftt.Test) {

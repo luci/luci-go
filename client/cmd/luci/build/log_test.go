@@ -474,17 +474,17 @@ func TestBuildLogRun(t *testing.T) {
 			run2 := cmd2.CommandRun().(*buildLogRun)
 			run2.buildsClient = mockBB
 			run2.logsClient = mockLD
-			assert.Loosely(t, run2.Flags.Parse([]string{"-buildid", "8738491827364512345", "-step", "compile", "-out", tmpFile2}), should.BeNil)
+			assert.Loosely(t, run2.Flags.Parse([]string{"-build-id", "8738491827364512345", "-step", "compile", "-out", tmpFile2}), should.BeNil)
 			assert.Loosely(t, run2.Run(nil, run2.Flags.Args(), nil), should.Equal(0))
 			content2, err := os.ReadFile(tmpFile2)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, string(content2), should.Equal("saved line 1\nsaved line 2\n"))
 		})
 
-		t.Run(`Flag aliases -lines, -bytes, and -out on head and tail`, func(t *ftt.Test) {
+		t.Run(`Flag aliases -lines, -bytes, and -build-id on head, tail, and list`, func(t *ftt.Test) {
 			headCmd := LogHeadCmd(af)
 			headRun := headCmd.CommandRun().(*buildLogRun)
-			assert.Loosely(t, headRun.Flags.Parse([]string{"-buildid", "8738491827364512345", "-lines", "15", "-bytes", "256", "-out", "h.log"}), should.BeNil)
+			assert.Loosely(t, headRun.Flags.Parse([]string{"-build-id", "8738491827364512345", "-lines", "15", "-bytes", "256", "-out", "h.log"}), should.BeNil)
 			assert.Loosely(t, headRun.id, should.Equal(int64(8738491827364512345)))
 			assert.Loosely(t, headRun.lines, should.Equal(15))
 			assert.Loosely(t, headRun.maxBytes, should.Equal(int64(256)))
@@ -492,11 +492,16 @@ func TestBuildLogRun(t *testing.T) {
 
 			tailCmd := LogTailCmd(af)
 			tailRun := tailCmd.CommandRun().(*buildLogRun)
-			assert.Loosely(t, tailRun.Flags.Parse([]string{"-buildid", "8738491827364512345", "-lines", "20", "-bytes", "512", "-out", "t.log"}), should.BeNil)
+			assert.Loosely(t, tailRun.Flags.Parse([]string{"-build-id", "8738491827364512345", "-lines", "20", "-bytes", "512", "-out", "t.log"}), should.BeNil)
 			assert.Loosely(t, tailRun.id, should.Equal(int64(8738491827364512345)))
 			assert.Loosely(t, tailRun.lines, should.Equal(20))
 			assert.Loosely(t, tailRun.maxBytes, should.Equal(int64(512)))
 			assert.Loosely(t, tailRun.outputFile, should.Equal("t.log"))
+
+			listCmd := LogListCmd(af)
+			listRun := listCmd.CommandRun().(*buildLogListRun)
+			assert.Loosely(t, listRun.Flags.Parse([]string{"-build-id", "8738491827364512345"}), should.BeNil)
+			assert.Loosely(t, listRun.id, should.Equal(int64(8738491827364512345)))
 		})
 
 		t.Run(`Datagram stream returns error`, func(t *ftt.Test) {

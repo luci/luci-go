@@ -107,6 +107,7 @@ func newBuildLogFetchCmd(af *base.AuthFlags, mode string) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.BuildbucketHost, "Buildbucket host")
 			r.Flags.Int64Var(&r.id, "buildid", 0, "Build ID (e.g. 8738491827364512345)")
+			r.Flags.Int64Var(&r.id, "build-id", 0, "Alias for -buildid")
 			r.Flags.Int64Var(&r.id, "id", 0, "Alias for -buildid")
 			r.Flags.StringVar(&r.step, "step", "", "Build step name (e.g. 'compile' or 'test|browser_tests')")
 			r.Flags.StringVar(&r.logName, "log", "", "Step log name (defaults to 'stdout')")

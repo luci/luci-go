@@ -80,6 +80,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Root invocation ID (e.g. ants-i... or build-867...)")
 			r.Flags.StringVar(&r.invocationID, "invocation-id", "", "Alias for -invocationid")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Module name (e.g. CellBroadcastReceiverMTS)")
+			r.Flags.StringVar(&r.moduleName, "module-name", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.moduleName, "module", "", "Alias for -modulename")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Show additional module metadata")
 			r.Flags.BoolVar(&r.jsonOut, "json", false, "Output module details in JSON format")

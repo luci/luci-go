@@ -74,7 +74,10 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.testID, "testid", "", "Flat or structured test ID to query history for")
 			r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Structured test ID module name (e.g. //chrome/test:browser_tests)")
+			r.Flags.StringVar(&r.moduleName, "module-name", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.moduleScheme, "scheme", "", "Structured test ID scheme (e.g. gtest, junit, webtest)")
+			r.Flags.StringVar(&r.moduleScheme, "modulescheme", "", "Alias for -scheme")
+			r.Flags.StringVar(&r.moduleScheme, "module-scheme", "", "Alias for -scheme")
 			r.Flags.StringVar(&r.coarseName, "coarse", "", "Structured test ID coarse name (e.g. package name)")
 			r.Flags.StringVar(&r.fineName, "fine", "", "Structured test ID fine name (e.g. class or suite name)")
 			r.Flags.StringVar(&r.caseName, "case", "", "Structured test ID case/method name")
@@ -82,6 +85,7 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.IntVar(&r.days, "days", defaultTestHistoryDays, "Lookback window in days (1..90)")
 			r.Flags.IntVar(&r.limit, "limit", defaultTestHistoryLimit, "Maximum number of recent verdicts to display (0 for all fetched)")
 			r.Flags.StringVar(&r.subRealm, "subrealm", "", "Optional project-scoped subrealm filter (e.g. ci or try)")
+			r.Flags.StringVar(&r.subRealm, "sub-realm", "", "Alias for -subrealm")
 			return r
 		},
 	}

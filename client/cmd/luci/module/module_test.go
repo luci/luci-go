@@ -455,10 +455,11 @@ func TestModuleDetails(t *testing.T) {
 	})
 
 	ftt.Run(`moduleGetRun`, t, func(t *ftt.Test) {
-		t.Run(`flag alias -invocation-id`, func(t *ftt.Test) {
+		t.Run(`flag aliases -invocation-id and -module-name`, func(t *ftt.Test) {
 			r := GetCmd(nil).CommandRun().(*moduleGetRun)
-			assert.Loosely(t, r.Flags.Parse([]string{"-invocation-id", "inv-1"}), should.BeNil)
+			assert.Loosely(t, r.Flags.Parse([]string{"-invocation-id", "inv-1", "-module-name", "ModA"}), should.BeNil)
 			assert.Loosely(t, r.invocationID, should.Equal("inv-1"))
+			assert.Loosely(t, r.moduleName, should.Equal("ModA"))
 		})
 
 		t.Run(`rejects legacy invocation`, func(t *ftt.Test) {

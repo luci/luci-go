@@ -48,6 +48,7 @@ func LogListCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.BuildbucketHost, "Buildbucket host")
 			r.Flags.Int64Var(&r.id, "buildid", 0, "Build ID (e.g. 8738491827364512345)")
+			r.Flags.Int64Var(&r.id, "build-id", 0, "Alias for -buildid")
 			r.Flags.Int64Var(&r.id, "id", 0, "Alias for -buildid")
 			r.Flags.StringVar(&r.step, "step", "", "Optional build step name to filter logs")
 			return r

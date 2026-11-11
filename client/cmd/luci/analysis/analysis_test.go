@@ -607,6 +607,23 @@ func TestSubcommandRunners(t *testing.T) {
 		assert.Loosely(t, getRun.Run(app, []string{"unexpected"}, nil), should.Equal(1))
 		assert.Loosely(t, getRun.Run(app, []string{"b/553974454", "extra"}, nil), should.Equal(1))
 
+		aliasRuleRun := RuleGetCmd(af).CommandRun().(*ruleGetRun)
+		assert.Loosely(t, aliasRuleRun.Flags.Parse([]string{"-bug-id", "553974454", "-rule-id", "r1"}), should.BeNil)
+		assert.Loosely(t, aliasRuleRun.bugID, should.Equal("553974454"))
+		assert.Loosely(t, aliasRuleRun.ruleID, should.Equal("r1"))
+
+		aliasFailRun := FailuresCmd(af).CommandRun().(*failuresRun)
+		assert.Loosely(t, aliasFailRun.Flags.Parse([]string{
+			"-bug-id", "553974454",
+			"-rule-id", "r1",
+			"-cluster-algorithm", "reason-v6",
+			"-cluster-id", "c1",
+		}), should.BeNil)
+		assert.Loosely(t, aliasFailRun.bugID, should.Equal("553974454"))
+		assert.Loosely(t, aliasFailRun.ruleID, should.Equal("r1"))
+		assert.Loosely(t, aliasFailRun.clusterAlg, should.Equal("reason-v6"))
+		assert.Loosely(t, aliasFailRun.clusterID, should.Equal("c1"))
+
 		failRun := FailuresCmd(af).CommandRun().(*failuresRun)
 		// Reject invalid positional arguments or too many positional arguments
 		assert.Loosely(t, failRun.Run(app, []string{"unexpected"}, nil), should.Equal(1))

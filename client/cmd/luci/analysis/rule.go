@@ -78,8 +78,10 @@ func RuleGetCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.AnalysisHost, "LUCI Analysis host")
 			r.Flags.StringVar(&r.bugID, "bugid", "", "Buganizer bug ID (e.g. 553974454)")
+			r.Flags.StringVar(&r.bugID, "bug-id", "", "Alias for -bugid")
 			r.Flags.StringVar(&r.project, "project", "", "LUCI project (e.g. chromium, turquoise)")
 			r.Flags.StringVar(&r.ruleID, "ruleid", "", "LUCI Analysis rule ID (e.g. 32ae75255a4aa807897d8fa20137e7d5)")
+			r.Flags.StringVar(&r.ruleID, "rule-id", "", "Alias for -ruleid")
 			r.Flags.IntVar(&r.limit, "limit", defaultRuleFailuresLimit, "Maximum number of example failures to display per rule (0 to skip)")
 			return r
 		},

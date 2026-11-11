@@ -103,6 +103,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.BuildbucketHost, "Buildbucket host")
 			r.Flags.Int64Var(&r.id, "buildid", 0, "Build ID (e.g. 8738491827364512345)")
+			r.Flags.Int64Var(&r.id, "build-id", 0, "Alias for -buildid")
 			r.Flags.Int64Var(&r.id, "id", 0, "Alias for -buildid")
 			r.Flags.BoolVar(&r.steps, "steps", false, "Print all steps in a hierarchical tree")
 			r.Flags.BoolVar(&r.failedSteps, "failed-steps", false, "Print failed steps only")
