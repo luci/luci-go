@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -144,5 +145,11 @@ func TestCreateSnapshot(t *testing.T) {
 				Type:   model.RerunBuildType_NthSection,
 			},
 		}))
+
+		_, counter := count.FilterRDS(c)
+		snapshotFromReruns := CreateSnapshotWithReruns(nsa, []*model.TestSingleRerun{rerun1, rerun2, rerun3, rerun4, rerun5})
+		assert.Loosely(t, snapshotFromReruns, should.Match(snapshot))
+		assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(0)))
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(0)))
 	})
 }

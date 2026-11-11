@@ -368,6 +368,30 @@ func GetTestSingleRerun(ctx context.Context, rerunID int64) (*model.TestSingleRe
 	return rerun, err
 }
 
+// GetTestSingleRerunsByIDs gets test single reruns by their IDs in a single Datastore call.
+func GetTestSingleRerunsByIDs(ctx context.Context, rerunIDs []int64) (map[int64]*model.TestSingleRerun, error) {
+	seen := make(map[int64]struct{}, len(rerunIDs))
+	reruns := make([]*model.TestSingleRerun, 0, len(rerunIDs))
+	for _, id := range rerunIDs {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		reruns = append(reruns, &model.TestSingleRerun{ID: id})
+	}
+	if len(reruns) == 0 {
+		return map[int64]*model.TestSingleRerun{}, nil
+	}
+	if err := datastore.Get(ctx, reruns); err != nil {
+		return nil, errors.Fmt("get test single reruns: %w", err)
+	}
+	result := make(map[int64]*model.TestSingleRerun, len(reruns))
+	for _, rerun := range reruns {
+		result[rerun.ID] = rerun
+	}
+	return result, nil
+}
+
 // GetTestFailure gets test failure by its ID.
 func GetTestFailure(ctx context.Context, failureID int64) (*model.TestFailure, error) {
 	failure := &model.TestFailure{
@@ -378,6 +402,30 @@ func GetTestFailure(ctx context.Context, failureID int64) (*model.TestFailure, e
 		return nil, errors.Fmt("get TestFailure with id %d: %w", failure.ID, err)
 	}
 	return failure, err
+}
+
+// GetTestFailuresByIDs gets test failures by their IDs in a single Datastore call.
+func GetTestFailuresByIDs(ctx context.Context, failureIDs []int64) (map[int64]*model.TestFailure, error) {
+	seen := make(map[int64]struct{}, len(failureIDs))
+	failures := make([]*model.TestFailure, 0, len(failureIDs))
+	for _, id := range failureIDs {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		failures = append(failures, &model.TestFailure{ID: id})
+	}
+	if len(failures) == 0 {
+		return map[int64]*model.TestFailure{}, nil
+	}
+	if err := datastore.Get(ctx, failures); err != nil {
+		return nil, errors.Fmt("get TestFailures: %w", err)
+	}
+	result := make(map[int64]*model.TestFailure, len(failures))
+	for _, tf := range failures {
+		result[tf.ID] = tf
+	}
+	return result, nil
 }
 
 // GetTestNthSectionAnalysis gets test nthsection analysis by its ID.
@@ -475,18 +523,25 @@ func GetInProgressReruns(ctx context.Context, tfa *model.TestFailureAnalysis) ([
 }
 
 func GetVerificationRerunsForTestCulprit(ctx context.Context, culprit *model.Suspect) (culpritRerun *model.TestSingleRerun, parentRerun *model.TestSingleRerun, reterr error) {
-	var err error
+	var rerunIDs []int64
 	if culprit.SuspectRerunBuild != nil {
-		culpritRerun, err = GetTestSingleRerun(ctx, culprit.SuspectRerunBuild.IntID())
-		if err != nil {
-			return nil, nil, errors.Fmt("get suspect rerun: %w", err)
-		}
+		rerunIDs = append(rerunIDs, culprit.SuspectRerunBuild.IntID())
 	}
 	if culprit.ParentRerunBuild != nil {
-		parentRerun, err = GetTestSingleRerun(ctx, culprit.ParentRerunBuild.IntID())
-		if err != nil {
-			return nil, nil, errors.Fmt("get parent rerun: %w", err)
-		}
+		rerunIDs = append(rerunIDs, culprit.ParentRerunBuild.IntID())
+	}
+	if len(rerunIDs) == 0 {
+		return nil, nil, nil
+	}
+	rerunsByID, err := GetTestSingleRerunsByIDs(ctx, rerunIDs)
+	if err != nil {
+		return nil, nil, errors.Fmt("get verification reruns: %w", err)
+	}
+	if culprit.SuspectRerunBuild != nil {
+		culpritRerun = rerunsByID[culprit.SuspectRerunBuild.IntID()]
+	}
+	if culprit.ParentRerunBuild != nil {
+		parentRerun = rerunsByID[culprit.ParentRerunBuild.IntID()]
 	}
 	return culpritRerun, parentRerun, nil
 }

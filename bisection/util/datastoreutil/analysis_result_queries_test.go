@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -765,10 +766,62 @@ func TestGetVerificationRerunsForTestCulprit(t *testing.T) {
 			SuspectRerunKey: datastore.KeyForObj(ctx, suspectRerun),
 			ParentRerunKey:  datastore.KeyForObj(ctx, parentRerun),
 		})
-		s, p, err := GetVerificationRerunsForTestCulprit(ctx, suspect)
+		countedCtx, counter := count.FilterRDS(ctx)
+		s, p, err := GetVerificationRerunsForTestCulprit(countedCtx, suspect)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, s.ID, should.Equal(100))
 		assert.Loosely(t, p.ID, should.Equal(101))
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
+
+		t.Run("No verification reruns", func(t *ftt.Test) {
+			emptySuspect := testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{ID: 102})
+			countedCtx, counter := count.FilterRDS(ctx)
+			s, p, err := GetVerificationRerunsForTestCulprit(countedCtx, emptySuspect)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, s, should.BeNil)
+			assert.Loosely(t, p, should.BeNil)
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(0)))
+		})
+	})
+}
+
+func TestGetTestFailuresByIDs(t *testing.T) {
+	t.Parallel()
+	ctx := memory.Use(context.Background())
+	testutil.UpdateIndices(ctx)
+
+	ftt.Run("GetTestFailuresByIDs", t, func(t *ftt.Test) {
+		testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
+			ID:     200,
+			TestID: "test200",
+		})
+		testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
+			ID:     201,
+			TestID: "test201",
+		})
+
+		t.Run("Empty input", func(t *ftt.Test) {
+			countedCtx, counter := count.FilterRDS(ctx)
+			res, err := GetTestFailuresByIDs(countedCtx, nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res), should.Equal(0))
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(0)))
+		})
+
+		t.Run("Deduplicated batch fetch", func(t *ftt.Test) {
+			countedCtx, counter := count.FilterRDS(ctx)
+			res, err := GetTestFailuresByIDs(countedCtx, []int64{200, 201, 200})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(res), should.Equal(2))
+			assert.Loosely(t, res[200].TestID, should.Equal("test200"))
+			assert.Loosely(t, res[201].TestID, should.Equal("test201"))
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
+		})
+
+		t.Run("Missing entity returns error", func(t *ftt.Test) {
+			_, err := GetTestFailuresByIDs(ctx, []int64{200, 999})
+			assert.Loosely(t, err, should.NotBeNil)
+		})
 	})
 }
 

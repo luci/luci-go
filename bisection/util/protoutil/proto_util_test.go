@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -262,8 +263,13 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 
-			tfaProto, err := TestFailureAnalysisToPb(ctx, tfa, mask)
+			countedCtx, counter := count.FilterRDS(ctx)
+			tfaProto, err := TestFailureAnalysisToPb(countedCtx, tfa, mask)
 			assert.Loosely(t, err, should.BeNil)
+			// Only 2 GetMulti calls should occur: 1 for nsa.CulpritKey (reused for
+			// tfa.VerifiedCulpritKey) and 1 batched GetMulti for its 2 verification
+			// reruns. All TestFailure lookups hit the in-memory bundle cache.
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(2)))
 
 			pbSuspectRerun := &pb.TestSingleRerun{
 				Bbid:       3000,
@@ -481,8 +487,14 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 
-			tfaProto, err := TestFailureAnalysisToPb(ctx, tfa, mask)
+			countedCtx, counter := count.FilterRDS(ctx)
+			tfaProto, err := TestFailureAnalysisToPb(countedCtx, tfa, mask)
 			assert.Loosely(t, err, should.BeNil)
+			// Overview mask skips TestNthSectionAnalysis, TestGenAIAnalysis, and
+			// TestSingleRerun queries completely: only 1 RunQuery (TestFailure bundle)
+			// and 1 GetMulti (VerifiedCulpritKey).
+			assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(1)))
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
 
 			culpritPb := &pb.TestCulprit{
 				ReviewUrl:   "review_url",
@@ -537,8 +549,12 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
 			assert.Loosely(t, err, should.BeNil)
 
-			tfaProto, err := TestFailureAnalysisToPb(ctx, tfa, mask)
+			countedCtx, counter := count.FilterRDS(ctx)
+			tfaProto, err := TestFailureAnalysisToPb(countedCtx, tfa, mask)
 			assert.Loosely(t, err, should.BeNil)
+			// Only PrimaryTestFailure GetMulti is needed; zero RunQuery calls.
+			assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(0)))
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
 			assert.Loosely(t, tfaProto, should.Match(&pb.TestAnalysis{
 				AnalysisId: 100,
 				StartCommit: &buildbucketpb.GitilesCommit{
@@ -549,6 +565,189 @@ func TestConvertTestFailureAnalysisToPb(t *testing.T) {
 					Position: 100,
 				},
 			}))
+		})
+
+		t.Run("Summary field mask without test_failures or commits", func(t *ftt.Test) {
+			fieldMask := &fieldmaskpb.FieldMask{
+				Paths: []string{
+					"analysis_id",
+					"status",
+					"run_status",
+					"culprit.commit",
+					"culprit.review_url",
+				},
+			}
+			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
+			assert.Loosely(t, err, should.BeNil)
+
+			countedCtx, counter := count.FilterRDS(ctx)
+			tfaProto, err := TestFailureAnalysisToPb(countedCtx, tfa, mask)
+			assert.Loosely(t, err, should.BeNil)
+			// Skips PrimaryTestFailure, TestFailureBundle, NthSection, and GenAI:
+			// 0 RunQuery calls and 1 GetMulti for VerifiedCulpritKey.
+			assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(0)))
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
+			assert.Loosely(t, tfaProto.AnalysisId, should.Equal(int64(100)))
+			assert.Loosely(t, tfaProto.Culprit.GetReviewUrl(), should.Equal("review_url"))
+		})
+
+		t.Run("Reruns without test_failures batches TestFailure lookups", func(t *ftt.Test) {
+			// Add a rerun referencing both TestFailure 99 and 100.
+			testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+				ID:                    2997,
+				AnalysisKey:           datastore.KeyForObj(ctx, tfa),
+				NthSectionAnalysisKey: datastore.KeyForObj(ctx, nsa),
+				Type:                  model.RerunBuildType_NthSection,
+				CreateTime:            time.Unix(102, 0).UTC(),
+				Status:                pb.RerunStatus_RERUN_STATUS_FAILED,
+				BuildStatus:           buildbucketpb.Status_SUCCESS,
+				TestResult: model.RerunTestResults{
+					IsFinalized: true,
+					Results: []model.RerunSingleTestResult{
+						{
+							TestFailureKey:  datastore.MakeKey(ctx, "TestFailure", 100),
+							UnexpectedCount: 1,
+						},
+						{
+							TestFailureKey:  datastore.MakeKey(ctx, "TestFailure", 99),
+							UnexpectedCount: 1,
+						},
+					},
+				},
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Ref:     "ref",
+					Id:      "commit1",
+				},
+			})
+
+			fieldMask := &fieldmaskpb.FieldMask{
+				Paths: []string{"nth_section_result.reruns"},
+			}
+			mask, err := mask.FromFieldMask(fieldMask, &pb.TestAnalysis{}, mask.AdvancedSemantics())
+			assert.Loosely(t, err, should.BeNil)
+
+			countedCtx, counter := count.FilterRDS(ctx)
+			tfaProto, err := TestFailureAnalysisToPb(countedCtx, tfa, mask)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(tfaProto.GetNthSectionResult().GetReruns()), should.Equal(3))
+			// 2 RunQuery calls (TestNthSectionAnalysis + TestNthSectionReruns) and
+			// 1 single batched GetMulti fetching both TestFailure 99 and 100 across all 3 reruns.
+			assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(2)))
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
+		})
+
+		t.Run("GenAI verified culprit without TestNthSectionAnalysis", func(t *ftt.Test) {
+			genaiOnlyTfa := testutil.CreateTestFailureAnalysis(ctx, t, &testutil.TestFailureAnalysisCreationOption{
+				ID:             int64(101),
+				Project:        "chromium",
+				Bucket:         "ci",
+				Builder:        "linux-rel",
+				FailedBuildID:  8001,
+				TestFailureKey: datastore.MakeKey(ctx, "TestFailure", 101),
+				Status:         pb.AnalysisStatus_FOUND,
+				RunStatus:      pb.AnalysisRunStatus_ENDED,
+			})
+			genaiPrimaryTf := testutil.CreateTestFailure(ctx, t, &testutil.TestFailureCreationOption{
+				ID:        int64(101),
+				Analysis:  genaiOnlyTfa,
+				IsPrimary: true,
+				TestID:    "genaiTestID",
+				Ref: &pb.SourceRef{
+					System: &pb.SourceRef_Gitiles{
+						Gitiles: &pb.GitilesRef{
+							Host:    "chromium.googlesource.com",
+							Project: "chromium/src",
+							Ref:     "refs/heads/main",
+						},
+					},
+				},
+				VariantHash: "genai_vhash",
+			})
+			ga := testutil.CreateTestGenAIAnalysis(ctx, t, &testutil.TestGenAIAnalysisCreationOption{
+				ParentAnalysisKey: datastore.KeyForObj(ctx, genaiOnlyTfa),
+				Status:            pb.AnalysisStatus_SUSPECTFOUND,
+				RunStatus:         pb.AnalysisRunStatus_ENDED,
+				StartTime:         time.Unix(100, 0).UTC(),
+				EndTime:           time.Unix(110, 0).UTC(),
+			})
+			sRerun1 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+				ID:          4000,
+				AnalysisKey: datastore.KeyForObj(ctx, genaiOnlyTfa),
+				Type:        model.RerunBuildType_CulpritVerification,
+				Status:      pb.RerunStatus_RERUN_STATUS_FAILED,
+				BuildStatus: buildbucketpb.Status_SUCCESS,
+				TestResult: model.RerunTestResults{
+					IsFinalized: true,
+					Results: []model.RerunSingleTestResult{
+						{TestFailureKey: datastore.KeyForObj(ctx, genaiPrimaryTf), UnexpectedCount: 1},
+					},
+				},
+			})
+			pRerun1 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+				ID:          4001,
+				AnalysisKey: datastore.KeyForObj(ctx, genaiOnlyTfa),
+				Type:        model.RerunBuildType_CulpritVerification,
+				Status:      pb.RerunStatus_RERUN_STATUS_PASSED,
+				BuildStatus: buildbucketpb.Status_SUCCESS,
+				TestResult: model.RerunTestResults{
+					IsFinalized: true,
+					Results: []model.RerunSingleTestResult{
+						{TestFailureKey: datastore.KeyForObj(ctx, genaiPrimaryTf), ExpectedCount: 1},
+					},
+				},
+			})
+			sRerun2 := testutil.CreateTestSingleRerun(ctx, t, &testutil.TestSingleRerunCreationOption{
+				ID:          4002,
+				AnalysisKey: datastore.KeyForObj(ctx, genaiOnlyTfa),
+				Type:        model.RerunBuildType_CulpritVerification,
+				Status:      pb.RerunStatus_RERUN_STATUS_PASSED,
+				BuildStatus: buildbucketpb.Status_SUCCESS,
+				TestResult: model.RerunTestResults{
+					IsFinalized: true,
+					Results: []model.RerunSingleTestResult{
+						{TestFailureKey: datastore.KeyForObj(ctx, genaiPrimaryTf), ExpectedCount: 1},
+					},
+				},
+			})
+			genaiCulprit := testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{
+				ID:                 601,
+				ParentKey:          datastore.KeyForObj(ctx, ga),
+				CommitID:           "genai_culprit_commit",
+				ReviewURL:          "https://crrev.com/c/601",
+				ReviewTitle:        "GenAI culprit CL",
+				SuspectRerunKey:    datastore.KeyForObj(ctx, sRerun1),
+				ParentRerunKey:     datastore.KeyForObj(ctx, pRerun1),
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			})
+			testutil.CreateSuspect(ctx, t, &testutil.SuspectCreationOption{
+				ID:                 602,
+				ParentKey:          datastore.KeyForObj(ctx, ga),
+				CommitID:           "genai_vindicated_commit",
+				ReviewURL:          "https://crrev.com/c/602",
+				SuspectRerunKey:    datastore.KeyForObj(ctx, sRerun2),
+				VerificationStatus: model.SuspectVerificationStatus_Vindicated,
+			})
+			genaiOnlyTfa.VerifiedCulpritKey = datastore.KeyForObj(ctx, genaiCulprit)
+			assert.Loosely(t, datastore.Put(ctx, genaiOnlyTfa), should.BeNil)
+			datastore.GetTestable(ctx).CatchupIndexes()
+
+			fullMask, err := mask.FromFieldMask(&fieldmaskpb.FieldMask{Paths: []string{"*"}}, &pb.TestAnalysis{}, mask.AdvancedSemantics())
+			assert.Loosely(t, err, should.BeNil)
+
+			countedCtx, counter := count.FilterRDS(ctx)
+			res, err := TestFailureAnalysisToPb(countedCtx, genaiOnlyTfa, fullMask)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.NthSectionResult, should.BeNil)
+			assert.Loosely(t, res.Culprit, should.NotBeNil)
+			assert.Loosely(t, res.Culprit.GetCommit().GetId(), should.Equal("genai_culprit_commit"))
+			assert.Loosely(t, res.Culprit.GetReviewUrl(), should.Equal("https://crrev.com/c/601"))
+			assert.Loosely(t, len(res.GetGenAiResult().GetSuspects()), should.Equal(2))
+			// All 3 verification reruns across both GenAI suspects are fetched in a
+			// single batched GetMulti, and VerifiedCulpritKey reuses the cached suspect
+			// and reruns with 0 extra GetMulti calls.
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
 		})
 	})
 }
@@ -581,8 +780,11 @@ func TestRegressionRange(t *testing.T) {
 		}
 		nsaMask, err := mask.FromFieldMask(&nsaFieldMask, &pb.TestNthSectionAnalysisResult{}, mask.AdvancedSemantics())
 		assert.Loosely(t, err, should.BeNil)
-		pbNsa, err := NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef, nsaMask)
+		countedCtx, counter := count.FilterRDS(ctx)
+		pbNsa, err := NthSectionAnalysisToPb(countedCtx, tfa, nsa, sourceRef, nsaMask)
 		assert.Loosely(t, err, should.BeNil)
+		// GetTestNthSectionReruns is queried once and shared between reruns and remaining_nth_section_range.
+		assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(1)))
 		assert.Loosely(t, pbNsa.RemainingNthSectionRange, should.Match(&pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",
@@ -613,8 +815,10 @@ func TestRegressionRange(t *testing.T) {
 			},
 		})
 
-		pbNsa, err = NthSectionAnalysisToPb(ctx, tfa, nsa, sourceRef, nsaMask)
+		countedCtx, counter = count.FilterRDS(ctx)
+		pbNsa, err = NthSectionAnalysisToPb(countedCtx, tfa, nsa, sourceRef, nsaMask)
 		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(1)))
 		assert.Loosely(t, pbNsa.RemainingNthSectionRange, should.Match(&pb.RegressionRange{
 			LastPassed: &buildbucketpb.GitilesCommit{
 				Host:    "chromium.googlesource.com",

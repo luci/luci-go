@@ -160,7 +160,12 @@ func CreateSnapshot(ctx context.Context, nsa *model.TestNthSectionAnalysis) (*nt
 	if err != nil {
 		return nil, errors.Fmt("getting test nthsection rerun: %w", err)
 	}
+	return CreateSnapshotWithReruns(nsa, reruns), nil
+}
 
+// CreateSnapshotWithReruns creates a snapshot of the nthsection analysis state
+// from pre-fetched nthsection reruns ordered by create time.
+func CreateSnapshotWithReruns(nsa *model.TestNthSectionAnalysis, reruns []*model.TestSingleRerun) *nthsectionsnapshot.Snapshot {
 	snapshot := &nthsectionsnapshot.Snapshot{
 		BlameList: nsa.BlameList,
 		Runs:      []*nthsectionsnapshot.Run{},
@@ -190,7 +195,7 @@ func CreateSnapshot(ctx context.Context, nsa *model.TestNthSectionAnalysis) (*nt
 			})
 		}
 	}
-	return snapshot, nil
+	return snapshot
 }
 
 // SaveNthSectionAnalysis updates nthsection analysis in a way that avoids race condition

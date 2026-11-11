@@ -24,6 +24,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/mask"
+	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/bisection/internal/tracing"
 	"go.chromium.org/luci/bisection/model"
@@ -33,11 +34,154 @@ import (
 	"go.chromium.org/luci/bisection/util/datastoreutil"
 )
 
+type suspectCacheKey struct {
+	parentEncoded string
+	id            int64
+}
+
+type analysisReadCache struct {
+	testFailures map[int64]*model.TestFailure
+	reruns       map[int64]*model.TestSingleRerun
+	suspects     map[suspectCacheKey]*model.Suspect
+}
+
+func newAnalysisReadCache() *analysisReadCache {
+	return &analysisReadCache{
+		testFailures: map[int64]*model.TestFailure{},
+		reruns:       map[int64]*model.TestSingleRerun{},
+		suspects:     map[suspectCacheKey]*model.Suspect{},
+	}
+}
+
+func makeSuspectCacheKey(parent *datastore.Key, id int64) suspectCacheKey {
+	parentEncoded := ""
+	if parent != nil {
+		parentEncoded = parent.Encode()
+	}
+	return suspectCacheKey{
+		parentEncoded: parentEncoded,
+		id:            id,
+	}
+}
+
+func (c *analysisReadCache) addTestFailures(tfs ...*model.TestFailure) {
+	for _, tf := range tfs {
+		if tf != nil {
+			c.testFailures[tf.ID] = tf
+		}
+	}
+}
+
+func (c *analysisReadCache) addSuspect(s *model.Suspect) {
+	if s == nil {
+		return
+	}
+	c.suspects[makeSuspectCacheKey(s.ParentAnalysis, s.Id)] = s
+}
+
+func (c *analysisReadCache) getSuspect(k *datastore.Key) (*model.Suspect, bool) {
+	if k == nil {
+		return nil, false
+	}
+	s, ok := c.suspects[makeSuspectCacheKey(k.Parent(), k.IntID())]
+	return s, ok
+}
+
+func (c *analysisReadCache) prefetchRerunTestFailures(ctx context.Context, reruns ...*model.TestSingleRerun) error {
+	var missingIDs []int64
+	for _, r := range reruns {
+		if r == nil || !r.TestResults.IsFinalized {
+			continue
+		}
+		for _, singleResult := range r.TestResults.Results {
+			if singleResult.TestFailureKey == nil {
+				continue
+			}
+			id := singleResult.TestFailureKey.IntID()
+			if _, ok := c.testFailures[id]; !ok {
+				missingIDs = append(missingIDs, id)
+			}
+		}
+	}
+	if len(missingIDs) == 0 {
+		return nil
+	}
+	fetched, err := datastoreutil.GetTestFailuresByIDs(ctx, missingIDs)
+	if err != nil {
+		return errors.Fmt("get test failures: %w", err)
+	}
+	for id, tf := range fetched {
+		c.testFailures[id] = tf
+	}
+	return nil
+}
+
+func (c *analysisReadCache) prefetchVerificationReruns(ctx context.Context, detailsMask *mask.Mask, suspects ...*model.Suspect) error {
+	includeSuspectRerun := detailsMask.MustIncludes("suspect_rerun") == mask.IncludeEntirely
+	includeParentRerun := detailsMask.MustIncludes("parent_rerun") == mask.IncludeEntirely
+	if !includeSuspectRerun && !includeParentRerun {
+		return nil
+	}
+
+	var missingRerunIDs []int64
+	for _, s := range suspects {
+		if s == nil {
+			continue
+		}
+		if includeSuspectRerun && s.SuspectRerunBuild != nil {
+			id := s.SuspectRerunBuild.IntID()
+			if _, ok := c.reruns[id]; !ok {
+				missingRerunIDs = append(missingRerunIDs, id)
+			}
+		}
+		if includeParentRerun && s.ParentRerunBuild != nil {
+			id := s.ParentRerunBuild.IntID()
+			if _, ok := c.reruns[id]; !ok {
+				missingRerunIDs = append(missingRerunIDs, id)
+			}
+		}
+	}
+	if len(missingRerunIDs) > 0 {
+		fetched, err := datastoreutil.GetTestSingleRerunsByIDs(ctx, missingRerunIDs)
+		if err != nil {
+			return err
+		}
+		for id, rerun := range fetched {
+			c.reruns[id] = rerun
+		}
+	}
+
+	var verificationReruns []*model.TestSingleRerun
+	for _, s := range suspects {
+		if s == nil {
+			continue
+		}
+		if includeSuspectRerun && s.SuspectRerunBuild != nil {
+			verificationReruns = append(verificationReruns, c.reruns[s.SuspectRerunBuild.IntID()])
+		}
+		if includeParentRerun && s.ParentRerunBuild != nil {
+			verificationReruns = append(verificationReruns, c.reruns[s.ParentRerunBuild.IntID()])
+		}
+	}
+	return c.prefetchRerunTestFailures(ctx, verificationReruns...)
+}
+
+func culpritNeedsNthSection(culpritMask *mask.Mask) bool {
+	includeDetails := culpritMask.MustIncludes("verification_details")
+	if includeDetails != mask.IncludeEntirely && includeDetails != mask.IncludePartially {
+		return false
+	}
+	detailsMask := culpritMask.MustSubmask("verification_details")
+	return detailsMask.MustIncludes("suspect_rerun") == mask.IncludeEntirely ||
+		detailsMask.MustIncludes("parent_rerun") == mask.IncludeEntirely
+}
+
 // TestFailureAnalysisToPb converts model.TestFailureAnalysis to pb.TestAnalysis
 func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis, tfaMask *mask.Mask) (analysis *pb.TestAnalysis, err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/protoutil/proto_util.TestFailureAnalysisToPb")
 	defer func() { tracing.End(ts, err) }()
 
+	cache := newAnalysisReadCache()
 	result := &pb.TestAnalysis{}
 	if tfaMask.MustIncludes("analysis_id") == mask.IncludeEntirely {
 		result.AnalysisId = tfa.ID
@@ -79,6 +223,7 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 		if err != nil {
 			return nil, errors.Fmt("get test failure bundle: %w", err)
 		}
+		cache.addTestFailures(bundle.All()...)
 		tfMask := tfaMask.MustSubmask("test_failures.*")
 		result.TestFailures = TestFailureBundleToPb(ctx, bundle, tfMask)
 	}
@@ -86,11 +231,12 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 	var primary *model.TestFailure
 	if bundle != nil {
 		primary = bundle.Primary()
-	} else {
+	} else if tfaMask.MustIncludes("start_commit") == mask.IncludeEntirely || tfaMask.MustIncludes("end_commit") == mask.IncludeEntirely {
 		primary, err = datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 		if err != nil {
 			return nil, errors.Fmt("get primary test failure: %w", err)
 		}
+		cache.addTestFailures(primary)
 	}
 
 	// It doesn't make sense to return commit information partially.
@@ -114,47 +260,52 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 		}
 	}
 
-	nsa, err := datastoreutil.GetTestNthSectionForAnalysis(ctx, tfa)
-	if err != nil {
-		return nil, errors.Fmt("get test nthsection for analysis: %w", err)
+	includeNsa := tfaMask.MustIncludes("nth_section_result")
+	needNsaResult := includeNsa == mask.IncludeEntirely || includeNsa == mask.IncludePartially
+	includeCulprit := tfaMask.MustIncludes("culprit")
+	needCulprit := (includeCulprit == mask.IncludeEntirely || includeCulprit == mask.IncludePartially) && tfa.VerifiedCulpritKey != nil
+	var culpritMask *mask.Mask
+	if needCulprit {
+		culpritMask = tfaMask.MustSubmask("culprit")
 	}
-	if nsa != nil {
-		includeNsa := tfaMask.MustIncludes("nth_section_result")
-		if includeNsa == mask.IncludeEntirely || includeNsa == mask.IncludePartially {
-			nsaMask := tfaMask.MustSubmask("nth_section_result")
-			nsaResult, err := NthSectionAnalysisToPb(ctx, tfa, nsa, primary.Ref, nsaMask)
-			if err != nil {
-				return nil, errors.Fmt("nthsection analysis to pb: %w", err)
-			}
-			result.NthSectionResult = nsaResult
+
+	var nsa *model.TestNthSectionAnalysis
+	if needNsaResult || (needCulprit && culpritNeedsNthSection(culpritMask)) {
+		nsa, err = datastoreutil.GetTestNthSectionForAnalysis(ctx, tfa)
+		if err != nil {
+			return nil, errors.Fmt("get test nthsection for analysis: %w", err)
 		}
-		includeCulprit := tfaMask.MustIncludes("culprit")
-		if includeCulprit == mask.IncludeEntirely || includeCulprit == mask.IncludePartially {
-			culpritMask := tfaMask.MustSubmask("culprit")
-			culprit, err := datastoreutil.GetVerifiedCulpritForTestAnalysis(ctx, tfa)
+	}
+	if nsa != nil && needNsaResult {
+		nsaMask := tfaMask.MustSubmask("nth_section_result")
+		if primary == nil && nsaMask.MustIncludes("remaining_nth_section_range") == mask.IncludeEntirely && !nsa.HasEnded() {
+			primary, err = datastoreutil.GetPrimaryTestFailure(ctx, tfa)
 			if err != nil {
-				return nil, errors.Fmt("get verified culprit: %w", err)
+				return nil, errors.Fmt("get primary test failure: %w", err)
 			}
-			if culprit != nil {
-				culpritPb, err := CulpritToPb(ctx, culprit, nsa, culpritMask)
-				if err != nil {
-					return nil, errors.Fmt("culprit to pb: %w", err)
-				}
-				result.Culprit = culpritPb
-			}
+			cache.addTestFailures(primary)
 		}
+		var sourceRef *pb.SourceRef
+		if primary != nil {
+			sourceRef = primary.Ref
+		}
+		nsaResult, err := nthSectionAnalysisToPbWithCache(ctx, tfa, nsa, sourceRef, nsaMask, cache)
+		if err != nil {
+			return nil, errors.Fmt("nthsection analysis to pb: %w", err)
+		}
+		result.NthSectionResult = nsaResult
 	}
 
 	// Get GenAI analysis result
-	genaiAnalysis, err := datastoreutil.GetTestGenAIAnalysisForAnalysis(ctx, tfa)
-	if err != nil {
-		return nil, errors.Fmt("get test genai analysis: %w", err)
-	}
-	if genaiAnalysis != nil {
-		includeGenai := tfaMask.MustIncludes("gen_ai_result")
-		if includeGenai == mask.IncludeEntirely || includeGenai == mask.IncludePartially {
+	includeGenai := tfaMask.MustIncludes("gen_ai_result")
+	if includeGenai == mask.IncludeEntirely || includeGenai == mask.IncludePartially {
+		genaiAnalysis, err := datastoreutil.GetTestGenAIAnalysisForAnalysis(ctx, tfa)
+		if err != nil {
+			return nil, errors.Fmt("get test genai analysis: %w", err)
+		}
+		if genaiAnalysis != nil {
 			genaiMask := tfaMask.MustSubmask("gen_ai_result")
-			genaiResult, err := TestGenAiAnalysisToPb(ctx, genaiAnalysis, genaiMask)
+			genaiResult, err := testGenAiAnalysisToPbWithCache(ctx, genaiAnalysis, genaiMask, cache)
 			if err != nil {
 				return nil, errors.Fmt("genai analysis to pb: %w", err)
 			}
@@ -162,10 +313,32 @@ func TestFailureAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis
 		}
 	}
 
+	if needCulprit {
+		culprit, ok := cache.getSuspect(tfa.VerifiedCulpritKey)
+		if !ok {
+			culprit, err = datastoreutil.GetVerifiedCulpritForTestAnalysis(ctx, tfa)
+			if err != nil {
+				return nil, errors.Fmt("get verified culprit: %w", err)
+			}
+			cache.addSuspect(culprit)
+		}
+		if culprit != nil {
+			culpritPb, err := culpritToPbWithCache(ctx, culprit, nsa, culpritMask, cache)
+			if err != nil {
+				return nil, errors.Fmt("culprit to pb: %w", err)
+			}
+			result.Culprit = culpritPb
+		}
+	}
+
 	return result, nil
 }
 
 func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, sourceRef *pb.SourceRef, nsaMask *mask.Mask) (*pb.TestNthSectionAnalysisResult, error) {
+	return nthSectionAnalysisToPbWithCache(ctx, tfa, nsa, sourceRef, nsaMask, newAnalysisReadCache())
+}
+
+func nthSectionAnalysisToPbWithCache(ctx context.Context, tfa *model.TestFailureAnalysis, nsa *model.TestNthSectionAnalysis, sourceRef *pb.SourceRef, nsaMask *mask.Mask, cache *analysisReadCache) (*pb.TestNthSectionAnalysisResult, error) {
 	result := &pb.TestNthSectionAnalysisResult{
 		StartTime: timestamppb.New(nsa.StartTime),
 	}
@@ -189,11 +362,16 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 	includeSuspect := nsaMask.MustIncludes("suspect")
 	if (includeSuspect == mask.IncludeEntirely || includeSuspect == mask.IncludePartially) && nsa.CulpritKey != nil {
 		suspectMask := nsaMask.MustSubmask("suspect")
-		culprit, err := datastoreutil.GetSuspect(ctx, nsa.CulpritKey.IntID(), nsa.CulpritKey.Parent())
-		if err != nil {
-			return nil, errors.Fmt("get suspect: %w", err)
+		culprit, ok := cache.getSuspect(nsa.CulpritKey)
+		if !ok {
+			var err error
+			culprit, err = datastoreutil.GetSuspect(ctx, nsa.CulpritKey.IntID(), nsa.CulpritKey.Parent())
+			if err != nil {
+				return nil, errors.Fmt("get suspect: %w", err)
+			}
+			cache.addSuspect(culprit)
 		}
-		culpritPb, err := CulpritToPb(ctx, culprit, nsa, suspectMask)
+		culpritPb, err := culpritToPbWithCache(ctx, culprit, nsa, suspectMask, cache)
 		if err != nil {
 			return nil, errors.Fmt("culprit to pb: %w", err)
 		}
@@ -202,14 +380,28 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 
 	// TODO(nqmtuan): Support selecting subfields of reruns.
 	// However, we don't need them now.
-	if nsaMask.MustIncludes("reruns") == mask.IncludeEntirely {
-		reruns, err := datastoreutil.GetTestNthSectionReruns(ctx, nsa)
+	includeReruns := nsaMask.MustIncludes("reruns") == mask.IncludeEntirely
+	includeRemainingRange := nsaMask.MustIncludes("remaining_nth_section_range") == mask.IncludeEntirely && !nsa.HasEnded()
+
+	var reruns []*model.TestSingleRerun
+	if includeReruns || includeRemainingRange {
+		var err error
+		reruns, err = datastoreutil.GetTestNthSectionReruns(ctx, nsa)
 		if err != nil {
 			return nil, errors.Fmt("get test nthsection reruns: %w", err)
 		}
-		pbReruns := []*pb.TestSingleRerun{}
+		for _, r := range reruns {
+			cache.reruns[r.ID] = r
+		}
+	}
+
+	if includeReruns {
+		if err := cache.prefetchRerunTestFailures(ctx, reruns...); err != nil {
+			return nil, err
+		}
+		pbReruns := make([]*pb.TestSingleRerun, 0, len(reruns))
 		for _, rerun := range reruns {
-			pbRerun, err := testSingleRerunToPb(ctx, rerun, nsa)
+			pbRerun, err := testSingleRerunToPbWithCache(ctx, rerun, nsa, cache)
 			if err != nil {
 				return nil, errors.Fmt("test single rerun to pb: %d: %w", rerun.ID, err)
 			}
@@ -220,11 +412,8 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 
 	// Populate remaining range.
 	// remaining regression range should be returned as whole.
-	if nsaMask.MustIncludes("remaining_nth_section_range") == mask.IncludeEntirely && !nsa.HasEnded() {
-		snapshot, err := nthsection.CreateSnapshot(ctx, nsa)
-		if err != nil {
-			return nil, errors.Fmt("couldn't create snapshot: %w", err)
-		}
+	if includeRemainingRange {
+		snapshot := nthsection.CreateSnapshotWithReruns(nsa, reruns)
 		ff, lp, err := snapshot.GetCurrentRegressionRange()
 		// GetCurrentRegressionRange return error if the regression is invalid.
 		// It is not exactly an error, but just a state of the analysis.
@@ -271,6 +460,10 @@ func NthSectionAnalysisToPb(ctx context.Context, tfa *model.TestFailureAnalysis,
 }
 
 func CulpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis, culpritMask *mask.Mask) (c *pb.TestCulprit, err error) {
+	return culpritToPbWithCache(ctx, culprit, nsa, culpritMask, newAnalysisReadCache())
+}
+
+func culpritToPbWithCache(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis, culpritMask *mask.Mask, cache *analysisReadCache) (c *pb.TestCulprit, err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/protoutil/proto_util.CulpritToPb")
 	defer func() { tracing.End(ts, err) }()
 
@@ -303,7 +496,7 @@ func CulpritToPb(ctx context.Context, culprit *model.Suspect, nsa *model.TestNth
 	includeDetails := culpritMask.MustIncludes("verification_details")
 	if includeDetails == mask.IncludeEntirely || includeDetails == mask.IncludePartially {
 		detailsMask := culpritMask.MustSubmask("verification_details")
-		verificationDetails, err := testVerificationDetails(ctx, culprit, nsa, detailsMask)
+		verificationDetails, err := testVerificationDetailsWithCache(ctx, culprit, nsa, detailsMask, cache)
 		if err != nil {
 			return nil, errors.Fmt("test verification details: %w", err)
 		}
@@ -356,7 +549,7 @@ func testFailureToPb(ctx context.Context, tf *model.TestFailure, tfMask *mask.Ma
 	return result
 }
 
-func testVerificationDetails(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis, detailsMask *mask.Mask) (result *pb.TestSuspectVerificationDetails, err error) {
+func testVerificationDetailsWithCache(ctx context.Context, culprit *model.Suspect, nsa *model.TestNthSectionAnalysis, detailsMask *mask.Mask, cache *analysisReadCache) (result *pb.TestSuspectVerificationDetails, err error) {
 	ctx, ts := tracing.Start(ctx, "go.chromium.org/luci/bisection/util/protoutil/proto_util.testVerificationDetails")
 	defer func() { tracing.End(ts, err) }()
 
@@ -367,22 +560,29 @@ func testVerificationDetails(ctx context.Context, culprit *model.Suspect, nsa *m
 
 	// TODO(nqmtuan): Support selecting subfields of reruns.
 	// However, we don't need them now.
-	if detailsMask.MustIncludes("suspect_rerun") == mask.IncludeEntirely || detailsMask.MustIncludes("parent_rerun") == mask.IncludeEntirely {
-		suspectRerun, parentRerun, err := datastoreutil.GetVerificationRerunsForTestCulprit(ctx, culprit)
-		if err != nil {
+	includeSuspectRerun := detailsMask.MustIncludes("suspect_rerun") == mask.IncludeEntirely
+	includeParentRerun := detailsMask.MustIncludes("parent_rerun") == mask.IncludeEntirely
+	if includeSuspectRerun || includeParentRerun {
+		if err := cache.prefetchVerificationReruns(ctx, detailsMask, culprit); err != nil {
 			return nil, errors.Fmt("get verification reruns for test culprit: %w", err)
 		}
 
-		if detailsMask.MustIncludes("suspect_rerun") == mask.IncludeEntirely && suspectRerun != nil {
-			verificationDetails.SuspectRerun, err = testSingleRerunToPb(ctx, suspectRerun, nsa)
-			if err != nil {
-				return nil, errors.Fmt("suspect rerun to pb: %w", err)
+		if includeSuspectRerun && culprit.SuspectRerunBuild != nil {
+			suspectRerun := cache.reruns[culprit.SuspectRerunBuild.IntID()]
+			if suspectRerun != nil {
+				verificationDetails.SuspectRerun, err = testSingleRerunToPbWithCache(ctx, suspectRerun, nsa, cache)
+				if err != nil {
+					return nil, errors.Fmt("suspect rerun to pb: %w", err)
+				}
 			}
 		}
-		if detailsMask.MustIncludes("parent_rerun") == mask.IncludeEntirely && parentRerun != nil {
-			verificationDetails.ParentRerun, err = testSingleRerunToPb(ctx, parentRerun, nsa)
-			if err != nil {
-				return nil, errors.Fmt("parent rerun to pb: %w", err)
+		if includeParentRerun && culprit.ParentRerunBuild != nil {
+			parentRerun := cache.reruns[culprit.ParentRerunBuild.IntID()]
+			if parentRerun != nil {
+				verificationDetails.ParentRerun, err = testSingleRerunToPbWithCache(ctx, parentRerun, nsa, cache)
+				if err != nil {
+					return nil, errors.Fmt("parent rerun to pb: %w", err)
+				}
 			}
 		}
 	}
@@ -412,6 +612,10 @@ func verificationStatusToPb(status model.SuspectVerificationStatus) pb.SuspectVe
 
 // TestGenAiAnalysisToPb converts model.TestGenAIAnalysis to pb.TestGenAiAnalysisResult
 func TestGenAiAnalysisToPb(ctx context.Context, genaiAnalysis *model.TestGenAIAnalysis, genaiMask *mask.Mask) (*pb.TestGenAiAnalysisResult, error) {
+	return testGenAiAnalysisToPbWithCache(ctx, genaiAnalysis, genaiMask, newAnalysisReadCache())
+}
+
+func testGenAiAnalysisToPbWithCache(ctx context.Context, genaiAnalysis *model.TestGenAIAnalysis, genaiMask *mask.Mask, cache *analysisReadCache) (*pb.TestGenAiAnalysisResult, error) {
 	result := &pb.TestGenAiAnalysisResult{}
 
 	if genaiMask.MustIncludes("status") == mask.IncludeEntirely {
@@ -434,10 +638,20 @@ func TestGenAiAnalysisToPb(ctx context.Context, genaiAnalysis *model.TestGenAIAn
 		if err != nil {
 			return nil, errors.Fmt("get suspects for genai analysis: %w", err)
 		}
+		for _, suspect := range suspects {
+			cache.addSuspect(suspect)
+		}
 
 		suspectMask := genaiMask.MustSubmask("suspects.*")
+		includeVerification := suspectMask.MustIncludes("verification_details")
+		if includeVerification == mask.IncludeEntirely || includeVerification == mask.IncludePartially {
+			verificationMask := suspectMask.MustSubmask("verification_details")
+			if err := cache.prefetchVerificationReruns(ctx, verificationMask, suspects...); err != nil {
+				return nil, errors.Fmt("get verification details: %w", err)
+			}
+		}
 		for _, suspect := range suspects {
-			suspectPb, err := testGenAiSuspectToPb(ctx, suspect, suspectMask)
+			suspectPb, err := testGenAiSuspectToPbWithCache(ctx, suspect, suspectMask, cache)
 			if err != nil {
 				return nil, errors.Fmt("convert suspect to pb: %w", err)
 			}
@@ -448,8 +662,7 @@ func TestGenAiAnalysisToPb(ctx context.Context, genaiAnalysis *model.TestGenAIAn
 	return result, nil
 }
 
-// testGenAiSuspectToPb converts model.Suspect (GenAI type) to pb.TestCulprit
-func testGenAiSuspectToPb(ctx context.Context, suspect *model.Suspect, suspectMask *mask.Mask) (*pb.TestCulprit, error) {
+func testGenAiSuspectToPbWithCache(ctx context.Context, suspect *model.Suspect, suspectMask *mask.Mask, cache *analysisReadCache) (*pb.TestCulprit, error) {
 	result := &pb.TestCulprit{}
 
 	if suspectMask.MustIncludes("commit") == mask.IncludeEntirely {
@@ -472,7 +685,7 @@ func testGenAiSuspectToPb(ctx context.Context, suspect *model.Suspect, suspectMa
 	includeVerification := suspectMask.MustIncludes("verification_details")
 	if includeVerification == mask.IncludeEntirely || includeVerification == mask.IncludePartially {
 		verificationMask := suspectMask.MustSubmask("verification_details")
-		verificationDetails, err := testVerificationDetails(ctx, suspect, nil, verificationMask)
+		verificationDetails, err := testVerificationDetailsWithCache(ctx, suspect, nil, verificationMask, cache)
 		if err != nil {
 			return nil, errors.Fmt("get verification details: %w", err)
 		}
@@ -488,7 +701,7 @@ func testGenAiSuspectToPb(ctx context.Context, suspect *model.Suspect, suspectMa
 	return result, nil
 }
 
-func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa *model.TestNthSectionAnalysis) (*pb.TestSingleRerun, error) {
+func testSingleRerunToPbWithCache(ctx context.Context, rerun *model.TestSingleRerun, nsa *model.TestNthSectionAnalysis, cache *analysisReadCache) (*pb.TestSingleRerun, error) {
 	result := &pb.TestSingleRerun{
 		Bbid:       rerun.ID,
 		CreateTime: timestamppb.New(rerun.CreateTime),
@@ -524,7 +737,7 @@ func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa 
 	}
 
 	// Update rerun results.
-	pbRerunResults, err := rerunResultsToPb(ctx, rerun.TestResults, rerun.Status)
+	pbRerunResults, err := rerunResultsToPbWithCache(ctx, rerun.TestResults, rerun.Status, cache)
 	if err != nil {
 		return nil, errors.Fmt("rerun results to pb: %w", err)
 	}
@@ -532,15 +745,18 @@ func testSingleRerunToPb(ctx context.Context, rerun *model.TestSingleRerun, nsa 
 	return result, nil
 }
 
-func rerunResultsToPb(ctx context.Context, testResults model.RerunTestResults, status pb.RerunStatus) (*pb.RerunTestResults, error) {
+func rerunResultsToPbWithCache(ctx context.Context, testResults model.RerunTestResults, status pb.RerunStatus, cache *analysisReadCache) (*pb.RerunTestResults, error) {
 	pb := &pb.RerunTestResults{
 		RerunStatus: status,
 	}
 	if !testResults.IsFinalized {
 		return pb, nil
 	}
+	if err := cache.prefetchRerunTestFailures(ctx, &model.TestSingleRerun{TestResults: testResults}); err != nil {
+		return nil, err
+	}
 	for _, singleResult := range testResults.Results {
-		pbSingleResult, err := rerunTestSingleResultToPb(ctx, singleResult)
+		pbSingleResult, err := rerunTestSingleResultToPbWithCache(ctx, singleResult, cache)
 		if err != nil {
 			return nil, errors.Fmt("rerun test single result to pb: %w", err)
 		}
@@ -549,14 +765,20 @@ func rerunResultsToPb(ctx context.Context, testResults model.RerunTestResults, s
 	return pb, nil
 }
 
-func rerunTestSingleResultToPb(ctx context.Context, singleResult model.RerunSingleTestResult) (*pb.RerunTestSingleResult, error) {
+func rerunTestSingleResultToPbWithCache(ctx context.Context, singleResult model.RerunSingleTestResult, cache *analysisReadCache) (*pb.RerunTestSingleResult, error) {
 	pb := &pb.RerunTestSingleResult{
 		ExpectedCount:   singleResult.ExpectedCount,
 		UnexpectedCount: singleResult.UnexpectedCount,
 	}
-	tf, err := datastoreutil.GetTestFailure(ctx, singleResult.TestFailureKey.IntID())
-	if err != nil {
-		return nil, errors.Fmt("get test failure: %w", err)
+	id := singleResult.TestFailureKey.IntID()
+	tf, ok := cache.testFailures[id]
+	if !ok {
+		var err error
+		tf, err = datastoreutil.GetTestFailure(ctx, id)
+		if err != nil {
+			return nil, errors.Fmt("get test failure: %w", err)
+		}
+		cache.testFailures[id] = tf
 	}
 	pb.TestId = tf.TestID
 	pb.VariantHash = tf.VariantHash
