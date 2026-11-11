@@ -14,7 +14,6 @@
 
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CheckIcon from '@mui/icons-material/Check';
-import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import PhotoLibraryOutlinedIcon from '@mui/icons-material/PhotoLibraryOutlined';
 import {
   Alert,
@@ -28,7 +27,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { ChangeEvent, useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { actionRowSx, tonalPanelSx } from '@/fleet/theme/recipes';
 import {
@@ -68,8 +67,7 @@ export interface CatalogPhotoEditDialogProps {
   readonly photoInputError?: string;
   readonly photoDimensionErrors: Readonly<Record<string, string>>;
   readonly onPhotoUrlDraftChange: (value: string) => void;
-  readonly onStagePhotoUrl: () => void;
-  readonly onStageUploadedDataUrl: (dataUrl: string) => void;
+  readonly onStagePhotoUrl: () => boolean;
   readonly onRemoveStagedPhoto: (index: number) => void;
   readonly onSetPrimaryPhoto: (index: number) => void;
   readonly onResetPhotos: () => void;
@@ -96,14 +94,12 @@ export const CatalogPhotoEditDialog = ({
   photoDimensionErrors,
   onPhotoUrlDraftChange,
   onStagePhotoUrl,
-  onStageUploadedDataUrl,
   onRemoveStagedPhoto,
   onSetPrimaryPhoto,
   onResetPhotos,
   onPhotoDimensionsEvaluated,
 }: CatalogPhotoEditDialogProps) => {
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const hasPhotoChanges = !arePhotoListsEqual(originalPhotos, stagedPhotos);
 
   const activeDimErrors = stagedPhotos
@@ -115,30 +111,9 @@ export const CatalogPhotoEditDialog = ({
 
   const handleStageUrlAndSelect = () => {
     const nextIdx = stagedPhotos.length;
-    onStagePhotoUrl();
-    if (photoUrlDraft.trim() && nextIdx < MAX_PHOTOS_PER_ENTRY) {
+    if (onStagePhotoUrl() && nextIdx < MAX_PHOTOS_PER_ENTRY) {
       setSelectedIdx(nextIdx);
     }
-  };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (
-      !file ||
-      stagedPhotos.length >= MAX_PHOTOS_PER_ENTRY ||
-      file.size > 10 * 1024 * 1024
-    ) {
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        onStageUploadedDataUrl(reader.result);
-        setSelectedIdx(stagedPhotos.length);
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -308,28 +283,6 @@ export const CatalogPhotoEditDialog = ({
               </Typography>
             )}
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                disabled={stagedPhotos.length >= MAX_PHOTOS_PER_ENTRY}
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-                data-testid="upload-photo-file-input"
-              />
-              <Button
-                variant="toolbar"
-                color="inherit"
-                startIcon={<CloudUploadOutlinedIcon />}
-                disabled={stagedPhotos.length >= MAX_PHOTOS_PER_ENTRY}
-                onClick={() => fileInputRef.current?.click()}
-                data-testid="upload-photo-file-btn"
-              >
-                Upload image from computer
-              </Button>
-            </Box>
-
             <CatalogBulkDropboxFooter productCatalogId={productCatalogId} />
           </Box>
         </Box>
@@ -350,7 +303,10 @@ export const CatalogPhotoEditDialog = ({
               variant="text"
               size="small"
               color="inherit"
-              onClick={onResetPhotos}
+              onClick={() => {
+                onResetPhotos();
+                setSelectedIdx(0);
+              }}
               data-testid="reset-staged-photos-btn"
             >
               Reset photos
@@ -365,7 +321,7 @@ export const CatalogPhotoEditDialog = ({
             onClick={onClose}
             data-testid="keep-editing-photos-btn"
           >
-            Keep editing
+            Close
           </Button>
           <Button
             variant="contained"

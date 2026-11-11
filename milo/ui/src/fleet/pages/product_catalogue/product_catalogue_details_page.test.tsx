@@ -24,6 +24,7 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 import {
   buildCatalogPhotoEditPrompt,
   COSMETIC_DROPBOX_GO_LINK,
+  normalizePhotoUrlInput,
   validatePhotoDimensions,
   validatePhotoUrlInput,
 } from './catalog_edit_validation';
@@ -516,6 +517,9 @@ describe('ProductCatalogDetailsPage', () => {
     expect(
       screen.getByTestId('catalog-photo-editor-panel'),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('upload-photo-file-btn'),
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId('bulk-photo-dropbox-note')).toHaveTextContent(
       COSMETIC_DROPBOX_GO_LINK,
     );
@@ -528,17 +532,26 @@ describe('ProductCatalogDetailsPage', () => {
       screen.getByText(/Use an https:\/\/ image URL/i),
     ).toBeInTheDocument();
 
-    // Stage a valid http://screen/ URL
+    // Stage a valid shorthand screen/ URL and verify resolved preview src and fallback on img error
     fireEvent.change(urlInput, {
-      target: { value: 'http://screen/9kLmN2pQrStUvWx' },
+      target: { value: 'screen/9kLmN2pQrStUvWx' },
     });
     fireEvent.click(screen.getByTestId('add-photo-url-btn'));
+    expect(screen.getByTestId('modal-photo-preview-img')).toHaveAttribute(
+      'src',
+      'https://screenshot.googleplex.com/image/9kLmN2pQrStUvWx.png',
+    );
+    fireEvent.error(screen.getByTestId('modal-photo-preview-img'));
+    expect(
+      screen.getByTestId('modal-photo-external-preview'),
+    ).toHaveTextContent('http://screen/9kLmN2pQrStUvWx');
+    expect(screen.getByTestId('save-photos-by-prompt-btn')).not.toBeDisabled();
 
     // Promote new photo to primary
     fireEvent.click(screen.getByTestId('set-primary-photo-1'));
     expect(screen.getByTestId('details-photo-img')).toHaveAttribute(
       'src',
-      'http://screen/9kLmN2pQrStUvWx',
+      'https://screenshot.googleplex.com/image/9kLmN2pQrStUvWx.png',
     );
 
     // Copy prompt directly via "Copy prompt to save" inside the photo modal (no second modal)
@@ -609,14 +622,22 @@ describe('ProductCatalogDetailsPage', () => {
   });
 
   it('validates photo URLs, dimensions, and preserves original existing_photo index on reorder', () => {
+    const shortGoUrl = ['go', 'my-photo'].join('/');
+    expect(normalizePhotoUrlInput('screen/abc123')).toBe(
+      'http://screen/abc123',
+    );
+    expect(normalizePhotoUrlInput(shortGoUrl)).toBe(
+      'http://goto.google.com/my-photo',
+    );
     expect(validatePhotoUrlInput('', [])).toMatch(/Enter an image URL/i);
     expect(validatePhotoUrlInput('ftp://bad', [])).toMatch(
       /Use an https:\/\/ image URL/i,
     );
     expect(
-      validatePhotoUrlInput('http://screen/abc123', ['http://screen/abc123']),
+      validatePhotoUrlInput('screen/abc123', ['http://screen/abc123']),
     ).toMatch(/already staged/i);
-    expect(validatePhotoUrlInput('http://screen/abc123', [])).toBeUndefined();
+    expect(validatePhotoUrlInput('screen/abc123', [])).toBeUndefined();
+    expect(validatePhotoUrlInput(shortGoUrl, [])).toBeUndefined();
 
     expect(validatePhotoDimensions(180, 100)).toMatch(/Minimum size/i);
     expect(validatePhotoDimensions(1000, 200)).toMatch(/Avoid 1U rack-strip/i);

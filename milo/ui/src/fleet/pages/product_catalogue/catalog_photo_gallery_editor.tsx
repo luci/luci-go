@@ -26,7 +26,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { SyntheticEvent, useEffect, useRef, useState } from 'react';
+import { SyntheticEvent, useEffect, useState } from 'react';
 
 import {
   borders,
@@ -43,6 +43,7 @@ import {
   BULK_PHOTO_DROPBOX_URL,
   COSMETIC_DROPBOX_GO_LINK,
   buildBulkDropboxSyncPrompt,
+  resolvePhotoPreviewSrc,
 } from './catalog_edit_validation';
 import { CategoryIllustration } from './category_illustration';
 export interface CatalogPhotoGalleryEditorProps {
@@ -117,50 +118,19 @@ export const CatalogBulkDropboxFooter = ({
   readonly productCatalogId: string;
 }) => {
   const [copiedBulkPrompt, setCopiedBulkPrompt] = useState(false);
-  const bulkCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(
-    () => () => {
-      if (bulkCopyTimeoutRef.current !== null) {
-        clearTimeout(bulkCopyTimeoutRef.current);
-      }
-    },
-    [],
-  );
-
-  const handleCopyBulkDropboxPrompt = async () => {
-    const ok = await copyTextToClipboard(
-      buildBulkDropboxSyncPrompt(productCatalogId),
-    );
-    setCopiedBulkPrompt(ok);
-    if (bulkCopyTimeoutRef.current !== null) {
-      clearTimeout(bulkCopyTimeoutRef.current);
-    }
-    if (ok) {
-      bulkCopyTimeoutRef.current = setTimeout(
-        () => setCopiedBulkPrompt(false),
-        2500,
-      );
-    }
-  };
+  useEffect(() => {
+    if (!copiedBulkPrompt) return undefined;
+    const t = setTimeout(() => setCopiedBulkPrompt(false), 2500);
+    return () => clearTimeout(t);
+  }, [copiedBulkPrompt]);
   return (
     <Box
-      sx={{
-        pt: 1.5,
-        borderTop: borders.divider,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.75,
-      }}
+      sx={{ pt: 1.5, borderTop: borders.divider, display: 'grid', gap: 0.75 }}
     >
       <Typography
         variant="caption"
         data-testid="bulk-photo-dropbox-note"
-        sx={{
-          fontSize: fontSizes.caption,
-          color: fleetColors.textSecondary,
-          lineHeight: 1.4,
-        }}
+        sx={{ fontSize: fontSizes.caption, color: fleetColors.textSecondary }}
       >
         {'For bulk uploads, drop files named '}
         <code>{`${productCatalogId}.jpg`}</code>
@@ -175,12 +145,17 @@ export const CatalogBulkDropboxFooter = ({
         </Link>
         {'.'}
       </Typography>
-
       <Box>
         <Button
           variant="text"
           size="small"
-          onClick={handleCopyBulkDropboxPrompt}
+          onClick={async () =>
+            setCopiedBulkPrompt(
+              await copyTextToClipboard(
+                buildBulkDropboxSyncPrompt(productCatalogId),
+              ),
+            )
+          }
           startIcon={
             copiedBulkPrompt ? (
               <CheckIcon sx={{ fontSize: iconSizes.control }} />
@@ -212,6 +187,12 @@ export const CatalogPhotoGalleryEditor = ({
   onSetPrimaryPhoto,
   onPhotoDimensionsEvaluated,
 }: CatalogPhotoGalleryEditorProps) => {
+  const [unpreviewableUris, setUnpreviewableUris] = useState<
+    Record<string, boolean>
+  >({});
+  const markUriUnpreviewable = (uri: string) =>
+    setUnpreviewableUris((p) => (p[uri] ? p : { ...p, [uri]: true }));
+
   const safeIdx =
     stagedPhotos.length > 0
       ? Math.min(selectedIdx, stagedPhotos.length - 1)
@@ -244,11 +225,12 @@ export const CatalogPhotoGalleryEditor = ({
           justifyContent: 'center',
         }}
       >
-        {activePreviewUri ? (
+        {activePreviewUri && !unpreviewableUris[activePreviewUri] ? (
           <Box
             component="img"
-            src={activePreviewUri}
+            src={resolvePhotoPreviewSrc(activePreviewUri)}
             alt={`${productName || productCatalogId} staged preview`}
+            data-testid="modal-photo-preview-img"
             onLoad={(e) =>
               reportImgDimensions(
                 e,
@@ -256,7 +238,7 @@ export const CatalogPhotoGalleryEditor = ({
                 onPhotoDimensionsEvaluated,
               )
             }
-            onError={() => onPhotoDimensionsEvaluated(activePreviewUri, 0, 0)}
+            onError={() => markUriUnpreviewable(activePreviewUri)}
             sx={COVER_IMG_SX}
           />
         ) : (
@@ -264,6 +246,26 @@ export const CatalogPhotoGalleryEditor = ({
             productType={resolvedProductType}
             productCatalogId={productCatalogId}
           />
+        )}
+        {activePreviewUri && unpreviewableUris[activePreviewUri] && (
+          <Typography
+            variant="caption"
+            noWrap
+            title={activePreviewUri}
+            data-testid="modal-photo-external-preview"
+            sx={{
+              position: 'absolute',
+              inset: 'auto 8px 8px',
+              px: 1,
+              py: 0.5,
+              borderRadius: radii.sm,
+              backgroundColor: fleetColors.surface,
+              border: borders.default,
+              fontWeight: 600,
+            }}
+          >
+            Staged URL: {formatPhotoUriLabel(activePreviewUri, safeIdx)}
+          </Typography>
         )}
       </Box>
 
@@ -314,16 +316,18 @@ export const CatalogPhotoGalleryEditor = ({
                     backgroundColor: fleetColors.surfaceTonal,
                   }}
                 >
-                  <Box
-                    component="img"
-                    src={uri}
-                    alt={formatPhotoUriLabel(uri, idx)}
-                    onLoad={(e) =>
-                      reportImgDimensions(e, uri, onPhotoDimensionsEvaluated)
-                    }
-                    onError={() => onPhotoDimensionsEvaluated(uri, 0, 0)}
-                    sx={COVER_IMG_SX}
-                  />
+                  {!unpreviewableUris[uri] && (
+                    <Box
+                      component="img"
+                      src={resolvePhotoPreviewSrc(uri)}
+                      alt={formatPhotoUriLabel(uri, idx)}
+                      onLoad={(e) =>
+                        reportImgDimensions(e, uri, onPhotoDimensionsEvaluated)
+                      }
+                      onError={() => markUriUnpreviewable(uri)}
+                      sx={COVER_IMG_SX}
+                    />
+                  )}
                   <Tooltip
                     title={
                       idx === 0

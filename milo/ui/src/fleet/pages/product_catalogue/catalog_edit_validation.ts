@@ -71,7 +71,48 @@ export const EDITABLE_SPEC_FIELD_BY_HEADER: Readonly<
 };
 
 const ALLOWED_PHOTO_URL_PREFIX_RE =
-  /^(?:https:\/\/\S+|http:\/\/(?:screen|screenshot)\/[A-Za-z0-9_.-]+|http:\/\/goto\.google\.com\/\S+|data:image\/(?:webp|png|jpeg|jpg|gif);base64,[A-Za-z0-9+/=_-]+)$/i;
+  /^(?:https:\/\/\S+|http:\/\/(?:screen|screenshot)\/\S+|http:\/\/goto\.google\.com\/\S+)$/i;
+
+const SNIPIT_PREVIEW_ID_RE =
+  /^(?:https?:\/\/)?(?:screen|screenshot|screenshot(?:-v2)?\.(?:googleplex|corp\.google)\.com)\/(?:image\/)?([A-Za-z0-9_-]{4,64})(?:\.(?:png|jpe?g|webp|gif))?(?:[?#].*)?$/i;
+
+const DRIVE_FILE_ID_RE =
+  /^https:\/\/drive\.google\.com\/(?:file\/d\/([A-Za-z0-9_-]+)|(?:open|uc)\?(?:[^#]*&)?id=([A-Za-z0-9_-]+))/i;
+
+/**
+ * Normalizes a candidate photo URL by expanding shorthand `screen/<id>`,
+ * `screenshot/<id>`, and `go/<slug>` links into canonical URLs.
+ */
+export function normalizePhotoUrlInput(rawUrl: string): string {
+  const trimmed = rawUrl.trim();
+  if (/^(?:screen|screenshot)\/\S+$/i.test(trimmed)) {
+    return `http://${trimmed}`;
+  }
+  const goMatch = trimmed.match(/^(?:https?:\/\/)?go\/(\S+)$/i);
+  if (goMatch) {
+    return `http://goto.google.com/${goMatch[1]}`;
+  }
+  return trimmed;
+}
+
+/**
+ * Resolves a staged photo URI into a direct browser-renderable `<img>` `src` URL
+ * so SnipIt (`http://screen/<id>` / `https://screenshot.googleplex.com/<id>`) and
+ * Google Drive file links serve image bytes instead of HTML viewer pages.
+ */
+export function resolvePhotoPreviewSrc(uri: string): string {
+  const trimmed = uri.trim();
+  const snipitMatch = trimmed.match(SNIPIT_PREVIEW_ID_RE);
+  if (snipitMatch?.[1]) {
+    return `https://screenshot.googleplex.com/image/${snipitMatch[1]}.png`;
+  }
+  const driveMatch = trimmed.match(DRIVE_FILE_ID_RE);
+  const driveId = driveMatch?.[1] || driveMatch?.[2];
+  if (driveId) {
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200`;
+  }
+  return trimmed;
+}
 
 const GPN_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/;
 const R11N_TOKEN_RE = /^[A-Za-z0-9._-]+$/;
@@ -284,20 +325,20 @@ export function validatePhotoUrlInput(
   rawUrl: string,
   existingUrls: readonly string[],
 ): string | undefined {
-  const trimmed = rawUrl.trim();
-  if (!trimmed) {
+  const normalized = normalizePhotoUrlInput(rawUrl);
+  if (!normalized) {
     return 'Enter an image URL (e.g. http://screen/..., https://drive.google.com/..., or https://...).';
   }
   if (existingUrls.length >= MAX_PHOTOS_PER_ENTRY) {
     return `Maximum of ${MAX_PHOTOS_PER_ENTRY} reference photos per catalog entry.`;
   }
-  if (!ALLOWED_PHOTO_URL_PREFIX_RE.test(trimmed)) {
-    return 'Use an https:// image URL, http://screen/<id> screenshot link, or data:image/ URI.';
+  if (!ALLOWED_PHOTO_URL_PREFIX_RE.test(normalized)) {
+    return 'Use an https:// image URL, http://screen/<id> screenshot link, or http://goto.google.com/... link.';
   }
-  if (existingUrls.includes(trimmed)) {
+  if (existingUrls.includes(normalized)) {
     return 'This photo URL is already staged on this catalog entry.';
   }
-  if (trimmed.toLowerCase().includes('1u_strip')) {
+  if (normalized.toLowerCase().includes('1u_strip')) {
     return '1U rack-strip diagrams stretch in card view. Provide a device or rack photo URL (>= 220×140 px, aspect <= 3.0:1).';
   }
   return undefined;
@@ -398,11 +439,10 @@ export function buildCatalogPhotoEditPrompt(
       stagedPhotos.length > 0
         ? stagedPhotos.map((u, i) => {
             const origIdx = originalPhotos.indexOf(u);
-            const displayUrl = u.startsWith('data:image/')
-              ? origIdx !== -1
+            const displayUrl =
+              u.startsWith('data:image/') && origIdx !== -1
                 ? `existing_photo_${origIdx + 1}.webp (retained catalog image)`
-                : `new_photo_${i + 1}.png (upload to ${COSMETIC_DROPBOX_GO_LINK} as ${entry.productCatalogId}_${i + 1}.png)`
-              : u;
+                : u;
             return `  ${i + 1}. ${displayUrl}${i === 0 ? ' (primary hero photo)' : ''}`;
           })
         : [

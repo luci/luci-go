@@ -30,6 +30,7 @@ import {
   radii,
 } from '@/fleet/theme/tokens';
 
+import { resolvePhotoPreviewSrc } from './catalog_edit_validation';
 import { CategoryIllustration } from './category_illustration';
 import { UnifiedProductCatalogEntry } from './types';
 
@@ -117,7 +118,7 @@ export const CatalogHeroPhotoStage = ({
         }}
       >
         {!isGce && (
-          <Tooltip title="Edit or upload reference photos">
+          <Tooltip title="Edit reference photos">
             <IconButton
               size="small"
               aria-label="Edit photos"
@@ -134,7 +135,7 @@ export const CatalogHeroPhotoStage = ({
           <>
             <Box
               component="img"
-              src={currentPhotoUri}
+              src={resolvePhotoPreviewSrc(currentPhotoUri)}
               alt={`${entry.productName || entry.productCatalogId} hardware reference`}
               data-testid="details-photo-img"
               onLoad={(e) => {
@@ -269,7 +270,7 @@ export const CatalogHeroPhotoStage = ({
                 >
                   <Box
                     component="img"
-                    src={uri}
+                    src={resolvePhotoPreviewSrc(uri)}
                     alt={`Thumbnail ${idx + 1}`}
                     sx={{
                       width: '100%',

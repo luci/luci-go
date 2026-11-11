@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   arePhotoListsEqual,
-  MAX_PHOTOS_PER_ENTRY,
+  normalizePhotoUrlInput,
   validatePhotoDimensions,
   validatePhotoUrlInput,
 } from './catalog_edit_validation';
@@ -53,8 +53,7 @@ export interface UseCatalogPhotoEditStateResult {
   readonly handleOpenPhotoEditor: () => void;
   readonly handleClosePhotoEditor: () => void;
   readonly handlePhotoUrlDraftChange: (val: string) => void;
-  readonly handleStagePhotoUrl: () => void;
-  readonly handleStageUploadedDataUrl: (dataUrl: string) => void;
+  readonly handleStagePhotoUrl: () => boolean;
   readonly handleRemoveStagedPhoto: (idx: number) => void;
   readonly handleSetPrimaryPhoto: (idx: number) => void;
   readonly handleResetPhotos: () => void;
@@ -126,25 +125,20 @@ export const useCatalogPhotoEditState = (
     setPhotoInputError(undefined);
   }, []);
 
-  const handleStagePhotoUrl = useCallback(() => {
+  const handleStagePhotoUrl = useCallback((): boolean => {
     const err = validatePhotoUrlInput(photoUrlDraft, stagedPhotos);
     if (err) {
       setPhotoInputError(err);
-      return;
+      return false;
     }
-    setStagedPhotosOverride([...stagedPhotos, photoUrlDraft.trim()]);
+    setStagedPhotosOverride([
+      ...stagedPhotos,
+      normalizePhotoUrlInput(photoUrlDraft),
+    ]);
     setPhotoUrlDraft('');
     setPhotoInputError(undefined);
+    return true;
   }, [photoUrlDraft, stagedPhotos]);
-
-  const handleStageUploadedDataUrl = useCallback(
-    (dataUrl: string) => {
-      if (stagedPhotos.length >= MAX_PHOTOS_PER_ENTRY) return;
-      setStagedPhotosOverride([...stagedPhotos, dataUrl]);
-      setPhotoInputError(undefined);
-    },
-    [stagedPhotos],
-  );
 
   const handleRemoveStagedPhoto = useCallback(
     (idx: number) => {
@@ -195,7 +189,6 @@ export const useCatalogPhotoEditState = (
       handleClosePhotoEditor,
       handlePhotoUrlDraftChange,
       handleStagePhotoUrl,
-      handleStageUploadedDataUrl,
       handleRemoveStagedPhoto,
       handleSetPrimaryPhoto,
       handleResetPhotos,
@@ -214,7 +207,6 @@ export const useCatalogPhotoEditState = (
       handleClosePhotoEditor,
       handlePhotoUrlDraftChange,
       handleStagePhotoUrl,
-      handleStageUploadedDataUrl,
       handleRemoveStagedPhoto,
       handleSetPrimaryPhoto,
       handleResetPhotos,

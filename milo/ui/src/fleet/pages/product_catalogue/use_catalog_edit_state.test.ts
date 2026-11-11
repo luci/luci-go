@@ -14,6 +14,7 @@
 
 import { act, renderHook } from '@testing-library/react';
 
+import { resolvePhotoPreviewSrc } from './catalog_edit_validation';
 import { UnifiedProductCatalogEntry } from './types';
 import { useCatalogEditState } from './use_catalog_edit_state';
 import { useCatalogPhotoEditState } from './use_catalog_photo_edit_state';
@@ -61,18 +62,26 @@ describe('useCatalogPhotoEditState', () => {
       useCatalogPhotoEditState('ATB-006', MOCK_ENTRY),
     );
 
+    let staged = false;
     act(() => {
-      result.current.handlePhotoUrlDraftChange(
-        'https://example.com/photo2.png',
-      );
+      result.current.handlePhotoUrlDraftChange('ftp://invalid');
     });
     act(() => {
-      result.current.handleStagePhotoUrl();
+      staged = result.current.handleStagePhotoUrl();
     });
+    expect(staged).toBe(false);
+
+    act(() => {
+      result.current.handlePhotoUrlDraftChange('screen/9kLmN2pQrStUvWx');
+    });
+    act(() => {
+      staged = result.current.handleStagePhotoUrl();
+    });
+    expect(staged).toBe(true);
 
     expect(result.current.stagedPhotos).toEqual([
       'https://example.com/photo1.png',
-      'https://example.com/photo2.png',
+      'http://screen/9kLmN2pQrStUvWx',
     ]);
     expect(result.current.hasPhotoChanges).toBe(true);
 
@@ -87,7 +96,26 @@ describe('useCatalogPhotoEditState', () => {
       result.current.handleSetPrimaryPhoto(1);
     });
     expect(result.current.stagedPhotos[0]).toBe(
-      'https://example.com/photo2.png',
+      'http://screen/9kLmN2pQrStUvWx',
+    );
+  });
+
+  it('resolves SnipIt and Google Drive photo URLs to direct image preview endpoints', () => {
+    expect(resolvePhotoPreviewSrc('http://screen/9kLmN2pQrStUvWx')).toBe(
+      'https://screenshot.googleplex.com/image/9kLmN2pQrStUvWx.png',
+    );
+    expect(
+      resolvePhotoPreviewSrc(
+        'https://screenshot.googleplex.com/9kLmN2pQrStUvWx',
+      ),
+    ).toBe('https://screenshot.googleplex.com/image/9kLmN2pQrStUvWx.png');
+    expect(
+      resolvePhotoPreviewSrc(
+        'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOp/view?usp=sharing',
+      ),
+    ).toBe('https://drive.google.com/thumbnail?id=1AbCdEfGhIjKlMnOp&sz=w1200');
+    expect(resolvePhotoPreviewSrc('https://example.com/photo1.png')).toBe(
+      'https://example.com/photo1.png',
     );
   });
 });

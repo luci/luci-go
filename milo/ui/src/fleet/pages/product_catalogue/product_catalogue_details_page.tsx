@@ -293,7 +293,6 @@ export const ProductCatalogDetailsPage = () => {
             photoDimensionErrors={editState.photoDimensionErrors}
             onPhotoUrlDraftChange={editState.handlePhotoUrlDraftChange}
             onStagePhotoUrl={editState.handleStagePhotoUrl}
-            onStageUploadedDataUrl={editState.handleStageUploadedDataUrl}
             onRemoveStagedPhoto={editState.handleRemoveStagedPhoto}
             onSetPrimaryPhoto={editState.handleSetPrimaryPhoto}
             onResetPhotos={editState.handleResetPhotos}
