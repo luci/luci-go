@@ -17,6 +17,9 @@ import type { RouteObject } from 'react-router';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
+  ANONYMOUS_IDENTITY,
+  type AuthState,
+  getAuthStateCache,
   obtainAuthState,
   queryAuthState,
   setAuthStateCache,
@@ -41,33 +44,63 @@ import { platformRoutes } from './routing/platform_routes';
 type LazyModule = Promise<{ readonly [s: string]: unknown }>;
 
 const loadNotFoundRoute = () => import('@/fleet/pages/not_found_page');
+const loadNotSignedInRoute = () =>
+  import('@/fleet/components/logged_in_boundary').then((m) => ({
+    Component: m.NotSignedInPage,
+  }));
+
+let anonymousReverifiedInSession = false;
+
+/**
+ * Resets the session-scoped anonymous re-verification flag for unit tests.
+ */
+export const resetAnonymousAuthCheckForTesting = () => {
+  anonymousReverifiedInSession = false;
+};
 
 /**
  * A higher-order function that returns a lazy-loading function for a route.
  * The returned function only loads the route if the user is a Googler.
- * Otherwise, it loads a "not found" page or a custom fallback.
+ * Unauthenticated users are prompted to sign in, while signed-in non-Googlers
+ * or failed auth checks see a "not found" page.
  */
 export const loadRouteForGooglersOnly = (
   onSuccess: () => LazyModule,
   onFail: () => LazyModule = loadNotFoundRoute,
+  onAnonymous: () => LazyModule = loadNotSignedInRoute,
 ) => {
   return async () => {
-    let authState = await obtainAuthState().catch(() => null);
-    if (!authState?.email?.endsWith('@google.com')) {
-      // Cached auth state in IndexedDB can be stale (e.g. anonymous:anonymous
-      // cached with msToExpire() === Infinity before the user logged in).
-      // Verify against the server before falling back to onFail.
-      const freshState = await queryAuthState().catch(() => null);
-      if (freshState) {
-        setAuthStateCache(freshState);
-        authState = freshState;
+    try {
+      const cachedState = await getAuthStateCache().catch(() => null);
+      const hasStaleCachedAnonymous =
+        cachedState !== null &&
+        (!cachedState.identity || cachedState.identity === ANONYMOUS_IDENTITY);
+
+      let authState: AuthState;
+      if (hasStaleCachedAnonymous && !anonymousReverifiedInSession) {
+        // Anonymous cached states have no expiry timestamp, so re-query the
+        // server once per page load after a login redirect.
+        authState = await queryAuthState();
+        await setAuthStateCache(authState).catch((err) => {
+          // eslint-disable-next-line no-console
+          console.warn('Failed to update auth state cache:', err);
+        });
+      } else {
+        authState = cachedState ?? (await obtainAuthState());
       }
+
+      if (!authState.identity || authState.identity === ANONYMOUS_IDENTITY) {
+        anonymousReverifiedInSession = true;
+        return onAnonymous();
+      }
+      anonymousReverifiedInSession = false;
+      if (authState.email?.endsWith('@google.com')) {
+        return onSuccess();
+      }
+      return onFail();
+    } catch {
+      return onFail();
     }
-    const isGoogler = authState?.email?.endsWith('@google.com') ?? false;
-    if (isGoogler) {
-      return onSuccess();
-    }
-    return onFail();
   };
 };
 

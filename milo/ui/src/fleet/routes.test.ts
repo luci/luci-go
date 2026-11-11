@@ -15,6 +15,7 @@
 import { LoaderFunction, LoaderFunctionArgs } from 'react-router';
 
 import {
+  getAuthStateCache,
   obtainAuthState,
   queryAuthState,
   setAuthStateCache,
@@ -22,12 +23,17 @@ import {
 import * as surveyUtils from '@/fleet/utils/survey';
 import { trackedRedirect } from '@/generic_libs/tools/react_router_utils/route_utils';
 
-import { fleetRoutes, loadRouteForGooglersOnly } from './routes';
+import {
+  fleetRoutes,
+  loadRouteForGooglersOnly,
+  resetAnonymousAuthCheckForTesting,
+} from './routes';
 
 jest.mock('@/generic_libs/tools/react_router_utils/route_utils');
 const mockedTrackedRedirect = jest.mocked(trackedRedirect);
 
 jest.mock('@/common/api/auth_state');
+const mockedGetAuthStateCache = jest.mocked(getAuthStateCache);
 const mockedObtainAuthState = jest.mocked(obtainAuthState);
 const mockedQueryAuthState = jest.mocked(queryAuthState);
 const mockedSetAuthStateCache = jest.mocked(setAuthStateCache);
@@ -38,11 +44,20 @@ const mockedInitiateSurvey = jest.mocked(surveyUtils.initiateSurvey);
 describe('loadRouteForGooglersOnly', () => {
   let onSuccess: jest.Mock;
   let onFail: jest.Mock;
+  let onAnonymous: jest.Mock;
 
   beforeEach(() => {
     jest.resetAllMocks();
+    resetAnonymousAuthCheckForTesting();
     onSuccess = jest.fn(() => Promise.resolve({ component: 'Success' }));
     onFail = jest.fn(() => Promise.resolve({ component: 'Fail' }));
+    onAnonymous = jest.fn(() => Promise.resolve({ component: 'SignIn' }));
+    mockedGetAuthStateCache.mockResolvedValue(null);
+    mockedSetAuthStateCache.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('should call onSuccess for a Googler', async () => {
@@ -50,75 +65,96 @@ describe('loadRouteForGooglersOnly', () => {
       identity: 'user:test@google.com',
       email: 'test@google.com',
     });
-    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail);
+    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail, onAnonymous);
     await expect(lazyLoader()).resolves.toEqual({ component: 'Success' });
 
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onFail).not.toHaveBeenCalled();
+    expect(onAnonymous).not.toHaveBeenCalled();
     expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
     expect(mockedQueryAuthState).not.toHaveBeenCalled();
   });
 
-  it('should call onFail for a non-Googler even after queryAuthState', async () => {
+  it('should call onFail for a signed-in non-Googler', async () => {
     mockedObtainAuthState.mockResolvedValue({
       identity: 'user:test@example.com',
       email: 'test@example.com',
     });
-    mockedQueryAuthState.mockResolvedValue({
-      identity: 'user:test@example.com',
-      email: 'test@example.com',
-    });
-    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail);
+    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail, onAnonymous);
     await expect(lazyLoader()).resolves.toEqual({ component: 'Fail' });
 
     expect(onFail).toHaveBeenCalledTimes(1);
     expect(onSuccess).not.toHaveBeenCalled();
+    expect(onAnonymous).not.toHaveBeenCalled();
     expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
-    expect(mockedQueryAuthState).toHaveBeenCalledTimes(1);
-    expect(mockedSetAuthStateCache).toHaveBeenCalledWith({
-      identity: 'user:test@example.com',
-      email: 'test@example.com',
-    });
+    expect(mockedQueryAuthState).not.toHaveBeenCalled();
   });
 
-  it('should call onFail for an anonymous user when queryAuthState remains anonymous', async () => {
+  it('should call onAnonymous on cold start without duplicate queryAuthState fetch', async () => {
+    mockedGetAuthStateCache.mockResolvedValue(null);
     mockedObtainAuthState.mockResolvedValue({
       identity: 'anonymous:anonymous',
       email: undefined,
     });
-    mockedQueryAuthState.mockResolvedValue({
-      identity: 'anonymous:anonymous',
-      email: undefined,
-    });
-    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail);
-    await expect(lazyLoader()).resolves.toEqual({ component: 'Fail' });
+    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail, onAnonymous);
+    await expect(lazyLoader()).resolves.toEqual({ component: 'SignIn' });
 
-    expect(onFail).toHaveBeenCalledTimes(1);
+    expect(onAnonymous).toHaveBeenCalledTimes(1);
+    expect(onFail).not.toHaveBeenCalled();
     expect(onSuccess).not.toHaveBeenCalled();
     expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
-    expect(mockedQueryAuthState).toHaveBeenCalledTimes(1);
+    expect(mockedQueryAuthState).not.toHaveBeenCalled();
   });
 
-  it('should refresh stale anonymous cache and call onSuccess if queryAuthState returns a Googler', async () => {
-    mockedObtainAuthState.mockResolvedValue({
+  it('should refresh stale cached anonymous state once per session and tolerate cache write errors', async () => {
+    mockedGetAuthStateCache.mockResolvedValue({
       identity: 'anonymous:anonymous',
       email: undefined,
     });
-    mockedQueryAuthState.mockResolvedValue({
-      identity: 'user:fresh@google.com',
-      email: 'fresh@google.com',
-    });
-    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail);
+    const refreshedState = {
+      identity: 'user:test@google.com',
+      email: 'test@google.com',
+    };
+    mockedQueryAuthState.mockResolvedValue(refreshedState);
+    mockedSetAuthStateCache.mockRejectedValueOnce(new Error('IndexedDB full'));
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail, onAnonymous);
     await expect(lazyLoader()).resolves.toEqual({ component: 'Success' });
 
-    expect(onSuccess).toHaveBeenCalledTimes(1);
-    expect(onFail).not.toHaveBeenCalled();
-    expect(mockedObtainAuthState).toHaveBeenCalledTimes(1);
     expect(mockedQueryAuthState).toHaveBeenCalledTimes(1);
-    expect(mockedSetAuthStateCache).toHaveBeenCalledWith({
-      identity: 'user:fresh@google.com',
-      email: 'fresh@google.com',
+    expect(mockedSetAuthStateCache).toHaveBeenCalledWith(refreshedState);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onAnonymous).not.toHaveBeenCalled();
+    expect(onFail).not.toHaveBeenCalled();
+  });
+
+  it('should not re-query server on subsequent client-side transitions after verifying anonymous state', async () => {
+    mockedGetAuthStateCache.mockResolvedValue({
+      identity: 'anonymous:anonymous',
+      email: undefined,
     });
+    mockedQueryAuthState.mockResolvedValue({
+      identity: 'anonymous:anonymous',
+      email: undefined,
+    });
+    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail, onAnonymous);
+    await expect(lazyLoader()).resolves.toEqual({ component: 'SignIn' });
+    await expect(lazyLoader()).resolves.toEqual({ component: 'SignIn' });
+
+    expect(mockedQueryAuthState).toHaveBeenCalledTimes(1);
+    expect(mockedObtainAuthState).not.toHaveBeenCalled();
+    expect(onAnonymous).toHaveBeenCalledTimes(2);
+  });
+
+  it('should call onFail when auth state fetch fails instead of showing sign-in prompt', async () => {
+    mockedObtainAuthState.mockRejectedValue(new Error('network error'));
+    const lazyLoader = loadRouteForGooglersOnly(onSuccess, onFail, onAnonymous);
+    await expect(lazyLoader()).resolves.toEqual({ component: 'Fail' });
+
+    expect(onFail).toHaveBeenCalledTimes(1);
+    expect(onAnonymous).not.toHaveBeenCalled();
+    expect(onSuccess).not.toHaveBeenCalled();
   });
 });
 
