@@ -99,6 +99,14 @@ func TestInvocationGet(t *testing.T) {
 			getCmd := GetCmd(nil)
 			assert.Loosely(t, getCmd, should.NotBeNil)
 			assert.Loosely(t, getCmd.UsageLine, should.Equal("get [-invocationid <invocation_id>] [<target>]"))
+
+			r1 := GetCmd(nil).CommandRun().(*invocationGetRun)
+			assert.Loosely(t, r1.Flags.Parse([]string{"-id", "inv-1"}), should.BeNil)
+			assert.Loosely(t, r1.invocationID, should.Equal("inv-1"))
+
+			r2 := GetCmd(nil).CommandRun().(*invocationGetRun)
+			assert.Loosely(t, r2.Flags.Parse([]string{"-invocation-id", "inv-2"}), should.BeNil)
+			assert.Loosely(t, r2.invocationID, should.Equal("inv-2"))
 		})
 
 		t.Run(`accepts positional URL and prints derived IDs`, func(t *ftt.Test) {

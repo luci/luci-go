@@ -107,6 +107,18 @@ func TestCmdWorkUnit(t *testing.T) {
 		assert.Loosely(t, getCmd, should.NotBeNil)
 		assert.Loosely(t, getCmd.UsageLine, should.Equal("get [-invocationid <invocation_id> -workunitid <work_unit_id>] [<target>]"))
 
+		t.Run(`flag aliases -id, -work-unit-id, and -invocation-id`, func(t *ftt.Test) {
+			r1 := GetCmd(nil).CommandRun().(*workUnitGetRun)
+			assert.Loosely(t, r1.Flags.Parse([]string{"-invocation-id", "inv-1", "-id", "wu-1"}), should.BeNil)
+			assert.Loosely(t, r1.invocationID, should.Equal("inv-1"))
+			assert.Loosely(t, r1.workUnitID, should.Equal("wu-1"))
+
+			r2 := GetCmd(nil).CommandRun().(*workUnitGetRun)
+			assert.Loosely(t, r2.Flags.Parse([]string{"-invocation-id", "inv-2", "-work-unit-id", "wu-2"}), should.BeNil)
+			assert.Loosely(t, r2.invocationID, should.Equal("inv-2"))
+			assert.Loosely(t, r2.workUnitID, should.Equal("wu-2"))
+		})
+
 		t.Run(`rejects legacy invocation`, func(t *ftt.Test) {
 			r := &workUnitGetRun{
 				client: &mockWorkUnitResultDBClient{

@@ -50,6 +50,34 @@ func TestCompareCmd(t *testing.T) {
 	ftt.Run(`CompareCmd`, t, func(t *ftt.Test) {
 		tmpDir := t.TempDir()
 
+		t.Run(`CompareCmd flag aliases`, func(t *ftt.Test) {
+			cmd := CompareCmd(nil, ParentTypeUnknown)
+			run := cmd.CommandRun().(*artifactCompareRun)
+			err := run.Flags.Parse([]string{
+				"-invocation-id", "inv-1",
+				"-work-unit-id", "wu-1",
+				"-test-id", "test-1",
+				"-result-id", "res-1",
+				"-artifact-id", "art-1",
+				"-variant-hash", "vhash-1",
+				"-out", "compare_out.txt",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, run.invocationID, should.Equal("inv-1"))
+			assert.Loosely(t, run.workUnitID, should.Equal("wu-1"))
+			assert.Loosely(t, run.testID, should.Equal("test-1"))
+			assert.Loosely(t, run.resultID, should.Equal("res-1"))
+			assert.Loosely(t, run.artifactID, should.Equal("art-1"))
+			assert.Loosely(t, run.variantHash, should.Equal("vhash-1"))
+			assert.Loosely(t, run.outputFile, should.Equal("compare_out.txt"))
+
+			wuCmd := CompareCmd(nil, ParentTypeWorkUnit)
+			wuRun := wuCmd.CommandRun().(*artifactCompareRun)
+			assert.Loosely(t, wuRun.Flags.Parse([]string{"-test-id", "wu-test-1", "-variant-hash", "wu-vhash-1"}), should.BeNil)
+			assert.Loosely(t, wuRun.testID, should.Equal("wu-test-1"))
+			assert.Loosely(t, wuRun.variantHash, should.Equal("wu-vhash-1"))
+		})
+
 		t.Run(`root invocation test result artifact comparison`, func(t *ftt.Test) {
 			outFile := filepath.Join(tmpDir, "root_tr.txt")
 			var capturedCompareReq *rdbpb.CompareArtifactLinesRequest

@@ -74,9 +74,11 @@ func CompareCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command 
 			r.registerFetchFlags(af, parentType)
 			if parentType == ParentTypeWorkUnit {
 				r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+				r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 			}
 			r.Flags.StringVar(&r.analysisHost, "analysis-host", chromeinfra.AnalysisHost, "LUCI Analysis host")
 			r.Flags.StringVar(&r.variantHash, "varianthash", "", "Optional variant hash for QueryRecentPasses")
+			r.Flags.StringVar(&r.variantHash, "variant-hash", "", "Alias for -varianthash")
 			r.Flags.Var(&r.passingResults, "passing-result", "Explicit passing test result resource name (repeatable; skips LUCI Analysis lookup)")
 			r.Flags.Var(&r.compareArtifacts, "compare-artifact", "Explicit comparison artifact resource name (repeatable; skips LUCI Analysis lookup)")
 			r.Flags.IntVar(&r.passesLimit, "passes-limit", 5, "Max passing test results to request from LUCI Analysis (default 5, max 25)")

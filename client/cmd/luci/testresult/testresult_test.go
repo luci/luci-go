@@ -122,6 +122,19 @@ func TestCmdTestResult(t *testing.T) {
 		assert.Loosely(t, getCmd, should.NotBeNil)
 		assert.Loosely(t, getCmd.UsageLine, should.Equal("get [-invocationid <invocation_id> -testid <test_id> -resultid <result_id>] [<target>]"))
 
+		t.Run(`flag aliases -invocation-id, -test-id, and -result-id`, func(t *ftt.Test) {
+			r1 := GetCmd(nil).CommandRun().(*testResultGetRun)
+			err := r1.Flags.Parse([]string{
+				"-invocation-id", "inv-1",
+				"-test-id", "test-1",
+				"-result-id", "res-1",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r1.invocationID, should.Equal("inv-1"))
+			assert.Loosely(t, r1.testID, should.Equal("test-1"))
+			assert.Loosely(t, r1.resultID, should.Equal("res-1"))
+		})
+
 		t.Run(`testResultGetRun accepts positional test result resource name and prints derived IDs`, func(t *ftt.Test) {
 			client := &mockResultDBClient{
 				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {

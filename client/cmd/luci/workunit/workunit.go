@@ -79,7 +79,10 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Root invocation ID (e.g. build-867... or ants-i...)")
+			r.Flags.StringVar(&r.invocationID, "invocation-id", "", "Alias for -invocationid")
 			r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+			r.Flags.StringVar(&r.workUnitID, "work-unit-id", "", "Alias for -workunitid")
+			r.Flags.StringVar(&r.workUnitID, "id", "", "Alias for -workunitid")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Show additional work unit metadata and tags")
 			return r
 		},

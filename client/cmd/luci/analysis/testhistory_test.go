@@ -72,6 +72,10 @@ func TestTestHistorySubcommand(t *testing.T) {
 			cmd := TestHistoryCmd(&base.AuthFlags{})
 			assert.Loosely(t, cmd.UsageLine, should.ContainSubstring("test-history"))
 			assert.Loosely(t, cmd.CommandRun(), should.NotBeNil)
+
+			run := cmd.CommandRun().(*testHistoryRun)
+			assert.Loosely(t, run.Flags.Parse([]string{"-test-id", "t1"}), should.BeNil)
+			assert.Loosely(t, run.testID, should.Equal("t1"))
 		})
 
 		t.Run("Validates required flags and structured test ID resolution", func(t *ftt.Test) {

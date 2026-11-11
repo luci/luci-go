@@ -112,10 +112,12 @@ func newBuildLogFetchCmd(af *base.AuthFlags, mode string) *subcommands.Command {
 			r.Flags.StringVar(&r.logName, "log", "", "Step log name (defaults to 'stdout')")
 			if mode == "head" || mode == "tail" {
 				r.Flags.IntVar(&r.lines, "n", 10, "Number of lines to fetch (default 10)")
+				r.Flags.IntVar(&r.lines, "lines", 10, "Alias for -n")
 			}
 			r.Flags.Int64Var(&r.maxBytes, "c", 0, "Maximum number of bytes to fetch")
 			r.Flags.Int64Var(&r.maxBytes, "bytes", 0, "Alias for -c")
 			r.Flags.StringVar(&r.outputFile, "o", "", "Optional file path to save the log content to")
+			r.Flags.StringVar(&r.outputFile, "out", "", "Alias for -o")
 			r.Flags.StringVar(&r.outputFile, "output", "", "Alias for -o")
 			return r
 		},

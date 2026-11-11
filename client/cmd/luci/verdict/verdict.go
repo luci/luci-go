@@ -74,8 +74,11 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
+			r.Flags.StringVar(&r.invocationID, "invocation-id", "", "Alias for -invocationid")
 			r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+			r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 			r.Flags.StringVar(&r.variantHash, "varianthash", "", "Variant hash (optional, e.g. b7de9035241e76cc)")
+			r.Flags.StringVar(&r.variantHash, "variant-hash", "", "Alias for -varianthash")
 			r.Flags.IntVar(&r.maxResults, "max-results", 10, "Maximum number of results to display (default: 10, 0 for all)")
 			r.Flags.BoolVar(&r.allResults, "all", false, "Show all results without truncation")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print test metadata, tags, and properties")

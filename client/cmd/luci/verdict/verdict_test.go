@@ -262,6 +262,19 @@ func TestCmdVerdict(t *testing.T) {
 		assert.Loosely(t, getCmd, should.NotBeNil)
 		assert.Loosely(t, getCmd.UsageLine, should.Equal("get [-invocationid <invocation_id> -testid <test_id>] [-varianthash <hash>] [<target>]"))
 
+		t.Run(`flag aliases -invocation-id, -test-id, and -variant-hash`, func(t *ftt.Test) {
+			r := GetCmd(nil).CommandRun().(*verdictGetRun)
+			err := r.Flags.Parse([]string{
+				"-invocation-id", "inv-1",
+				"-test-id", "test-1",
+				"-variant-hash", "vhash-1",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, r.invocationID, should.Equal("inv-1"))
+			assert.Loosely(t, r.testID, should.Equal("test-1"))
+			assert.Loosely(t, r.variantHash, should.Equal("vhash-1"))
+		})
+
 		t.Run(`verdictGetRun accepts positional verdict URL and prints derived IDs`, func(t *ftt.Test) {
 			client := &mockAggResultDBClient{
 				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {

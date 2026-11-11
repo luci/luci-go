@@ -76,6 +76,9 @@ func TestListCmd(t *testing.T) {
 
 		run := cmd.CommandRun().(*verdictListRun)
 		assert.Loosely(t, run.maxVerdicts, should.Equal(100))
+
+		assert.Loosely(t, run.Flags.Parse([]string{"-invocation-id", "inv-1"}), should.BeNil)
+		assert.Loosely(t, run.invocationID, should.Equal("inv-1"))
 	})
 }
 

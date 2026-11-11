@@ -76,8 +76,11 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
+			r.Flags.StringVar(&r.invocationID, "invocation-id", "", "Alias for -invocationid")
 			r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+			r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 			r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+			r.Flags.StringVar(&r.resultID, "result-id", "", "Alias for -resultid")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Show additional result metadata and tags")
 			// -legacy is now unused and will be removed in the future.
 			r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")

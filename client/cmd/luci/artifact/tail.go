@@ -59,7 +59,9 @@ func TailCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 			r := &artifactTailRun{lines: 10}
 			r.registerFetchFlags(af, parentType)
 			r.Flags.IntVar(&r.lines, "n", 10, "Number of lines to fetch from the end of the artifact (default 10)")
+			r.Flags.IntVar(&r.lines, "lines", 10, "Alias for -n")
 			r.Flags.Int64Var(&r.bytes, "c", 0, "Number of bytes to fetch from the end of the artifact")
+			r.Flags.Int64Var(&r.bytes, "bytes", 0, "Alias for -c")
 			return r
 		},
 	}

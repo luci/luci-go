@@ -71,18 +71,26 @@ func (r *artifactCommonRun) registerTargetFlags(af *base.AuthFlags, parentType P
 	}
 	r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 	r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. build-867... or ants-i...)")
+	r.Flags.StringVar(&r.invocationID, "invocation-id", "", "Alias for -invocationid")
 	if parentType == ParentTypeTestResult {
 		r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+		r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 		r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+		r.Flags.StringVar(&r.resultID, "result-id", "", "Alias for -resultid")
 		r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (optional)")
+		r.Flags.StringVar(&r.workUnitID, "work-unit-id", "", "Alias for -workunitid")
 		// -legacy is now unused and will be removed in the future.
 		r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 	} else if parentType == ParentTypeWorkUnit {
 		r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+		r.Flags.StringVar(&r.workUnitID, "work-unit-id", "", "Alias for -workunitid")
 	} else {
 		r.Flags.StringVar(&r.workUnitID, "workunitid", "", "Work unit ID (e.g. run-tests or ants-wu...)")
+		r.Flags.StringVar(&r.workUnitID, "work-unit-id", "", "Alias for -workunitid")
 		r.Flags.StringVar(&r.testID, "testid", "", "Test ID (e.g. :module!junit:pkg.Class#Method)")
+		r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 		r.Flags.StringVar(&r.resultID, "resultid", "", "Result ID (e.g. 0, r1, or uuid)")
+		r.Flags.StringVar(&r.resultID, "result-id", "", "Alias for -resultid")
 		// -legacy is now unused and will be removed in the future.
 		r.Flags.BoolVar(&r.legacy, "legacy", false, "Query as legacy invocation instead of root invocation")
 	}
@@ -91,7 +99,9 @@ func (r *artifactCommonRun) registerTargetFlags(af *base.AuthFlags, parentType P
 func (r *artifactCommonRun) registerFetchFlags(af *base.AuthFlags, parentType ParentType) {
 	r.registerTargetFlags(af, parentType)
 	r.Flags.StringVar(&r.artifactID, "artifactid", "", "Artifact ID (e.g. text_log or test.xml)")
+	r.Flags.StringVar(&r.artifactID, "artifact-id", "", "Alias for -artifactid")
 	r.Flags.StringVar(&r.outputFile, "o", "", "Optional file path to save the artifact content to")
+	r.Flags.StringVar(&r.outputFile, "out", "", "Optional file path to save the artifact content to (alias for -o)")
 	r.Flags.StringVar(&r.outputFile, "output", "", "Optional file path to save the artifact content to (alias for -o)")
 }
 

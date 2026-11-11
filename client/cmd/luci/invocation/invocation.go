@@ -78,6 +78,8 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.ResultDBHost, "ResultDB host")
 			r.Flags.StringVar(&r.invocationID, "invocationid", "", "Invocation ID (e.g. ants-i... or build-867...)")
+			r.Flags.StringVar(&r.invocationID, "invocation-id", "", "Alias for -invocationid")
+			r.Flags.StringVar(&r.invocationID, "id", "", "Alias for -invocationid")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Show additional invocation tags, properties, and realm metadata")
 			r.Flags.BoolVar(&r.jsonOut, "json", false, "Output invocation proto in JSON format")
 			return r

@@ -245,20 +245,49 @@ func TestFetchTailLines(t *testing.T) {
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, run.Flags.Lookup("o"), should.NotBeNil)
 		assert.Loosely(t, run.Flags.Lookup("output"), should.NotBeNil)
+		assert.Loosely(t, run.Flags.Lookup("out"), should.NotBeNil)
 
 		unknownCmd := TailCmd(base.NewAuthFlags(), ParentTypeUnknown)
 		unknownRun, ok := unknownCmd.CommandRun().(*artifactTailRun)
 		assert.Loosely(t, ok, should.BeTrue)
 		assert.Loosely(t, unknownRun.Flags.Lookup("invocationid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("invocation-id"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("workunitid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("work-unit-id"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("testid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("test-id"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("resultid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("result-id"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("artifactid"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("artifact-id"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("legacy"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("n"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("lines"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("c"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("bytes"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("o"), should.NotBeNil)
 		assert.Loosely(t, unknownRun.Flags.Lookup("output"), should.NotBeNil)
+		assert.Loosely(t, unknownRun.Flags.Lookup("out"), should.NotBeNil)
+
+		err := unknownRun.Flags.Parse([]string{
+			"-invocation-id", "inv-1",
+			"-work-unit-id", "wu-1",
+			"-test-id", "test-1",
+			"-result-id", "res-1",
+			"-artifact-id", "art-1",
+			"-lines", "25",
+			"-bytes", "512",
+			"-out", "out.txt",
+		})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, unknownRun.invocationID, should.Equal("inv-1"))
+		assert.Loosely(t, unknownRun.workUnitID, should.Equal("wu-1"))
+		assert.Loosely(t, unknownRun.testID, should.Equal("test-1"))
+		assert.Loosely(t, unknownRun.resultID, should.Equal("res-1"))
+		assert.Loosely(t, unknownRun.artifactID, should.Equal("art-1"))
+		assert.Loosely(t, unknownRun.lines, should.Equal(25))
+		assert.Loosely(t, unknownRun.bytes, should.Equal(int64(512)))
+		assert.Loosely(t, unknownRun.outputFile, should.Equal("out.txt"))
 	})
 
 	ftt.Run(`artifactTailRun invocation-wide without -workunitid`, t, func(t *ftt.Test) {

@@ -72,6 +72,7 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.host, "host", chromeinfra.AnalysisHost, "LUCI Analysis host")
 			r.Flags.StringVar(&r.project, "project", "", "LUCI project (required, e.g. chromium, turquoise)")
 			r.Flags.StringVar(&r.testID, "testid", "", "Flat or structured test ID to query history for")
+			r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Structured test ID module name (e.g. //chrome/test:browser_tests)")
 			r.Flags.StringVar(&r.moduleScheme, "scheme", "", "Structured test ID scheme (e.g. gtest, junit, webtest)")
 			r.Flags.StringVar(&r.coarseName, "coarse", "", "Structured test ID coarse name (e.g. package name)")
