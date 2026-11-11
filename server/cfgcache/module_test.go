@@ -27,17 +27,32 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/config/vars"
 
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/router"
 )
 
 type fakeModuleHost struct {
 	module.Host
 	bgActivity string
+	routes     *router.Router
+	cookieAuth fakeCookieAuth
 }
 
 func (f *fakeModuleHost) RunInBackground(activity string, fn func(context.Context)) {
 	f.bgActivity = activity
+}
+
+func (f *fakeModuleHost) Routes() *router.Router {
+	if f.routes == nil {
+		f.routes = router.New()
+	}
+	return f.routes
+}
+
+func (f *fakeModuleHost) CookieAuth() auth.Method {
+	return &f.cookieAuth
 }
 
 func TestServerModule(t *testing.T) {
@@ -73,6 +88,7 @@ func TestServerModule(t *testing.T) {
 		assert.NoErr(t, err)
 		assert.That(t, outCtx, should.Equal(ctx))
 		assert.That(t, host.bgActivity, should.Equal(memoryRefreshID))
+		assert.Loosely(t, host.routes, should.BeNil)
 
 		patterns, err := opts.Rules.ConfigPatterns(ctx)
 		assert.NoErr(t, err)
@@ -104,6 +120,7 @@ func TestServerModule(t *testing.T) {
 			"-cfgcache-max-memory-staleness=35s",
 			"-cfgcache-memory-refresh-timeout=45s",
 			"-cfgcache-memory-refresh-every=30s",
+			"-cfgcache-status-admin-group=custom-admins",
 		}))
 
 		mod := NewModule(opts)
@@ -114,7 +131,9 @@ func TestServerModule(t *testing.T) {
 		assert.That(t, opts.Registry.MaxIngestMemoryMB, should.Equal(int64(128)))
 		assert.That(t, opts.Registry.MaxMemoryStaleness, should.Equal(35*time.Second))
 		assert.That(t, opts.Registry.MemoryRefreshTimeout, should.Equal(45*time.Second))
+		assert.That(t, opts.StatusAdminGroup, should.Equal("custom-admins"))
 		assert.That(t, host.bgActivity, should.Equal(""))
+		assert.Loosely(t, host.routes, should.NotBeNil)
 
 		patterns, err := opts.Rules.ConfigPatterns(ctx)
 		assert.NoErr(t, err)

@@ -29,6 +29,7 @@ import (
 
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/module"
+	"go.chromium.org/luci/server/secrets"
 )
 
 const (
@@ -38,6 +39,18 @@ const (
 	// memoryRefreshID is the RunInBackground activity name for refreshing in-memory
 	// configs.
 	memoryRefreshID = "cfgcache"
+
+	// StatusPagePath is the HTTP route path where the cfgcache status page is
+	// mounted.
+	StatusPagePath = "/admin/cfgcache"
+
+	// StatusIngestPath is the HTTP POST route path that triggers an immediate
+	// config ingestion from LUCI Config into storage.
+	StatusIngestPath = "/admin/cfgcache/ingest"
+
+	// StatusConfigPath is the HTTP GET route path that returns a stored config
+	// message encoded as JSONPB (query parameters: `pipeline` and `config_set`).
+	StatusConfigPath = "/admin/cfgcache/config"
 )
 
 // ModuleName can be used to refer to this module when declaring dependencies.
@@ -121,6 +134,12 @@ type ModuleOptions struct {
 	//
 	// If <= 0, defaults to 60s.
 	MemoryRefreshEvery time.Duration
+
+	// StatusAdminGroup is the Chrome Infra Auth group authorized to view the
+	// [StatusPagePath] status page and trigger config imports in production.
+	//
+	// If this is unset (default), the status page is disabled.
+	StatusAdminGroup string
 }
 
 // Register registers the command line flags.
@@ -139,6 +158,8 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"How long to allow in-memory configs to be stale before returning errors.")
 	f.DurationVar(&o.MemoryRefreshEvery, "cfgcache-memory-refresh-every", time.Minute,
 		"How frequently to refresh in-memory configs.")
+	f.StringVar(&o.StatusAdminGroup, "cfgcache-status-admin-group", "",
+		fmt.Sprintf("Auth group allowed to access %q (empty disables status page).", StatusPagePath))
 }
 
 // NewModule returns a server module that registers cfgcache validation rules,
@@ -183,7 +204,7 @@ func (m *serverModule) Dependencies() []module.Dependency {
 	reg := m.registry()
 	reg.finishRegistration()
 
-	ret := make([]module.Dependency, 0, 2+len(reg.ingestConfigs))
+	ret := make([]module.Dependency, 0, 3+len(reg.ingestConfigs))
 	seen := map[module.Dependency]bool{}
 
 	add := func(dep module.Dependency) {
@@ -197,6 +218,9 @@ func (m *serverModule) Dependencies() []module.Dependency {
 	add(module.RequiredDependency(cfgmodule.ModuleName))
 	if !m.opts.DisableCron {
 		add(module.RequiredDependency(cron.ModuleName))
+	}
+	if m.opts.StatusAdminGroup != "" {
+		add(module.RequiredDependency(secrets.ModuleName))
 	}
 	for _, ic := range reg.ingestConfigs {
 		for _, dep := range ic.store.ModuleDependencies() {
@@ -236,6 +260,9 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 			return nil, err
 		}
 		host.RunInBackground(memoryRefreshID, m.refreshLoop)
+	}
+	if m.opts.StatusAdminGroup != "" {
+		m.installStatusHandlers(host, opts)
 	}
 	return ctx, nil
 }

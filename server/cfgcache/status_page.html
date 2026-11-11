@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cfgcache Status</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --surface: #ffffff; --surface-alt: #f1f5f9;
+      --border: #cbd5e1; --border-subtle: #e2e8f0;
+      --text: #0f172a; --muted: #64748b;
+      --nav-bg: #0f172a; --nav-fg: #f8fafc;
+      --primary: #2563eb; --primary-hover: #1d4ed8;
+      --success-bg: #dcfce7; --success-fg: #166534;
+      --warn-bg: #fef3c7; --warn-fg: #92400e;
+      --danger-bg: #fee2e2; --danger-fg: #991b1b; --danger-row: #fef2f2;
+      --info-bg: #dbeafe; --info-fg: #1e40af;
+      --neutral-bg: #e2e8f0; --neutral-fg: #334155;
+      --active-row: #eff6ff; --drawer-width: 720px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px; line-height: 1.45;
+    }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .muted { color: var(--muted); }
+    .italic { font-style: italic; }
+    .danger-text { color: #b91c1c; }
+
+    .topbar {
+      background: var(--nav-bg); color: var(--nav-fg); padding: 0.65rem 1.25rem;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;
+    }
+    .brand { color: var(--nav-fg); text-decoration: none; font-weight: 700; font-size: 1.05rem; }
+    .topbar-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; font-size: 0.8rem; }
+
+    main { padding: 1rem 1.25rem 3rem; transition: padding-right 0.15s ease; }
+    body.panel-open main { padding-right: calc(min(var(--drawer-width), 92vw) + 1.25rem); }
+
+    .toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.9rem; }
+    .toolbar-actions { display: flex; align-items: center; gap: 0.5rem; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.25rem;
+      padding: 0.32rem 0.65rem; font-size: 0.8rem; font-weight: 500; line-height: 1.2;
+      border-radius: 4px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+      text-decoration: none; cursor: pointer; white-space: nowrap;
+    }
+    .btn:hover { background: var(--surface-alt); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); border-color: var(--primary); color: #ffffff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-nav { background: transparent; border-color: #475569; color: var(--nav-fg); padding: 0.22rem 0.55rem; }
+    .btn-nav:hover { background: #1e293b; }
+    .btn-xs { padding: 0.18rem 0.45rem; font-size: 0.75rem; }
+    .btn.active { background: var(--info-bg); border-color: #93c5fd; color: var(--info-fg); font-weight: 600; }
+
+    .badge { display: inline-block; padding: 0.15rem 0.45rem; font-size: 0.72rem; font-weight: 600; border-radius: 4px; white-space: nowrap; }
+    .badge-ok { background: var(--success-bg); color: var(--success-fg); }
+    .badge-warn { background: var(--warn-bg); color: var(--warn-fg); }
+    .badge-err { background: var(--danger-bg); color: var(--danger-fg); }
+    .badge-info { background: var(--info-bg); color: var(--info-fg); }
+    .badge-neutral { background: var(--neutral-bg); color: var(--neutral-fg); }
+    .badge-dark { background: #1e293b; color: #f8fafc; }
+    .badge-outline { background: var(--surface); color: var(--neutral-fg); border: 1px solid var(--border); }
+
+    .alert { padding: 0.65rem 0.9rem; border-radius: 6px; margin-bottom: 0.9rem; border: 1px solid transparent; }
+    .alert-ok { background: var(--success-bg); color: var(--success-fg); border-color: #bbf7d0; }
+    .alert-err { background: var(--danger-bg); color: var(--danger-fg); border-color: #fecaca; }
+    .alert-neutral { background: var(--surface-alt); color: var(--neutral-fg); border-color: var(--border); }
+    .alert pre { margin: 0.4rem 0 0; white-space: pre-wrap; word-break: break-word; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 1rem; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+    .card-header {
+      padding: 0.6rem 0.9rem; background: var(--surface-alt); border-bottom: 1px solid var(--border);
+      border-radius: 6px 6px 0 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem;
+    }
+    .card-title-group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; }
+    .pipeline-id { font-size: 1rem; font-weight: 700; }
+    .card-body { padding: 0.8rem 0.9rem; }
+
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem 1.25rem; margin-bottom: 0.8rem; font-size: 0.82rem; }
+    .meta-heading { font-weight: 600; color: var(--muted); margin-bottom: 0.2rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+    .file-list { list-style: none; padding: 0; margin: 0; }
+    .file-list li + li { margin-top: 0.2rem; }
+
+    .table-wrap { overflow-x: auto; }
+    table.cfg-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    table.cfg-table th, table.cfg-table td { border: 1px solid var(--border-subtle); padding: 0.35rem 0.55rem; text-align: left; vertical-align: middle; }
+    table.cfg-table thead th {
+      background: var(--surface-alt); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-weight: 600; color: var(--neutral-fg); white-space: nowrap;
+    }
+    table.cfg-table tbody tr:hover { background: #f8fafc; }
+    table.cfg-table tbody tr.row-err { background: var(--danger-row); }
+    table.cfg-table tbody tr.row-active { background: var(--active-row); outline: 1px solid #93c5fd; }
+    .err-cell { color: #b91c1c; word-break: break-word; max-width: 340px; }
+
+    .jv-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; width: min(var(--drawer-width), 92vw);
+      background: var(--surface); border-left: 1px solid var(--border); box-shadow: -4px 0 16px rgba(15, 23, 42, 0.12);
+      display: none; flex-direction: column; z-index: 1000;
+    }
+    .jv-panel.open { display: flex; }
+    .jv-resizer { position: absolute; top: 0; left: -3px; bottom: 0; width: 6px; cursor: ew-resize; }
+    .jv-resizer:hover, .jv-resizer.dragging { background: rgba(37, 99, 235, 0.35); }
+    .jv-header { padding: 0.65rem 0.85rem; background: var(--surface-alt); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .jv-title { font-weight: 700; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .jv-meta { padding: 0.45rem 0.85rem; background: #f8fafc; border-bottom: 1px solid var(--border-subtle); display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; font-size: 0.75rem; }
+    .jv-meta-label { color: var(--muted); margin-right: 0.2rem; }
+    .jv-toolbar { padding: 0.4rem 0.85rem; border-bottom: 1px solid var(--border-subtle); display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; background: var(--surface); }
+    .jv-toolbar-spacer { flex: 1 1 auto; }
+    .jv-check { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: var(--neutral-fg); cursor: pointer; user-select: none; margin-left: 0.25rem; }
+    .jv-body { flex: 1 1 auto; overflow: auto; padding: 0.65rem 0.85rem; background: #ffffff; }
+    .jv-status { padding: 0.6rem 0.75rem; border-radius: 4px; font-size: 0.82rem; }
+    .jv-status.err { background: var(--danger-bg); color: var(--danger-fg); }
+
+    .jv-tree, .jv-raw { font-size: 12.5px; line-height: 1.5; margin: 0; white-space: pre-wrap; word-break: break-word; }
+    .jv-line { position: relative; padding-left: 1.15em; }
+    summary.jv-line { list-style: none; cursor: pointer; }
+    summary.jv-line::-webkit-details-marker { display: none; }
+    summary.jv-line:hover { background: #f1f5f9; border-radius: 3px; }
+    summary.jv-line::before { content: "▸"; position: absolute; left: 0; width: 1.15em; text-align: center; color: var(--muted); user-select: none; }
+    details.jv-fold[open] > summary.jv-line::before { content: "▾"; }
+    details.jv-fold[open] > summary.jv-line > .jv-collapsed-hint { display: none; }
+    .jv-ellipsis { color: var(--muted); font-style: italic; font-size: 0.92em; user-select: none; }
+    .jv-children { padding-left: 1.2em; margin-left: 0.45em; border-left: 1px solid var(--border-subtle); }
+    .jv-key { color: #0f4c81; font-weight: 500; }
+    .jv-str { color: #15803d; }
+    .jv-num { color: #b45309; }
+    .jv-bool { color: #7e22ce; font-weight: 600; }
+    .jv-null { color: #64748b; font-style: italic; }
+    .jv-brace { color: #334155; }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a class="brand mono" href="{{.StatusPagePath}}">cfgcache Status</a>
+    <div class="topbar-meta">
+      <span class="badge {{if .InMemoryEnabled}}badge-ok{{else}}badge-neutral{{end}}">
+        In-Memory Refresh: {{if .InMemoryEnabled}}Enabled ({{.MemoryRefreshTimeout}}){{else}}Disabled{{end}}
+      </span>
+      <span class="badge {{if .CronEnabled}}badge-ok{{else}}badge-neutral{{end}}">
+        Cron: {{if .CronEnabled}}Enabled{{else}}Disabled{{end}}
+      </span>
+      <span class="badge {{if .ValidationEnabled}}badge-ok{{else}}badge-neutral{{end}}">
+        Validation: {{if .ValidationEnabled}}Enabled{{else}}Disabled{{end}}
+      </span>
+      <span class="badge badge-info">
+        MaxIngestMemory: {{.MaxIngestMemoryMB}} MiB
+      </span>
+      <span class="mono" style="margin-left: 0.4rem;">{{.Identity}}</span>
+      {{if .LogoutURL}}
+        <a class="btn btn-nav" href="{{.LogoutURL}}">Logout</a>
+      {{end}}
+    </div>
+  </nav>
+
+  <main>
+    {{if .IngestResult}}
+      {{if .IngestResult.Err}}
+        <div class="alert alert-err" role="alert">
+          <strong>Import failed</strong> ({{.IngestResult.Duration}}):
+          <pre class="mono">{{.IngestResult.Err}}</pre>
+        </div>
+      {{else}}
+        <div class="alert alert-ok" role="alert">
+          <strong>Import succeeded</strong> in {{.IngestResult.Duration}}.
+        </div>
+      {{end}}
+    {{end}}
+
+    <div class="toolbar">
+      <div class="muted" style="font-size: 0.82rem;">
+        Rendered at <span class="mono">{{formatTime .Now}}</span>
+        &middot; Admin group: <span class="mono">{{.AdminGroup}}</span>
+      </div>
+      <div class="toolbar-actions">
+        <a href="{{.StatusPagePath}}" class="btn">Refresh Status</a>
+        <form method="POST" action="{{.StatusIngestPath}}" style="margin: 0; display: inline;">
+          {{.XsrfTokenField}}
+          <button type="submit" class="btn btn-primary">Run Import Now</button>
+        </form>
+      </div>
+    </div>
+
+    {{if not .Pipelines}}
+      <div class="alert alert-neutral">No pipelines registered in this Registry.</div>
+    {{end}}
+
+    {{range $pipe := .Pipelines}}
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="pipeline-id mono">{{$pipe.ID}}</span>
+            {{if $pipe.IsService}}
+              <span class="badge badge-info">ServicePipeline</span>
+              <span class="mono muted">services/{{$pipe.ServiceName}}</span>
+              {{if ne $pipe.ServiceName $pipe.ServiceNamePattern}}
+                <span class="muted" style="font-size: 0.78rem;">({{$pipe.ServiceNamePattern}})</span>
+              {{end}}
+            {{else}}
+              <span class="badge badge-dark">ProjectPipeline</span>
+              <span class="mono muted">projects/*</span>
+            {{end}}
+          </div>
+          <div>
+            {{if eq $pipe.OverallStatus "HEALTHY"}}
+              <span class="badge badge-ok">HEALTHY</span>
+            {{else if eq $pipe.OverallStatus "STORE_ONLY"}}
+              <span class="badge badge-neutral">STORE_ONLY</span>
+            {{else}}
+              <span class="badge badge-err">ERROR</span>
+            {{end}}
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="meta-grid">
+            <div>
+              <div class="meta-heading">Files</div>
+              <ul class="file-list mono">
+                {{range $pipe.Files}}
+                  <li>
+                    {{if .IsRegex}}<span class="badge badge-warn">regex</span>{{else}}<span class="badge badge-outline">exact</span>{{end}}
+                    {{.ResolvedPath}}
+                    {{if ne .ResolvedPath .Pattern}}<span class="muted">({{.Pattern}})</span>{{end}}
+                  </li>
+                {{end}}
+              </ul>
+            </div>
+            <div>
+              <div class="meta-heading">Transform &amp; In-Memory Refresh</div>
+              <div>Writer TransformVersion: <span class="mono">{{$pipe.TransformVersion}}</span></div>
+              {{if $pipe.HasMemoryRefresh}}
+                <div>ToMemory Version Window: <span class="mono">[{{$pipe.ToMemoryMinVersion}} .. {{$pipe.ToMemoryMaxVersion}}]</span></div>
+              {{else}}
+                <div>In-Memory Refresh: <span class="muted mono">NoMemoryRefresh</span></div>
+              {{end}}
+              {{if not $pipe.IsGettable}}
+                <div class="muted">Store: write-only (not GettableStore)</div>
+              {{end}}
+            </div>
+            <div>
+              <div class="meta-heading">In-Memory Sync Telemetry</div>
+              {{if $pipe.HasMemoryRefresh}}
+                <div>Last Refreshed: <span class="mono">{{formatTime $pipe.LastRefreshed}}</span></div>
+                <div>Last Attempt: <span class="mono">{{formatTime $pipe.LastRefreshAttempt}}</span></div>
+                {{if $pipe.LastRefreshErr}}
+                  <div class="danger-text" style="margin-top: 0.2rem;">Last Refresh Error: <span class="mono">{{$pipe.LastRefreshErr}}</span></div>
+                {{end}}
+              {{else}}
+                <div class="muted">N/A (NoMemoryRefresh)</div>
+              {{end}}
+            </div>
+          </div>
+
+          {{if $pipe.StoreErr}}
+            <div class="alert alert-err" style="padding: 0.45rem 0.7rem;">
+              <strong>Store LoadMeta Error:</strong> <span class="mono">{{$pipe.StoreErr}}</span>
+            </div>
+          {{end}}
+
+          {{if not $pipe.ConfigSets}}
+            <div class="muted italic" style="font-size: 0.82rem;">No config sets currently stored in Store.</div>
+          {{else}}
+            <div class="table-wrap">
+              <table class="cfg-table">
+                <thead>
+                  <tr>
+                    <th>Config Set</th>
+                    <th>Sync Status</th>
+                    <th>Ingested Revision</th>
+                    <th>Store InputHash</th>
+                    <th>Store InputSize</th>
+                    <th>Store TransformedSize</th>
+                    <th>Store TransformVer</th>
+                    <th>In-Memory Accepted</th>
+                    <th>Stored Config</th>
+                    <th>Error</th>
+                  </tr>
+                </thead>
+                <tbody class="mono">
+                  {{range $pipe.ConfigSets}}
+                    <tr class="{{if and (ne .SyncStatus "OK") (ne .SyncStatus "STORE_ONLY")}}row-err{{end}}">
+                      <td>{{.ConfigSet}}</td>
+                      <td>
+                        {{if eq .SyncStatus "OK"}}
+                          <span class="badge badge-ok">OK</span>
+                        {{else if eq .SyncStatus "STORE_ONLY"}}
+                          <span class="badge badge-neutral">STORE_ONLY</span>
+                        {{else if eq .SyncStatus "VERSION_MISMATCH"}}
+                          <span class="badge badge-warn">VERSION_MISMATCH</span>
+                        {{else if eq .SyncStatus "TO_MEMORY_ERROR"}}
+                          <span class="badge badge-err">TO_MEMORY_ERROR</span>
+                        {{else}}
+                          <span class="badge badge-err">{{.SyncStatus}}</span>
+                        {{end}}
+                      </td>
+                      {{if .StoreMeta}}
+                        <td title="{{.StoreMeta.InputRevision}}">{{shortHash .StoreMeta.InputRevision}}</td>
+                        <td title="{{.StoreMeta.InputHash}}">{{shortHash .StoreMeta.InputHash}}</td>
+                        <td title="{{.StoreMeta.InputSize}} bytes">{{humanBytes .StoreMeta.InputSize}}</td>
+                        <td title="{{.StoreMeta.TransformedSize}} bytes">{{humanBytes .StoreMeta.TransformedSize}}</td>
+                        <td>{{.StoreMeta.TransformVersion}}</td>
+                      {{else}}
+                        <td colspan="5" class="muted italic">not in Store</td>
+                      {{end}}
+                      <td>
+                        {{if .AcceptedMeta}}
+                          {{if .AcceptedMeta.InputRevision}}<span title="Revision: {{.AcceptedMeta.InputRevision}}">{{shortHash .AcceptedMeta.InputRevision}}</span> &middot; {{end}}<span title="InputHash: {{.AcceptedMeta.InputHash}}">{{shortHash .AcceptedMeta.InputHash}}</span> (v{{.AcceptedMeta.TransformVersion}})
+                        {{else}}
+                          <span class="muted">-</span>
+                        {{end}}
+                      </td>
+                      <td>
+                        {{if and .StoreMeta $pipe.IsGettable}}
+                          <a href="{{configURL $pipe.ID .ConfigSet}}"
+                             class="btn btn-xs js-view-config"
+                             data-pipeline="{{$pipe.ID}}"
+                             data-config-set="{{.ConfigSet}}"
+                             data-revision="{{.StoreMeta.InputRevision}}"
+                             data-input-hash="{{.StoreMeta.InputHash}}"
+                             data-transformed-size="{{humanBytes .StoreMeta.TransformedSize}}"
+                             data-transform-version="{{.StoreMeta.TransformVersion}}">JSONPB</a>
+                        {{else}}
+                          <span class="muted">-</span>
+                        {{end}}
+                      </td>
+                      <td class="err-cell">{{.Error}}</td>
+                    </tr>
+                  {{end}}
+                </tbody>
+              </table>
+            </div>
+          {{end}}
+        </div>
+      </div>
+    {{end}}
+  </main>
+
+  <aside id="jv-panel" class="jv-panel" aria-label="Ingested Config JSONPB Viewer">
+    <div id="jv-resizer" class="jv-resizer" title="Drag to resize"></div>
+    <div class="jv-header">
+      <div id="jv-title" class="jv-title mono"></div>
+      <button type="button" id="jv-close" class="btn btn-xs" title="Close (Esc)">Close ✕</button>
+    </div>
+    <div class="jv-meta mono">
+      <div><span class="jv-meta-label">Proto:</span><span id="jv-proto-type">-</span></div>
+      <div><span class="jv-meta-label">Revision:</span><span id="jv-rev">-</span></div>
+      <div><span class="jv-meta-label">InputHash:</span><span id="jv-hash">-</span></div>
+      <div><span class="jv-meta-label">TransformVer:</span><span id="jv-ver">-</span></div>
+      <div><span class="jv-meta-label">TransformedSize:</span><span id="jv-size">-</span></div>
+    </div>
+    <div class="jv-toolbar">
+      <button type="button" id="jv-mode-tree" class="btn btn-xs active">Tree</button>
+      <button type="button" id="jv-mode-raw" class="btn btn-xs">Raw</button>
+      <button type="button" id="jv-expand-all" class="btn btn-xs">Expand All</button>
+      <button type="button" id="jv-collapse-all" class="btn btn-xs">Collapse All</button>
+      <label class="jv-check" title="Use proto field names (snake_case) instead of lowerCamelCase JSON names">
+        <input type="checkbox" id="jv-proto-names"> snake_case
+      </label>
+      <div class="jv-toolbar-spacer"></div>
+      <button type="button" id="jv-copy" class="btn btn-xs">Copy</button>
+      <a id="jv-raw-link" class="btn btn-xs" href="#" target="_blank" rel="noopener">Raw ↗</a>
+    </div>
+    <div class="jv-body">
+      <div id="jv-status" class="jv-status" hidden></div>
+      <div id="jv-tree" class="jv-tree mono"></div>
+      <pre id="jv-raw" class="jv-raw mono" hidden></pre>
+    </div>
+  </aside>
+
+  <script>
+    (function() {
+      const panel = document.getElementById('jv-panel');
+      const resizer = document.getElementById('jv-resizer');
+      const titleEl = document.getElementById('jv-title');
+      const closeBtn = document.getElementById('jv-close');
+      const protoTypeEl = document.getElementById('jv-proto-type');
+      const revEl = document.getElementById('jv-rev');
+      const hashEl = document.getElementById('jv-hash');
+      const verEl = document.getElementById('jv-ver');
+      const sizeEl = document.getElementById('jv-size');
+      const modeTreeBtn = document.getElementById('jv-mode-tree');
+      const modeRawBtn = document.getElementById('jv-mode-raw');
+      const expandAllBtn = document.getElementById('jv-expand-all');
+      const collapseAllBtn = document.getElementById('jv-collapse-all');
+      const protoNamesCheck = document.getElementById('jv-proto-names');
+      const copyBtn = document.getElementById('jv-copy');
+      const rawLink = document.getElementById('jv-raw-link');
+      const statusEl = document.getElementById('jv-status');
+      const treeEl = document.getElementById('jv-tree');
+      const rawEl = document.getElementById('jv-raw');
+
+      let currentBaseUrl = '';
+      let currentRawText = '';
+      let activeRow = null;
+      let activeAbort = null;
+      let viewMode = 'tree';
+
+      function shortStr(s) {
+        if (!s) return '-';
+        return s.length > 12 ? s.slice(0, 12) : s;
+      }
+
+      function setMetaField(el, full) {
+        el.textContent = shortStr(full);
+        el.title = full || '';
+      }
+
+      function appendKeyPrefix(container, key) {
+        if (key !== null) {
+          const kSpan = document.createElement('span');
+          kSpan.className = 'jv-key';
+          kSpan.textContent = JSON.stringify(key);
+          container.appendChild(kSpan);
+          container.appendChild(document.createTextNode(': '));
+        }
+      }
+
+      function createPrimitiveLine(key, text, cls, isLast) {
+        const line = document.createElement('div');
+        line.className = 'jv-line';
+        appendKeyPrefix(line, key);
+        const valSpan = document.createElement('span');
+        valSpan.className = cls;
+        valSpan.textContent = text;
+        line.appendChild(valSpan);
+        if (!isLast) {
+          line.appendChild(document.createTextNode(','));
+        }
+        return line;
+      }
+
+      function createJsonNode(key, val, isLast, depth, maxOpenDepth) {
+        if (val === null) {
+          return createPrimitiveLine(key, 'null', 'jv-null', isLast);
+        }
+        const t = typeof val;
+        if (t === 'boolean') {
+          return createPrimitiveLine(key, String(val), 'jv-bool', isLast);
+        }
+        if (t === 'number') {
+          return createPrimitiveLine(key, String(val), 'jv-num', isLast);
+        }
+        if (t === 'string') {
+          return createPrimitiveLine(key, JSON.stringify(val), 'jv-str', isLast);
+        }
+
+        const isArr = Array.isArray(val);
+        const keys = isArr ? null : Object.keys(val);
+        const count = isArr ? val.length : keys.length;
+        if (count === 0) {
+          return createPrimitiveLine(key, isArr ? '[]' : '{}', 'jv-brace', isLast);
+        }
+
+        const openSym = isArr ? '[' : '{';
+        const closeSym = isArr ? ']' : '}';
+        const countLabel = isArr
+          ? (count === 1 ? '1 item' : count + ' items')
+          : (count === 1 ? '1 key' : count + ' keys');
+
+        const details = document.createElement('details');
+        details.className = 'jv-fold';
+
+        const summary = document.createElement('summary');
+        summary.className = 'jv-line';
+        appendKeyPrefix(summary, key);
+
+        const openBrace = document.createElement('span');
+        openBrace.className = 'jv-brace';
+        openBrace.textContent = openSym;
+        summary.appendChild(openBrace);
+
+        const hint = document.createElement('span');
+        hint.className = 'jv-collapsed-hint';
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'jv-ellipsis';
+        ellipsis.textContent = ' \u2026 ' + countLabel + ' ';
+        hint.appendChild(ellipsis);
+        const hintClose = document.createElement('span');
+        hintClose.className = 'jv-brace';
+        hintClose.textContent = closeSym;
+        hint.appendChild(hintClose);
+        if (!isLast) {
+          hint.appendChild(document.createTextNode(','));
+        }
+        summary.appendChild(hint);
+        details.appendChild(summary);
+
+        const childrenBox = document.createElement('div');
+        childrenBox.className = 'jv-children';
+        details.appendChild(childrenBox);
+
+        const closeLine = document.createElement('div');
+        closeLine.className = 'jv-line jv-close';
+        const closeBrace = document.createElement('span');
+        closeBrace.className = 'jv-brace';
+        closeBrace.textContent = closeSym;
+        closeLine.appendChild(closeBrace);
+        if (!isLast) {
+          closeLine.appendChild(document.createTextNode(','));
+        }
+        details.appendChild(closeLine);
+
+        let populated = false;
+        function populate(targetOpenDepth) {
+          if (populated) return;
+          populated = true;
+          const frag = document.createDocumentFragment();
+          if (isArr) {
+            for (let i = 0; i < val.length; i++) {
+              frag.appendChild(createJsonNode(null, val[i], i === val.length - 1, depth + 1, targetOpenDepth));
+            }
+          } else {
+            for (let i = 0; i < keys.length; i++) {
+              const k = keys[i];
+              frag.appendChild(createJsonNode(k, val[k], i === keys.length - 1, depth + 1, targetOpenDepth));
+            }
+          }
+          childrenBox.appendChild(frag);
+        }
+        details._populate = populate;
+
+        if (depth < maxOpenDepth) {
+          populate(maxOpenDepth);
+          details.open = true;
+        } else {
+          details.addEventListener('toggle', function() {
+            if (details.open) {
+              populate(depth + 2);
+            }
+          });
+        }
+        return details;
+      }
+
+      function applyViewMode(mode) {
+        viewMode = mode;
+        const isTree = mode === 'tree';
+        modeTreeBtn.classList.toggle('active', isTree);
+        modeRawBtn.classList.toggle('active', !isTree);
+        expandAllBtn.disabled = !isTree;
+        collapseAllBtn.disabled = !isTree;
+        if (!statusEl.hidden) {
+          treeEl.hidden = true;
+          rawEl.hidden = true;
+          return;
+        }
+        treeEl.hidden = !isTree;
+        rawEl.hidden = isTree;
+      }
+
+      function buildRequestUrl() {
+        if (!currentBaseUrl) return '#';
+        if (!protoNamesCheck.checked) return currentBaseUrl;
+        return currentBaseUrl + (currentBaseUrl.includes('?') ? '&' : '?') + 'proto_names=1';
+      }
+
+      async function loadConfig() {
+        if (!currentBaseUrl) return;
+        if (activeAbort) {
+          activeAbort.abort();
+        }
+        const ctrl = new AbortController();
+        activeAbort = ctrl;
+
+        const fetchUrl = buildRequestUrl();
+        rawLink.href = fetchUrl;
+        statusEl.className = 'jv-status muted';
+        statusEl.textContent = 'Loading stored config\u2026';
+        statusEl.hidden = false;
+        treeEl.hidden = true;
+        rawEl.hidden = true;
+        treeEl.replaceChildren();
+        rawEl.textContent = '';
+        currentRawText = '';
+
+        try {
+          const resp = await fetch(fetchUrl, {
+            signal: ctrl.signal,
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json' },
+          });
+          const text = await resp.text();
+          if (ctrl.signal.aborted) return;
+
+          if (!resp.ok) {
+            statusEl.className = 'jv-status err';
+            statusEl.textContent = 'HTTP ' + resp.status + ': ' + (text.trim() || resp.statusText);
+            return;
+          }
+
+          const protoType = resp.headers.get('X-Cfgcache-Proto-Type');
+          if (protoType) {
+            protoTypeEl.textContent = protoType;
+            protoTypeEl.title = protoType;
+          }
+          const hdrRev = resp.headers.get('X-Cfgcache-Input-Revision');
+          if (hdrRev !== null) setMetaField(revEl, hdrRev);
+          const hdrHash = resp.headers.get('X-Cfgcache-Input-Hash');
+          if (hdrHash !== null) setMetaField(hashEl, hdrHash);
+          const hdrVer = resp.headers.get('X-Cfgcache-Transform-Version');
+          if (hdrVer !== null) verEl.textContent = 'v' + hdrVer;
+          const hdrSize = resp.headers.get('X-Cfgcache-Transformed-Size-Human');
+          const hdrBytes = resp.headers.get('X-Cfgcache-Transformed-Size');
+          if (hdrSize) {
+            sizeEl.textContent = hdrSize;
+            sizeEl.title = hdrBytes ? hdrBytes + ' bytes' : '';
+          }
+
+          currentRawText = text;
+          rawEl.textContent = text;
+
+          const parsed = JSON.parse(text);
+          const maxOpenDepth = text.length > 100000 ? 2 : 64;
+          treeEl.appendChild(createJsonNode(null, parsed, true, 0, maxOpenDepth));
+          statusEl.hidden = true;
+          applyViewMode(viewMode);
+        } catch (err) {
+          if (ctrl.signal.aborted) return;
+          statusEl.className = 'jv-status err';
+          statusEl.textContent = 'Failed to load config: ' + err;
+        }
+      }
+
+      function openViewerForButton(btn) {
+        if (activeRow) activeRow.classList.remove('row-active');
+        activeRow = btn.closest('tr');
+        if (activeRow) activeRow.classList.add('row-active');
+
+        const pipeline = btn.dataset.pipeline || '';
+        const configSet = btn.dataset.configSet || '';
+        titleEl.textContent = pipeline + ' \u2014 ' + configSet;
+        titleEl.title = pipeline + ' / ' + configSet;
+        protoTypeEl.textContent = '-';
+        setMetaField(revEl, btn.dataset.revision || '');
+        setMetaField(hashEl, btn.dataset.inputHash || '');
+        verEl.textContent = btn.dataset.transformVersion ? 'v' + btn.dataset.transformVersion : '-';
+        sizeEl.textContent = btn.dataset.transformedSize || '-';
+
+        currentBaseUrl = btn.getAttribute('href');
+        panel.classList.add('open');
+        document.body.classList.add('panel-open');
+        loadConfig();
+      }
+
+      function closeViewer() {
+        if (activeAbort) {
+          activeAbort.abort();
+          activeAbort = null;
+        }
+        panel.classList.remove('open');
+        document.body.classList.remove('panel-open');
+        if (activeRow) {
+          activeRow.classList.remove('row-active');
+          activeRow = null;
+        }
+      }
+
+      document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.js-view-config');
+        if (!btn) return;
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+          return;
+        }
+        e.preventDefault();
+        openViewerForButton(btn);
+      });
+
+      closeBtn.addEventListener('click', closeViewer);
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && panel.classList.contains('open')) {
+          closeViewer();
+        }
+      });
+
+      modeTreeBtn.addEventListener('click', function() { applyViewMode('tree'); });
+      modeRawBtn.addEventListener('click', function() { applyViewMode('raw'); });
+      protoNamesCheck.addEventListener('change', loadConfig);
+
+      expandAllBtn.addEventListener('click', function() {
+        let nodes = treeEl.querySelectorAll('details.jv-fold');
+        let idx = 0;
+        while (idx < nodes.length) {
+          for (; idx < nodes.length; idx++) {
+            if (nodes[idx]._populate) nodes[idx]._populate(Infinity);
+            nodes[idx].open = true;
+          }
+          nodes = treeEl.querySelectorAll('details.jv-fold');
+        }
+      });
+
+      collapseAllBtn.addEventListener('click', function() {
+        const nodes = treeEl.querySelectorAll('details.jv-fold');
+        nodes.forEach(function(d, idx) {
+          d.open = (idx === 0 && d.parentElement === treeEl);
+        });
+      });
+
+      copyBtn.addEventListener('click', async function() {
+        if (!currentRawText || !navigator.clipboard) return;
+        try {
+          await navigator.clipboard.writeText(currentRawText);
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = 'Copied';
+          setTimeout(function() { copyBtn.textContent = orig; }, 1200);
+        } catch (_) {}
+      });
+
+      // Drag-resize left edge of sidepanel.
+      resizer.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        resizer.classList.add('dragging');
+        function onMove(ev) {
+          const w = Math.max(360, Math.min(window.innerWidth - 80, window.innerWidth - ev.clientX));
+          document.documentElement.style.setProperty('--drawer-width', w + 'px');
+        }
+        function onUp() {
+          resizer.classList.remove('dragging');
+          window.removeEventListener('mousemove', onMove);
+          window.removeEventListener('mouseup', onUp);
+        }
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+      });
+    })();
+  </script>
+</body>
+</html>

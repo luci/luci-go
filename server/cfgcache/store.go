@@ -81,12 +81,28 @@ type GettableStore[StoreMsg proto.Message] interface {
 	Get(ctx context.Context, pipelineID string, sets map[config.Set]*cfgcachepb.Meta) iter.Seq2[*cfgcachecommon.StoredConfig[StoreMsg], error]
 }
 
-// genericStore is a type-erased [GettableStore] stored on [ingestConfig].
-type genericStore = GettableStore[proto.Message]
+// genericStore is a type-erased [Store] (and optional [GettableStore]) stored
+// on [ingestConfig].
+type genericStore interface {
+	GettableStore[proto.Message]
+	isGettable() bool
+}
 
+// storeAdapter erases the StoreMsg type parameter on a pipeline's [Store].
+//
+// `gettable` is non-nil iff the underlying [Store] implements [GettableStore].
+// Pipelines with in-memory refresh enabled (ic.toMemory != nil) require a
+// [GettableStore] at registration time, so `gettable` is always non-nil for
+// them. [NoMemoryRefresh] pipelines (ic.toMemory == nil) only require [Store],
+// so `gettable` is populated only when the chosen backend also implements
+// [GettableStore] (e.g. dsstore.Store or memstore.Store).
 type storeAdapter[StoreMsg proto.Message] struct {
 	Store[StoreMsg]
 	gettable GettableStore[StoreMsg]
+}
+
+func (c storeAdapter[StoreMsg]) isGettable() bool {
+	return c.gettable != nil
 }
 
 func (c storeAdapter[StoreMsg]) Put(ctx context.Context, pipelineID string, cs config.Set, m *cfgcachepb.Meta, out proto.Message) error {
