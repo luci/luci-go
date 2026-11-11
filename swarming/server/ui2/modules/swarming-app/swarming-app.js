@@ -143,8 +143,19 @@ window.customElements.define(
 
       this.addEventListener("log-in", (e) => {
         this._auth_header = e.detail.authHeader;
-        this._profile = e.detail.profile;
-        this._fetch();
+        this._profile = e.detail.profile || {};
+        if (!e.detail.authHeader) {
+          this._permissions = {};
+          this._serverDetails = {
+            serverVersion: versionDefault,
+            botVersion: "",
+            casViewerServer: "",
+          };
+          this.render();
+        } else if (!e.detail.refresh) {
+          this._permissions = {};
+          this._fetch();
+        }
       });
 
       this.render();
@@ -352,7 +363,11 @@ window.customElements.define(
           this.finishedTask();
         })
         .catch((e) => {
-          if (e.status !== 403) {
+          if (
+            e.status !== 403 &&
+            e.codeName !== "PERMISSION_DENIED" &&
+            e.name !== "AbortError"
+          ) {
             console.error(e);
             errorMessage(
               `Unexpected error loading permissions: ${e.message}`,

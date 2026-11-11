@@ -1,6 +1,16 @@
-// Copyright 2018 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 import "./bot-list";
 import fetchMock from "fetch-mock";
@@ -1206,6 +1216,36 @@ describe("bot-list", function () {
         expect(calls.filter(countsCheck)).toBeLessThan(1);
 
         checkAuthorization(calls);
+        done();
+      });
+    });
+
+    it("updates authHeader on token refresh without refetching and resets on expiry", function (done) {
+      loggedInBotlist((ele) => {
+        fetchMock.resetHistory();
+        const login = $$("oauth-login", ele);
+        const fireLogin = (authHeader, profile = null, refresh = false) =>
+          login.dispatchEvent(
+            new CustomEvent("log-in", {
+              detail: { authHeader, profile, refresh },
+              bubbles: true,
+            })
+          );
+        fireLogin("Bearer refreshed-token", ele.profile, true);
+        expect(ele.authHeader).toBe("Bearer refreshed-token");
+        expect($$("bot-mass-delete", ele).authHeader).toBe(
+          "Bearer refreshed-token"
+        );
+        expect(fetchMock.calls(MATCHED, "POST")).toHaveSize(0);
+
+        const controller = ele._fetchController;
+        expect(controller.signal.aborted).toBeFalse();
+
+        fireLogin("");
+        expect(ele.authHeader).toBe("");
+        expect(controller.signal.aborted).toBeTrue();
+        expect($$(".message", ele).textContent).toContain("must sign in");
+        expect(fetchMock.calls(MATCHED, "POST")).toHaveSize(0);
         done();
       });
     });

@@ -1,6 +1,16 @@
-// Copyright 2018 The LUCI Authors. All rights reserved.
-// Use of this source code is governed under the Apache License, Version 2.0
-// that can be found in the LICENSE file.
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /** @module swarming-ui/modules/oauth-login
  * @description <h2><code>oauth-login</code></h2>
@@ -25,11 +35,13 @@
  *   profile: {
  *     email: 'foo@example.com',
  *     imageURL: 'http://example.com/img.png',
- *   }
+ *   },
+ *   refresh: false,
  * }
  * </pre>
  * where authHeader is a string that should be used as the
- * "Authorization" header for authenticated requests.
+ * "Authorization" header for authenticated requests, and refresh is true
+ * when an existing session refreshed its token for the same user.
  *
  */
 
@@ -38,8 +50,6 @@ import { upgradeProperty } from "elements-sk/upgradeProperty";
 import { errorMessage } from "elements-sk/errorMessage";
 
 import { jsonOrThrow } from "common-sk/modules/jsonOrThrow";
-
-// TODO: Support refreshing the token when it expires.
 
 const template = (ele) => {
   if (ele.authHeader) {
@@ -69,24 +79,17 @@ window.customElements.define(
       upgradeProperty(this, "testing_offline");
       this._auth_header = "";
       this._profile = null;
+      this._refreshTimer = null;
       if (!this.testing_offline) {
-        this._fetchAuthState().then(
-          (authState) => {
-            if (authState.identity != "anonymous:anonymous") {
-              this._fireLoginEvent(authState);
-              this.render();
-            }
-          },
-          (error) => {
-            console.error(error);
-            errorMessage(
-              `Error getting auth state: ${JSON.stringify(error)}`,
-              10000
-            );
-          }
-        );
+        this._refreshAuthState();
       }
       this.render();
+    }
+
+    disconnectedCallback() {
+      this._fetchGen = (this._fetchGen || 0) + 1;
+      clearTimeout(this._refreshTimer);
+      this._refreshTimer = null;
     }
 
     static get observedAttributes() {
@@ -120,16 +123,29 @@ window.customElements.define(
     }
 
     _fireLoginEvent(authState) {
-      this._profile = {
-        email: authState.email,
-        imageURL: authState.picture,
-      };
-      this._auth_header = `Bearer ${authState.accessToken}`;
+      const prevEmail = this._profile && this._profile.email;
+      const nextEmail = authState && authState.email;
+      const refresh =
+        !!this._auth_header &&
+        !!(authState && authState.accessToken) &&
+        !!prevEmail &&
+        prevEmail === nextEmail;
+      if (authState && authState.accessToken) {
+        this._profile = {
+          email: authState.email,
+          imageURL: authState.picture,
+        };
+        this._auth_header = `Bearer ${authState.accessToken}`;
+      } else {
+        this._profile = null;
+        this._auth_header = "";
+      }
       this.dispatchEvent(
         new CustomEvent("log-in", {
           detail: {
             authHeader: this._auth_header,
             profile: this._profile,
+            refresh: refresh,
           },
           bubbles: true,
         })
@@ -181,6 +197,71 @@ window.customElements.define(
         cache: "no-store",
       };
       return fetch("/auth/openid/state", options).then(jsonOrThrow);
+    }
+
+    _refreshAuthState() {
+      if (this.testing_offline) {
+        return;
+      }
+      clearTimeout(this._refreshTimer);
+      this._refreshTimer = null;
+      const fetchGen = (this._fetchGen = (this._fetchGen || 0) + 1);
+      this._fetchAuthState().then(
+        (authState) => {
+          if (!this.isConnected || fetchGen !== this._fetchGen) {
+            return;
+          }
+          if (
+            authState &&
+            authState.identity !== "anonymous:anonymous" &&
+            authState.accessToken
+          ) {
+            this._scheduleRefresh(authState);
+            this._fireLoginEvent(authState);
+            this.render();
+          } else if (this._auth_header) {
+            this._fireLoginEvent(null);
+            this.render();
+          }
+        },
+        (error) => {
+          if (!this.isConnected || fetchGen !== this._fetchGen) {
+            return;
+          }
+          console.error(error);
+          if (this._auth_header) {
+            this._refreshTimer = setTimeout(() => {
+              this._refreshTimer = null;
+              this._refreshAuthState();
+            }, 15 * 1000);
+          } else {
+            errorMessage(
+              `Error getting auth state: ${JSON.stringify(error)}`,
+              10000
+            );
+          }
+        }
+      );
+    }
+
+    _scheduleRefresh(authState) {
+      let expiresIn = authState.accessTokenExpiresIn;
+      if (
+        !Number.isFinite(expiresIn) &&
+        Number.isFinite(authState.accessTokenExpiry) &&
+        authState.accessTokenExpiry > 0
+      ) {
+        expiresIn = authState.accessTokenExpiry - Date.now() / 1000;
+      }
+      if (!Number.isFinite(expiresIn)) {
+        return;
+      }
+      // Refresh 2 minutes before expiry, clamped between 10s and 1h.
+      const delaySec = Math.min(Math.max(10, expiresIn - 120), 3600);
+      this._refreshTimer = setTimeout(() => {
+        this._refreshTimer = null;
+        this._refreshAuthState();
+      }, delaySec * 1000);
     }
 
     render() {

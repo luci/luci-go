@@ -55,7 +55,6 @@ export default class SwarmingAppBoilerplate extends HTMLElement {
     this._template = template;
     this._app = null;
     this._auth_header = "";
-    this._profile = null;
     // False until we see a 403 and get a call to setUserNotAuthorized();
     this._notAuthorized = false;
   }
@@ -65,6 +64,20 @@ export default class SwarmingAppBoilerplate extends HTMLElement {
 
     this._authHeaderEvent = (e) => {
       this._auth_header = e.detail.authHeader;
+      if (this._auth_header && e.detail.refresh && !this._notAuthorized) {
+        e.stopImmediatePropagation();
+        this.render();
+        return;
+      }
+      this._notAuthorized = false;
+      this._message = "You must sign in to see anything useful.";
+      if (this._fetchController) {
+        this._fetchController.abort();
+      }
+      if (!this._auth_header) {
+        e.stopImmediatePropagation();
+        this.render();
+      }
     };
     this.addEventListener("log-in", this._authHeaderEvent);
   }
