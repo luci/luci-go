@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/server/auth"
@@ -61,6 +62,7 @@ type ModuleOptions struct {
 	// During the initialization the module registers the following vars:
 	//   ${appid}: value of -cloud-project server flag.
 	//   ${config_service_appid}: app ID of the LUCI Config service.
+	//   Any additional variables specified via -config-var flags.
 	Vars *vars.VarSet
 
 	// Rules is a rule set to use for the config validation.
@@ -68,6 +70,9 @@ type ModuleOptions struct {
 	// If nil, the module uses global &validation.Rules. This is usually what
 	// you want.
 	Rules *validation.RuleSet
+
+	// cliVars are extra variables set with `-config-var key=value`.
+	cliVars stringmapflag.Value
 }
 
 // Register registers the command line flags.
@@ -83,6 +88,11 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 		"config-local-dir",
 		o.LocalDir,
 		`A file system directory to fetch configs from (not compatible with -config-service-host)`,
+	)
+	f.Var(
+		&o.cliVars,
+		"config-var",
+		"Arbitrary key-value pairs which can be used in config set/config path patterns.",
 	)
 }
 
@@ -129,7 +139,9 @@ func (m *serverModule) Initialize(ctx context.Context, host module.Host, opts mo
 	if m.opts.Rules == nil {
 		m.opts.Rules = &validation.Rules
 	}
-	m.registerVars(opts)
+	if err := m.registerVars(opts); err != nil {
+		return nil, err
+	}
 
 	var creds credentials.PerRPCCredentials
 	if m.opts.ServiceHost != "" {
@@ -192,7 +204,16 @@ func (m *serverModule) configServiceInfo(ctx context.Context) (*signing.ServiceI
 
 // registerVars populates the var set with predefined vars that can be used
 // in config patterns.
-func (m *serverModule) registerVars(opts module.HostOptions) {
+func (m *serverModule) registerVars(opts module.HostOptions) error {
+	for key, value := range m.opts.cliVars {
+		switch key {
+		case "appid", "config_service_appid":
+			return errors.Fmt("-config-var cannot override built-in variable %q", key)
+		}
+		m.opts.Vars.Register(key, func(ctx context.Context) (string, error) {
+			return value, nil
+		})
+	}
 	m.opts.Vars.Register("appid", func(context.Context) (string, error) {
 		if opts.CloudProject == "" {
 			return "", fmt.Errorf("can't resolve ${appid}: -cloud-project is not set")
@@ -206,4 +227,5 @@ func (m *serverModule) registerVars(opts module.HostOptions) {
 		}
 		return info.AppID, nil
 	})
+	return nil
 }
