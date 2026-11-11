@@ -15,14 +15,77 @@
 package cli
 
 import (
+	"context"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
+	"time"
 
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func TestRetrieveCL(t *testing.T) {
+	ftt.Run("RetrieveCL", t, func(t *ftt.Test) {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestRecentTimeUTC)
+		tc.SetTimerCallback(func(d time.Duration, _ clock.Timer) {
+			tc.Add(d)
+		})
+
+		run := func(respond func(attempt int) (int, string)) (*pb.GerritChange, int, error) {
+			attempts := 0
+			client := &http.Client{
+				Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+					attempts++
+					code, body := respond(attempts)
+					return &http.Response{
+						StatusCode: code,
+						Body:       io.NopCloser(strings.NewReader(body)),
+					}, nil
+				}),
+			}
+			cl, err := (&clsFlag{}).retrieveCL(ctx, "crrev.com/c/123/4", client, true)
+			return cl, attempts, err
+		}
+
+		t.Run("retries on HTTP 429 Too Many Requests", func(t *ftt.Test) {
+			actual, attempts, err := run(func(attempt int) (int, string) {
+				if attempt < 3 {
+					return http.StatusTooManyRequests, "rate limit exceeded"
+				}
+				return http.StatusOK, ")]}'\n{\"project\": \"infra/luci/luci-go\", \"_number\": 123}"
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, attempts, should.Equal(3))
+			assert.Loosely(t, actual, should.Match(&pb.GerritChange{
+				Host:     "chromium-review.googlesource.com",
+				Project:  "infra/luci/luci-go",
+				Change:   123,
+				Patchset: 4,
+			}))
+		})
+
+		t.Run("does not retry on permanent errors (HTTP 404)", func(t *ftt.Test) {
+			_, attempts, err := run(func(int) (int, string) {
+				return http.StatusNotFound, "not found"
+			})
+			assert.Loosely(t, err, should.ErrLike("not found"))
+			assert.Loosely(t, attempts, should.Equal(1))
+		})
+	})
+}
 
 func TestParseCL(t *testing.T) {
 	ftt.Run("ParseCL", t, func(t *ftt.Test) {

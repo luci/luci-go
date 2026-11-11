@@ -22,10 +22,15 @@ import (
 	"regexp"
 	"strconv"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/luci/common/api/gerrit"
 	luciflag "go.chromium.org/luci/common/flag"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/retry"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 )
@@ -76,10 +81,15 @@ func (f *clsFlag) retrieveCL(ctx context.Context, cl string, httpClient *http.Cl
 	if err != nil {
 		return nil, err
 	}
-	change, err := client.GetChange(ctx, &gerritpb.GetChangeRequest{
-		Number:  ret.Change,
-		Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
-	})
+	var change *gerritpb.ChangeInfo
+	err = retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		var err error
+		change, err = client.GetChange(ctx, &gerritpb.GetChangeRequest{
+			Number:  ret.Change,
+			Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
+		})
+		return grpcutil.WrapIfTransientOr(err, codes.ResourceExhausted)
+	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch CL %d from %q: %s", ret.Change, ret.Host, err)
 	}
