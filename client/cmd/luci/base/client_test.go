@@ -49,6 +49,24 @@ func TestNewAnalysisClients(t *testing.T) {
 	})
 }
 
+func TestNewNotifyClients(t *testing.T) {
+	ftt.Run(`NewNotifyClients`, t, func(t *ftt.Test) {
+		ctx := t.Context()
+		af := &AuthFlags{DefaultOpts: auth.Options{SecretsDir: t.TempDir()}}
+
+		// Without Parse(), NewNotifyClients returns an error.
+		_, _, err := af.NewNotifyClients(ctx, chromeinfra.NotifyHost)
+		assert.Loosely(t, err, should.NotBeNil)
+
+		// After Parse(), NewNotifyClients returns both pRPC clients.
+		assert.Loosely(t, af.Parse(), should.BeNil)
+		buildersClient, alertGroupsClient, err := af.NewNotifyClients(ctx, chromeinfra.NotifyHost)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, buildersClient, should.NotBeNil)
+		assert.Loosely(t, alertGroupsClient, should.NotBeNil)
+	})
+}
+
 type mockResultDBClient struct {
 	pb.ResultDBClient
 	getRootInvocation func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)

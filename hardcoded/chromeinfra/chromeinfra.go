@@ -76,6 +76,9 @@ const (
 	// AnalysisHost is the hostname of the production LUCI Analysis service.
 	AnalysisHost = "analysis.api.luci.app"
 
+	// NotifyHost is the hostname of the production LUCI Notify service.
+	NotifyHost = "notify.api.luci.app"
+
 	// ResultDBHost is the hostname of the production ResultDB service.
 	ResultDBHost = "results.api.luci.app"
 

@@ -1375,6 +1375,151 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, buf.String(), should.ContainSubstring("not a Buildbucket build; use 'luci work-unit get' / 'luci verdict list'"))
 			assert.Loosely(t, buf.String(), should.ContainSubstring("luci work-unit get -invocationid ants-i92200010628191158 -workunitid root"))
 			assert.Loosely(t, buf.String(), should.ContainSubstring("luci verdict list -invocationid ants-i92200010628191158"))
+
+			buf.Reset()
+			PrintMissingFlagsError(&buf, &ExtractedIDs{Rotation: "chrome-browser-release"}, "flag -buildid or a positional target is required")
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Rotation:          chrome-browser-release\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Hint: to list builder statuses or alert groups for this rotation, run:\n  luci notify builder list -rotation chrome-browser-release\n  luci notify alert-group list -rotation chrome-browser-release\n"))
+
+			buf.Reset()
+			PrintMissingFlagsError(&buf, &ExtractedIDs{Rotation: "chrome-browser-release", AlertGroupID: "12345"}, "flag -buildid or a positional target is required")
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Rotation:          chrome-browser-release\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Alert Group ID:    12345\n"))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Hint: to inspect this LUCI Notify alert group, run:\n  luci notify alert-group get -rotation chrome-browser-release -id 12345\n"))
+
+			buf.Reset()
+			PrintMissingFlagsError(&buf, &ExtractedIDs{Rotation: "chrome-browser-release"}, "flags -rotation and -id (or a positional rotations/<rotation>/alertGroups/<id> target) are required")
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Hint: to list alert groups for this rotation first, run:\n  luci notify alert-group list -rotation chrome-browser-release\n"))
+		})
+
+		t.Run("extract_luci_notify_targets", func(t *ftt.Test) {
+			ctx := t.Context()
+
+			// 1. Canonical rotation and alert group resource names
+			rotRes, err := ExtractIDs(ctx, nil, nil, "rotations/chrome-browser-release", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rotRes.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, rotRes.AlertGroupID, should.Equal(""))
+			assert.Loosely(t, rotRes.IsEmpty(), should.BeFalse)
+
+			agRes, err := ExtractIDs(ctx, nil, nil, "rotations/chrome-browser-release/alertGroups/ag-12345", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, agRes.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, agRes.AlertGroupID, should.Equal("ag-12345"))
+			assert.Loosely(t, agRes.IsEmpty(), should.BeFalse)
+
+			aipRes, err := ExtractIDs(ctx, nil, nil, "//notify.api.luci.app/rotations/chrome-browser-release/alertGroups/ag-12345", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, aipRes.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, aipRes.AlertGroupID, should.Equal("ag-12345"))
+
+			notifyHostURL, err := ExtractIDs(ctx, nil, nil, "https://notify.api.luci.app/rotations/chrome-browser-release", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, notifyHostURL.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, notifyHostURL.AlertGroupID, should.Equal(""))
+
+			schemelessStagingHost, err := ExtractIDs(ctx, nil, nil, "staging.notify.api.luci.app/rotations/chrome-browser-release", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, schemelessStagingHost.Rotation, should.Equal("chrome-browser-release"))
+
+			agCollectionRes, err := ExtractIDs(ctx, nil, nil, "rotations/chrome-browser-release/alertGroups", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, agCollectionRes.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, agCollectionRes.AlertGroupID, should.Equal(""))
+
+			// 2. Monitoring web URLs
+			monURL, err := ExtractIDs(ctx, nil, nil, "https://ci.chromium.org/ui/monitoring/chrome_browser_release", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, monURL.Rotation, should.Equal("chrome_browser_release"))
+
+			monV2URL, err := ExtractIDs(ctx, nil, nil, "https://ci.chromium.org/ui/labs/monitoringv2/chrome-browser-release", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, monV2URL.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, monV2URL.AlertGroupID, should.Equal(""))
+
+			monAlertsTabGroupURL, err := ExtractIDs(ctx, nil, nil, "https://ci.chromium.org/ui/monitoring/chrome_browser_release?alerts_tab=group%3Arotations%2Fchrome-browser-release%2FalertGroups%2F1730900000000", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, monAlertsTabGroupURL.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, monAlertsTabGroupURL.AlertGroupID, should.Equal("1730900000000"))
+
+			monTabURL, err := ExtractIDs(ctx, nil, nil, "https://ci.chromium.org/ui/labs/monitoring/chrome-browser-release/alerts", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, monTabURL.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, monTabURL.AlertGroupID, should.Equal(""))
+
+			labsMonURL, err := ExtractIDs(ctx, nil, nil, "https://luci-milo.appspot.com/ui/labs/monitoring/android/alert-groups/999?tab=bugs", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, labsMonURL.Rotation, should.Equal("android"))
+			assert.Loosely(t, labsMonURL.AlertGroupID, should.Equal("999"))
+
+			// 3-segment /alerts/<key> extracts Rotation without populating AlertGroupID or falling through to extractFromBuilderPath
+			alertKeyRes, err := ExtractIDs(ctx, nil, nil, "rotations/chrome-browser-release/alerts/some-alert-key", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, alertKeyRes.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, alertKeyRes.AlertGroupID, should.Equal(""))
+
+			numericAlertKeyRes, err := ExtractIDs(ctx, nil, nil, "rotations/chrome-browser-release/alerts/12345", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, numericAlertKeyRes.Rotation, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, numericAlertKeyRes.AlertGroupID, should.Equal(""))
+			assert.Loosely(t, numericAlertKeyRes.BuildID, should.Equal(""))
+
+			// Non-Notify targets containing "/rotations/" or "/ui/monitoring/" in test IDs, artifacts, or builder names must not be hijacked
+			miloTestRotURL, err := ExtractIDs(ctx, nil, nil, "https://ci.chromium.org/ui/test/chromium/ninja://ash/rotations/screen_rotation_unittest", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, miloTestRotURL.Rotation, should.Equal(""))
+			assert.Loosely(t, miloTestRotURL.Project, should.Equal("chromium"))
+			assert.Loosely(t, miloTestRotURL.TestID, should.Equal("ninja://ash/rotations/screen_rotation_unittest"))
+
+			miloTestMonURL, err := ExtractIDs(ctx, nil, nil, "https://ci.chromium.org/ui/test/chromium/ninja://chrome/browser/ui/monitoring/tab_unittest", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, miloTestMonURL.Rotation, should.Equal(""))
+			assert.Loosely(t, miloTestMonURL.Project, should.Equal("chromium"))
+			assert.Loosely(t, miloTestMonURL.TestID, should.Equal("ninja://chrome/browser/ui/monitoring/tab_unittest"))
+
+			rdbArtRotRes, err := ExtractIDs(ctx, nil, nil, "rootInvocations/build-8765432109876543210/workUnits/root/artifacts/logs/rotations/summary.txt", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, rdbArtRotRes.Rotation, should.Equal(""))
+			assert.Loosely(t, rdbArtRotRes.BuildID, should.Equal("8765432109876543210"))
+			assert.Loosely(t, rdbArtRotRes.InvocationID, should.Equal("build-8765432109876543210"))
+			assert.Loosely(t, rdbArtRotRes.WorkUnitID, should.Equal("root"))
+
+			miloBuilderRotURL, err := ExtractIDs(ctx, nil, nil, "https://ci.chromium.org/ui/p/chromium/builders/ci/rotations/8676886509240051393", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, miloBuilderRotURL.Rotation, should.Equal(""))
+			assert.Loosely(t, miloBuilderRotURL.BuildID, should.Equal("8676886509240051393"))
+			assert.Loosely(t, miloBuilderRotURL.InvocationID, should.Equal("build-8676886509240051393"))
+
+			ninjaMonRes, err := ExtractIDs(ctx, nil, nil, "ninja://ash/ui/monitoring/screen_unittest", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, ninjaMonRes.Rotation, should.Equal(""))
+
+			gnMonRes, err := ExtractIDs(ctx, nil, nil, "//ash/ui/monitoring/screen_unittest", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gnMonRes.Rotation, should.Equal(""))
+
+			buildWithAlertsTabURL, err := ExtractIDs(ctx, nil, nil, "https://ci.chromium.org/ui/p/chromium/builders/ci/Linux%20Tests/8676886509240051393?alerts_tab=group:rotations/chrome-browser-release/alertGroups/123", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, buildWithAlertsTabURL.Rotation, should.Equal(""))
+			assert.Loosely(t, buildWithAlertsTabURL.BuildID, should.Equal("8676886509240051393"))
+
+			// 3. Output formatting and TargetBindings
+			var textBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&textBuf, agRes, false), should.BeNil)
+			assert.Loosely(t, textBuf.String(), should.Equal("Rotation:          chrome-browser-release\nAlert Group ID:    ag-12345\n"))
+
+			var jsonBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&jsonBuf, agRes, true), should.BeNil)
+			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"rotation": "chrome-browser-release"`))
+			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"alert_group_id": "ag-12345"`))
+
+			var boundRot, boundAG string
+			agRes.Apply(TargetBindings{
+				Rotation:     &boundRot,
+				AlertGroupID: &boundAG,
+			})
+			assert.Loosely(t, boundRot, should.Equal("chrome-browser-release"))
+			assert.Loosely(t, boundAG, should.Equal("ag-12345"))
 		})
 	})
 }

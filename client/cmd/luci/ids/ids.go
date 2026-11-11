@@ -54,6 +54,8 @@ type ExtractedIDs struct {
 	ArtifactID         string `json:"artifact_id,omitempty"`
 	VariantHash        string `json:"variant_hash,omitempty"`
 	GerritURL          string `json:"gerrit_url,omitempty"`
+	Rotation           string `json:"rotation,omitempty"`
+	AlertGroupID       string `json:"alert_group_id,omitempty"`
 	SummaryPlaceholder bool   `json:"summary_placeholder,omitempty"`
 	Legacy             bool   `json:"legacy,omitempty"`
 
@@ -83,7 +85,9 @@ func (e *ExtractedIDs) IsEmpty() bool {
 		e.ResultID == "" &&
 		e.ArtifactID == "" &&
 		e.VariantHash == "" &&
-		e.GerritURL == ""
+		e.GerritURL == "" &&
+		e.Rotation == "" &&
+		e.AlertGroupID == ""
 }
 
 // Cmd returns the subcommand for `luci ids`.
@@ -91,8 +95,8 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ids [-json] <target>",
 		ShortDesc: "Extract resource IDs from a URL or resource name",
-		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog / LUCI Analysis URLs, Gerrit CL URLs / shorthands, ResultDB / LUCI Analysis resource names, bug URLs / shorthands, and AnTS / ATI URLs)\n" +
-			"and extract the canonical IDs (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash)\n" +
+		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog / LUCI Analysis / LUCI Notify monitoring URLs, Gerrit CL URLs / shorthands, ResultDB / LUCI Analysis / LUCI Notify resource names, bug URLs / shorthands, and AnTS / ATI URLs)\n" +
+			"and extract the canonical IDs (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash, -rotation, -id)\n" +
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &idsRun{af: af}
@@ -179,6 +183,8 @@ type TargetBindings struct {
 	ResultID                           *string
 	ArtifactID                         *string
 	VariantHash                        *string
+	Rotation                           *string
+	AlertGroupID                       *string
 	ResultDBHost                       string // Optional ResultDB host override for lazy client creation (defaults to chromeinfra.ResultDBHost).
 	BuildbucketHost                    string // Optional Buildbucket host override for lazy client creation (defaults to chromeinfra.BuildbucketHost).
 	DefaultRootForWorkUnit             bool   // When true, sets WorkUnitID = "root" if SummaryPlaceholder is true and WorkUnitID is empty.
@@ -254,6 +260,8 @@ func (e *ExtractedIDs) Apply(b TargetBindings) {
 	bind(b.ResultID, &e.ResultID)
 	bind(b.ArtifactID, &e.ArtifactID)
 	bind(b.VariantHash, &e.VariantHash)
+	bind(b.Rotation, &e.Rotation)
+	bind(b.AlertGroupID, &e.AlertGroupID)
 }
 
 // EnrichFromTestResult populates unset ModuleName, WorkUnitID, ResultID, and
@@ -385,6 +393,18 @@ func nextStepHint(extracted *ExtractedIDs, msg string) string {
 
 	if extracted.GerritURL != "" {
 		return fmt.Sprintf("Hint: a Gerrit CL has multiple tryjob builds; to list them, run:\n  luci build list -cl %s", extracted.GerritURL)
+	}
+
+	if extracted.Rotation != "" {
+		if (strings.Contains(msg, "-id") || strings.Contains(msg, "-alertgroupid")) && extracted.AlertGroupID == "" {
+			return fmt.Sprintf("Hint: to list alert groups for this rotation first, run:\n  luci notify alert-group list -rotation %s", extracted.Rotation)
+		}
+		if !strings.Contains(msg, "-rotation") {
+			if extracted.AlertGroupID != "" {
+				return fmt.Sprintf("Hint: to inspect this LUCI Notify alert group, run:\n  luci notify alert-group get -rotation %s -id %s", extracted.Rotation, extracted.AlertGroupID)
+			}
+			return fmt.Sprintf("Hint: to list builder statuses or alert groups for this rotation, run:\n  luci notify builder list -rotation %s\n  luci notify alert-group list -rotation %s", extracted.Rotation, extracted.Rotation)
+		}
 	}
 
 	// 1. Target has Bug / Rule / Cluster IDs, and command does not accept -bugid.
@@ -531,6 +551,12 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	if extracted.GerritURL != "" {
 		fmt.Fprintf(out, "Gerrit CL:         %s\n", extracted.GerritURL)
 	}
+	if extracted.Rotation != "" {
+		fmt.Fprintf(out, "Rotation:          %s\n", extracted.Rotation)
+	}
+	if extracted.AlertGroupID != "" {
+		fmt.Fprintf(out, "Alert Group ID:    %s\n", extracted.AlertGroupID)
+	}
 	if extracted.Legacy {
 		fmt.Fprintf(out, "Legacy:            true\n")
 	}
@@ -603,7 +629,7 @@ func extractIDs(ctx context.Context, af *base.AuthFlags, rdbClient pb.ResultDBCl
 	// 2. Android Test Investigate (ATI) URL or AnTS target
 	if ok, err := extractFromAntsTarget(ctx, ensureRDBClient, raw, extracted); err != nil {
 		return nil, err
-	} else if !ok && !extractFromLogDogBuildURL(raw, extracted) && !extractFromLUCIAnalysisTarget(raw, extracted) {
+	} else if !ok && !extractFromLogDogBuildURL(raw, extracted) && !extractFromLUCIAnalysisTarget(raw, extracted) && !extractFromLUCINotifyTarget(raw, extracted) {
 		clean := base.TrimResourceURL(raw)
 
 		// 2. Milo module URL without test cases: .../modules/<module>
@@ -1244,6 +1270,122 @@ func applyAnalysisResourceSegments(parts []string, extracted *ExtractedIDs) bool
 		if strings.HasPrefix(extracted.ClusterAlgorithm, "rules") {
 			extracted.RuleID = extracted.ClusterID
 		}
+		return true
+	}
+	return false
+}
+
+// extractFromLUCINotifyTarget handles LUCI Notify rotation and alert group
+// resource names and Milo monitoring URLs without making any network calls:
+//   - Canonical resource names:
+//   - rotations/<rotation>
+//   - rotations/<rotation>/alertGroups/<alert_group_id>
+//   - Monitoring web URLs:
+//   - https://ci.chromium.org/ui/monitoring/<rotation>[?alerts_tab=group:rotations/<rotation>/alertGroups/<alert_group_id>]
+//   - https://ci.chromium.org/ui/labs/monitoring/<rotation>[/alert-groups/<alert_group_id>]
+//   - https://ci.chromium.org/ui/labs/monitoringv2/<rotation>
+//   - https://luci-milo.appspot.com/ui/labs/monitoring/<rotation>[/alert-groups/<alert_group_id>]
+func extractFromLUCINotifyTarget(raw string, extracted *ExtractedIDs) bool {
+	clean := strings.TrimSpace(raw)
+	rawQuery := ""
+	if qIdx := strings.IndexByte(clean, '?'); qIdx != -1 {
+		rawQuery = clean[qIdx+1:]
+		if hIdx := strings.IndexByte(rawQuery, '#'); hIdx != -1 {
+			rawQuery = rawQuery[:hIdx]
+		}
+	}
+	if idx := strings.IndexAny(clean, "?#"); idx != -1 {
+		clean = clean[:idx]
+	}
+	clean = strings.TrimRight(clean, "/")
+
+	isNotifyHost := func(h string) bool {
+		h = strings.ToLower(h)
+		return h == chromeinfra.NotifyHost || strings.HasSuffix(h, "."+chromeinfra.NotifyHost)
+	}
+
+	res := ""
+	uiPath := ""
+	if strings.Contains(clean, "://") || strings.HasPrefix(clean, "//") {
+		if u, err := url.Parse(clean); err == nil {
+			scheme := strings.ToLower(u.Scheme)
+			host := u.Hostname()
+			if (scheme == "http" || scheme == "https") || (scheme == "" && strings.Contains(host, ".")) {
+				uiPath = u.EscapedPath()
+				if isNotifyHost(host) {
+					res = strings.Trim(uiPath, "/")
+				}
+			}
+		}
+	} else {
+		trimmed := strings.TrimLeft(clean, "/")
+		if slashIdx := strings.IndexByte(trimmed, '/'); slashIdx > 0 && strings.Contains(trimmed[:slashIdx], ".") {
+			host := trimmed[:slashIdx]
+			uiPath = trimmed[slashIdx:]
+			if isNotifyHost(host) {
+				res = trimmed[slashIdx+1:]
+			}
+		} else {
+			res = trimmed
+			if strings.HasPrefix(clean, "/ui/") {
+				uiPath = clean
+			}
+		}
+	}
+
+	// 1. Canonical LUCI Notify resource names and notify.api.luci.app URLs:
+	//    rotations/<rotation> or rotations/<rotation>/alertGroups/<id>
+	if strings.HasPrefix(res, "rotations/") {
+		if applyNotifyResourceSegments(strings.Split(strings.TrimPrefix(res, "rotations/"), "/"), false, extracted) {
+			return true
+		}
+	}
+
+	// 2. Milo / LUCI UI monitoring URLs:
+	//    .../ui/monitoring/<rotation>, .../ui/labs/monitoring/<rotation>[/alert-groups/<id>],
+	//    or .../ui/labs/monitoringv2/<rotation>
+	for _, marker := range []string{"/ui/labs/monitoringv2/", "/ui/labs/monitoring/", "/ui/monitoring/"} {
+		trimmedMarker := strings.TrimSuffix(marker, "/")
+		if strings.HasPrefix(uiPath, marker) || (rawQuery != "" && uiPath == trimmedMarker) {
+			// In Milo Monitoring v2, selecting an alert group stores the canonical resource
+			// name in ?alerts_tab=group:rotations/<rotation>/alertGroups/<id>.
+			if rawQuery != "" {
+				if q, err := url.ParseQuery(rawQuery); err == nil {
+					if alertsTab := strings.TrimSpace(q.Get("alerts_tab")); strings.HasPrefix(alertsTab, "group:") {
+						groupRes := strings.Trim(strings.TrimPrefix(alertsTab, "group:"), "/")
+						if strings.HasPrefix(groupRes, "rotations/") {
+							if applyNotifyResourceSegments(strings.Split(strings.TrimPrefix(groupRes, "rotations/"), "/"), false, extracted) {
+								return true
+							}
+						}
+					}
+				}
+			}
+			if strings.HasPrefix(uiPath, marker) && applyNotifyResourceSegments(strings.Split(uiPath[len(marker):], "/"), true, extracted) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func applyNotifyResourceSegments(parts []string, isMonitoringURL bool, extracted *ExtractedIDs) bool {
+	if len(parts) == 0 || parts[0] == "" {
+		return false
+	}
+	if len(parts) == 1 {
+		extracted.Rotation = unescapePathSegment(parts[0])
+		return true
+	}
+	isAlertGroupSeg := parts[1] == "alertGroups" || parts[1] == "alert-groups"
+	if (len(parts) == 2 && (isAlertGroupSeg || (isMonitoringURL && parts[1] == "builders"))) || parts[1] == "alerts" {
+		extracted.Rotation = unescapePathSegment(parts[0])
+		return true
+	}
+	if (len(parts) == 3 || (isMonitoringURL && len(parts) >= 3)) && isAlertGroupSeg && parts[2] != "" {
+		extracted.Rotation = unescapePathSegment(parts[0])
+		extracted.AlertGroupID = unescapePathSegment(parts[2])
 		return true
 	}
 	return false

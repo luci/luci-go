@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/grpc/prpc"
 	logdog "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
+	lucinotifypb "go.chromium.org/luci/luci_notify/api/service/v1"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -106,6 +107,22 @@ func (af *AuthFlags) NewAnalysisClients(ctx context.Context, host string) (analy
 		Options: prpc.DefaultOptions(),
 	}
 	return analysispb.NewRulesClient(prpcClient), analysispb.NewClustersClient(prpcClient), analysispb.NewTestHistoryClient(prpcClient), nil
+}
+
+// NewNotifyClients creates authenticated LUCI Notify Builders and AlertGroups
+// pRPC clients sharing a single underlying HTTP transport against host (typically
+// chromeinfra.NotifyHost, i.e. "notify.api.luci.app").
+func (af *AuthFlags) NewNotifyClients(ctx context.Context, host string) (lucinotifypb.BuildersClient, lucinotifypb.AlertGroupsClient, error) {
+	httpClient, err := af.NewHTTPClient(ctx)
+	if err != nil {
+		return nil, nil, errors.Fmt("failed to create http client: %w", err)
+	}
+	prpcClient := &prpc.Client{
+		C:       httpClient,
+		Host:    host,
+		Options: prpc.DefaultOptions(),
+	}
+	return lucinotifypb.NewBuildersClient(prpcClient), lucinotifypb.NewAlertGroupsClient(prpcClient), nil
 }
 
 // IsLegacyInvocation queries ResultDB directly to determine if an invocation is a legacy invocation
