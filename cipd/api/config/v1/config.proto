@@ -91,4 +91,12 @@ message Prefix {
   // If true, the prefix and all its sub-prefixes are exempt from Verify Software
   // Artifacts checks.
   bool exempt_from_verify_software_artifacts = 5;
+
+  // If false, ACLs will not fall back from realms to legacy READER/WRITER/OWNER
+  // checks.
+  //
+  // This also will disable the ability to set ACLs with `cipd acl-edit`.
+  //
+  // Defaults to true at the root prefix if unset.
+  optional bool enable_legacy_acl_fallback = 6;
 }
