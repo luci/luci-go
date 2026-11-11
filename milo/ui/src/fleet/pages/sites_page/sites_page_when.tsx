@@ -125,7 +125,11 @@ export const when = {
   },
 
   async userOpensDeleteSiteDialog(siteName: string) {
-    await genericWhen.userClicksButton(`Delete ${siteName}`);
+    await genericWhen.userClicksButton(`More actions for ${siteName}`);
+    const menuItem = await screen.findByRole('menuitem', {
+      name: `Delete ${siteName}`,
+    });
+    await getUser().click(menuItem);
   },
 
   async userConfirmsDeleteSite() {

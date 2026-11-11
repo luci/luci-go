@@ -95,7 +95,8 @@ describe('Physical Sites Directory Page', () => {
     cy.get('[role="dialog"]').contains('button', 'Save changes').click();
     cy.wait('@updatePhysicalSite');
 
-    cy.get('button[aria-label="Delete Mountain View MTV"]').click();
+    cy.get('button[aria-label="More actions for Mountain View MTV"]').click();
+    cy.get('[role="menuitem"][aria-label="Delete Mountain View MTV"]').click();
     cy.get('[role="dialog"]').contains('button', 'Delete site').click();
     cy.wait('@deletePhysicalSite');
   });

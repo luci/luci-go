@@ -16,10 +16,21 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
-import { Box, IconButton, Link, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Link,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { useState } from 'react';
 
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
@@ -45,6 +56,7 @@ export interface SiteCardProps {
 }
 
 const ctrlIconSx = { fontSize: tk.iconSizes.control } as const;
+const tipProps = { disableInteractive: true } as const;
 const rowBetweenSx = {
   ...actionRowSx,
   justifyContent: 'space-between',
@@ -142,6 +154,8 @@ const placeholderStackSx = {
 export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
   const [photoIdx, setPhotoIdx] = useState(0);
   const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const closeMenu = () => setMenuAnchorEl(null);
   const validUrls = Array.from(
     new Set(
       (site.imageUrls ?? [])
@@ -241,7 +255,7 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
           {(onEdit || onDelete) && (
             <Box sx={{ ...actionRowSx, gap: 0.25, flexShrink: 0 }}>
               {onEdit && (
-                <Tooltip title="Edit site">
+                <Tooltip {...tipProps} title="Edit site">
                   <IconButton
                     size="small"
                     aria-label={`Edit ${site.name}`}
@@ -253,16 +267,44 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
                 </Tooltip>
               )}
               {onDelete && (
-                <Tooltip title="Delete site">
-                  <IconButton
-                    size="small"
-                    aria-label={`Delete ${site.name}`}
-                    onClick={() => onDelete(site)}
-                    sx={iconButtonSx}
+                <>
+                  <Tooltip
+                    {...tipProps}
+                    title={menuAnchorEl ? '' : 'More actions'}
                   >
-                    <DeleteOutlineIcon sx={ctrlIconSx} />
-                  </IconButton>
-                </Tooltip>
+                    <IconButton
+                      size="small"
+                      aria-label={`More actions for ${site.name}`}
+                      aria-haspopup="menu"
+                      aria-expanded={Boolean(menuAnchorEl)}
+                      onClick={(e) => setMenuAnchorEl(e.currentTarget)}
+                      sx={iconButtonSx}
+                    >
+                      <MoreVertIcon sx={ctrlIconSx} />
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    anchorEl={menuAnchorEl}
+                    open={Boolean(menuAnchorEl)}
+                    onClose={closeMenu}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  >
+                    <MenuItem
+                      aria-label={`Delete ${site.name}`}
+                      onClick={() => {
+                        closeMenu();
+                        onDelete(site);
+                      }}
+                      sx={{ color: 'error.main' }}
+                    >
+                      <ListItemIcon>
+                        <DeleteOutlineIcon fontSize="small" color="error" />
+                      </ListItemIcon>
+                      <ListItemText disableTypography>Delete site</ListItemText>
+                    </MenuItem>
+                  </Menu>
+                </>
               )}
             </Box>
           )}
