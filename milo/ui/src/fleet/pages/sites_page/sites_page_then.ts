@@ -120,6 +120,18 @@ export const then = {
     expect(img).toHaveAttribute('src', expectedSrc);
   },
 
+  async siteCardPreloadsAllFacilityPhotos(
+    id: string,
+    expectedSrcs: readonly string[],
+  ) {
+    const carousel = await screen.findByTestId(`site-photo-carousel-${id}`);
+    const allImgs = Array.from(carousel.querySelectorAll('img'));
+    expect(allImgs.map((el) => el.getAttribute('src'))).toEqual(expectedSrcs);
+    for (const img of allImgs) {
+      expect(img).not.toHaveAttribute('loading', 'lazy');
+    }
+  },
+
   async siteCardShowsPhotoBadge(id: string, expectedBadge: string) {
     const carousel = await screen.findByTestId(`site-photo-carousel-${id}`);
     expect(within(carousel).getByText(expectedBadge)).toBeInTheDocument();

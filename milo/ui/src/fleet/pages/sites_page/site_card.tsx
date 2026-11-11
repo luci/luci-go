@@ -87,22 +87,36 @@ const pillInnerSx = {
   fontFamily: tk.fontFamilies.mono,
   color: tk.fleetColors.primary,
 } as const;
-const navBtnSx = {
-  ...iconButtonSx,
-  backgroundColor: tk.fleetColors.surface,
-  border: tk.borders.divider,
-  pointerEvents: 'auto',
-  '&:hover': { backgroundColor: tk.fleetColors.surfaceTonal },
-} as const;
-const photoBadgeSx = {
+const photoPillSx = {
+  position: 'absolute',
+  bottom: 8,
+  right: 8,
   ...actionRowSx,
-  gap: 0.5,
-  px: 1,
-  py: 0.25,
+  flexWrap: 'nowrap',
+  gap: 0.25,
+  px: 0.5,
+  height: tk.controlHeights.chip,
   borderRadius: tk.radii.pill,
-  backgroundColor: tk.fleetColors.surface,
-  border: tk.borders.divider,
-  color: tk.fleetColors.textPrimary,
+  backgroundColor: tk.fleetColors.scrim,
+  color: tk.fleetColors.onScrim,
+} as const;
+const photoNavBtnSx = {
+  width: tk.controlHeights.chipCompact,
+  height: tk.controlHeights.chipCompact,
+  p: 0,
+  color: tk.fleetColors.onScrim,
+  '&:hover': { backgroundColor: tk.fleetColors.scrimHover },
+  '&:focus-visible': {
+    outline: `2px solid ${tk.fleetColors.onScrim}`,
+    outlineOffset: -2,
+  },
+} as const;
+const photoCountSx = {
+  color: tk.fleetColors.onScrim,
+  fontWeight: 500,
+  px: 0.5,
+  fontVariantNumeric: 'tabular-nums',
+  userSelect: 'none',
 } as const;
 const carouselBoxSx = {
   position: 'relative',
@@ -150,60 +164,45 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
     >
       {activeUrl ? (
         <Box data-testid={`site-photo-carousel-${site.id}`} sx={carouselBoxSx}>
-          <Box
-            component="img"
-            src={activeUrl}
-            alt={`${site.name} facility photo ${safeIdx + 1}`}
-            loading="lazy"
-            onError={() =>
-              setFailedUrls((prev) => ({ ...prev, [activeUrl]: true }))
-            }
-            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          {validUrls.length > 1 && (
+          {validUrls.map((url, idx) => (
             <Box
+              key={url}
+              component="img"
+              src={url}
+              alt={`${site.name} facility photo ${idx + 1}`}
+              onError={() =>
+                setFailedUrls((prev) => ({ ...prev, [url]: true }))
+              }
               sx={{
-                position: 'absolute',
-                bottom: 10,
-                left: 10,
-                right: 10,
-                ...rowBetweenSx,
-                pointerEvents: 'none',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: idx === safeIdx ? 'block' : 'none',
               }}
-            >
-              <Box sx={{ ...actionRowSx, gap: 0.75, pointerEvents: 'auto' }}>
-                <IconButton
-                  size="small"
-                  aria-label={`Previous photo for ${site.name}`}
-                  onClick={() =>
-                    setPhotoIdx(
-                      (i) => (i - 1 + validUrls.length) % validUrls.length,
-                    )
-                  }
-                  sx={navBtnSx}
-                >
-                  <ChevronLeftIcon sx={ctrlIconSx} />
-                </IconButton>
-                <Box sx={photoBadgeSx}>
-                  <PhotoCameraOutlinedIcon
-                    sx={{
-                      fontSize: tk.iconSizes.control,
-                      color: tk.fleetColors.textSecondary,
-                    }}
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{ color: 'inherit', fontWeight: 500 }}
-                  >
-                    {`${safeIdx + 1} / ${validUrls.length}`}
-                  </Typography>
-                </Box>
-              </Box>
+            />
+          ))}
+          {validUrls.length > 1 && (
+            <Box sx={photoPillSx}>
+              <IconButton
+                size="small"
+                aria-label={`Previous photo for ${site.name}`}
+                onClick={() =>
+                  setPhotoIdx(
+                    (i) => (i - 1 + validUrls.length) % validUrls.length,
+                  )
+                }
+                sx={photoNavBtnSx}
+              >
+                <ChevronLeftIcon sx={ctrlIconSx} />
+              </IconButton>
+              <Typography variant="caption" sx={photoCountSx}>
+                {`${safeIdx + 1} / ${validUrls.length}`}
+              </Typography>
               <IconButton
                 size="small"
                 aria-label={`Next photo for ${site.name}`}
                 onClick={() => setPhotoIdx((i) => (i + 1) % validUrls.length)}
-                sx={navBtnSx}
+                sx={photoNavBtnSx}
               >
                 <ChevronRightIcon sx={ctrlIconSx} />
               </IconButton>

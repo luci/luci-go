@@ -68,6 +68,13 @@ export const fleetColors = {
   textPrimary: '#1f1f1f',
   textSecondary: '#444746',
   textTertiary: '#5f6368',
+
+  /** GM3 media overlay scrim (`inverseSurface` at 76% opacity) for floating controls over photos. */
+  scrim: 'rgba(31, 31, 31, 0.76)',
+  /** Foreground text and icons on `scrim` (`inverseOnSurface`). */
+  onScrim: '#ffffff',
+  /** Hover state layer (`inverseOnSurface` at 14% opacity) inside `scrim` controls. */
+  scrimHover: 'rgba(255, 255, 255, 0.14)',
 } as const;
 
 export const borders = {

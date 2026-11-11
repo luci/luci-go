@@ -176,6 +176,10 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     when.pageIsRendered();
 
     await then.siteCardShowsPhotoBadge('EM25', '1 / 2');
+    await then.siteCardPreloadsAllFacilityPhotos('EM25', [
+      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+      'https://example.com/lab-2.png',
+    ]);
     await then.siteCardShowsFacilityPhoto(
       'EM25',
       'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
@@ -190,6 +194,10 @@ describe('<SitesPage /> (Full Page Integration)', () => {
 
     await when.userClicksButton('Previous photo for Palo Alto EM25');
     await then.siteCardShowsPhotoBadge('EM25', '1 / 2');
+    await then.siteCardPreloadsAllFacilityPhotos('EM25', [
+      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
+      'https://example.com/lab-2.png',
+    ]);
     await then.siteCardShowsFacilityPhoto(
       'EM25',
       'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
