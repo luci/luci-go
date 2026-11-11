@@ -48,40 +48,27 @@ func SyncLockfile(ctx context.Context, specPath, uvBin, pythonBin string, isBot 
 		return nil
 	}
 
-	outOfSync := false
 	var missingDeps []string
 	lockData, readErr := os.ReadFile(lockPath)
 	if readErr != nil && !errors.Is(readErr, os.ErrNotExist) {
 		return readErr
 	}
 
-	// Fast synchronization check: ensure all base packages requested in the spec
-	// are present in the lockfile, regardless of version strings.
-	lockedNames := make(map[string]bool)
-	scanner := bufio.NewScanner(bytes.NewReader(lockData))
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "-") {
-			continue
-		}
-		lockedNames[extractBaseName(line)] = true
-	}
-
+	// Fast synchronization check: ensure every package requested in the spec is
+	// pinned in the lockfile to a version satisfying the spec's specifiers.
+	locked := lockedVersions(lockData)
 	for _, dep := range spec.Dependencies {
 		baseName := extractBaseName(dep)
-		if !lockedNames[baseName] {
+		versions, ok := locked[baseName]
+		if !ok {
 			missingDeps = append(missingDeps, baseName)
-			outOfSync = true
+		} else if !lockSatisfies(requirementSpecifiers(dep), versions) {
+			missingDeps = append(missingDeps, strings.TrimSpace(dep))
 		}
 	}
 
-	if outOfSync {
-		var reason string
-		if len(missingDeps) > 0 {
-			reason = fmt.Sprintf("missing dependencies: %s", strings.Join(missingDeps, ", "))
-		} else {
-			reason = "file is missing"
-		}
+	if len(missingDeps) > 0 {
+		reason := fmt.Sprintf("missing or out-of-sync dependencies: %s", strings.Join(missingDeps, ", "))
 
 		if isBot {
 			if readErr != nil && errors.Is(readErr, os.ErrNotExist) {
@@ -98,7 +85,7 @@ func SyncLockfile(ctx context.Context, specPath, uvBin, pythonBin string, isBot 
 	}
 
 	var frozenDeps []string
-	scanner = bufio.NewScanner(bytes.NewReader(lockData))
+	scanner := bufio.NewScanner(bytes.NewReader(lockData))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "-") {
@@ -269,4 +256,58 @@ func normalizeBaseName(s string) string {
 	return strings.Join(strings.FieldsFunc(strings.ToLower(s), func(r rune) bool {
 		return r == '-' || r == '_' || r == '.'
 	}), "-")
+}
+
+// requirementSpecifiers returns the comma-separated version specifiers of a
+// PEP 508 dependency string, e.g. "==1.0,!=1.1" for "foo[bar] (==1.0, !=1.1)".
+func requirementSpecifiers(dep string) string {
+	dep, _, _ = strings.Cut(dep, ";")
+	if strings.Contains(dep, "@") {
+		return ""
+	}
+	idx := strings.IndexAny(dep, "!=<>~")
+	if idx == -1 {
+		return ""
+	}
+	return strings.TrimSpace(strings.TrimRight(dep[idx:], ") \t"))
+}
+
+// lockedVersions extracts the pinned versions of a `uv pip compile` lockfile,
+// keyed by normalized package name.
+func lockedVersions(lockData []byte) map[string][]string {
+	locked := make(map[string][]string)
+	for line := range strings.Lines(string(lockData)) {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "-") {
+			continue
+		}
+		first, _, _ := strings.Cut(strings.Fields(line)[0], ";")
+		first = strings.TrimSuffix(first, "\\")
+		name := extractBaseName(first)
+		if _, version, ok := strings.Cut(first, "=="); ok {
+			locked[name] = append(locked[name], version)
+		} else if _, ok := locked[name]; !ok {
+			locked[name] = nil
+		}
+	}
+	return locked
+}
+
+// lockSatisfies reports whether any locked version satisfies specifiers.
+//
+// vpython lockfiles are universal, so a package may be pinned once per
+// environment marker branch; any matching pin counts. Specifiers or versions
+// that cannot be evaluated are treated as satisfied so that unusual
+// requirements never force a lockfile regeneration on their own.
+func lockSatisfies(specifiers string, versions []string) bool {
+	if specifiers == "" {
+		return true
+	}
+	for _, version := range versions {
+		ok, err := standard.RequirementSatisfied(specifiers, version)
+		if err != nil || ok {
+			return true
+		}
+	}
+	return false
 }

@@ -33,7 +33,7 @@ const DefaultPythonVersion = "3.11"
 var pep440Regex = regexp.MustCompile(`^([1-9]\d*!)?(0|[1-9]\d*)(\.(0|[1-9]\d*))*((a|b|rc)(0|[1-9]\d*))?`)
 
 // baseReleaseRegex extracts the leading major.minor.patch release digits blocks sequence.
-var baseReleaseRegex = regexp.MustCompile(`^v?(\d+(?:\.\d+)*)`)
+var baseReleaseRegex = regexp.MustCompile(`^v?(\d+(?:\.\d+){0,2})`)
 
 // Version represents a MAJOR.MINOR.PATCH version segment sequence.
 type Version struct {
@@ -219,6 +219,53 @@ func (c constraint) isSatisfied(v Version) bool {
 		}
 	}
 	return true
+}
+
+// RequirementSatisfied reports whether version satisfies a comma-separated
+// PEP 440 specifier list such as ">=1.0,!=1.5" or "==1.15.1+chromium.2".
+func RequirementSatisfied(specifiers, version string) (bool, error) {
+	c, err := parseConstraint(specifiers)
+	if err != nil {
+		return false, err
+	}
+	v, err := ParseVersion(version)
+	if err != nil {
+		return false, err
+	}
+	for _, sub := range c.subs {
+		var ok bool
+		switch sub.op {
+		case opEq:
+			ok = releaseEqual(sub.ver, v)
+		case opNe:
+			ok = !releaseEqual(sub.ver, v)
+		default:
+			ok = sub.isSatisfied(v)
+		}
+		if !ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func releaseEqual(spec, candidate Version) bool {
+	if strings.HasSuffix(spec.Raw, ".*") {
+		if spec.Segments == 1 {
+			return candidate.Major == spec.Major
+		}
+		return candidate.Equal(spec, spec.Segments >= 3)
+	}
+	candRaw := candidate.Raw
+	if !strings.Contains(spec.Raw, "+") {
+		candRaw, _, _ = strings.Cut(candRaw, "+")
+	}
+	return candidate.Equal(spec, true) && strings.EqualFold(releaseTail(spec.Raw), releaseTail(candRaw))
+}
+
+func releaseTail(raw string) string {
+	m := baseReleaseRegex.FindString(raw)
+	return raw[len(m):]
 }
 
 // MatchInterpreter matches a constraint string against available Chrome runtime names on disk.

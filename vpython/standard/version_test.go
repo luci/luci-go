@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 )
@@ -210,5 +211,62 @@ func TestVersionParsingAndMatching(tT *testing.T) {
 			_, err = ResolveTargetVersion("", "abc", []string{"abc", "3.11"})
 			assert.Loosely(t, err, should.NotBeNil)
 		})
+	})
+}
+
+func TestRequirementSatisfied(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		specifiers string
+		version    string
+		want       bool
+	}{
+		{name: "exact_match", specifiers: "==1.16.0", version: "1.16.0", want: true},
+		{name: "exact_mismatch", specifiers: "==1.17.0", version: "1.16.0", want: false},
+		{name: "zero_padded_match", specifiers: "==1.0", version: "1.0.0", want: true},
+		{name: "two_segment_patch_mismatch", specifiers: "==1.0", version: "1.0.5", want: false},
+		{name: "four_segment_mismatch", specifiers: "==3.7.4.3", version: "3.7.4.2", want: false},
+		{name: "local_version_match", specifiers: "==1.15.1+chromium.2", version: "1.15.1+chromium.2", want: true},
+		{name: "local_version_mismatch", specifiers: "==1.15.1+chromium.2", version: "1.15.1+chromium.1", want: false},
+		{name: "public_spec_ignores_candidate_local", specifiers: "==1.15.1", version: "1.15.1+chromium.1", want: true},
+		{name: "prerelease_mismatch", specifiers: "==2.0rc1", version: "2.0", want: false},
+		{name: "wildcard_match", specifiers: "==1.2.*", version: "1.2.5", want: true},
+		{name: "wildcard_mismatch", specifiers: "==1.2.*", version: "1.3.0", want: false},
+		{name: "not_equal_match", specifiers: "!=1.25.0", version: "2.0.0", want: true},
+		{name: "not_equal_mismatch", specifiers: "!=1.25.0", version: "1.25.0", want: false},
+		{name: "ge_match", specifiers: ">=2.0.0", version: "2.22.0", want: true},
+		{name: "ge_mismatch", specifiers: ">=2.0.0", version: "1.9", want: false},
+		{name: "compound_range_match", specifiers: ">=1.0,<2.0", version: "1.5", want: true},
+		{name: "compound_range_mismatch", specifiers: ">=1.0,<2.0", version: "2.0", want: false},
+		{name: "gt_equal_is_false", specifiers: ">1.0", version: "1.0", want: false},
+		{name: "le_zero_padded_match", specifiers: "<=1.0", version: "1.0.0", want: true},
+		{name: "compatible_patch_match", specifiers: "~=1.4.5", version: "1.4.9", want: true},
+		{name: "compatible_patch_mismatch", specifiers: "~=1.4.5", version: "1.5.0", want: false},
+		{name: "compatible_minor_match", specifiers: "~=2.2", version: "2.9", want: true},
+		{name: "compatible_minor_mismatch", specifiers: "~=2.2", version: "3.0", want: false},
+		{name: "arbitrary_equality_match", specifiers: "===1.0+abc", version: "1.0+abc", want: true},
+		{name: "arbitrary_equality_mismatch", specifiers: "===1.0+abc", version: "1.0", want: false},
+		{name: "wildcard_single_segment_candidate", specifiers: "==1.0.*", version: "1", want: true},
+		{name: "wildcard_prerelease_candidate", specifiers: "==1.0.*", version: "1.0rc1", want: true},
+		{name: "postrelease_mismatch", specifiers: "==1.0.post1", version: "1.0.post2", want: false},
+		{name: "ge_higher_major", specifiers: ">=2.0", version: "1.9rc1", want: false},
+		{name: "lt_higher_major", specifiers: "<2.0", version: "1.9.post1", want: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := RequirementSatisfied(tc.specifiers, tc.version)
+			assert.NoErr(t, err)
+			assert.That(t, got, should.Equal(tc.want), truth.Explain("%s vs %s", tc.specifiers, tc.version))
+		})
+	}
+
+	t.Run("invalid_specifier", func(t *testing.T) {
+		t.Parallel()
+		_, err := RequirementSatisfied("==abc", "1.0")
+		assert.Loosely(t, err, should.NotBeNil)
 	})
 }

@@ -187,6 +187,55 @@ func TestSyncLockfile_PEP508AndPEP503Normalization(t *testing.T) {
 	})
 }
 
+func TestSyncLockfile_VersionChange(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		lock     string
+		deps     []string
+		wantDeps []string
+		wantErr  string
+	}{
+		{
+			name:     "matching_pin",
+			lock:     "six==1.16.0 ; python_full_version < '3.12' \\\n    --hash=sha256:0123\n",
+			deps:     []string{"six==1.16.0"},
+			wantDeps: []string{"six==1.16.0 ; python_full_version < '3.12'"},
+		},
+		{
+			name:     "direct_url_and_mixed_case",
+			lock:     "foo-bar==1.0\nbaz @ https://example.com/baz-1.0.whl\n",
+			deps:     []string{"Foo_Bar==1.0", "baz @ https://example.com/baz-1.0.whl"},
+			wantDeps: []string{"foo-bar==1.0", "baz @ https://example.com/baz-1.0.whl"},
+		},
+		{
+			name:    "bumped_pin_out_of_sync",
+			lock:    "six==1.16.0 ; python_full_version < '3.12' \\\n    --hash=sha256:0123\n",
+			deps:    []string{"six==1.17.0"},
+			wantErr: "missing or out-of-sync dependencies: six==1.17.0",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			specPath := filepath.Join(t.TempDir(), "vpython.toml")
+			assert.NoErr(t, os.WriteFile(specPath, []byte("requires-python = '>=3.11'\n"), 0644))
+			assert.NoErr(t, os.WriteFile(specPath+".uv.lock", []byte(tc.lock), 0644))
+
+			spec := &standard.ProjectSpec{Dependencies: tc.deps}
+			err := SyncLockfile(t.Context(), specPath, "uv", "", true, spec)
+			if tc.wantErr != "" {
+				assert.Loosely(t, err, should.ErrLike(tc.wantErr))
+				return
+			}
+			assert.NoErr(t, err)
+			assert.Loosely(t, spec.Dependencies, should.Match(tc.wantDeps))
+		})
+	}
+}
+
 func BenchmarkSyncLockfileCheck(b *testing.B) {
 	ctx := context.Background()
 	tempDir := b.TempDir()
@@ -227,5 +276,77 @@ certifi==2019.11.28
 		if err != nil {
 			b.Fatalf("SyncLockfile failed: %v", err)
 		}
+	}
+}
+
+func TestRequirementSpecifiers(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		dep  string
+		want string
+	}{
+		{name: "bare_name", dep: "numpy", want: ""},
+		{name: "extras_only", dep: "requests[security]", want: ""},
+		{name: "direct_url", dep: "foo @ https://example.com/foo.whl", want: ""},
+		{name: "exact_pin", dep: "six==1.17.0", want: "==1.17.0"},
+		{name: "extras_with_ge", dep: "requests[security]>=2.0.0", want: ">=2.0.0"},
+		{name: "parens_and_marker", dep: "wheel (==0.36.2) ; python_version >= '3.8'", want: "==0.36.2"},
+		{name: "pin_with_marker", dep: "pywin32==306; sys_platform == 'win32'", want: "==306"},
+		{name: "compound_range", dep: "foo >= 1.0, < 2.0", want: ">= 1.0, < 2.0"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Loosely(t, requirementSpecifiers(tc.dep), should.Equal(tc.want))
+		})
+	}
+}
+
+func TestLockedVersions(t *testing.T) {
+	t.Parallel()
+
+	lock := `
+six==1.16.0 ; python_full_version < '3.12' \
+    --hash=sha256:0123 \
+    # via foo
+Foo_Bar==2.0 --hash=sha256:0123
+numpy==1.23.5+chromium.4 ; sys_platform == 'linux'
+numpy==1.21.0 ; sys_platform == 'win32'
+bar[extra]==3.0
+baz @ https://example.com/baz-1.0.whl?x==y
+`
+	assert.Loosely(t, lockedVersions([]byte(lock)), should.Match(map[string][]string{
+		"six":     {"1.16.0"},
+		"foo-bar": {"2.0"},
+		"numpy":   {"1.23.5+chromium.4", "1.21.0"},
+		"bar":     {"3.0"},
+		"baz":     nil,
+	}))
+}
+
+func TestLockSatisfies(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		specifiers string
+		versions   []string
+		want       bool
+	}{
+		{name: "unconstrained", specifiers: "", versions: []string{"1.0"}, want: true},
+		{name: "mismatched_pin", specifiers: "==1.17.0", versions: []string{"1.16.0"}, want: false},
+		{name: "multi_marker_match", specifiers: "==1.21.0", versions: []string{"1.23.5+chromium.4", "1.21.0"}, want: true},
+		{name: "unparseable_specifier_fails_open", specifiers: "==not a version", versions: []string{"1.0"}, want: true},
+		{name: "unversioned_lock_entry", specifiers: "==1.0", versions: nil, want: false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Loosely(t, lockSatisfies(tc.specifiers, tc.versions), should.Equal(tc.want))
+		})
 	}
 }
