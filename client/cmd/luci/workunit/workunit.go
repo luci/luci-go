@@ -221,7 +221,7 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	isRoot := wu.WorkUnitId == "root"
 	var rootAgg *pb.TestAggregation
 	if isRoot {
-		rootAgg = fetchRootInvocationAggregation(rpcCtx, client, invID)
+		rootAgg = format.FetchRootInvocationAggregation(rpcCtx, client, invID)
 	}
 
 	if wu.WorkUnitId != "" && (extracted == nil || extracted.WorkUnitID == "") {
@@ -246,14 +246,7 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	if wu.FinalizationState != pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
 		fmt.Printf("Finalization: %s\n", wu.FinalizationState)
 	}
-	if rootAgg != nil {
-		if modSummary := format.FormatModuleStatusCountsSummary(rootAgg.GetModuleStatusCounts()); modSummary != "" {
-			fmt.Printf("Module Statuses: %s\n", modSummary)
-		}
-		if verdictSummary := format.FormatVerdictCountsSummary(rootAgg.GetTotalVerdictCounts()); verdictSummary != "" {
-			fmt.Printf("Test Verdicts:   %s\n", verdictSummary)
-		}
-	}
+	format.FprintRootInvocationAggregationSummary(os.Stdout, rootAgg)
 	if len(wu.ChildWorkUnits) > 0 {
 		fmt.Printf("Child Work Units (%d):\n", len(wu.ChildWorkUnits))
 		const maxChildrenShown = 10
@@ -278,11 +271,13 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	if wuFailure != nil && wuFailure.FullSummaryText != "" {
 		summaryToPrint = wuFailure.FullSummaryText
 	}
-	if summaryToPrint != "" {
+	hasDistinctSummary := strings.TrimSpace(summaryToPrint) != "" &&
+		(!isRoot || !format.IsRedundantExternalSummary(summaryToPrint, resolved.RootInvocation))
+	if hasDistinctSummary {
 		fmt.Printf("Summary:\n%s\n", summaryToPrint)
 	} else if len(childFailures) == 0 {
 		discErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, clean)
-		if discErr != nil {
+		if discErr != nil && (!isRoot || !format.IsRedundantExternalSummary(discErr.RawSummary, resolved.RootInvocation)) {
 			format.PrintModuleErrorForTarget(discErr, clean, "")
 		}
 	}
@@ -297,7 +292,11 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		format.FprintWorkUnitMetadata(os.Stdout, wu, "", false)
 		if resolved.RootInvocation != nil {
 			fmt.Println()
-			format.FprintRootInvocationMetadata(os.Stdout, resolved.RootInvocation)
+			if isRoot {
+				format.FprintRootInvocationCoreMetadata(os.Stdout, resolved.RootInvocation)
+			} else {
+				format.FprintRootInvocationMetadata(os.Stdout, resolved.RootInvocation)
+			}
 			format.FprintRootInvocationAdditionalMetadata(os.Stdout, resolved.RootInvocation)
 		}
 	}
@@ -305,23 +304,6 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	artifact.PrintWorkUnitAndAncestorNotices(rpcCtx, client, []string{clean}, os.Stdout)
 
 	return 0
-}
-
-func fetchRootInvocationAggregation(ctx context.Context, client pb.ResultDBClient, normInv string) *pb.TestAggregation {
-	if client == nil || normInv == "" {
-		return nil
-	}
-	resp, err := client.QueryTestAggregations(ctx, &pb.QueryTestAggregationsRequest{
-		Parent: "rootInvocations/" + normInv,
-		Predicate: &pb.TestAggregationPredicate{
-			AggregationLevel: pb.AggregationLevel_INVOCATION,
-		},
-		PageSize: 1,
-	})
-	if err != nil || resp == nil || len(resp.Aggregations) == 0 {
-		return nil
-	}
-	return resp.Aggregations[0]
 }
 
 func printRootInvocationMetadata(rootInv *pb.RootInvocation) {
@@ -345,24 +327,5 @@ func printRootInvocationMetadata(rootInv *pb.RootInvocation) {
 	if sys := rootInv.GetProducerResource().GetSystem(); sys != "" {
 		fmt.Printf("Scheduler:    %s\n", sys)
 	}
-	tags := make(map[string]string, len(rootInv.GetTags()))
-	for _, t := range rootInv.GetTags() {
-		if k, v := t.GetKey(), t.GetValue(); k != "" && v != "" && tags[k] == "" {
-			tags[k] = v
-		}
-	}
-	for _, item := range []struct {
-		key   string
-		label string
-	}{
-		{key: "runner", label: "Runner:       "},
-		{key: "result_link", label: "Result Link:  "},
-		{key: "sponge_invocation_id", label: "Sponge Invocation ID: "},
-		{key: "test_uri", label: "Test URI:     "},
-		{key: "runner_url", label: "Runner URL:   "},
-	} {
-		if v := tags[item.key]; v != "" {
-			fmt.Printf("%s%s\n", item.label, v)
-		}
-	}
+	format.FprintRootInvocationExternalMetadata(os.Stdout, rootInv, 14)
 }

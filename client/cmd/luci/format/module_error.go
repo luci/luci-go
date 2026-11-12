@@ -429,12 +429,30 @@ func fetchAndParseXMLReasonWithCache(ctx context.Context, httpClient *http.Clien
 	return reason, err
 }
 
-// isGenericHarnessSummary checks if the summary is a generic harness-level wrapper error.
+// IsGenericHarnessSummary reports whether s is a generic MobileHarness wrapper
+// error summary (ANDROID_TRADEFED_TEST_HAS_FAIL_SUBTEST) indicating only that
+// sub-tests failed without a specific module/harness root cause.
 //
 // TODO(b/547503348): Remove once TradeFed populates WorkUnit.SummaryMarkdown with
 // specific module failure reasons instead of relying on MobileHarness wrapper summary.
-func isGenericHarnessSummary(s string) bool {
+func IsGenericHarnessSummary(s string) bool {
 	return strings.Contains(s, "ANDROID_TRADEFED_TEST_HAS_FAIL_SUBTEST")
+}
+
+func isFallbackWorkUnitSummary(ctx context.Context, rdbClient pb.ResultDBClient, wuName, summary string, cache *DiscoveryCache) bool {
+	if IsGenericHarnessSummary(summary) {
+		return true
+	}
+	if !strings.HasSuffix(wuName, "/workUnits/root") {
+		return false
+	}
+	rootInvID, _ := base.ExtractWorkUnitComponents(wuName)
+	if rootInvID == "" {
+		return false
+	}
+	rootInvName := "rootInvocations/" + base.NormalizeInvocation(rootInvID)
+	rootInv := getRootInvocationWithCache(ctx, rdbClient, rootInvName, cache)
+	return rootInv != nil && IsRedundantExternalSummary(summary, rootInv)
 }
 
 // DiscoverWorkUnitError executes the 3-layer discovery hierarchy to find module / work unit errors:
@@ -478,7 +496,7 @@ func discoverWorkUnitErrorUncached(ctx context.Context, rdbClient pb.ResultDBCli
 	if strings.Contains(clean, "/workUnits/") {
 		wu := getWorkUnitWithCache(ctx, rdbClient, clean, cache)
 		if wu != nil && strings.TrimSpace(wu.SummaryMarkdown) != "" {
-			if !isGenericHarnessSummary(wu.SummaryMarkdown) {
+			if !isFallbackWorkUnitSummary(ctx, rdbClient, clean, wu.SummaryMarkdown, cache) {
 				return &DiscoveredError{
 					Source:         fmt.Sprintf("Work Unit %s", clean),
 					SourceWorkUnit: clean,
@@ -497,7 +515,7 @@ func discoverWorkUnitErrorUncached(ctx context.Context, rdbClient pb.ResultDBCli
 	ancestors := QueryAncestorWorkUnits(ctx, rdbClient, clean)
 	for _, anc := range ancestors {
 		if strings.TrimSpace(anc.SummaryMarkdown) != "" {
-			if !isGenericHarnessSummary(anc.SummaryMarkdown) {
+			if !isFallbackWorkUnitSummary(ctx, rdbClient, anc.Name, anc.SummaryMarkdown, cache) {
 				return &DiscoveredError{
 					Source:         fmt.Sprintf("Ancestor Work Unit %s", anc.Name),
 					SourceWorkUnit: anc.Name,
@@ -782,7 +800,7 @@ func DiscoverFirstLevelWorkUnitFailures(ctx context.Context, rdbClient pb.Result
 		if cf == nil {
 			continue
 		}
-		hasSummary := cf.SummaryMarkdown != "" && !isGenericHarnessSummary(cf.SummaryMarkdown)
+		hasSummary := cf.SummaryMarkdown != "" && !IsGenericHarnessSummary(cf.SummaryMarkdown)
 		if children[i].GetState() == pb.WorkUnit_FAILED || hasSummary || len(cf.Artifacts) > 0 {
 			results = append(results, cf)
 		}

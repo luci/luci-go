@@ -230,19 +230,10 @@ func printInvocationDetails(ctx context.Context, out io.Writer, client pb.Result
 
 	rootInv := resolved.RootInvocation
 	rootInvName := "rootInvocations/" + resolved.ID
+	agg := format.FetchRootInvocationAggregation(ctx, client, resolved.ID)
 	var countsSuffix string
-	if client != nil {
-		if resAgg, err := client.QueryTestAggregations(ctx, &pb.QueryTestAggregationsRequest{
-			Parent: rootInvName,
-			Predicate: &pb.TestAggregationPredicate{
-				AggregationLevel: pb.AggregationLevel_INVOCATION,
-			},
-			PageSize: 1,
-		}); err == nil && resAgg != nil && len(resAgg.Aggregations) > 0 {
-			if c := format.FormatVerdictCountsInline(resAgg.Aggregations[0].GetTotalVerdictCounts()); c != "" {
-				countsSuffix = " " + c
-			}
-		}
+	if c := format.FormatVerdictCountsInline(agg.GetTotalVerdictCounts()); c != "" {
+		countsSuffix = " " + c
 	}
 	fmt.Fprintf(out, "Invocation:    %s%s\n", rootInvName, countsSuffix)
 	format.FprintRootInvocationMetadata(out, rootInv)
@@ -253,6 +244,9 @@ func printInvocationDetails(ctx context.Context, out io.Writer, client pb.Result
 		if rootInv.GetFinalizeTime() != nil {
 			fmt.Fprintf(out, "Finalized:     %s\n", rootInv.GetFinalizeTime().AsTime().UTC().Format(time.RFC3339))
 		}
+	}
+	format.FprintRootInvocationAggregationSummary(out, agg)
+	if rootInv != nil {
 		var rootFailure *format.WorkUnitFailure
 		var failures []*format.WorkUnitFailure
 		if client != nil && rootInv.GetState() != pb.RootInvocation_SUCCEEDED {
@@ -260,13 +254,11 @@ func printInvocationDetails(ctx context.Context, out io.Writer, client pb.Result
 			rootFailure = format.DiscoverSingleWorkUnitFailure(ctx, client, httpClient, rootWU)
 			failures = format.DiscoverFirstLevelWorkUnitFailures(ctx, client, httpClient, resolved.ID, rootWU)
 		}
-		summary := strings.TrimSpace(rootInv.GetSummaryMarkdown())
-		if rootFailure != nil && rootFailure.FullSummaryText != "" {
-			summary = strings.TrimSpace(rootFailure.FullSummaryText)
+		summary := rootInv.GetSummaryMarkdown()
+		if rootFailure != nil && strings.TrimSpace(rootFailure.FullSummaryText) != "" {
+			summary = rootFailure.FullSummaryText
 		}
-		if summary != "" {
-			fmt.Fprintf(out, "Summary:\n  %s\n", strings.ReplaceAll(summary, "\n", "\n  "))
-		}
+		format.FprintRootInvocationSummary(out, summary, rootInv)
 		if rootFailure != nil {
 			format.FprintWorkUnitFailureArtifacts(out, resolved.ID, rootFailure, "")
 		}

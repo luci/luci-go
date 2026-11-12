@@ -17,6 +17,7 @@ package format
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -152,7 +153,8 @@ func TestStripHTML(t *testing.T) {
 
 type fakeRDBClient struct {
 	rdbpb.ResultDBClient
-	getArtifactFunc func(ctx context.Context, in *rdbpb.GetArtifactRequest, opts ...grpc.CallOption) (*rdbpb.Artifact, error)
+	getArtifactFunc           func(ctx context.Context, in *rdbpb.GetArtifactRequest, opts ...grpc.CallOption) (*rdbpb.Artifact, error)
+	queryTestAggregationsFunc func(ctx context.Context, in *rdbpb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestAggregationsResponse, error)
 }
 
 func (f *fakeRDBClient) GetArtifact(ctx context.Context, in *rdbpb.GetArtifactRequest, opts ...grpc.CallOption) (*rdbpb.Artifact, error) {
@@ -160,6 +162,13 @@ func (f *fakeRDBClient) GetArtifact(ctx context.Context, in *rdbpb.GetArtifactRe
 		return f.getArtifactFunc(ctx, in, opts...)
 	}
 	return nil, nil
+}
+
+func (f *fakeRDBClient) QueryTestAggregations(ctx context.Context, in *rdbpb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestAggregationsResponse, error) {
+	if f.queryTestAggregationsFunc != nil {
+		return f.queryTestAggregationsFunc(ctx, in, opts...)
+	}
+	return &rdbpb.QueryTestAggregationsResponse{}, nil
 }
 
 func TestFormatVerdictCountsInline(t *testing.T) {
@@ -851,6 +860,114 @@ func TestPrintFailureReason(t *testing.T) {
 			assert.Loosely(t, buf.String(), should.ContainSubstring("Invocation Properties:\n"))
 			assert.Loosely(t, buf.String(), should.ContainSubstring(`"scheduler"`))
 			assert.Loosely(t, buf.String(), should.ContainSubstring(`"ATP"`))
+		})
+
+		t.Run(`FprintRootInvocationMetadata with Sponge2 and Fusion2 links, runner fallback, and failure policy tags`, func(t *ftt.Test) {
+			props, _ := structpb.NewStruct(map[string]any{"runner": "TRADEFED"})
+			rootInv := &rdbpb.RootInvocation{
+				Name:              "rootInvocations/ants-i90900010658207079",
+				State:             rdbpb.RootInvocation_SUCCEEDED,
+				FinalizationState: rdbpb.RootInvocation_FINALIZED,
+				Tags: []*rdbpb.StringPair{
+					{Key: "result_link", Value: "http://sponge2/3920feb1-7663-4085-b120-47a767784c3c"},
+					{Key: "sponge_invocation_id", Value: "19cd1c2a-4869-45ec-98a5-17651f29d248"},
+					{Key: "test_uri", Value: "http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248"},
+					{Key: "runner_url", Value: "https://mobileharness-fe.corp.google.com/sessiondetailview/3920feb1-7663-4085-b120-47a767784c3c"},
+					{Key: "failure_status", Value: "presubmit_error"},
+					{Key: "presubmit_failure_status", Value: "ERROR"},
+				},
+				Properties: props,
+			}
+
+			var buf bytes.Buffer
+			FprintRootInvocationMetadata(&buf, rootInv)
+			expected := "" +
+				"Inv State:     SUCCEEDED (FINALIZED)\n" +
+				"Runner:        TRADEFED\n" +
+				"Result Link:   http://sponge2/3920feb1-7663-4085-b120-47a767784c3c\n" +
+				"Sponge Invocation ID: 19cd1c2a-4869-45ec-98a5-17651f29d248\n" +
+				"Test URI:      http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248\n" +
+				"Runner URL:    https://mobileharness-fe.corp.google.com/sessiondetailview/3920feb1-7663-4085-b120-47a767784c3c\n" +
+				"Failure Policy: failure_status=presubmit_error presubmit_failure_status=ERROR\n"
+			assert.Loosely(t, buf.String(), should.Equal(expected))
+
+			// Explicit runner tag overrides properties["runner"], and postsubmit_failure_status is surfaced.
+			rootInv.Tags = append(rootInv.Tags,
+				&rdbpb.StringPair{Key: "runner", Value: "MobileHarness"},
+				&rdbpb.StringPair{Key: "postsubmit_failure_status", Value: "DISABLED"},
+			)
+			extInfo := ExtractRootInvocationExternalInfo(rootInv)
+			assert.Loosely(t, extInfo.Runner, should.Equal("MobileHarness"))
+			assert.Loosely(t, extInfo.PostsubmitFailureStatus, should.Equal("DISABLED"))
+			buf.Reset()
+			FprintRootInvocationMetadata(&buf, rootInv)
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Failure Policy: failure_status=presubmit_error presubmit_failure_status=ERROR postsubmit_failure_status=DISABLED\n"))
+		})
+
+		t.Run(`FprintRootInvocationSummary normalizes CRLF and deduplicates external links`, func(t *ftt.Test) {
+			rootInv := &rdbpb.RootInvocation{
+				SummaryMarkdown: "http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248",
+				Tags: []*rdbpb.StringPair{
+					{Key: "test_uri", Value: "http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248"},
+					{Key: "runner_url", Value: "https://mobileharness-fe.corp.google.com/sessiondetailview/123"},
+				},
+			}
+			var buf bytes.Buffer
+			FprintRootInvocationSummary(&buf, rootInv.GetSummaryMarkdown(), rootInv)
+			assert.Loosely(t, buf.String(), should.BeEmpty)
+
+			rootInv.SummaryMarkdown = "https://mobileharness-fe.corp.google.com/sessiondetailview/123"
+			FprintRootInvocationSummary(&buf, rootInv.GetSummaryMarkdown(), rootInv)
+			assert.Loosely(t, buf.String(), should.BeEmpty)
+
+			rootInv.SummaryMarkdown = "Line 1\r\n\r\nLine 2\r\n"
+			FprintRootInvocationSummary(&buf, rootInv.GetSummaryMarkdown(), rootInv)
+			assert.Loosely(t, buf.String(), should.Equal("Summary:\n  Line 1\n\n  Line 2\n"))
+		})
+
+		t.Run(`FetchRootInvocationAggregation and FprintRootInvocationAggregationSummary`, func(t *ftt.Test) {
+			var gotReq *rdbpb.QueryTestAggregationsRequest
+			client := &fakeRDBClient{
+				queryTestAggregationsFunc: func(ctx context.Context, in *rdbpb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestAggregationsResponse, error) {
+					gotReq = in
+					return &rdbpb.QueryTestAggregationsResponse{
+						Aggregations: []*rdbpb.TestAggregation{
+							{
+								ModuleStatusCounts: &rdbpb.TestAggregation_ModuleStatusCounts{Skipped: 1},
+								TotalVerdictCounts: &rdbpb.TestAggregation_VerdictCounts{},
+							},
+						},
+					}, nil
+				},
+			}
+
+			// Normalizes raw AnTS IDs and resource names before querying.
+			agg := FetchRootInvocationAggregation(context.Background(), client, "I90900010658207079")
+			assert.Loosely(t, gotReq, should.NotBeNil)
+			assert.Loosely(t, gotReq.Parent, should.Equal("rootInvocations/ants-i90900010658207079"))
+			assert.Loosely(t, gotReq.PageSize, should.Equal(1))
+			assert.Loosely(t, gotReq.Predicate.GetAggregationLevel(), should.Equal(rdbpb.AggregationLevel_INVOCATION))
+
+			gotReq = nil
+			_ = FetchRootInvocationAggregation(context.Background(), client, "rootInvocations/ants-i90900010658207079")
+			assert.Loosely(t, gotReq.Parent, should.Equal("rootInvocations/ants-i90900010658207079"))
+
+			var buf bytes.Buffer
+			FprintRootInvocationAggregationSummary(&buf, agg)
+			assert.Loosely(t, buf.String(), should.Equal(
+				"Module Statuses: [1 skipped] (1 total)\n"+
+					"Test Verdicts:   0 tests ran\n",
+			))
+
+			// Nil / error paths return nil safely.
+			assert.Loosely(t, FetchRootInvocationAggregation(context.Background(), nil, "ants-i1"), should.BeNil)
+			assert.Loosely(t, FetchRootInvocationAggregation(context.Background(), client, ""), should.BeNil)
+			errClient := &fakeRDBClient{
+				queryTestAggregationsFunc: func(ctx context.Context, in *rdbpb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestAggregationsResponse, error) {
+					return nil, fmt.Errorf("permission denied")
+				},
+			}
+			assert.Loosely(t, FetchRootInvocationAggregation(context.Background(), errClient, "ants-i1"), should.BeNil)
 		})
 
 		t.Run(`FprintWorkUnitMetadata`, func(t *ftt.Test) {

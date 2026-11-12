@@ -198,6 +198,10 @@ func TestInvocationGet(t *testing.T) {
 					return &pb.QueryTestAggregationsResponse{
 						Aggregations: []*pb.TestAggregation{
 							{
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{
+									Failed:    1,
+									Succeeded: 5,
+								},
 								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
 									Failed: 2,
 									Passed: 40,
@@ -224,6 +228,9 @@ func TestInvocationGet(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Sources:       submitted_android_build(branch=git_main build_id=16133789)\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Definition:    system=atp name=v2/android-mts/mts-cellbroadcast [run_target=cf_x86_64_phone]\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Producer:      system=ants name=ants-i14600010609614895\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Runner:        tradefed\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Statuses: [1 failed, 5 succeeded] (6 total)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   [2 failed, 40 passed] (42 total)\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Realm:        google:android-test-results\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Invocation Tags:\n  test_type: mts\n"))
 			assert.Loosely(t, out, should.ContainSubstring(`"runner"`))
@@ -284,6 +291,66 @@ func TestInvocationGet(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("- **error_name**: DEVICE_UNAVAILABLE"))
 			assert.Loosely(t, out, should.ContainSubstring("DeviceNotAvailableException: Device 127.0.0.1:41235 offline"))
 			assert.Loosely(t, out, should.ContainSubstring("luci artifact get -invocationid=ants-i11700010583257168 -workunitid=ants-wu11700010583257168 -artifactid=invocationFailed_trace"))
+		})
+
+		t.Run(`surfaces Sponge2 and Fusion2 links, failure policy tags, 0 tests ran, and deduplicates SummaryMarkdown`, func(t *ftt.Test) {
+			props, _ := structpb.NewStruct(map[string]any{"runner": "TRADEFED"})
+			rootInv := &pb.RootInvocation{
+				Name:              "rootInvocations/ants-i90900010658207079",
+				RootInvocationId:  "ants-i90900010658207079",
+				State:             pb.RootInvocation_SUCCEEDED,
+				FinalizationState: pb.RootInvocation_FINALIZED,
+				SummaryMarkdown:   "http://sponge2/3920feb1-7663-4085-b120-47a767784c3c",
+				Tags: []*pb.StringPair{
+					{Key: "result_link", Value: "http://sponge2/3920feb1-7663-4085-b120-47a767784c3c"},
+					{Key: "sponge_invocation_id", Value: "19cd1c2a-4869-45ec-98a5-17651f29d248"},
+					{Key: "test_uri", Value: "http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248"},
+					{Key: "runner_url", Value: "https://mobileharness-fe.corp.google.com/sessiondetailview/3920feb1-7663-4085-b120-47a767784c3c"},
+					{Key: "failure_status", Value: "presubmit_error"},
+					{Key: "presubmit_failure_status", Value: "ERROR"},
+				},
+				Properties: props,
+			}
+
+			client := &mockInvocationResultDBClient{
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{Skipped: 1},
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+							},
+						},
+					}, nil
+				},
+			}
+
+			resolved := &base.ResolvedInvocation{
+				ID:             "ants-i90900010658207079",
+				Legacy:         false,
+				RootInvocation: rootInv,
+			}
+
+			var buf bytes.Buffer
+			printInvocationDetails(ctx, &buf, client, nil, resolved, false)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Invocation:    rootInvocations/ants-i90900010658207079\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Inv State:     SUCCEEDED (FINALIZED)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Runner:        TRADEFED\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Result Link:   http://sponge2/3920feb1-7663-4085-b120-47a767784c3c\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Sponge Invocation ID: 19cd1c2a-4869-45ec-98a5-17651f29d248\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test URI:      http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Runner URL:    https://mobileharness-fe.corp.google.com/sessiondetailview/3920feb1-7663-4085-b120-47a767784c3c\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Failure Policy: failure_status=presubmit_error presubmit_failure_status=ERROR\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Statuses: [1 skipped] (1 total)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   0 tests ran\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Summary:"))
+
+			// Distinct multi-line SummaryMarkdown is printed without trailing spaces on blank lines.
+			rootInv.SummaryMarkdown = "Setup failed\n\nDevice offline"
+			buf.Reset()
+			printInvocationDetails(ctx, &buf, client, nil, resolved, false)
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Summary:\n  Setup failed\n\n  Device offline\n"))
 		})
 
 		t.Run(`fails immediately on PermissionDenied`, func(t *ftt.Test) {

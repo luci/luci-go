@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -476,6 +477,8 @@ func TestCmdWorkUnit(t *testing.T) {
 							{Key: "runner", Value: "Tradefed"},
 							{Key: "result_link", Value: "https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898"},
 							{Key: "sponge_invocation_id", Value: "d1234567-89ab-cdef-0123-456789abcdef"},
+							{Key: "failure_status", Value: "presubmit_error"},
+							{Key: "presubmit_failure_status", Value: "ERROR"},
 						},
 					}, nil
 				},
@@ -487,6 +490,7 @@ func TestCmdWorkUnit(t *testing.T) {
 							Kind:              "ATP_INVOCATION",
 							State:             pb.WorkUnit_FAILED,
 							FinalizationState: pb.WorkUnit_FINALIZED,
+							SummaryMarkdown:   "https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898",
 							ChildWorkUnits: []string{
 								"rootInvocations/ants-i77100010600769898/workUnits/ants-wu1",
 								"rootInvocations/ants-i77100010600769898/workUnits/ants-wu2",
@@ -546,11 +550,57 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Sponge Invocation ID: d1234567-89ab-cdef-0123-456789abcdef\n"))
 			assert.Loosely(t, out, should.NotContainSubstring("Test URI:"))
 			assert.Loosely(t, out, should.ContainSubstring("Runner URL:   https://tradefed.example.com/run/123\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Failure Policy: failure_status=presubmit_error presubmit_failure_status=ERROR\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Kind:         ATP_INVOCATION\n"))
 			assert.Loosely(t, out, should.ContainSubstring("State:        FAILED\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Finalization: FINALIZED\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Module Statuses: [1 failed, 1 flaky, 18 succeeded] (20 total)\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   [3 failed, 2 flaky, 145 passed, 5 skipped] (155 total)\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Summary:"))
+
+			// -show-metadata on root work unit prints external metadata fields only once.
+			rRootMeta := &workUnitGetRun{
+				client:       client,
+				invocationID: "I77100010600769898",
+				workUnitID:   "root",
+				showMetadata: true,
+			}
+			outRootMeta := testutil.CaptureStdout(func() {
+				assert.Loosely(t, rRootMeta.Run(nil, nil, nil), should.Equal(0))
+			})
+			assert.Loosely(t, strings.Count(outRootMeta, "Result Link:"), should.Equal(1))
+			assert.Loosely(t, strings.Count(outRootMeta, "Runner URL:"), should.Equal(1))
+			assert.Loosely(t, strings.Count(outRootMeta, "Failure Policy:"), should.Equal(1))
+			assert.Loosely(t, outRootMeta, should.ContainSubstring("Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=12345678\n"))
+
+			// Empty wu.SummaryMarkdown on root does not leak redundant RootInvocation.SummaryMarkdown via Layer 3.
+			origGetRootInv := client.getRootInvocation
+			origGetWU := client.getWorkUnit
+			client.getRootInvocation = func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+				ri, err := origGetRootInv(ctx, in)
+				if ri != nil {
+					ri.SummaryMarkdown = "https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898"
+				}
+				return ri, err
+			}
+			client.getWorkUnit = func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+				wu, err := origGetWU(ctx, in)
+				if wu != nil && wu.WorkUnitId == "root" {
+					wu.SummaryMarkdown = ""
+				}
+				return wu, err
+			}
+			rRootLayer3 := &workUnitGetRun{
+				client:       client,
+				invocationID: "I77100010600769898",
+				workUnitID:   "root",
+			}
+			outRootLayer3 := testutil.CaptureStdout(func() {
+				assert.Loosely(t, rRootLayer3.Run(nil, nil, nil), should.Equal(0))
+			})
+			assert.Loosely(t, outRootLayer3, should.NotContainSubstring("Summary"))
+			client.getRootInvocation = origGetRootInv
+			client.getWorkUnit = origGetWU
 
 			gotAggReq = nil
 			rChild := &workUnitGetRun{

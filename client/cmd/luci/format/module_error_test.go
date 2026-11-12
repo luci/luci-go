@@ -193,6 +193,73 @@ func TestDiscoverWorkUnitError(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.RawSummary, should.Equal("Harness timeout after 3600s"))
 		})
+
+		t.Run(`Redundant external link on ancestor root work unit does not short-circuit Layer 2 XML reason`, func(t *ftt.Test) {
+			var gzBuf bytes.Buffer
+			gw := gzip.NewWriter(&gzBuf)
+			gw.Write([]byte(`<?xml version="1.0"?><TestResult><Reason message="APK install failed" error_name="APK_INSTALLATION_FAILED" error_code="2002" /></TestResult>`))
+			gw.Close()
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write(gzBuf.Bytes())
+			}))
+			defer server.Close()
+
+			fakeClient := &fakeDiscoveryRDBClient{
+				getWorkUnitFunc: func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+					if in.Name == "rootInvocations/inv1/workUnits/root" {
+						return &pb.WorkUnit{
+							Name:            in.Name,
+							WorkUnitId:      "root",
+							SummaryMarkdown: "http://sponge2/3920feb1-7663-4085-b120-47a767784c3c",
+						}, nil
+					}
+					return &pb.WorkUnit{
+						Name:   in.Name,
+						Parent: "rootInvocations/inv1/workUnits/root",
+					}, nil
+				},
+				queryWorkUnitsFunc: func(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{
+								Name:            "rootInvocations/inv1/workUnits/root",
+								WorkUnitId:      "root",
+								SummaryMarkdown: "http://sponge2/3920feb1-7663-4085-b120-47a767784c3c",
+							},
+						},
+					}, nil
+				},
+				getRootInvocationFunc: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name: in.Name,
+						Tags: []*pb.StringPair{
+							{Key: "result_link", Value: "http://sponge2/3920feb1-7663-4085-b120-47a767784c3c"},
+						},
+					}, nil
+				},
+				listArtifactsFunc: func(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == "rootInvocations/inv1/workUnits/wu1" {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									ArtifactId: "subprocess-test_result.xml.gz",
+									FetchUrl:   server.URL,
+								},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			err, dErr := DiscoverWorkUnitError(ctx, fakeClient, server.Client(), "rootInvocations/inv1/workUnits/wu1")
+			assert.Loosely(t, dErr, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.ErrorName, should.Equal("APK_INSTALLATION_FAILED"))
+			assert.Loosely(t, err.Message, should.Equal("APK install failed"))
+		})
 	})
 }
 

@@ -34,6 +34,7 @@ import (
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -78,18 +79,23 @@ func (h *HierarchyAggregations) GetFine() *rdbpb.TestAggregation_VerdictCounts {
 	return h.Fine
 }
 
+// VerdictCountsTotal returns the sum of all verdict counts in vc, or 0 if vc is nil.
+func VerdictCountsTotal(vc *rdbpb.TestAggregation_VerdictCounts) int64 {
+	if vc == nil {
+		return 0
+	}
+	return int64(vc.Failed) + int64(vc.ExecutionErrored) + int64(vc.Precluded) +
+		int64(vc.Flaky) + int64(vc.Exonerated) + int64(vc.Passed) + int64(vc.Skipped)
+}
+
 // FormatVerdictCountsInline formats verdict counts as a compact inline bracketed
 // summary, e.g. "[245 failed, 218 passed, 7 skipped]". Returns "" if vc is nil
 // or all counts are zero.
 func FormatVerdictCountsInline(vc *rdbpb.TestAggregation_VerdictCounts) string {
-	if vc == nil {
+	if VerdictCountsTotal(vc) == 0 {
 		return ""
 	}
 	hasFailures := vc.Failed > 0 || vc.ExecutionErrored > 0 || vc.Precluded > 0 || vc.Flaky > 0 || vc.Exonerated > 0
-	total := vc.Failed + vc.ExecutionErrored + vc.Precluded + vc.Flaky + vc.Exonerated + vc.Passed + vc.Skipped
-	if total == 0 {
-		return ""
-	}
 	var parts []string
 	if vc.Failed > 0 {
 		parts = append(parts, fmt.Sprintf("%d failed", vc.Failed))
@@ -125,7 +131,7 @@ func FormatVerdictCountsSummary(vc *rdbpb.TestAggregation_VerdictCounts) string 
 	if vc == nil {
 		return ""
 	}
-	total := vc.Failed + vc.ExecutionErrored + vc.Precluded + vc.Flaky + vc.Exonerated + vc.Passed + vc.Skipped
+	total := VerdictCountsTotal(vc)
 	if total == 0 {
 		return "0 tests ran"
 	}
@@ -1168,10 +1174,173 @@ func FormatProducerResource(pr *rdbpb.ProducerResource) string {
 	return strings.Join(parts, " ")
 }
 
-// FprintRootInvocationMetadata prints populated RootInvocation build, branch, target,
-// sources, definition, and state metadata to out.
-func FprintRootInvocationMetadata(out io.Writer, rootInv *rdbpb.RootInvocation) {
+// FetchRootInvocationAggregation queries the invocation-level TestAggregation
+// for rootInvocations/<invID>, normalizing invID first. Returns nil if client
+// is nil, invID is empty, the RPC fails, or no aggregation is returned.
+func FetchRootInvocationAggregation(ctx context.Context, client rdbpb.ResultDBClient, invID string) *rdbpb.TestAggregation {
+	normInv := base.NormalizeInvocation(invID)
+	if client == nil || normInv == "" {
+		return nil
+	}
+	rpcCtx := logging.SetLevel(ctx, logging.Error)
+	resp, err := client.QueryTestAggregations(rpcCtx, &rdbpb.QueryTestAggregationsRequest{
+		Parent: "rootInvocations/" + normInv,
+		Predicate: &rdbpb.TestAggregationPredicate{
+			AggregationLevel: rdbpb.AggregationLevel_INVOCATION,
+		},
+		PageSize: 1,
+	})
+	if err != nil || resp == nil || len(resp.Aggregations) == 0 {
+		return nil
+	}
+	return resp.Aggregations[0]
+}
+
+// FprintRootInvocationAggregationSummary prints the invocation-level Module Statuses
+// and Test Verdicts summary lines when agg is non-nil.
+func FprintRootInvocationAggregationSummary(out io.Writer, agg *rdbpb.TestAggregation) {
+	if out == nil || agg == nil {
+		return
+	}
+	if modSummary := FormatModuleStatusCountsSummary(agg.GetModuleStatusCounts()); modSummary != "" {
+		fmt.Fprintf(out, "Module Statuses: %s\n", modSummary)
+	}
+	if verdictSummary := FormatVerdictCountsSummary(agg.GetTotalVerdictCounts()); verdictSummary != "" {
+		fmt.Fprintf(out, "Test Verdicts:   %s\n", verdictSummary)
+	}
+}
+
+// RootInvocationExternalInfo holds external result/runner links, runner name,
+// and failure policy tags extracted from a RootInvocation.
+type RootInvocationExternalInfo struct {
+	Runner                  string
+	ResultLink              string
+	SpongeInvocationID      string
+	TestURI                 string
+	RunnerURL               string
+	FailureStatus           string
+	PresubmitFailureStatus  string
+	PostsubmitFailureStatus string
+}
+
+// ExtractRootInvocationExternalInfo extracts external runner links, runner name,
+// and failure policy tags from rootInv. For Runner, it checks the "runner" tag
+// first and falls back to the "runner" string field in rootInv.Properties.
+func ExtractRootInvocationExternalInfo(rootInv *rdbpb.RootInvocation) RootInvocationExternalInfo {
 	if rootInv == nil {
+		return RootInvocationExternalInfo{}
+	}
+	tags := make(map[string]string, len(rootInv.GetTags()))
+	for _, t := range rootInv.GetTags() {
+		k := t.GetKey()
+		v := strings.TrimSpace(t.GetValue())
+		if k != "" && v != "" && tags[k] == "" {
+			tags[k] = v
+		}
+	}
+	runner := tags["runner"]
+	if runner == "" {
+		if fields := rootInv.GetProperties().GetFields(); fields != nil {
+			if val, ok := fields["runner"]; ok {
+				runner = strings.TrimSpace(val.GetStringValue())
+			}
+		}
+	}
+	return RootInvocationExternalInfo{
+		Runner:                  runner,
+		ResultLink:              tags["result_link"],
+		SpongeInvocationID:      tags["sponge_invocation_id"],
+		TestURI:                 tags["test_uri"],
+		RunnerURL:               tags["runner_url"],
+		FailureStatus:           tags["failure_status"],
+		PresubmitFailureStatus:  tags["presubmit_failure_status"],
+		PostsubmitFailureStatus: tags["postsubmit_failure_status"],
+	}
+}
+
+// formatFailurePolicyTags formats ATP's configured TestOptions.FailureStatus
+// blocking policy tags ("what to do on test failure", e.g. ERROR vs WARN/INFO).
+func formatFailurePolicyTags(info RootInvocationExternalInfo) string {
+	var parts []string
+	if info.FailureStatus != "" {
+		parts = append(parts, fmt.Sprintf("failure_status=%s", info.FailureStatus))
+	}
+	if info.PresubmitFailureStatus != "" {
+		parts = append(parts, fmt.Sprintf("presubmit_failure_status=%s", info.PresubmitFailureStatus))
+	}
+	if info.PostsubmitFailureStatus != "" {
+		parts = append(parts, fmt.Sprintf("postsubmit_failure_status=%s", info.PostsubmitFailureStatus))
+	}
+	return strings.Join(parts, " ")
+}
+
+func padMetadataLabel(label string, labelWidth int) string {
+	prefix := label + ": "
+	if len(prefix) >= labelWidth {
+		return prefix
+	}
+	return fmt.Sprintf("%-*s", labelWidth, label+":")
+}
+
+// FprintRootInvocationExternalMetadata prints populated external links, runner,
+// and failure policy tags for rootInv to out, padding short labels to labelWidth.
+func FprintRootInvocationExternalMetadata(out io.Writer, rootInv *rdbpb.RootInvocation, labelWidth int) {
+	if out == nil || rootInv == nil {
+		return
+	}
+	info := ExtractRootInvocationExternalInfo(rootInv)
+	for _, item := range []struct {
+		label string
+		value string
+	}{
+		{label: "Runner", value: info.Runner},
+		{label: "Result Link", value: info.ResultLink},
+		{label: "Sponge Invocation ID", value: info.SpongeInvocationID},
+		{label: "Test URI", value: info.TestURI},
+		{label: "Runner URL", value: info.RunnerURL},
+		{label: "Failure Policy", value: formatFailurePolicyTags(info)},
+	} {
+		if item.value != "" {
+			fmt.Fprintf(out, "%s%s\n", padMetadataLabel(item.label, labelWidth), item.value)
+		}
+	}
+}
+
+// IsRedundantExternalSummary reports whether summary (after trimming whitespace)
+// is empty or identical to an external link already surfaced from rootInv.
+func IsRedundantExternalSummary(summary string, rootInv *rdbpb.RootInvocation) bool {
+	trimmed := strings.TrimSpace(summary)
+	if trimmed == "" {
+		return true
+	}
+	extInfo := ExtractRootInvocationExternalInfo(rootInv)
+	return trimmed == extInfo.ResultLink || trimmed == extInfo.TestURI || trimmed == extInfo.RunnerURL
+}
+
+// FprintRootInvocationSummary prints summary indented by two spaces when
+// non-empty and distinct from surfaced external link fields on rootInv.
+func FprintRootInvocationSummary(out io.Writer, summary string, rootInv *rdbpb.RootInvocation) {
+	if out == nil {
+		return
+	}
+	summary = strings.TrimSpace(strings.ReplaceAll(summary, "\r\n", "\n"))
+	if IsRedundantExternalSummary(summary, rootInv) {
+		return
+	}
+	fmt.Fprintln(out, "Summary:")
+	for _, line := range strings.Split(summary, "\n") {
+		if line == "" {
+			fmt.Fprintln(out)
+		} else {
+			fmt.Fprintf(out, "  %s\n", line)
+		}
+	}
+}
+
+// FprintRootInvocationCoreMetadata prints populated RootInvocation state, build,
+// sources, definition, and producer metadata (excluding external runner/link tags).
+func FprintRootInvocationCoreMetadata(out io.Writer, rootInv *rdbpb.RootInvocation) {
+	if out == nil || rootInv == nil {
 		return
 	}
 	if s := FormatRootInvocationState(rootInv); s != "" {
@@ -1192,6 +1361,16 @@ func FprintRootInvocationMetadata(out io.Writer, rootInv *rdbpb.RootInvocation) 
 	if s := FormatProducerResource(rootInv.GetProducerResource()); s != "" {
 		fmt.Fprintf(out, "Producer:      %s\n", s)
 	}
+}
+
+// FprintRootInvocationMetadata prints populated RootInvocation build, branch, target,
+// sources, definition, external links, runner/failure policy tags, and state metadata to out.
+func FprintRootInvocationMetadata(out io.Writer, rootInv *rdbpb.RootInvocation) {
+	if out == nil || rootInv == nil {
+		return
+	}
+	FprintRootInvocationCoreMetadata(out, rootInv)
+	FprintRootInvocationExternalMetadata(out, rootInv, 15)
 }
 
 // FprintRootInvocationAdditionalMetadata prints extended RootInvocation metadata

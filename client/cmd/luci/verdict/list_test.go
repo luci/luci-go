@@ -22,7 +22,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -31,10 +33,11 @@ import (
 
 type mockListResultDBClient struct {
 	pb.ResultDBClient
-	getRootInvocation func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
-	getInvocation     func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
-	queryTestVerdicts func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
-	queryTestVariants func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error)
+	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
+	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
+	queryTestVariants     func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error)
+	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
 }
 
 func (m *mockListResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
@@ -63,6 +66,13 @@ func (m *mockListResultDBClient) QueryTestVariants(ctx context.Context, in *pb.Q
 		return m.queryTestVariants(ctx, in)
 	}
 	return &pb.QueryTestVariantsResponse{}, nil
+}
+
+func (m *mockListResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
+	if m.queryTestAggregations != nil {
+		return m.queryTestAggregations(ctx, in)
+	}
+	return &pb.QueryTestAggregationsResponse{}, nil
 }
 
 func TestListCmd(t *testing.T) {
@@ -531,6 +541,264 @@ func TestVerdictListRunAutoDetect(t *testing.T) {
 			out := buf.String()
 			assert.Loosely(t, out, should.ContainSubstring("Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=16133789\n"))
 			assert.Loosely(t, out, should.ContainSubstring("- FAILED :mod!junit:pkg.Class#testA\n"))
+		})
+
+		t.Run(`surfaces Sponge2 and Fusion2 links, module counts, and actionable hints on 0-verdict root invocation`, func(t *ftt.Test) {
+			props, _ := structpb.NewStruct(map[string]any{"runner": "TRADEFED"})
+			var gotAggReq *pb.QueryTestAggregationsRequest
+			client := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:              in.Name,
+						State:             pb.RootInvocation_SUCCEEDED,
+						FinalizationState: pb.RootInvocation_FINALIZED,
+						SummaryMarkdown:   "http://sponge2/3920feb1-7663-4085-b120-47a767784c3c",
+						Tags: []*pb.StringPair{
+							{Key: "result_link", Value: "http://sponge2/3920feb1-7663-4085-b120-47a767784c3c"},
+							{Key: "sponge_invocation_id", Value: "19cd1c2a-4869-45ec-98a5-17651f29d248"},
+							{Key: "test_uri", Value: "http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248"},
+							{Key: "runner_url", Value: "https://mobileharness-fe.corp.google.com/sessiondetailview/3920feb1-7663-4085-b120-47a767784c3c"},
+							{Key: "failure_status", Value: "presubmit_error"},
+							{Key: "presubmit_failure_status", Value: "ERROR"},
+						},
+						Properties: props,
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					gotAggReq = in
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{Skipped: 1},
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+							},
+						},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			run := &verdictListRun{
+				client:       client,
+				out:          &buf,
+				invocationID: "ants-i90900010658207079",
+				maxVerdicts:  100,
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, gotAggReq, should.NotBeNil)
+			assert.Loosely(t, gotAggReq.Parent, should.Equal("rootInvocations/ants-i90900010658207079"))
+			assert.Loosely(t, gotAggReq.PageSize, should.Equal(1))
+			assert.Loosely(t, gotAggReq.Predicate.GetAggregationLevel(), should.Equal(pb.AggregationLevel_INVOCATION))
+
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Inv State:     SUCCEEDED (FINALIZED)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Runner:        TRADEFED\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Result Link:   http://sponge2/3920feb1-7663-4085-b120-47a767784c3c\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Sponge Invocation ID: 19cd1c2a-4869-45ec-98a5-17651f29d248\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test URI:      http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Runner URL:    https://mobileharness-fe.corp.google.com/sessiondetailview/3920feb1-7663-4085-b120-47a767784c3c\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Failure Policy: failure_status=presubmit_error presubmit_failure_status=ERROR\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Module Statuses: [1 skipped] (1 total)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   0 tests ran\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Summary:"))
+			assert.Loosely(t, out, should.ContainSubstring(`No test verdicts were uploaded to ResultDB for invocation "ants-i90900010658207079" (0 tests ran).`))
+			assert.Loosely(t, out, should.NotContainSubstring("-all-statuses"))
+			assert.Loosely(t, out, should.ContainSubstring("luci work-unit get -invocationid=ants-i90900010658207079 -workunitid=root"))
+			assert.Loosely(t, out, should.ContainSubstring("luci artifact list -invocationid=ants-i90900010658207079"))
+			assert.Loosely(t, out, should.ContainSubstring("Inspect external test results at Result Link (http://sponge2/3920feb1-7663-4085-b120-47a767784c3c) or Test URI (http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248)"))
+		})
+
+		t.Run(`formats single-link, identical-link, SpongeInvocationID, and RunnerURL external result hints`, func(t *ftt.Test) {
+			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
+				ResultLink: "http://sponge2/abc",
+			}), should.Equal("Inspect external test results at Result Link (http://sponge2/abc)"))
+			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
+				TestURI: "http://fusion2/def",
+			}), should.Equal("Inspect external test results at Test URI (http://fusion2/def)"))
+			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
+				ResultLink: "http://sponge2/same",
+				TestURI:    "http://sponge2/same",
+			}), should.Equal("Inspect external test results at Result Link (http://sponge2/same)"))
+			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
+				SpongeInvocationID: "19cd1c2a-4869-45ec-98a5-17651f29d248",
+			}), should.Equal("Inspect external test results for Sponge Invocation ID 19cd1c2a-4869-45ec-98a5-17651f29d248 (http://sponge2/19cd1c2a-4869-45ec-98a5-17651f29d248)"))
+			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
+				RunnerURL: "https://mobileharness-fe.corp.google.com/sessiondetailview/abc",
+			}), should.Equal("Inspect external test runner session at Runner URL (https://mobileharness-fe.corp.google.com/sessiondetailview/abc)"))
+		})
+
+		t.Run(`prints distinct SummaryMarkdown on 0-verdict root invocation without external links`, func(t *ftt.Test) {
+			client := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:              in.Name,
+						State:             pb.RootInvocation_FAILED,
+						FinalizationState: pb.RootInvocation_FINALIZED,
+						SummaryMarkdown:   "TargetSetupError: failed to flash device",
+					}, nil
+				},
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{Failed: 1},
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+							},
+						},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			run := &verdictListRun{
+				client:       client,
+				out:          &buf,
+				invocationID: "ants-i555",
+				maxVerdicts:  100,
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Module Statuses: [1 failed, 0 succeeded] (1 total)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   0 tests ran\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Summary:\n  TargetSetupError: failed to flash device\n"))
+			assert.Loosely(t, out, should.ContainSubstring(`No test verdicts were uploaded to ResultDB for invocation "ants-i555" (0 tests ran).`))
+			assert.Loosely(t, out, should.NotContainSubstring("Inspect external test results"))
+		})
+
+		t.Run(`includes inline verdict counts alongside -all-statuses hint on all-passed root invocation`, func(t *ftt.Test) {
+			client := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:              in.Name,
+						State:             pb.RootInvocation_SUCCEEDED,
+						FinalizationState: pb.RootInvocation_FINALIZED,
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{Succeeded: 2},
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{Passed: 42},
+							},
+						},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			run := &verdictListRun{
+				client:       client,
+				out:          &buf,
+				invocationID: "ants-i456",
+				maxVerdicts:  100,
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Module Statuses: [2 succeeded] (2 total)\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   [42 passed] (42 total)\n"))
+			assert.Loosely(t, out, should.ContainSubstring(`No failed or execution errored verdicts found in invocation "ants-i456" [42 passed] (use -all-statuses or status flags to see other verdicts)`))
+
+			// Partial status flags (-flaky) on all-passed invocation still show inline counts and -all-statuses hint,
+			// and suppress generic ANDROID_TRADEFED_TEST_HAS_FAIL_SUBTEST wrapper summaries when verdicts exist.
+			origGetRoot := client.getRootInvocation
+			client.getRootInvocation = func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+				ri, err := origGetRoot(ctx, in)
+				if ri != nil {
+					ri.SummaryMarkdown = "name: ANDROID_TRADEFED_TEST_HAS_FAIL_SUBTEST\nstack trace: MobileHarnessException"
+				}
+				return ri, err
+			}
+			buf.Reset()
+			runFlaky := &verdictListRun{
+				client:       client,
+				out:          &buf,
+				invocationID: "ants-i456",
+				includeFlaky: true,
+				maxVerdicts:  100,
+			}
+			assert.Loosely(t, runFlaky.Run(nil, nil, nil), should.Equal(0))
+			outFlaky := buf.String()
+			assert.Loosely(t, outFlaky, should.NotContainSubstring("ANDROID_TRADEFED_TEST_HAS_FAIL_SUBTEST"))
+			assert.Loosely(t, outFlaky, should.ContainSubstring(`No matching verdicts found in invocation "ants-i456" [42 passed] (use -all-statuses or status flags to see other verdicts)`))
+		})
+
+		t.Run(`avoids contradictory invocation counts and suggests module get when -modulename matches 0 failed verdicts`, func(t *ftt.Test) {
+			client := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:              in.Name,
+						State:             pb.RootInvocation_FAILED,
+						FinalizationState: pb.RootInvocation_FINALIZED,
+						SummaryMarkdown:   "OtherModule failed",
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{Failed: 1, Succeeded: 1},
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{Failed: 2, Passed: 40},
+							},
+						},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			run := &verdictListRun{
+				client:       client,
+				out:          &buf,
+				invocationID: "ants-i789",
+				moduleName:   "PassingModule",
+				maxVerdicts:  100,
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.NotContainSubstring("Test Verdicts:"))
+			assert.Loosely(t, out, should.NotContainSubstring("OtherModule failed"))
+			assert.Loosely(t, out, should.ContainSubstring(`No matching verdicts found in invocation "ants-i789" (use -all-statuses or status flags to see other verdicts)`))
+			assert.Loosely(t, out, should.ContainSubstring("Hint: inspect module state with: luci module get -invocationid=ants-i789 -modulename=PassingModule"))
+
+			// Preserves -all-statuses and module get hints even when QueryTestAggregations fails (rootAgg == nil).
+			client.queryTestAggregations = func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+				return nil, status.Error(codes.Unavailable, "transient error")
+			}
+			buf.Reset()
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, buf.String(), should.ContainSubstring(`No matching verdicts found in invocation "ants-i789" (use -all-statuses or status flags to see other verdicts)`))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Hint: inspect module state with: luci module get -invocationid=ants-i789 -modulename=PassingModule"))
+
+			// Includes module get next-step bullet when -modulename is passed on a 0-verdict invocation.
+			client.queryTestAggregations = func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+				return &pb.QueryTestAggregationsResponse{
+					Aggregations: []*pb.TestAggregation{
+						{
+							ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{Failed: 1},
+							TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+						},
+					},
+				}, nil
+			}
+			buf.Reset()
+			runZeroMod := &verdictListRun{
+				client:       client,
+				out:          &buf,
+				invocationID: "ants-i789",
+				moduleName:   "BrokenSetupModule",
+				maxVerdicts:  100,
+			}
+			assert.Loosely(t, runZeroMod.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Inspect module state and setup errors: luci module get -invocationid=ants-i789 -modulename=BrokenSetupModule"))
 		})
 	})
 }

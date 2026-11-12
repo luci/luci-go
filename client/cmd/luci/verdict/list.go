@@ -111,12 +111,20 @@ type statusFilter struct {
 	containsFilter   string
 }
 
-func (f *statusFilter) All() bool {
+func (f statusFilter) All() bool {
 	return f.failed && f.executionErrored && f.precluded && f.flaky && f.exonerated && f.skipped && f.passed
 }
 
-func (f *statusFilter) IsDefault() bool {
-	return f.failed && f.executionErrored && !f.precluded && !f.flaky && !f.exonerated && !f.skipped && !f.passed && f.moduleName == "" && f.containsFilter == ""
+func (f statusFilter) hasDefaultStatuses() bool {
+	return f.failed && f.executionErrored && !f.precluded && !f.flaky && !f.exonerated && !f.skipped && !f.passed
+}
+
+func (f statusFilter) hasScopeFilter() bool {
+	return f.moduleName != "" || f.containsFilter != ""
+}
+
+func (f statusFilter) IsDefault() bool {
+	return f.hasDefaultStatuses() && !f.hasScopeFilter()
 }
 
 func (f statusFilter) buildContainsTestResultFilter() string {
@@ -525,6 +533,80 @@ func QueryVerdictList(ctx context.Context, client pb.ResultDBClient, invID strin
 	return QueryRootInvocationListedVerdicts(ctx, client, invID, filter, maxVerdicts)
 }
 
+func formatExternalResultHint(extInfo format.RootInvocationExternalInfo) string {
+	switch {
+	case extInfo.ResultLink != "" && extInfo.TestURI != "" && extInfo.ResultLink != extInfo.TestURI:
+		return fmt.Sprintf("Inspect external test results at Result Link (%s) or Test URI (%s)", extInfo.ResultLink, extInfo.TestURI)
+	case extInfo.ResultLink != "":
+		return fmt.Sprintf("Inspect external test results at Result Link (%s)", extInfo.ResultLink)
+	case extInfo.TestURI != "":
+		return fmt.Sprintf("Inspect external test results at Test URI (%s)", extInfo.TestURI)
+	case extInfo.SpongeInvocationID != "":
+		return fmt.Sprintf("Inspect external test results for Sponge Invocation ID %s (http://sponge2/%s)", extInfo.SpongeInvocationID, extInfo.SpongeInvocationID)
+	case extInfo.RunnerURL != "":
+		return fmt.Sprintf("Inspect external test runner session at Runner URL (%s)", extInfo.RunnerURL)
+	default:
+		return ""
+	}
+}
+
+func printEmptyRootInvocationVerdicts(out io.Writer, invID string, rootInv *pb.RootInvocation, rootAgg *pb.TestAggregation, filter statusFilter) {
+	vc := rootAgg.GetTotalVerdictCounts()
+	total := format.VerdictCountsTotal(vc)
+
+	if vc != nil && total == 0 {
+		format.FprintRootInvocationAggregationSummary(out, rootAgg)
+		format.FprintRootInvocationSummary(out, rootInv.GetSummaryMarkdown(), rootInv)
+		quotedInv := base.ShellQuoteIfNeeded(invID)
+		fmt.Fprintf(out, "No test verdicts were uploaded to ResultDB for invocation %q (0 tests ran).\n", invID)
+		fmt.Fprintln(out, "Next steps:")
+		if filter.moduleName != "" {
+			fmt.Fprintf(out, "  - Inspect module state and setup errors: luci module get -invocationid=%s -modulename=%s\n",
+				quotedInv, base.ShellQuoteIfNeeded(filter.moduleName))
+		}
+		fmt.Fprintf(out, "  - Inspect root work unit and module states: luci work-unit get -invocationid=%s -workunitid=root\n", quotedInv)
+		fmt.Fprintf(out, "  - List invocation-level logs and artifacts: luci artifact list -invocationid=%s\n", quotedInv)
+		extInfo := format.ExtractRootInvocationExternalInfo(rootInv)
+		if extHint := formatExternalResultHint(extInfo); extHint != "" {
+			fmt.Fprintf(out, "  - %s\n", extHint)
+		}
+		return
+	}
+
+	if filter.hasScopeFilter() {
+		if !filter.All() {
+			fmt.Fprintf(out, "No matching verdicts found in invocation %q (use -all-statuses or status flags to see other verdicts)\n", invID)
+		} else {
+			fmt.Fprintf(out, "No matching verdicts found in invocation %q\n", invID)
+		}
+		if filter.moduleName != "" {
+			fmt.Fprintf(out, "  Hint: inspect module state with: luci module get -invocationid=%s -modulename=%s\n",
+				base.ShellQuoteIfNeeded(invID), base.ShellQuoteIfNeeded(filter.moduleName))
+		}
+		return
+	}
+
+	format.FprintRootInvocationAggregationSummary(out, rootAgg)
+	if !format.IsGenericHarnessSummary(rootInv.GetSummaryMarkdown()) {
+		format.FprintRootInvocationSummary(out, rootInv.GetSummaryMarkdown(), rootInv)
+	}
+
+	var countsClause string
+	if inline := format.FormatVerdictCountsInline(vc); inline != "" {
+		countsClause = " " + inline
+	}
+	if filter.IsDefault() {
+		fmt.Fprintf(out, "No failed or execution errored verdicts found in invocation %q%s (use -all-statuses or status flags to see other verdicts)\n", invID, countsClause)
+		return
+	}
+	if !filter.All() {
+		fmt.Fprintf(out, "No matching verdicts found in invocation %q%s (use -all-statuses or status flags to see other verdicts)\n", invID, countsClause)
+		return
+	}
+
+	printListedVerdicts(out, invID, nil, false, false)
+}
+
 func printListedVerdicts(out io.Writer, invID string, verdicts []*ListedVerdict, hasMore bool, isDefaultFilter bool) {
 	if len(verdicts) == 0 {
 		if isDefaultFilter {
@@ -656,6 +738,11 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 	ids.PrintDerivedIDs(out, extracted)
 	if !legacy {
 		format.FprintRootInvocationMetadata(out, resolved.RootInvocation)
+		if len(verdicts) == 0 {
+			rootAgg := format.FetchRootInvocationAggregation(ctx, client, invID)
+			printEmptyRootInvocationVerdicts(out, invID, resolved.RootInvocation, rootAgg, filter)
+			return 0
+		}
 	}
 	printListedVerdicts(out, invID, verdicts, hasMore, filter.IsDefault())
 	return 0
