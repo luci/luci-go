@@ -492,7 +492,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 				`<span class="console-cell-text">%s</span></a><div class="console-cell-spacer"></div></div>`,
 			class, link,
 			template.HTMLEscapeString(br.BuilderName()),
-			br.ShortName))
+			template.HTMLEscapeString(br.ShortName)))
 
 		// Update state.
 		state = nextState

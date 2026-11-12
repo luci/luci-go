@@ -15,6 +15,7 @@
 package ui
 
 import (
+	"bytes"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -116,5 +117,25 @@ func TestCategory(t *testing.T) {
 			assert.Loosely(t, root.Children()[0].(*Category).cachedNumLeafNodes, should.Equal(-1))
 			assert.Loosely(t, root.NumLeafNodes(), should.Equal(2))
 		})
+	})
+}
+
+func TestBuilderRefRenderHTML(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("BuilderRef.RenderHTML escapes HTML characters in ShortName", t, func(t *ftt.Test) {
+		br := BuilderRef{
+			ID:        "buildbucket/luci.project.bucket/builder",
+			ShortName: `<span title="x">&</span>`,
+			Build:     []*model.BuildSummary{nil},
+		}
+
+		var buf bytes.Buffer
+		br.RenderHTML(&buf, 1, 1)
+		out := buf.String()
+
+		assert.Loosely(t, out, should.ContainSubstring(
+			`<span class="console-cell-text">&lt;span title=&#34;x&#34;&gt;&amp;&lt;/span&gt;</span>`))
+		assert.Loosely(t, out, should.NotContainSubstring(`<span title="x">&</span>`))
 	})
 }
