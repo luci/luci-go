@@ -368,39 +368,13 @@ export class StringListFilterCategory implements FilterCategory {
     selectedKeys: string[],
     silent = false,
   ): string | undefined {
-    const unquotedLowerSelectedKeys = selectedKeys.map((k) =>
-      unquote(k).toLowerCase(),
+    const selectionByValue = Object.fromEntries(
+      selectedKeys.map((key) => [key, true]),
     );
-    const lowerUnquotedSelectedKeysSet = new Set(unquotedLowerSelectedKeys);
-    const map: Record<string, boolean> = {};
-    const foundKeys = new Set<string>();
+    this.setOptions(selectionByValue, silent);
 
-    for (const opt of Object.values(this.options)) {
-      const lowerVal = unquote(opt.optionValue.value).toLowerCase();
-      const lowerLabel = unquote(opt.optionValue.label).toLowerCase();
-      const lowerSnakeLabel = lowerLabel.replace(/ /g, '_');
-
-      const matchedVal = lowerUnquotedSelectedKeysSet.has(lowerVal);
-      const matchedLabel = lowerUnquotedSelectedKeysSet.has(lowerLabel);
-      const matchedSnake = lowerUnquotedSelectedKeysSet.has(lowerSnakeLabel);
-
-      const isSelected = matchedVal || matchedLabel || matchedSnake;
-      map[opt.optionValue.value] = isSelected;
-      if (matchedVal) foundKeys.add(lowerVal);
-      if (matchedLabel) foundKeys.add(lowerLabel);
-      if (matchedSnake) foundKeys.add(lowerSnakeLabel);
-    }
-
-    this.setOptions(map, silent);
-
-    for (let i = 0; i < unquotedLowerSelectedKeys.length; i++) {
-      const key = unquotedLowerSelectedKeys[i];
-      if (!foundKeys.has(key)) {
-        return `Invalid option: ${key}`;
-      }
-    }
-
-    return undefined;
+    const invalidKey = selectedKeys.find((key) => !this.options[key]);
+    return invalidKey ? `Invalid option: ${invalidKey}` : undefined;
   }
 
   public getChildrenSearchScore(searchQuery: string) {

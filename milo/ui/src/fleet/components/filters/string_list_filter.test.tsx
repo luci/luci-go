@@ -27,8 +27,8 @@ describe('StringListFilterCategory', () => {
       'Model',
       'model',
       [
-        { value: '"pixel"', label: 'Pixel' },
-        { value: '"nexus"', label: 'Nexus' },
+        { value: 'pixel', label: 'Pixel' },
+        { value: 'nexus', label: 'Nexus' },
       ],
       [],
       () => {},
@@ -39,17 +39,14 @@ describe('StringListFilterCategory', () => {
     const category = result.value;
 
     category.setSelectedOptions(['pixel']);
-    expect(category.getSelectedOptions()).toEqual(['"pixel"']);
+    expect(category.getSelectedOptions()).toEqual(['pixel']);
   });
 
-  it('should set selected options correctly with quotes', () => {
+  it('should handle internal quotes in keys', () => {
     const result = StringListFilterCategory.create(
       'Model',
       'model',
-      [
-        { value: '"pixel"', label: 'Pixel' },
-        { value: '"nexus"', label: 'Nexus' },
-      ],
+      [{ value: 'device \\"pro\\" model', label: 'Pro Model' }],
       [],
       () => {},
       [],
@@ -58,11 +55,11 @@ describe('StringListFilterCategory', () => {
     if (result.isError) return;
     const category = result.value;
 
-    category.setSelectedOptions(['pixel']);
-    expect(category.getSelectedOptions()).toEqual(['"pixel"']);
+    category.setSelectedOptions(['device \\"pro\\" model']);
+    expect(category.getSelectedOptions()).toEqual(['device \\"pro\\" model']);
   });
 
-  it('should handle unquoted keys for unquoted options', () => {
+  it('should clear all options when an empty array is passed', () => {
     const result = StringListFilterCategory.create(
       'Model',
       'model',
@@ -80,42 +77,6 @@ describe('StringListFilterCategory', () => {
 
     category.setSelectedOptions(['pixel']);
     expect(category.getSelectedOptions()).toEqual(['pixel']);
-  });
-  it('should handle internal quotes in keys', () => {
-    const result = StringListFilterCategory.create(
-      'Model',
-      'model',
-      [{ value: '"device \\"pro\\" model"', label: 'Pro Model' }],
-      [],
-      () => {},
-      [],
-    );
-    expect(result.isError).toBe(false);
-    if (result.isError) return;
-    const category = result.value;
-
-    category.setSelectedOptions(['device \\"pro\\" model']);
-    expect(category.getSelectedOptions()).toEqual(['"device \\"pro\\" model"']);
-  });
-
-  it('should clear all options when an empty array is passed', () => {
-    const result = StringListFilterCategory.create(
-      'Model',
-      'model',
-      [
-        { value: '"pixel"', label: 'Pixel' },
-        { value: '"nexus"', label: 'Nexus' },
-      ],
-      [],
-      () => {},
-      [],
-    );
-    expect(result.isError).toBe(false);
-    if (result.isError) return;
-    const category = result.value;
-
-    category.setSelectedOptions(['pixel']);
-    expect(category.getSelectedOptions()).toEqual(['"pixel"']);
 
     category.setSelectedOptions([]);
     expect(category.getSelectedOptions()).toEqual([]);
@@ -242,13 +203,14 @@ describe('StringListFilterCategory', () => {
     expect(category.getSelectedOptions()).toEqual(['(Blank)']);
   });
 
-  it('should set selected options case-insensitively', () => {
+  it('should select only exact-case option values and reject non-existent casing variants', () => {
     const result = StringListFilterCategory.create(
-      'Dut State',
-      'dut_state',
+      'Model',
+      'model',
       [
-        { value: '"ready"', label: 'Ready' },
-        { value: '"repair_failed"', label: 'Repair Failed' },
+        { value: 'MOCK-MODEL-TWO', label: 'MOCK-MODEL-TWO' },
+        { value: 'mock-model-two', label: 'mock-model-two' },
+        { value: 'repair_failed', label: 'Repair Failed' },
       ],
       [],
       () => {},
@@ -258,11 +220,22 @@ describe('StringListFilterCategory', () => {
     if (result.isError) return;
     const category = result.value;
 
-    category.setSelectedOptions(['READY', 'REPAIR_FAILED']);
+    expect(
+      category.setSelectedOptions(['MOCK-MODEL-TWO', 'repair_failed']),
+    ).toBeUndefined();
     expect(category.getSelectedOptions()).toEqual([
-      '"ready"',
-      '"repair_failed"',
+      'MOCK-MODEL-TWO',
+      'repair_failed',
     ]);
+
+    expect(category.setSelectedOptions(['mock-model-two'])).toBeUndefined();
+    expect(category.getSelectedOptions()).toEqual(['mock-model-two']);
+    expect(category.toAIP160()).toBe('(model = "mock-model-two")');
+
+    expect(category.setSelectedOptions(['Mock-Model-Two'])).toBe(
+      'Invalid option: Mock-Model-Two',
+    );
+    expect(category.getSelectedOptions()).toEqual([]);
   });
 
   it('should quote values containing colons', () => {
@@ -441,8 +414,8 @@ describe('StringListFilterCategory', () => {
     expect(category.getChildrenSearchScore('needs_repair')).toBeGreaterThan(0);
     expect(category.getChildrenSearchScore('Needs repair')).toBeGreaterThan(0);
 
-    // Selecting by either pretty display label or raw enum value emits raw AIP-160 value
-    expect(category.setSelectedOptions(['Needs repair'])).toBeUndefined();
+    // Selecting by raw enum value emits raw AIP-160 value
+    expect(category.setSelectedOptions(['NEEDS_REPAIR'])).toBeUndefined();
     expect(category.getSelectedOptions()).toEqual(['NEEDS_REPAIR']);
     expect(category.toAIP160()).toEqual(
       '(labels."dut_state" = "NEEDS_REPAIR")',

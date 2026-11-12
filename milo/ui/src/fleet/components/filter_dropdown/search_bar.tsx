@@ -20,11 +20,38 @@ import { pillInputSx } from '@/fleet/theme/recipes';
 import { fleetColors, iconSizes } from '@/fleet/theme/tokens';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 
-import { normalizeFilterKey } from '../filters/normalize_filter_key';
+import { normalizeFilterKey, unquote } from '../filters/normalize_filter_key';
 import { StringListFilterCategory } from '../filters/string_list_filter';
 import { FilterCategory } from '../filters/use_filters';
 
 import { SelectedChip } from './selected_chip';
+
+const resolveOptionValue = (
+  category: StringListFilterCategory,
+  rawValue: string,
+): string | undefined => {
+  const unquotedValue = unquote(rawValue);
+  const options = Object.values(category.getOptions()).map(
+    (o) => o.optionValue,
+  );
+
+  const exactMatch = options.find(
+    (opt) => opt.value === unquotedValue || opt.label === unquotedValue,
+  );
+  if (exactMatch) {
+    return exactMatch.value;
+  }
+
+  const lowerValue = unquotedValue.toLowerCase();
+  return options.find((opt) => {
+    const lowerLabel = opt.label.toLowerCase();
+    return (
+      opt.value.toLowerCase() === lowerValue ||
+      lowerLabel === lowerValue ||
+      lowerLabel.replace(/ /g, '_') === lowerValue
+    );
+  })?.value;
+};
 
 interface SearchBarProps {
   value: string;
@@ -45,7 +72,7 @@ const SEARCH_BAR_SX = {
   zIndex: 3, // above the filter dropdown backdrop
 };
 
-export const SEARCH_BAR_INPUT_SX = {
+const SEARCH_BAR_INPUT_SX = {
   ...pillInputSx,
   width: '100%',
   display: 'inline-flex',
@@ -195,16 +222,19 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                   c.label.toLowerCase() === normalizedFilterKey,
               );
               if (category && category instanceof StringListFilterCategory) {
-                const current = category.getSelectedOptions();
-                const error = category.setSelectedOptions([
-                  ...current,
-                  filterValue,
-                ]);
-                if (!error) {
-                  onChange('');
-                  onChipEditApplied();
-                  onChangeDropdownOpen(false);
-                  e.preventDefault();
+                const resolvedValue = resolveOptionValue(category, filterValue);
+                if (resolvedValue !== undefined) {
+                  const current = category.getSelectedOptions();
+                  const error = category.setSelectedOptions([
+                    ...current,
+                    resolvedValue,
+                  ]);
+                  if (!error) {
+                    onChange('');
+                    onChipEditApplied();
+                    onChangeDropdownOpen(false);
+                    e.preventDefault();
+                  }
                 }
               }
             }

@@ -32,6 +32,7 @@ import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 
 import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
+import { OptionValue } from '@/fleet/types/option';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { StringListFilterCategoryBuilder } from '../filters/string_list_filter';
@@ -72,7 +73,11 @@ const TestComponent = ({
   renderDuplicate?: boolean;
   disableShortcut?: boolean;
   commonOptions?: string[];
-  initialOptions?: { label: string; key: string; options: string[] }[];
+  initialOptions?: {
+    label: string;
+    key: string;
+    options: (string | OptionValue)[];
+  }[];
 }) => {
   const [filterCategories, setFilterCategories] = useState<FilterCategory[]>(
     () => {
@@ -80,7 +85,11 @@ const TestComponent = ({
       initialOptions.forEach((o) => {
         const builder = new StringListFilterCategoryBuilder()
           .setLabel(o.label)
-          .setOptions(o.options.map((val) => ({ label: val, value: val })));
+          .setOptions(
+            o.options.map((val) =>
+              typeof val === 'string' ? { label: val, value: val } : val,
+            ),
+          );
 
         const result = builder.build(
           o.key,
@@ -872,6 +881,83 @@ describe('FilterBar', () => {
     expect(screen.getByText('1 | Lab IN MTV')).toBeInTheDocument();
     expect(searchInput).toHaveValue('');
     expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+  });
+
+  it('should select only the exact-case option on Enter when multiple case variants exist', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent
+          initialOptions={[
+            {
+              label: 'Model',
+              key: 'model',
+              options: ['MOCK-MODEL-TWO', 'mock-model-two'],
+            },
+          ]}
+        />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBarInput();
+    await user.type(searchInput, 'model:MOCK-MODEL-TWO');
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByText('1 | Model IN MOCK-MODEL-TWO')).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
+
+    await user.type(searchInput, 'model:mock-model-two');
+    await user.keyboard('{Enter}');
+
+    expect(
+      screen.getByText('2 | Model IN MOCK-MODEL-TWO, mock-model-two'),
+    ).toBeInTheDocument();
+  });
+
+  it('should fall back to case-insensitive, quoted, and snake_case label matching on Enter', async () => {
+    render(
+      <FakeContextProvider>
+        <TestComponent
+          initialOptions={[
+            {
+              label: 'Dut State',
+              key: 'labels."dut_state"',
+              options: [{ value: 'ready', label: 'Ready' }],
+            },
+            {
+              label: 'State',
+              key: 'state',
+              options: [
+                { value: 'LAB_MISSING', label: 'Lab missing' },
+                { value: 'NEEDS_REPAIR', label: 'Needs repair' },
+              ],
+            },
+          ]}
+        />
+      </FakeContextProvider>,
+    );
+    const user = userEvent.setup();
+
+    const searchInput = getSearchBarInput();
+    await user.type(searchInput, 'dut_state:READY');
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByText('1 | Dut State IN Ready')).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
+
+    await user.type(searchInput, 'state:lab_missing');
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByText('1 | State IN Lab missing')).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
+
+    await user.type(searchInput, 'state:"Needs repair"');
+    await user.keyboard('{Enter}');
+
+    expect(
+      screen.getByText('2 | State IN Lab missing, Needs repair'),
+    ).toBeInTheDocument();
+    expect(searchInput).toHaveValue('');
   });
 
   it('should NOT clear search query if typed value is invalid', async () => {

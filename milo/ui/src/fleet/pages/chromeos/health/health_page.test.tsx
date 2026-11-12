@@ -12,375 +12,170 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { UseQueryResult } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { TrendlineMetricType } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
-import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
-import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
-import { ShortcutProvider } from '@/fleet/components/shortcut_provider';
-import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
-import {
-  GetDefaultQuotaResponse,
-  GetFleetAvailabilityTrendsResponse,
-  GetDeviceDimensionsResponse,
-  ListSupportRiskIncidentsResponse,
-  TrendlineMetricType,
-} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
-import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
-import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
+import { given } from './health_page_given';
+import { then } from './health_page_then';
+import { when } from './health_page_when';
 
-import { Component, HealthPage } from './health_page';
-import * as UseDefaultQuotaModule from './use_default_quota';
-import * as UseFleetAvailabilityTrendsModule from './use_fleet_availability_trends';
-import * as UseHealthFiltersModule from './use_health_filters';
-import * as UseHealthSlicesModule from './use_health_slices';
-import * as UseModelQuotaOverridesModule from './use_model_quota_overrides';
-import * as UseSupportRiskIncidentsModule from './use_support_risk_incidents';
+describe('<HealthPage /> (Full Page Integration with Fake pRPC Backend)', () => {
+  it('renders overview page with header, Configuration button, FilterBar, and Support Risk Incidents panel', async () => {
+    when.pageIsRendered();
 
-describe('HealthPage', () => {
-  beforeEach(() => {
-    jest
-      .spyOn(UseDeviceDimensionsModule, 'useDeviceDimensions')
-      .mockReturnValue({
-        data: {
-          baseDimensions: {},
-          labels: {
-            'label-model': { values: ['volteer', 'brya'] },
-            'label-pool': { values: ['DUT_POOL_QUOTA'] },
-          },
-        } as unknown as GetDeviceDimensionsResponse,
-        isPending: false,
-        isLoading: false,
-        isError: false,
-        error: null,
-      } as unknown as UseQueryResult<GetDeviceDimensionsResponse, Error>);
+    await then.overviewDashboardIsVisible();
+    await then.configurationButtonIsVisible();
+  });
 
-    jest
-      .spyOn(UseAdminTaskPermissionModule, 'useModelQuotaPermission')
-      .mockReturnValue({
-        hasPermission: true,
-        fetchPermissions: jest.fn(),
-        isError: false,
-        error: null,
-      });
-    jest
-      .spyOn(UseFleetAvailabilityTrendsModule, 'useFleetAvailabilityTrends')
-      .mockImplementation((req) => {
-        const isAvailability =
-          !req.filter || !req.filter.includes('DUT_POOL_QUOTA');
-        return {
-          data: {
-            series: [],
-            metricType: isAvailability
-              ? TrendlineMetricType.AVAILABILITY
-              : TrendlineMetricType.HEALTH,
-          },
-          isLoading: false,
-          isError: false,
-          error: null,
-        } as unknown as UseQueryResult<
-          GetFleetAvailabilityTrendsResponse,
-          Error
-        >;
-      });
+  it('switches slice baseline chip to Enrolled Baseline when non-model filter is applied', async () => {
+    given.initialUrl('/?filters=pool%20%3D%20%22DUT_POOL_QUOTA%22');
+    given.availabilityTrends({
+      metricType: TrendlineMetricType.HEALTH,
+      series: [],
+    });
 
-    jest
-      .spyOn(UseModelQuotaOverridesModule, 'useModelQuotaOverrides')
-      .mockReturnValue({
-        overridesQuery: {
-          data: { overrides: [] },
-          isPending: false,
-          isError: false,
-          error: null,
-        } as unknown as ReturnType<
-          typeof UseModelQuotaOverridesModule.useModelQuotaOverrides
-        >['overridesQuery'],
-        setOverrideMutation: {
-          mutateAsync: jest.fn(),
-          isPending: false,
-        } as unknown as ReturnType<
-          typeof UseModelQuotaOverridesModule.useModelQuotaOverrides
-        >['setOverrideMutation'],
-        deleteOverrideMutation: {
-          mutateAsync: jest.fn(),
-          isPending: false,
-        } as unknown as ReturnType<
-          typeof UseModelQuotaOverridesModule.useModelQuotaOverrides
-        >['deleteOverrideMutation'],
-        canEdit: true,
-        isPermissionLoading: false,
-      });
+    when.pageIsRendered();
 
-    const idleMutation = {
-      mutate: jest.fn(),
-      reset: jest.fn(),
-      isPending: false,
-      error: null,
-    };
-    jest.spyOn(UseHealthSlicesModule, 'useHealthSlices').mockReturnValue({
-      slicesQuery: {
-        data: {
-          healthSlices: [{ id: 'all-fleet', name: 'All Fleet', filter: '' }],
+    await then.sliceBaselineChipIs('all-fleet', 'Enrolled Baseline');
+  });
+
+  it('applies model filter when Show button on Support Risk incident is clicked', async () => {
+    when.pageIsRendered();
+
+    await when.userClicksButton(/^show$/i);
+
+    await then.filterChipIsVisible('1 | Model IN volteer');
+    then.searchParamIs('filters', '(model = "volteer")');
+  });
+
+  it('navigates to Configuration view showing the quota card and returns on Back', async () => {
+    when.pageIsRendered();
+
+    await when.userClicksButton(/^configuration$/i);
+
+    await then.textIsVisible('Fleet Health Configuration');
+    await then.textIsVisible('Global Default Expected Quota');
+    await then.textIsVisible('Manual Model Quota Overrides');
+
+    await when.userClicksButton(/back to fleet overview/i);
+
+    await then.textIsVisible('ChromeOS Fleet Health Metrics');
+    then.textIsNotVisible('Global Default Expected Quota');
+  });
+
+  it('hides Configuration button when user lacks permission', async () => {
+    given.permission(false);
+
+    when.pageIsRendered();
+
+    await then.textIsVisible('ChromeOS Fleet Health Metrics');
+    await then.configurationButtonIsNotVisible();
+  });
+
+  it('does not display configuration view when tab=configuration is accessed without permission', async () => {
+    given.permission(false);
+    given.initialUrl('/?tab=configuration');
+
+    when.pageIsRendered();
+
+    await then.textIsVisible('ChromeOS Fleet Health Metrics');
+    then.textIsNotVisible('Fleet Health Configuration');
+  });
+
+  it('renders wrapped Component with analytics and error boundaries', async () => {
+    when.routeComponentIsRendered();
+
+    await then.textIsVisible('ChromeOS Fleet Health Metrics');
+    then.trackedAnalyticsEvent('page_view', {
+      appId: undefined,
+      content_group: 'fleet-console-chromeos-health',
+      page_location: 'http://localhost/',
+      page_title: 'ChromeOS Fleet Health Metrics | Fleet Console',
+    });
+  });
+
+  it('requires login in route Component when user is anonymous', async () => {
+    given.mountedPath('/ui/fleet/p/chromeos/health');
+    given.initialUrl('/ui/fleet/p/chromeos/health');
+    given.unauthenticated();
+
+    when.routeComponentIsRendered();
+
+    await then.textIsVisible('Sign in to Fleet Console');
+    then.textIsNotVisible('ChromeOS Fleet Health Metrics');
+  });
+
+  it('preserves exact model casing in ranking rows, device links, and row click filter selection', async () => {
+    given.deviceDimensions({
+      models: ['Demo-Model-One', 'MOCK-MODEL-TWO', 'mock-model-two'],
+      pools: ['DUT_POOL_QUOTA'],
+    });
+    given.availabilityTrends({
+      metricType: TrendlineMetricType.AVAILABILITY,
+      series: [
+        {
+          name: 'Demo-Model-One',
+          points: [{ timestamp: '2026-09-30T00:00:00Z', value: 0.62 }],
         },
-        isPending: false,
-        isError: false,
-        error: null,
-      },
-      createSliceMutation: idleMutation,
-      updateSliceMutation: idleMutation,
-      deleteSliceMutation: idleMutation,
-      reorderSlicesMutation: idleMutation,
-    } as unknown as ReturnType<typeof UseHealthSlicesModule.useHealthSlices>);
-
-    jest.spyOn(UseDefaultQuotaModule, 'useDefaultQuota').mockReturnValue({
-      quotaQuery: {
-        data: {
-          defaultQuota: 49,
-        } as unknown as GetDefaultQuotaResponse,
-        isPending: false,
-        isError: false,
-        error: null,
-      } as unknown as UseQueryResult<GetDefaultQuotaResponse, Error>,
-      setQuotaMutation: {
-        mutateAsync: jest.fn(),
-        isPending: false,
-      } as unknown as ReturnType<
-        typeof UseDefaultQuotaModule.useDefaultQuota
-      >['setQuotaMutation'],
-      canEdit: true,
-      isPermissionLoading: false,
+        {
+          name: 'MOCK-MODEL-TWO',
+          points: [{ timestamp: '2026-09-30T00:00:00Z', value: 0.71 }],
+        },
+        {
+          name: 'mock-model-two',
+          points: [{ timestamp: '2026-09-30T00:00:00Z', value: 0.84 }],
+        },
+      ],
     });
 
-    jest
-      .spyOn(UseSupportRiskIncidentsModule, 'useSupportRiskIncidents')
-      .mockReturnValue({
-        data: {
-          incidents: [
-            {
-              id: '1',
-              model: 'volteer',
-              title: 'Battery controller defect',
-              buganizerId: 'b/312456789',
-            },
-          ],
-        } as unknown as ListSupportRiskIncidentsResponse,
-        isLoading: false,
-        isError: false,
-        error: null,
-      } as unknown as UseQueryResult<ListSupportRiskIncidentsResponse, Error>);
-  });
+    when.pageIsRendered();
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  it('renders overview page with header, Configuration button, FilterBar, and Support Risk Incidents panel', () => {
-    render(
-      <FakeContextProvider>
-        <ShortcutProvider>
-          <HealthPage />
-        </ShortcutProvider>
-      </FakeContextProvider>,
+    await then.rankingRowHasDeviceListFilter(
+      'Demo-Model-One',
+      '(labels."label-model" = "Demo-Model-One")',
+    );
+    await then.rankingRowHasDeviceListFilter(
+      'MOCK-MODEL-TWO',
+      '(labels."label-model" = "MOCK-MODEL-TWO")',
+    );
+    await then.rankingRowHasDeviceListFilter(
+      'mock-model-two',
+      '(labels."label-model" = "mock-model-two")',
     );
 
-    expect(
-      screen.getByText('ChromeOS Fleet Health Metrics'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Analyze hardware reliability trends/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText('availability and health')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /^configuration$/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Add a filter (e.g. model:volteer)'),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /^models$/i })).toBeInTheDocument();
-    expect(
-      screen.getByText('Active Support Risk Incidents'),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId('health-slices-card')).toBeInTheDocument();
-    expect(
-      screen.getByTestId('health-slice-item-all-fleet'),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId('health-page-help-icon')).toBeInTheDocument();
-    expect(
-      screen.queryByText('Global Default Expected Quota'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('switches slice baseline chip to Enrolled Baseline when non-model filter is applied', () => {
-    const builder = new StringListFilterCategoryBuilder()
-      .setLabel('Pool')
-      .setOptions([{ label: 'DUT_POOL_QUOTA', value: 'DUT_POOL_QUOTA' }]);
-    const buildResult = builder.build('pool', jest.fn(), null);
-    if (buildResult.isError) throw new Error(buildResult.error);
-    buildResult.value.setSelectedOptions(['DUT_POOL_QUOTA'], true);
-
-    jest.spyOn(UseHealthFiltersModule, 'useHealthFilters').mockReturnValue({
-      filterValues: {
-        pool: buildResult.value,
-      } as unknown as ReturnType<
-        typeof UseHealthFiltersModule.useHealthFilters
-      >['filterValues'],
-      aip160: () => 'pool = "DUT_POOL_QUOTA"',
-      isLoading: false,
-      warnings: [],
-      setFiltersBatch: jest.fn(),
+    await when.userClicksRankingRow('MOCK-MODEL-TWO');
+    await then.filterChipIsVisible('1 | Model IN MOCK-MODEL-TWO');
+    then.searchParamIs('filters', '(model = "MOCK-MODEL-TWO")');
+    then.rpcWasCalledWith('GetFleetAvailabilityTrends', {
+      filter: '(model = "MOCK-MODEL-TWO")',
     });
 
-    render(
-      <FakeContextProvider>
-        <ShortcutProvider>
-          <HealthPage />
-        </ShortcutProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(
-      screen.getByTestId('slice-baseline-chip-all-fleet'),
-    ).toHaveTextContent('Enrolled Baseline');
-  });
-
-  it('applies model filter when Show button on Support Risk incident is clicked', () => {
-    render(
-      <FakeContextProvider>
-        <ShortcutProvider>
-          <HealthPage />
-        </ShortcutProvider>
-      </FakeContextProvider>,
-    );
-
-    const showButton = screen.getByRole('button', { name: /^show$/i });
-    expect(showButton).toBeInTheDocument();
-    fireEvent.click(showButton);
-  });
-
-  it('navigates to Configuration view showing the quota card and returns on Back', () => {
-    render(
-      <FakeContextProvider>
-        <ShortcutProvider>
-          <HealthPage />
-        </ShortcutProvider>
-      </FakeContextProvider>,
-    );
-
-    const configButton = screen.getByRole('button', {
-      name: /^configuration$/i,
+    await when.userClicksRankingRow('mock-model-two');
+    await then.filterChipIsVisible('1 | Model IN mock-model-two');
+    then.searchParamIs('filters', '(model = "mock-model-two")');
+    then.rpcWasCalledWith('GetFleetAvailabilityTrends', {
+      filter: '(model = "mock-model-two")',
     });
-    fireEvent.click(configButton);
+  });
 
-    expect(screen.getByText('Fleet Health Configuration')).toBeInTheDocument();
-    expect(
-      screen.getByText('Global Default Expected Quota'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Manual Model Quota Overrides'),
-    ).toBeInTheDocument();
+  it('treats model quota overrides with distinct casing as separate models in Configuration view', async () => {
+    given.initialUrl('/?tab=configuration');
+    given.quotaOverrides([
+      { id: '1', model: 'demo-model-one', overriddenExpectedQuantity: 15 },
+    ]);
 
-    const backButton = screen.getByRole('button', {
-      name: /back to fleet overview/i,
+    when.pageIsRendered();
+    await then.textIsVisible('demo-model-one');
+
+    await when.userEntersQuotaOverride('  demo-model-one  ', '15');
+    then.setOverrideButtonIsDisabled();
+
+    await when.userEntersQuotaOverride('DEMO-MODEL-ONE', '15');
+    then.setOverrideButtonIsEnabled();
+
+    await when.userClicksButton(/set override/i);
+    then.rpcWasCalledWith('SetModelQuotaOverride', {
+      model: 'DEMO-MODEL-ONE',
+      overriddenExpectedQuantity: 15,
     });
-    fireEvent.click(backButton);
-
-    expect(
-      screen.getByText('ChromeOS Fleet Health Metrics'),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText('Global Default Expected Quota'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('hides Configuration button when user lacks permission', () => {
-    jest
-      .spyOn(UseAdminTaskPermissionModule, 'useModelQuotaPermission')
-      .mockReturnValue({
-        hasPermission: false,
-        fetchPermissions: jest.fn(),
-        isError: false,
-        error: null,
-      });
-
-    render(
-      <FakeContextProvider>
-        <ShortcutProvider>
-          <HealthPage />
-        </ShortcutProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(
-      screen.getByText('ChromeOS Fleet Health Metrics'),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /^configuration$/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('does not display configuration view when tab=configuration is accessed without permission', () => {
-    jest
-      .spyOn(UseAdminTaskPermissionModule, 'useModelQuotaPermission')
-      .mockReturnValue({
-        hasPermission: false,
-        fetchPermissions: jest.fn(),
-        isError: false,
-        error: null,
-      });
-
-    render(
-      <FakeContextProvider
-        routerOptions={{ initialEntries: ['/?tab=configuration'] }}
-      >
-        <ShortcutProvider>
-          <HealthPage />
-        </ShortcutProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(
-      screen.getByText('ChromeOS Fleet Health Metrics'),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText('Fleet Health Configuration'),
-    ).not.toBeInTheDocument();
-  });
-
-  it('renders wrapped Component with analytics and error boundaries', () => {
-    render(
-      <FakeContextProvider>
-        <ShortcutProvider>
-          <Component />
-        </ShortcutProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(
-      screen.getByText('ChromeOS Fleet Health Metrics'),
-    ).toBeInTheDocument();
-  });
-
-  it('requires login in route Component when user is anonymous', () => {
-    render(
-      <FakeContextProvider
-        mountedPath="/ui/fleet/p/chromeos/health"
-        routerOptions={{ initialEntries: ['/ui/fleet/p/chromeos/health'] }}
-      >
-        <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
-          <ShortcutProvider>
-            <Component />
-          </ShortcutProvider>
-        </FakeAuthStateProvider>
-      </FakeContextProvider>,
-    );
-
-    expect(screen.getByTestId('fleet-not-signed-in-page')).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: 'Sign in to Fleet Console' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText('ChromeOS Fleet Health Metrics'),
-    ).not.toBeInTheDocument();
   });
 });

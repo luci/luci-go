@@ -145,9 +145,7 @@ export const ManualQuotaOverridesCard = () => {
     }
   };
 
-  const existingOverride = overrides.find(
-    (o) => o.model.toLowerCase() === modelInput.trim().toLowerCase(),
-  );
+  const existingOverride = overrides.find((o) => o.model === modelInput.trim());
   const isUnchanged =
     existingOverride !== undefined &&
     existingOverride.overriddenExpectedQuantity === Number(quotaInput);

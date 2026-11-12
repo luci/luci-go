@@ -38,7 +38,6 @@ import {
   generateDeviceListURL,
 } from '@/fleet/constants/paths';
 import { getFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
-import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
 import { subMetricRowSx } from '@/fleet/theme/recipes';
 import {
   combineAipFiltersWithParentheses,
@@ -46,7 +45,6 @@ import {
 } from '@/fleet/utils/search_param';
 import { TrendlineGrouping } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { HEALTH_FILTER_CONFIGS } from './filter_constants';
 import { getHealthStatus } from './health_status_utils';
 import { HealthTooltip } from './health_tooltip';
 import {
@@ -141,31 +139,6 @@ export const PerformanceRankingCard = ({
   }, [data?.series, sortBy]);
 
   const onSelectItem = entityTab === 'models' ? onSelectModel : onSelectPool;
-
-  // Trend series names are lowercased by the backend (e.g. "anahera"), while
-  // device dimension values keep their original casing (e.g. "Anahera").
-  // Filters match option values exactly, so map to the canonical value.
-  //
-  // Known limitation: device labels are not consistently cased in production
-  // (e.g. both "VOLET" and "volet" exist). Health aggregates them into one
-  // lowercase series, but this maps it to only one of the casings, so the
-  // device list shows a subset of the devices counted here. There is
-  // intentionally no fallback for multiple casings until a fleet-wide strategy
-  // is decided.
-  //
-  // TODO(b/568309497): Revisit once model label casing is handled
-  // consistently across fleetconsole.
-  const { getValues } = useChromeOSFields();
-  const dimensionKey =
-    entityTab === 'models'
-      ? HEALTH_FILTER_CONFIGS.MODEL.dimensionSource
-      : HEALTH_FILTER_CONFIGS.POOL.dimensionSource;
-  const canonicalNames = useMemo(
-    () => new Map(getValues(dimensionKey).map((v) => [v.toLowerCase(), v])),
-    [getValues, dimensionKey],
-  );
-  const toCanonical = (name: string) =>
-    canonicalNames.get(name.toLowerCase()) ?? name;
 
   return (
     <Card
@@ -349,7 +322,7 @@ export const PerformanceRankingCard = ({
               <ListItem
                 key={item.name}
                 data-testid={`ranking-row-${item.name}`}
-                onClick={() => onSelectItem?.(toCanonical(item.name))}
+                onClick={() => onSelectItem?.(item.name)}
                 sx={{
                   py: 1.5,
                   px: 2.5,
@@ -389,7 +362,7 @@ export const PerformanceRankingCard = ({
                             entityTab === 'models'
                               ? 'label-model'
                               : 'label-pool',
-                          )]: [toCanonical(item.name)],
+                          )]: [item.name],
                         },
                         undefined,
                       )
@@ -419,7 +392,7 @@ export const PerformanceRankingCard = ({
                     }}
                   >
                     <HealthStatePopover
-                      title={toCanonical(item.name)}
+                      title={item.name}
                       breakdown={item.stateBreakdown}
                       availabilityPct={
                         entityTab === 'models'
@@ -432,8 +405,8 @@ export const PerformanceRankingCard = ({
                       baseFilter={combineAipFiltersWithParentheses(
                         filter,
                         entityTab === 'models'
-                          ? `model = "${toCanonical(item.name)}"`
-                          : `pool = "${toCanonical(item.name)}"`,
+                          ? `model = "${item.name}"`
+                          : `pool = "${item.name}"`,
                       )}
                     >
                       <Typography
@@ -534,7 +507,7 @@ export const PerformanceRankingCard = ({
                     )}
                   </Box>
                   <SegmentedHealthBar
-                    title={toCanonical(item.name)}
+                    title={item.name}
                     breakdown={item.stateBreakdown}
                     height={4}
                     availabilityPct={
@@ -546,8 +519,8 @@ export const PerformanceRankingCard = ({
                     baseFilter={combineAipFiltersWithParentheses(
                       filter,
                       entityTab === 'models'
-                        ? `model = "${toCanonical(item.name)}"`
-                        : `pool = "${toCanonical(item.name)}"`,
+                        ? `model = "${item.name}"`
+                        : `pool = "${item.name}"`,
                     )}
                     testId={`progress-bar-${item.name}`}
                   />

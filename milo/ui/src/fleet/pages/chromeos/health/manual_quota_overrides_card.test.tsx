@@ -151,9 +151,11 @@ describe('ManualQuotaOverridesCard', () => {
     expect(saveButton).toBeDisabled();
   });
 
-  it('disables save button when model and quota match an existing override', () => {
+  it('disables save button only when trimmed model with exact casing and quota match an existing override', () => {
     setupMockHook({
-      overrides: [{ id: '1', model: 'brya', overriddenExpectedQuantity: 15 }],
+      overrides: [
+        { id: '1', model: 'demo-model-one', overriddenExpectedQuantity: 15 },
+      ],
     });
 
     render(
@@ -168,13 +170,17 @@ describe('ManualQuotaOverridesCard', () => {
       name: /set override/i,
     });
 
-    // Enter identical values (with whitespace and different casing)
-    fireEvent.change(modelInput, { target: { value: '  BrYa  ' } });
+    // Exact casing with surrounding whitespace matches the existing override
+    fireEvent.change(modelInput, { target: { value: '  demo-model-one  ' } });
     fireEvent.change(quotaInput, { target: { value: '15' } });
-
     expect(saveButton).toBeDisabled();
 
-    // Changing quota to a different value enables submission
+    // Distinct casing is treated as a separate model and remains saveable
+    fireEvent.change(modelInput, { target: { value: 'DEMO-MODEL-ONE' } });
+    expect(saveButton).not.toBeDisabled();
+
+    // Changing quota on the existing casing enables submission
+    fireEvent.change(modelInput, { target: { value: '  demo-model-one  ' } });
     fireEvent.change(quotaInput, { target: { value: '25' } });
     expect(saveButton).not.toBeDisabled();
   });
