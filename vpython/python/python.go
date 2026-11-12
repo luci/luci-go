@@ -142,6 +142,21 @@ func VirtualenvFromCIPD(version string) generators.Generator {
 	}
 }
 
+// UVFromCIPD returns a cipkg Generator that exports the prebuilt uv CIPD
+// package ("infra/3pp/tools/uv/${platform}") at the given version tag.
+func UVFromCIPD(version string) generators.Generator {
+	return &generators.CIPDExport{
+		Name: "uv",
+		Ensure: ensure.File{
+			PackagesBySubdir: map[string]ensure.PackageSlice{
+				"": {
+					{PackageTemplate: "infra/3pp/tools/uv/${platform}", UnresolvedVersion: version},
+				},
+			},
+		},
+	}
+}
+
 //go:embed bootstrap.py pep425tags.py uv_bootstrap.py
 var bootstrapEmbed embed.FS
 var bootstrapGen = generators.InitEmbeddedFS("bootstrap", bootstrapEmbed)

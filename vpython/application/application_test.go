@@ -34,6 +34,11 @@ import (
 )
 
 func TestParseArguments(t *testing.T) {
+	t.Setenv(cipd.EnvCacheDir, os.Getenv(cipd.EnvCacheDir))
+	t.Cleanup(func() {
+		defaultVpythonRoot.Store("")
+	})
+
 	ftt.Run("Test parse arguments", t, func(t *ftt.Test) {
 		ctx := context.Background()
 

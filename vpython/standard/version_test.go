@@ -210,8 +210,89 @@ func TestVersionParsingAndMatching(tT *testing.T) {
 
 			_, err = ResolveTargetVersion("", "abc", []string{"abc", "3.11"})
 			assert.Loosely(t, err, should.NotBeNil)
+
+			matched, err := ResolveTargetVersion("==3.14.8.chromium.1", DefaultPythonVersion, multiAvailable)
+			assert.NoErr(t, err)
+			assert.That(t, matched, should.Equal("3.14.8.chromium.1"))
+
+			matched, err = ResolveTargetVersion("==2@3.11.8.chromium.35", DefaultPythonVersion, multiAvailable)
+			assert.NoErr(t, err)
+			assert.That(t, matched, should.Equal("2@3.11.8.chromium.35"))
+
+			_, err = ResolveTargetVersion("==3.12.9.chromium.38", DefaultPythonVersion, multiAvailable)
+			assert.That(t, err != nil, should.BeTrue)
+
+			_, err = ResolveTargetVersion("==3.13.3.chromium.1", DefaultPythonVersion, multiAvailable)
+			assert.That(t, err != nil, should.BeTrue)
 		})
 	})
+}
+
+func TestParseChromiumBuild(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		input       string
+		wantTrack   string
+		wantBuild   string
+		wantCIPDVer string
+		wantOK      bool
+	}{
+		{
+			name:        "default_epoch_3_equality",
+			input:       "==3.14.8.chromium.1",
+			wantTrack:   "3.14",
+			wantBuild:   "3.14.8.chromium.1",
+			wantCIPDVer: "version:3@3.14.8.chromium.1",
+			wantOK:      true,
+		},
+		{
+			name:        "explicit_epoch_3_stripped_from_build",
+			input:       "3@3.11.9.chromium.39",
+			wantTrack:   "3.11",
+			wantBuild:   "3.11.9.chromium.39",
+			wantCIPDVer: "version:3@3.11.9.chromium.39",
+			wantOK:      true,
+		},
+		{
+			name:        "epoch_2_at_preserved",
+			input:       "==2@3.8.10.chromium.34",
+			wantTrack:   "3.8",
+			wantBuild:   "2@3.8.10.chromium.34",
+			wantCIPDVer: "version:2@3.8.10.chromium.34",
+			wantOK:      true,
+		},
+		{
+			name:        "epoch_2_pep440_bang_normalized",
+			input:       "===2!3.11.8.chromium.35",
+			wantTrack:   "3.11",
+			wantBuild:   "2@3.11.8.chromium.35",
+			wantCIPDVer: "version:2@3.11.8.chromium.35",
+			wantOK:      true,
+		},
+		{
+			name:   "unsupported_track_3_12_rejected",
+			input:  "==3.12.9.chromium.38",
+			wantOK: false,
+		},
+		{
+			name:   "range_operator_rejected",
+			input:  ">=3.11.9.chromium.39",
+			wantOK: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			track, build, cipdVer, ok := ParseChromiumBuild(tc.input)
+			assert.That(t, ok, should.Equal(tc.wantOK))
+			assert.That(t, track, should.Equal(tc.wantTrack))
+			assert.That(t, build, should.Equal(tc.wantBuild))
+			assert.That(t, cipdVer, should.Equal(tc.wantCIPDVer))
+		})
+	}
 }
 
 func TestRequirementSatisfied(t *testing.T) {

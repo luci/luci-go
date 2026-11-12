@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/base/generators"
 	"go.chromium.org/luci/common/errors"
@@ -69,6 +70,10 @@ func getPythonEnvironment(ver string) *python.Environment {
 
 func setupApp(ctx context.Context, t testing.TB, app *Application) context.Context {
 	t.Helper()
+	t.Setenv(cipd.EnvCacheDir, os.Getenv(cipd.EnvCacheDir))
+	t.Cleanup(func() {
+		defaultVpythonRoot.Store("")
+	})
 	if app.VpythonRoot == "" {
 		app.VpythonRoot = testStorageDir
 	}

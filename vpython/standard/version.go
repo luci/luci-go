@@ -26,6 +26,20 @@ import (
 // a spec's requires-python constraint is empty or satisfied by the default interpreter.
 const DefaultPythonVersion = "3.11"
 
+// DefaultUVVersion is the pinned CIPD version tag for on-demand uv
+// ("infra/3pp/tools/uv/${platform}") when uv is unbundled from vpython3.
+// Built from https://chromium.googlesource.com/infra/infra/+/HEAD/3pp/uv/3pp.pb.
+const DefaultUVVersion = "version:3@0.10.9.prebuilt"
+
+// Default pinned CIPD version tags for on-demand CPython 3.8, 3.11, and 3.14
+// ("infra/3pp/tools/cpython3/${platform}") when unbundled from vpython3.
+// Built from https://chromium.googlesource.com/infra/infra/+/HEAD/3pp/cpython3/3pp.pb.
+const (
+	DefaultCPython38Version  = "version:3@3.8.10.chromium.35"
+	DefaultCPython311Version = "version:3@3.11.9.chromium.39"
+	DefaultCPython314Version = "version:3@3.14.10.chromium.4"
+)
+
 // pep440Regex is a prefix-only PEP 440 regular expression.
 // By matching only the leading release and optional pre-release blocks without a trailing anchor ($),
 // we naturally skip/ignore any trailing post-releases, dev-releases, or Google's custom LTS/build suffixes
@@ -34,6 +48,31 @@ var pep440Regex = regexp.MustCompile(`^([1-9]\d*!)?(0|[1-9]\d*)(\.(0|[1-9]\d*))*
 
 // baseReleaseRegex extracts the leading major.minor.patch release digits blocks sequence.
 var baseReleaseRegex = regexp.MustCompile(`^v?(\d+(?:\.\d+){0,2})`)
+
+// chromiumBuildRegex matches an exact 3pp CPython build constraint or version
+// string for the supported major.minor tracks (3.8, 3.11, 3.14), such as
+// "3.14.8.chromium.1", "==3.14.8.chromium.1", or "2@3.11.8.chromium.35".
+var chromiumBuildRegex = regexp.MustCompile(`^\s*(?:===|==)?\s*v?(?:([1-9]\d*)[@!])?((3\.(?:8|11|14))\.\d+\.chromium\.\d+)\s*$`)
+
+// ParseChromiumBuild extracts the major.minor track, normalized build version,
+// and CIPD version tag from an exact 3pp CPython build string or equality
+// constraint (e.g. "==3.14.8.chromium.1" or "3.11.9.chromium.35"). Only the
+// supported 3.8, 3.11, and 3.14 tracks are accepted.
+func ParseChromiumBuild(s string) (track, build, cipdVersion string, ok bool) {
+	m := chromiumBuildRegex.FindStringSubmatch(s)
+	if m == nil {
+		return "", "", "", false
+	}
+	epoch, rawBuild, track := m[1], m[2], m[3]
+	if epoch == "" {
+		epoch = "3"
+	}
+	build = rawBuild
+	if epoch != "3" {
+		build = epoch + "@" + rawBuild
+	}
+	return track, build, fmt.Sprintf("version:%s@%s", epoch, rawBuild), true
+}
 
 // Version represents a MAJOR.MINOR.PATCH version segment sequence.
 type Version struct {
@@ -307,6 +346,9 @@ func MatchInterpreter(constraintStr string, available []string) (string, error) 
 // runtime versions, preferring defaultVer when it is present in available and
 // satisfies constraintStr, and falling back to MatchInterpreter otherwise.
 func ResolveTargetVersion(constraintStr, defaultVer string, available []string) (string, error) {
+	if track, build, _, ok := ParseChromiumBuild(constraintStr); ok && slices.Contains(available, track) {
+		return build, nil
+	}
 	if defaultVer != "" && slices.Contains(available, defaultVer) {
 		c, err := parseConstraint(constraintStr)
 		if err != nil {

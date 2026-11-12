@@ -21,51 +21,13 @@ import (
 	"runtime"
 	"testing"
 
+	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/vpython/standard"
 )
-
-func TestResolveTargetPythonVersion(t *testing.T) {
-	t.Parallel()
-
-	ftt.Run("Test resolveTargetPythonVersion", t, func(t *ftt.Test) {
-		ver, err := resolveTargetPythonVersion(">=3.8,<3.9")
-		assert.NoErr(t, err)
-		assert.Loosely(t, ver, should.Equal("3.8"))
-
-		ver, err = resolveTargetPythonVersion(">=3.11,<3.12")
-		assert.NoErr(t, err)
-		assert.Loosely(t, ver, should.Equal("3.11"))
-
-		ver, err = resolveTargetPythonVersion(">=3.8")
-		assert.NoErr(t, err)
-		assert.Loosely(t, ver, should.Equal("3.11"))
-
-		ver, err = resolveTargetPythonVersion("")
-		assert.NoErr(t, err)
-		assert.Loosely(t, ver, should.Equal("3.11"))
-
-		ver, err = resolveTargetPythonVersion(">=3.14")
-		assert.NoErr(t, err)
-		assert.Loosely(t, ver, should.Equal("3.14"))
-
-		ver, err = resolveTargetPythonVersion("==3.14.*")
-		assert.NoErr(t, err)
-		assert.Loosely(t, ver, should.Equal("3.14"))
-
-		_, err = resolveTargetPythonVersion(">=2.7,<2.8")
-		assert.Loosely(t, err, should.NotBeNil)
-
-		_, err = resolveTargetPythonVersion(">=3.12,<3.14")
-		assert.Loosely(t, err, should.NotBeNil)
-
-		_, err = resolveTargetPythonVersion(">=3.15")
-		assert.Loosely(t, err, should.NotBeNil)
-	})
-}
 
 func TestIsStandardSpecTOML(t *testing.T) {
 	t.Parallel()
@@ -74,6 +36,25 @@ func TestIsStandardSpecTOML(t *testing.T) {
 		assert.Loosely(t, isStandardSpecTOML("vpython.toml"), should.BeTrue)
 		assert.Loosely(t, isStandardSpecTOML("standalone.vpython.toml"), should.BeTrue)
 		assert.Loosely(t, isStandardSpecTOML("pyproject.toml"), should.BeFalse)
+	})
+}
+
+func TestParseArgsSetsCIPDCacheDirEnv(t *testing.T) {
+	ftt.Run("ParseArgs exports CIPD_CACHE_DIR before lockfile sync or upgrade", t, func(t *ftt.Test) {
+		t.Cleanup(func() { defaultVpythonRoot.Store("") })
+		tempRoot := t.TempDir()
+		t.Setenv(cipd.EnvCacheDir, "")
+
+		app := &Application{
+			Arguments: []string{"-vpython-root", tempRoot, "-c", "print(1)"},
+		}
+		ctx := app.Initialize(context.Background())
+		assert.NoErr(t, app.ParseEnvs(ctx))
+		assert.NoErr(t, app.ParseArgs(ctx))
+
+		expectedCache := filepath.Join(tempRoot, "cipd")
+		assert.That(t, app.CIPDCacheDir, should.Equal(expectedCache))
+		assert.That(t, os.Getenv(cipd.EnvCacheDir), should.Equal(expectedCache))
 	})
 }
 
@@ -150,6 +131,47 @@ func TestCompileLockfileBoundsPythonVersion(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, string(pyprojectData), should.ContainSubstring(`requires-python = "==3.8.*"`))
 			assert.Loosely(t, string(pyprojectData), should.ContainSubstring(`environments = ["python_version == '3.8'"]`))
+		})
+
+		t.Run("Bounds explicit Chromium patch pin to major.minor track", func(t *ftt.Test) {
+			specPath := filepath.Join(tempDir, "patch314.vpython.toml")
+			assert.NoErr(t, os.WriteFile(specPath, []byte("requires-python = '==3.14.8.chromium.1'\ndependencies = ['ruff==0.15.4']\n"), 0644))
+
+			spec := &standard.ProjectSpec{
+				RequiresPython: "==3.14.8.chromium.1",
+				Dependencies:   []string{"ruff==0.15.4"},
+			}
+
+			assert.NoErr(t, SyncLockfile(ctx, specPath, mockUV, "", false, spec))
+
+			argsData, err := os.ReadFile(argsLog)
+			assert.NoErr(t, err)
+			assert.That(t, string(argsData), should.ContainSubstring("--python-version\n3.14"))
+
+			pyprojectData, err := os.ReadFile(pyprojectLog)
+			assert.NoErr(t, err)
+			assert.That(t, string(pyprojectData), should.ContainSubstring(`requires-python = "==3.14.*"`))
+			assert.That(t, string(pyprojectData), should.ContainSubstring(`environments = ["python_version == '3.14'"]`))
+		})
+
+		t.Run("Passes --python and UV_PYTHON when pythonBin is resolved", func(t *ftt.Test) {
+			specPath := filepath.Join(tempDir, "with_python.vpython.toml")
+			assert.NoErr(t, os.WriteFile(specPath, []byte("requires-python = '>=3.11'\ndependencies = ['ruff==0.15.4']\n"), 0644))
+
+			spec := &standard.ProjectSpec{
+				RequiresPython: ">=3.11",
+				Dependencies:   []string{"ruff==0.15.4"},
+			}
+
+			assert.NoErr(t, SyncLockfile(ctx, specPath, mockUV, "/opt/cipd/bin/python3", false, spec))
+
+			argsData, err := os.ReadFile(argsLog)
+			assert.NoErr(t, err)
+			assert.That(t, string(argsData), should.ContainSubstring("--python\n/opt/cipd/bin/python3"))
+
+			envData, err := os.ReadFile(envLog)
+			assert.NoErr(t, err)
+			assert.That(t, string(envData), should.ContainSubstring("UV_PYTHON=/opt/cipd/bin/python3\n"))
 		})
 	})
 }

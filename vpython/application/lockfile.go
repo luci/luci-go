@@ -22,7 +22,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"go.chromium.org/luci/common/errors"
@@ -30,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 
 	"go.chromium.org/luci/vpython/common"
-	"go.chromium.org/luci/vpython/python"
 	"go.chromium.org/luci/vpython/standard"
 )
 
@@ -106,47 +104,24 @@ func SyncLockfile(ctx context.Context, specPath, uvBin, pythonBin string, isBot 
 // DefaultSupportedPythonVersions lists the CPython major.minor versions supported by vpython3.
 var DefaultSupportedPythonVersions = []string{"3.8", "3.11", "3.14"}
 
-// resolveTargetPythonVersion resolves a PEP 440 requires-python constraint
-// against vpython's supported Python versions, preferring the default
-// bundled version ("3.11") when satisfied.
-func resolveTargetPythonVersion(requiresPython string) (string, error) {
-	ver, err := standard.ResolveTargetVersion(requiresPython, standard.DefaultPythonVersion, DefaultSupportedPythonVersions)
-	if err != nil {
-		return "", errors.Fmt("failed to resolve compatible Python interpreter for constraint %q: %w", requiresPython, err)
-	}
-	return ver, nil
-}
-
-// resolveBundledPythonBin probes for the bundled CPython interpreter matching
-// targetVer relative to the running vpython3 executable.
-func resolveBundledPythonBin(targetVer string) string {
-	execDir, err := python.FindExecutableDir()
-	if err != nil {
-		return ""
-	}
-	pythonBundle := filepath.Join(execDir, common.DefaultBundleDir(targetVer))
-	candidates := []string{filepath.Join(pythonBundle, "bin", "python3")}
-	if runtime.GOOS == "windows" {
-		candidates = []string{
-			filepath.Join(pythonBundle, "bin", "python.exe"),
-			filepath.Join(pythonBundle, "python.exe"),
-		}
-	}
-	for _, cand := range candidates {
-		if st, err := os.Stat(cand); err == nil && !st.IsDir() {
-			return cand
-		}
-	}
-	return ""
-}
-
 // compileLockfile invokes `uv pip compile` to resolve universal dependencies
 // bounded to the target Python version from spec.RequiresPython, and writes
 // the resulting lockfile to lockPath.
 func compileLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin string, spec *standard.ProjectSpec) ([]byte, error) {
-	targetVer, err := resolveTargetPythonVersion(spec.RequiresPython)
+	targetVer, err := standard.ResolveTargetVersion(spec.RequiresPython, standard.DefaultPythonVersion, DefaultSupportedPythonVersions)
 	if err != nil {
-		return nil, err
+		return nil, errors.Fmt("failed to resolve compatible Python interpreter for constraint %q: %w", spec.RequiresPython, err)
+	}
+	if track, _, _, ok := standard.ParseChromiumBuild(targetVer); ok {
+		targetVer = track
+	}
+	if uvBin == "" {
+		if uvBin, err = resolveUpgradeUVBin(ctx); err != nil {
+			return nil, err
+		}
+	}
+	if pythonBin == "" {
+		pythonBin = resolveUpgradePythonBin(ctx, targetVer)
 	}
 
 	// Create an isolated temporary project with [tool.uv] environments bounded to
@@ -174,22 +149,20 @@ func compileLockfile(ctx context.Context, specPath, lockPath, uvBin, pythonBin s
 		reqs.WriteByte('\n')
 	}
 
-	cmdLock := exec.CommandContext(ctx, uvBin, "pip", "compile", "-",
+	args := []string{
+		"pip", "compile", "-",
 		"--universal",
 		"--generate-hashes",
 		"--no-header",
 		"--python-version", targetVer,
 		"--project", tmpProjDir,
-	)
+	}
+	if pythonBin != "" {
+		args = append(args, "--python", pythonBin)
+	}
+	cmdLock := exec.CommandContext(ctx, uvBin, args...)
 	cmdLock.Dir = filepath.Dir(specPath)
 	cmdLock.Stdin = &reqs
-
-	if pythonBin == "" {
-		pythonBin = resolveBundledPythonBin(targetVer)
-		if pythonBin == "" {
-			pythonBin = resolveBundledPythonBin(standard.DefaultPythonVersion)
-		}
-	}
 
 	arURL := os.Getenv(common.EnvVpythonArUrl)
 	if arURL == "" {

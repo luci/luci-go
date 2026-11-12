@@ -24,6 +24,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"go.chromium.org/luci/cipd/client/cipd"
@@ -80,6 +81,11 @@ const (
 	// vpython bypass.
 	BypassSentinel = "manually managed python not supported by chrome operations"
 )
+
+// defaultVpythonRoot stores the active VpythonRoot directory configured by
+// Application.ParseArgs so package-level lockfile compilation and spec upgrade
+// helpers can materialize on-demand CIPD tools into the same cipkg store.
+var defaultVpythonRoot atomic.Value
 
 // Application contains the basic configuration for the application framework.
 type Application struct {
@@ -277,10 +283,14 @@ func (a *Application) ParseArgs(ctx context.Context) (err error) {
 	if a.VpythonRoot, err = filepath.Abs(a.VpythonRoot); err != nil {
 		return errors.Fmt("failed to get absolute vpython root path: %w", err)
 	}
+	defaultVpythonRoot.Store(a.VpythonRoot)
 
 	// Set CIPD CacheDIR
 	if a.CIPDCacheDir == "" {
 		a.CIPDCacheDir = filepath.Join(a.VpythonRoot, "cipd")
+	}
+	if err := os.Setenv(cipd.EnvCacheDir, a.CIPDCacheDir); err != nil {
+		return errors.Fmt("failed to set %s: %w", cipd.EnvCacheDir, err)
 	}
 
 	if a.ToolMode == "upgrade" {
@@ -373,6 +383,35 @@ func (a *Application) BuildVENV(ctx context.Context, ap *actions.ActionProcessor
 	return err
 }
 
+// buildPackage constructs and executes a cipkg derivation for gen inside
+// filepath.Join(vpythonRoot, "store"), initializing default ActionProcessor and
+// PackageExecutor instances when ap or pe are nil.
+func buildPackage(ctx context.Context, vpythonRoot string, ap *actions.ActionProcessor, pe *workflow.PackageExecutor, gen generators.Generator) (actions.Package, *workflow.LocalPackageManager, error) {
+	pm, err := workflow.NewLocalPackageManager(filepath.Join(vpythonRoot, "store"))
+	if err != nil {
+		return actions.Package{}, nil, errors.Fmt("failed to load storage: %w", err)
+	}
+
+	curPlat := generators.CurrentPlatform()
+	plats := generators.Platforms{
+		Build:  curPlat,
+		Host:   curPlat,
+		Target: curPlat,
+	}
+	if ap == nil {
+		ap = actions.NewActionProcessor()
+	}
+	if pe == nil {
+		pe = workflow.NewPackageExecutor("", workflow.PackageExecutorConfig{})
+	}
+	b := workflow.NewBuilder(plats, pm, ap)
+	pkg, err := b.Build(ctx, pe, gen)
+	if err != nil {
+		return actions.Package{}, nil, errors.Fmt("failed to build package derivation: %w", err)
+	}
+	return pkg, pm, nil
+}
+
 // BuildVENVWithPackage builds the derivation for the venv, updates applications'
 // PythonExecutable, and returns the full built actions.Package.
 func (a *Application) BuildVENVWithPackage(ctx context.Context, ap *actions.ActionProcessor, venv generators.Generator) (actions.Package, error) {
@@ -381,20 +420,6 @@ func (a *Application) BuildVENVWithPackage(ctx context.Context, ap *actions.Acti
 			return actions.Package{}, errors.Fmt("failed to set %s: %w", cipd.EnvCacheDir, err)
 		}
 	}
-	pm, err := workflow.NewLocalPackageManager(filepath.Join(a.VpythonRoot, "store"))
-	if err != nil {
-		return actions.Package{}, errors.Fmt("failed to load storage: %w", err)
-	}
-
-	// Generate derivations
-	curPlat := generators.CurrentPlatform()
-	plats := generators.Platforms{
-		Build:  curPlat,
-		Host:   curPlat,
-		Target: curPlat,
-	}
-
-	b := workflow.NewBuilder(plats, pm, ap)
 	pe := workflow.NewPackageExecutor("", workflow.PackageExecutorConfig{
 		ExecFn: func(ctx context.Context, cfg *workflow.ExecutionConfig, drv *core.Derivation) error {
 			return workflow.Execute(ctx, cfg, python.WithPassthroughEnv(drv))
@@ -413,9 +438,9 @@ func (a *Application) BuildVENVWithPackage(ctx context.Context, ap *actions.Acti
 			return err
 		},
 	})
-	pkg, err := b.Build(ctx, pe, venv)
+	pkg, pm, err := buildPackage(ctx, a.VpythonRoot, ap, pe, venv)
 	if err != nil {
-		return actions.Package{}, errors.Fmt("failed to generate venv derivation: %w", err)
+		return actions.Package{}, err
 	}
 	workflow.MustIncRefRecursiveRuntime(pkg)
 	a.close = func() {

@@ -693,32 +693,89 @@ func isStandardSpecTOML(base string) bool {
 	return base == "vpython.toml" || strings.HasSuffix(base, ".vpython.toml")
 }
 
-func resolveUpgradeUVBin() (string, error) {
+// resolveUpgradeUVBin locates the uv executable for lockfile compilation and
+// spec upgrades. It checks VPYTHON_UV_BIN first, then probes for a bundled uv
+// binary relative to the running vpython3 executable, materializes the pinned
+// uv CIPD package into defaultVpythonRoot's store when unbundled, and finally
+// falls back to looking up "uv" on PATH.
+func resolveUpgradeUVBin(ctx context.Context) (string, error) {
 	if uvBin := os.Getenv("VPYTHON_UV_BIN"); uvBin != "" {
 		return uvBin, nil
 	}
+	uvExe := "uv"
+	if runtime.GOOS == "windows" {
+		uvExe = "uv.exe"
+	}
 	if execDir, err := python.FindExecutableDir(); err == nil {
-		uvBundle := filepath.Join(execDir, common.DefaultBundleDir("uv"))
-		candidate := filepath.Join(uvBundle, "uv")
-		if runtime.GOOS == "windows" {
-			candidate += ".exe"
-		}
+		candidate := filepath.Join(execDir, common.DefaultBundleDir("uv"), uvExe)
 		if st, err := os.Stat(candidate); err == nil && !st.IsDir() {
 			return candidate, nil
 		}
 	}
-	uvBin, err := exec.LookPath("uv")
-	if err != nil {
-		return "", errors.New("failed to resolve bundled 'uv', 'uv' on PATH, or VPYTHON_UV_BIN")
+	var cipdErr error
+	if root, ok := defaultVpythonRoot.Load().(string); ok && root != "" {
+		pkg, _, err := buildPackage(ctx, root, nil, nil, python.UVFromCIPD(standard.DefaultUVVersion))
+		if err == nil {
+			candidate := filepath.Join(pkg.Handler.OutputDirectory(), uvExe)
+			if st, err := os.Stat(candidate); err == nil && !st.IsDir() {
+				return candidate, nil
+			}
+		} else {
+			cipdErr = err
+		}
 	}
-	return uvBin, nil
+	if uvBin, err := exec.LookPath("uv"); err == nil {
+		return uvBin, nil
+	}
+	if cipdErr != nil {
+		return "", errors.Fmt("failed to resolve bundled 'uv', materialize CIPD 'uv' (%w), or find 'uv' on PATH", cipdErr)
+	}
+	return "", errors.New("failed to resolve bundled 'uv', 'uv' on PATH, or VPYTHON_UV_BIN")
+}
+
+// resolveUpgradePythonBin locates a CPython interpreter binary to pass via
+// --python to `uv pip compile`, ensuring lockfile compilation succeeds
+// hermetically even on hosts without a system Python installed on PATH. It
+// probes for a bundled CPython matching targetVer (or DefaultPythonVersion)
+// first, and otherwise materializes the default CPython CIPD package for
+// targetVer into defaultVpythonRoot's store.
+func resolveUpgradePythonBin(ctx context.Context, targetVer string) string {
+	if execDir, err := python.FindExecutableDir(); err == nil {
+		for _, ver := range []string{targetVer, standard.DefaultPythonVersion} {
+			cand := common.Python(filepath.Join(execDir, common.DefaultBundleDir(ver)), "python3")
+			if st, err := os.Stat(cand); err == nil && !st.IsDir() {
+				return cand
+			}
+		}
+	}
+	root, ok := defaultVpythonRoot.Load().(string)
+	if !ok || root == "" {
+		return ""
+	}
+	cipdVer := standard.DefaultCPython311Version
+	switch targetVer {
+	case "3.8":
+		cipdVer = standard.DefaultCPython38Version
+	case "3.14":
+		cipdVer = standard.DefaultCPython314Version
+	}
+	pkg, _, err := buildPackage(ctx, root, nil, nil, python.CPython3FromCIPD(cipdVer))
+	if err != nil {
+		logging.Debugf(ctx, "Failed to materialize CIPD CPython for %s (%s): %v", targetVer, cipdVer, err)
+		return ""
+	}
+	cand := common.Python(pkg.Handler.OutputDirectory(), "python3")
+	if st, err := os.Stat(cand); err == nil && !st.IsDir() {
+		return cand
+	}
+	return ""
 }
 
 func generateProactiveLockfile(ctx context.Context, specPath string, projectSpec *standard.ProjectSpec) {
 	if projectSpec == nil || len(projectSpec.Dependencies) == 0 {
 		return
 	}
-	uvBin, err := resolveUpgradeUVBin()
+	uvBin, err := resolveUpgradeUVBin(ctx)
 	if err != nil {
 		logging.Infof(ctx, "Proactive lockfile skipped: %v", err)
 		return
@@ -860,7 +917,7 @@ func forceRegenerateLockfile(ctx context.Context, specPath string) error {
 	fmt.Println(msg)
 	logging.Infof(ctx, "%s", msg)
 
-	uvBin, err := resolveUpgradeUVBin()
+	uvBin, err := resolveUpgradeUVBin(ctx)
 	if err != nil {
 		return err
 	}

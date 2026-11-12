@@ -167,6 +167,28 @@ def main():
     print("Creating virtualenv via UV...")
     subprocess.check_call(venv_cmd, env=env)
 
+    # Replicate python.exe to python3.exe in the venv from current executable.
+    # Replace venv launchers with actual physical copies of host CPython binary and
+    # copy DLLs before running `uv pip install` so that CPython packages without
+    # `bin\python.exe` (e.g. older Windows 3pp builds that only ship `bin\python3.exe`)
+    # can be queried by `uv pip install` directly from the Venv.
+    if sys.platform == "win32":
+        scripts_dir = os.path.join(target_dir, "Scripts")
+        cpython_dir = os.path.dirname(sys.executable)
+        python_exe = os.path.join(scripts_dir, "python.exe")
+        python3_exe = os.path.join(scripts_dir, "python3.exe")
+        for target_exe in (python_exe, python3_exe):
+            if os.path.exists(target_exe):
+                os.chmod(target_exe, stat.S_IWRITE)
+                os.remove(target_exe)
+            shutil.copyfile(sys.executable, target_exe)
+        for dll in glob.glob(os.path.join(cpython_dir, '*.dll')):
+            target_dll = os.path.join(scripts_dir, os.path.basename(dll))
+            if os.path.exists(target_dll):
+                os.chmod(target_dll, stat.S_IWRITE)
+                os.remove(target_dll)
+            shutil.copyfile(dll, target_dll)
+
     # Install requirements.
     venv_python = os.path.join(target_dir, "bin", "python3")
     if sys.platform == "win32":
@@ -222,26 +244,6 @@ def main():
             if e.stderr:
                 print(e.stderr, file=sys.stderr)
             sys.exit(e.returncode)
-
-    # Replicate python.exe to python3.exe in the venv from current executable.
-    # Replace venv launchers with actual physical copies of host CPython binary and
-    # copy DLLs so that Python can be executed entirely from Venv.
-    if sys.platform == "win32":
-        scripts_dir = os.path.join(target_dir, "Scripts")
-        cpython_dir = os.path.dirname(sys.executable)
-        p1 = os.path.join(scripts_dir, "python.exe")
-        p3 = os.path.join(scripts_dir, "python3.exe")
-        for p in (p1, p3):
-            if os.path.exists(p):
-                os.chmod(p, stat.S_IWRITE)
-                os.remove(p)
-            shutil.copyfile(sys.executable, p)
-        for dll in glob.glob(os.path.join(cpython_dir, '*.dll')):
-            target_dll = os.path.join(scripts_dir, os.path.basename(dll))
-            if os.path.exists(target_dll):
-                os.chmod(target_dll, stat.S_IWRITE)
-                os.remove(target_dll)
-            shutil.copyfile(dll, target_dll)
 
     print("UV Virtualenv synchronization complete successfully!")
 

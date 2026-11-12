@@ -56,6 +56,17 @@ func TestUVGenerator(tT *testing.T) {
 			assert.Loosely(t, importTarget.Targets["."].Version, should.Equal("mock-uv-version-1.0"))
 		})
 
+		t.Run("UVFromCIPD constructs CIPDExport generator for uv", func(t *ftt.Test) {
+			gen := UVFromCIPD("version:3@0.10.9.prebuilt")
+			cipdExport, ok := gen.(*generators.CIPDExport)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, cipdExport.Name, should.Equal("uv"))
+			pkgs := cipdExport.Ensure.PackagesBySubdir[""]
+			assert.That(t, len(pkgs), should.Equal(1))
+			assert.That(t, pkgs[0].PackageTemplate, should.Equal("infra/3pp/tools/uv/${platform}"))
+			assert.That(t, pkgs[0].UnresolvedVersion, should.Equal("version:3@0.10.9.prebuilt"))
+		})
+
 		t.Run("SpecRequirementsGenerator compiles specs correctly", func(t *ftt.Test) {
 			spec := &standard.ProjectSpec{
 				Dependencies: []string{"six==1.16.0", "requests>=2.0.0"},
