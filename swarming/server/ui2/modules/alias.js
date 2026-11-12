@@ -264,10 +264,35 @@ const OS_ALIASES = {
   "Windows-Server-18363": "Windows Server version 1909",
 };
 
+const MAC_MODEL_ALIASES = {
+  "Mac13,1": "Mac Studio",
+  "Mac13,2": "Mac Studio",
+  "Mac14,3": "Mac mini (2023)",
+  "Mac14,7": "MacBook Pro (13-inch, M2, 2022)",
+  "Mac14,12": "Mac mini (2023)",
+  "Mac14,14": "Mac Studio (2023)",
+  "Mac15,3": "MacBook Pro (14-inch, Nov 2023)",
+  "Mac15,14": "Mac Studio (2025)",
+  "Mac16,8": "MacBook Pro (14-inch, Nov 2024)",
+  "Mac16,10": "Mac mini (2024)",
+  "Mac16,11": "Mac mini (2024)",
+  "Mac17,9": "MacBook Pro (14-inch, M5 Pro)",
+  "MacBookPro15,1": "MacBook Pro (15-inch, 2018 or 2019)",
+  "MacBookPro16,1": "MacBook Pro (16-inch, 2019)",
+  "MacBookPro18,3": "MacBook Pro (14-inch, 2021)",
+  "MacPro6,1": "Mac Pro (Late 2013)",
+  "MacPro7,1": "Mac Pro (2019)",
+  "Macmini7,1": "Mac mini (Late 2014)",
+  "Macmini8,1": "Mac mini (2018)",
+  "Macmini9,1": "Mac mini (M1, 2020)",
+  "VirtualMac2,1": "Apple Virtual Machine 1",
+};
+
 const aliasMap = {
   device: DEVICE_ALIASES,
   device_type: DEVICE_TYPE_ALIASES,
   gpu: GPU_ALIASES,
+  mac_model: MAC_MODEL_ALIASES,
   os: OS_ALIASES,
 };
 

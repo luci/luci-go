@@ -103,5 +103,22 @@ describe("alias", function () {
       check("Windows-8.1-SP0");
       done();
     });
+
+    it("maps mac_model", function (done) {
+      expect(applyAlias("Mac14,14", "mac_model")).toBe(
+        "Mac Studio (2023) (Mac14,14)"
+      );
+      expect(applyAlias("Macmini8,1", "mac_model")).toBe(
+        "Mac mini (2018) (Macmini8,1)"
+      );
+      expect(applyAlias("Macmini9,1", "mac_model")).toBe(
+        "Mac mini (M1, 2020) (Macmini9,1)"
+      );
+      expect(applyAlias("VirtualMac2,1", "mac_model")).toBe(
+        "Apple Virtual Machine 1 (VirtualMac2,1)"
+      );
+      expect(applyAlias("UnknownMac99,1", "mac_model")).toBe("UnknownMac99,1");
+      done();
+    });
   }); // end describe('applyAlias')
 });
