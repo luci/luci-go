@@ -19,7 +19,9 @@ import {
   PerfChartWidget_ChartType,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
+import { generateColor } from './colors';
 import {
+  assignSeriesStrokeColors,
   calculateChange,
   calculateTooltipPosition,
   dataPointsToData,
@@ -317,5 +319,71 @@ describe('findMatchingSeriesIndex and findMatchingSeriesConfig', () => {
     expect(
       findMatchingSeriesConfig(mockSeriesList, 'unknown_id', 10),
     ).toBeUndefined();
+  });
+});
+
+describe('assignSeriesStrokeColors', () => {
+  const RED = '#ff0000';
+  const BLUE = '#0000ff';
+  const seriesList = [
+    PerfChartSeries.fromPartial({ id: 'hwm', color: BLUE }),
+    PerfChartSeries.fromPartial({ id: 'avg', color: RED }),
+  ];
+
+  test('uses configured colors for exact matches', () => {
+    expect(assignSeriesStrokeColors(['hwm', 'avg'], seriesList)).toEqual([
+      BLUE,
+      RED,
+    ]);
+  });
+
+  test('child lines inherit parent color regardless of response order', () => {
+    // Regression test for b/550081489: the backend returned the avg child
+    // first, which previously swapped colors relative to the legend.
+    expect(assignSeriesStrokeColors(['avg_0', 'hwm_0'], seriesList)).toEqual([
+      RED,
+      BLUE,
+    ]);
+  });
+
+  test('only the lowest-index child inherits; siblings get distinct colors', () => {
+    const strokes = assignSeriesStrokeColors(
+      ['hwm_2', 'hwm_0', 'hwm_1'],
+      seriesList,
+    );
+    expect(strokes[1]).toBe(BLUE);
+    expect(new Set(strokes).size).toBe(3);
+    expect(strokes).not.toContain(RED);
+  });
+
+  test('children do not reuse parent color when an exact match exists', () => {
+    const strokes = assignSeriesStrokeColors(['hwm_0', 'hwm'], seriesList);
+    expect(strokes[1]).toBe(BLUE);
+    expect(strokes[0]).not.toBe(BLUE);
+    expect(strokes[0]).not.toBe(RED);
+  });
+
+  test('palette colors skip colors already used by configured series', () => {
+    const list = [
+      PerfChartSeries.fromPartial({ id: 'a', color: generateColor(0) }),
+    ];
+    expect(assignSeriesStrokeColors(['unknown'], list)).toEqual([
+      generateColor(1),
+    ]);
+  });
+
+  test('series without a configured color get a palette color', () => {
+    const list = [PerfChartSeries.fromPartial({ id: 'a' })];
+    expect(assignSeriesStrokeColors(['a', 'a_0'], list)).toEqual([
+      generateColor(0),
+      generateColor(1),
+    ]);
+  });
+
+  test('handles undefined series list and IDs', () => {
+    expect(assignSeriesStrokeColors([undefined, undefined])).toEqual([
+      generateColor(0),
+      generateColor(1),
+    ]);
   });
 });

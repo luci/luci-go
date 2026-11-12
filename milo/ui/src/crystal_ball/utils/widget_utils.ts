@@ -22,6 +22,14 @@ import {
   PerfFilter,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
+import { generateColor } from './colors';
+
+/**
+ * Upper bound on palette lookups when searching for an unused color, to
+ * guarantee termination even if every generated color is already taken.
+ */
+const MAX_PALETTE_LOOKUPS = 1000;
+
 /**
  * Finds the matching series index in the widget's configured series list.
  * Matching precedence:
@@ -78,6 +86,88 @@ export function findMatchingSeriesConfig(
 ): PerfChartSeries | undefined {
   const index = findMatchingSeriesIndex(seriesList, seriesId, seriesIndex);
   return index >= 0 && seriesList ? seriesList[index] : undefined;
+}
+
+/**
+ * Assigns a stroke color to each rendered chart line so that the chart,
+ * tooltip and the CHART SERIES legend all agree.
+ *
+ * Rules:
+ * 1. A line whose ID exactly matches a configured series uses that series'
+ *    color.
+ * 2. Otherwise, the expanded child line with the lowest index suffix (e.g.
+ *    "<parent_id>_0") of a configured series inherits the parent's color, so
+ *    the parent's legend dot always matches a visible line.
+ * 3. All remaining lines (additional children, unmatched lines, or series
+ *    without a configured color) get a distinct palette color that is not
+ *    already used by any configured series or previously assigned line.
+ *
+ * Configured colors (rules 1 and 2) do not depend on the order in which the
+ * backend returns lines.
+ *
+ * @param lineSeriesIds The series ID of each rendered line, in render order.
+ * @param seriesList The widget's configured series.
+ * @returns A stroke color for each entry in `lineSeriesIds`.
+ */
+export function assignSeriesStrokeColors(
+  lineSeriesIds: readonly (string | undefined)[],
+  seriesList?: readonly PerfChartSeries[],
+): string[] {
+  const usedColors = new Set<string>(
+    (seriesList ?? [])
+      .map((s) => s.color?.toLowerCase())
+      .filter((c): c is string => !!c),
+  );
+  let paletteIndex = 0;
+  const nextPaletteColor = (): string => {
+    let color = generateColor(paletteIndex++);
+    for (
+      let lookups = 0;
+      usedColors.has(color.toLowerCase()) && lookups < MAX_PALETTE_LOOKUPS;
+      lookups++
+    ) {
+      color = generateColor(paletteIndex++);
+    }
+    usedColors.add(color.toLowerCase());
+    return color;
+  };
+
+  const strokes: (string | undefined)[] = lineSeriesIds.map(() => undefined);
+  const matchedIndices = lineSeriesIds.map((id) =>
+    findMatchingSeriesIndex(seriesList, id),
+  );
+  const claimedSeries = new Set<number>();
+
+  // Pass 1: exact ID matches always use their configured color.
+  lineSeriesIds.forEach((id, i) => {
+    const config =
+      matchedIndices[i] >= 0 ? seriesList?.[matchedIndices[i]] : undefined;
+    if (config?.color && id === config.id) {
+      strokes[i] = config.color;
+      claimedSeries.add(matchedIndices[i]);
+    }
+  });
+
+  // Pass 2: for each series without an exact match, the child line with the
+  // lowest numeric suffix inherits the series' color.
+  const inheritingLine = new Map<number, { line: number; suffix: number }>();
+  lineSeriesIds.forEach((id, i) => {
+    const seriesIdx = matchedIndices[i];
+    if (strokes[i] !== undefined || seriesIdx < 0) return;
+    if (claimedSeries.has(seriesIdx) || !seriesList?.[seriesIdx]?.color) return;
+    const suffixMatch = id?.match(/_(\d+)$/);
+    const suffix = suffixMatch ? Number(suffixMatch[1]) : Infinity;
+    const current = inheritingLine.get(seriesIdx);
+    if (!current || suffix < current.suffix) {
+      inheritingLine.set(seriesIdx, { line: i, suffix });
+    }
+  });
+  inheritingLine.forEach(({ line }, seriesIdx) => {
+    strokes[line] = seriesList?.[seriesIdx]?.color;
+  });
+
+  // Pass 3: everything else gets a distinct, unused palette color.
+  return strokes.map((stroke) => stroke ?? nextPaletteColor());
 }
 
 /**

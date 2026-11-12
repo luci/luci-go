@@ -58,11 +58,11 @@ import {
   useUserSettings,
 } from '@/crystal_ball/hooks';
 import {
+  assignSeriesStrokeColors,
   dataPointsToData,
   detectRawUnit,
   findMatchingSeriesIndex,
   findUnitInfo,
-  generateColor,
   getSafeChartType,
   getScaleFactor,
   isDataPointsValid,
@@ -126,7 +126,12 @@ function getChartSeries(
       const xAxisKey = widgetResponse.invocationDistributionData.xAxisDataKey;
       const yAxisKey = widgetResponse.invocationDistributionData.yAxisDataKey;
 
-      return widgetResponse.invocationDistributionData.points
+      const groups = widgetResponse.invocationDistributionData.points;
+      const strokes = assignSeriesStrokeColors(
+        groups.map((group) => group.seriesId),
+        widgetSeries,
+      );
+      return groups
         .map((group, index) => {
           const seriesIndex = findMatchingSeriesIndex(
             widgetSeries,
@@ -186,10 +191,7 @@ function getChartSeries(
                 };
               },
             ),
-            stroke:
-              seriesConfig && group.seriesId === seriesConfig.id
-                ? seriesConfig.color
-                : generateColor(index),
+            stroke: strokes[index],
           };
         })
         .filter((series) => {
@@ -207,7 +209,12 @@ function getChartSeries(
 
       const xAxisKey = widgetResponse.multiMetricChartData.xAxisDataKey;
       const yAxisKey = widgetResponse.multiMetricChartData.yAxisDataKey;
-      return widgetResponse.multiMetricChartData.lines
+      const lines = widgetResponse.multiMetricChartData.lines;
+      const strokes = assignSeriesStrokeColors(
+        lines.map((line) => line.seriesId),
+        widgetSeries,
+      );
+      return lines
         .map((line, index) => {
           const seriesIndex = findMatchingSeriesIndex(
             widgetSeries,
@@ -231,10 +238,7 @@ function getChartSeries(
                   }),
                 )
               : [],
-            stroke:
-              seriesConfig && line.seriesId === seriesConfig.id
-                ? seriesConfig.color
-                : generateColor(index),
+            stroke: strokes[index],
           };
         })
         .filter((series) => {
