@@ -184,15 +184,15 @@ func (m *serverModule) installStatusHandlers(host module.Host, hostOpts module.H
 		reg := m.registry()
 		ctx := c.Request.Context()
 		start := clock.Now(ctx)
-		err := reg.IngestToStorage(ctx)
+		ingestErr := reg.IngestToStorage(ctx)
+		var refreshErr error
+		if !m.opts.DisableInMemory {
+			refreshErr = reg.RefreshInMemory(ctx)
+		}
 		res := &ingestActionResult{
 			Duration: clock.Now(ctx).Sub(start).Round(time.Millisecond),
 		}
-		if err != nil {
-			res.Err = err.Error()
-		}
-		err = reg.RefreshInMemory(ctx)
-		if err != nil {
+		if err := errors.Join(ingestErr, refreshErr); err != nil {
 			res.Err = err.Error()
 		}
 		m.renderStatusPage(c, res)
@@ -215,10 +215,7 @@ func (m *serverModule) authorizeStatusMiddleware(prod bool) router.Middleware {
 		}
 
 		if u.Identity == identity.AnonymousIdentity {
-			destURL := *c.Request.URL
-			destURL.Host = ""
-			destURL.Scheme = ""
-			loginURL, err := auth.LoginURL(ctx, destURL.String())
+			loginURL, err := auth.LoginURL(ctx, c.Request.URL.RequestURI())
 			switch {
 			case err == nil:
 				http.Redirect(c.Writer, c.Request, loginURL, http.StatusFound)
@@ -259,6 +256,10 @@ func (m *serverModule) handleGetStoredConfig(c *router.Context) {
 		http.Error(c.Writer, "Missing required query parameters: pipeline and config_set", http.StatusBadRequest)
 		return
 	}
+	if err := cs.Validate(); err != nil {
+		http.Error(c.Writer, fmt.Sprintf("Invalid config_set: %s", err), http.StatusBadRequest)
+		return
+	}
 
 	reg := m.registry()
 	ic, ok := reg.ingestConfigs[pipelineID]
@@ -275,7 +276,7 @@ func (m *serverModule) handleGetStoredConfig(c *router.Context) {
 	for sc, err := range ic.store.Get(ctx, ic.id, map[config.Set]*cfgcachepb.Meta{cs: {}}) {
 		if err != nil {
 			logging.WithError(err).Errorf(ctx, "cfgcache status: failed to load stored config %s[%s]", ic.id, cs)
-			http.Error(c.Writer, fmt.Sprintf("Failed to load stored config: %s", err), http.StatusInternalServerError)
+			http.Error(c.Writer, "Internal server error loading stored config", http.StatusInternalServerError)
 			return
 		}
 		if sc != nil && sc.ConfigSet == cs {
@@ -292,13 +293,13 @@ func (m *serverModule) handleGetStoredConfig(c *router.Context) {
 	}).Marshal(found.Config)
 	if err != nil {
 		logging.WithError(err).Errorf(ctx, "cfgcache status: failed to marshal %s[%s] as JSONPB", ic.id, cs)
-		http.Error(c.Writer, fmt.Sprintf("Failed to marshal config as JSONPB: %s", err), http.StatusInternalServerError)
+		http.Error(c.Writer, "Internal server error marshaling config as JSONPB", http.StatusInternalServerError)
 		return
 	}
 	var prettyJSON bytes.Buffer
 	if err := json.Indent(&prettyJSON, rawJSON, "", "  "); err != nil {
 		logging.WithError(err).Errorf(ctx, "cfgcache status: failed to indent %s[%s] JSONPB", ic.id, cs)
-		http.Error(c.Writer, "Failed to format JSONPB", http.StatusInternalServerError)
+		http.Error(c.Writer, "Internal server error formatting JSONPB", http.StatusInternalServerError)
 		return
 	}
 	prettyJSON.WriteByte('\n')
@@ -359,7 +360,12 @@ func (m *serverModule) renderStatusPage(c *router.Context, ingestRes *ingestActi
 		http.Error(c.Writer, "Internal server error rendering status page", http.StatusInternalServerError)
 		return
 	}
-	c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+	hdr := c.Writer.Header()
+	hdr.Set("Content-Type", "text/html; charset=utf-8")
+	hdr.Set("X-Content-Type-Options", "nosniff")
+	hdr.Set("X-Frame-Options", "DENY")
+	hdr.Set("Content-Security-Policy", "frame-ancestors 'none'; base-uri 'none'; object-src 'none'")
+	hdr.Set("Cache-Control", "no-store")
 	c.Writer.WriteHeader(http.StatusOK)
 	_, _ = c.Writer.Write(buf.Bytes())
 }

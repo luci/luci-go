@@ -696,4 +696,63 @@ func TestIngestToStorage(t *testing.T) {
 			assert.ErrIsLike(t, ts.IngestToStorage(cancelFetchCtx), context.Canceled.Error())
 		})
 	})
+
+	t.Run("serializes concurrent IngestToStorage calls", func(t *testing.T) {
+		t.Parallel()
+		ctx, ts := TestingContext(t.Context())
+		s := &memstore.Store[*durationpb.Duration]{}
+		entered := make(chan struct{})
+		release := make(chan struct{})
+		var active atomic.Int32
+		var maxActive atomic.Int32
+
+		svcFile := &SingleFile[*durationpb.Duration]{Path: "settings.cfg"}
+		(&PassthroughServicePipeline[*durationpb.Duration]{
+			ID:    "svc",
+			Store: s,
+			Files: []File{svcFile},
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
+				cur := active.Add(1)
+				for {
+					prev := maxActive.Load()
+					if cur <= prev || maxActive.CompareAndSwap(prev, cur) {
+						break
+					}
+				}
+				defer active.Add(-1)
+				select {
+				case entered <- struct{}{}:
+				default:
+				}
+				<-release
+				return svcFile.Get(snap), nil
+			},
+		}).Register(ts.Registry)
+		assert.NoErr(t, ts.Initialize(ctx))
+		ts.SetConfig("services/my-app", "settings.cfg", &durationpb.Duration{Seconds: 10})
+
+		done1 := make(chan error, 1)
+		go func() {
+			done1 <- ts.IngestToStorage(ctx)
+		}()
+		<-entered
+
+		done2 := make(chan error, 1)
+		go func() {
+			done2 <- ts.IngestToStorage(ctx)
+		}()
+
+		cancelCtx, cancel := context.WithCancel(ctx)
+		cancel()
+		done3 := make(chan error, 1)
+		go func() {
+			done3 <- ts.IngestToStorage(cancelCtx)
+		}()
+
+		close(release)
+		assert.NoErr(t, <-done1)
+		assert.NoErr(t, <-done2)
+		assert.ErrIsLike(t, <-done3, context.Canceled.Error())
+		assert.That(t, maxActive.Load(), should.Equal[int32](1))
+	})
 }

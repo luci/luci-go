@@ -16,6 +16,7 @@ package cfgcache
 
 import (
 	"context"
+	"iter"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -37,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/authtest"
+	cfgcachecommon "go.chromium.org/luci/server/cfgcache/common"
 	"go.chromium.org/luci/server/cfgcache/dsstore"
 	"go.chromium.org/luci/server/cfgcache/memstore"
 	cfgcachepb "go.chromium.org/luci/server/cfgcache/proto"
@@ -158,11 +160,11 @@ func TestStatusPageACLs(t *testing.T) {
 	t.Run("prod redirects anonymous user when LoginURL is available", func(t *testing.T) {
 		t.Parallel()
 		ctx, handler := setupServer(t, true, nil)
-		req := httptest.NewRequest(http.MethodGet, StatusPagePath, nil).WithContext(ctx)
+		req := httptest.NewRequest(http.MethodGet, "http://attacker@example.com"+StatusPagePath+"?foo=bar", nil).WithContext(ctx)
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 		assert.That(t, rec.Code, should.Equal(http.StatusFound))
-		assert.That(t, rec.Header().Get("Location"), should.Equal("/auth/login?r=%2Fadmin%2Fcfgcache"))
+		assert.That(t, rec.Header().Get("Location"), should.Equal("/auth/login?r=%2Fadmin%2Fcfgcache%3Ffoo%3Dbar"))
 	})
 
 	t.Run("prod returns 403 for authenticated user not in admin group", func(t *testing.T) {
@@ -267,7 +269,7 @@ func TestStatusPageRenderingIngestAndConfigJSONPB(t *testing.T) {
 		CronDispatcher:    &cron.Dispatcher{},
 		DisableValidation: true,
 		DisableCron:       true,
-		DisableInMemory:   true,
+		DisableInMemory:   false,
 		StatusAdminGroup:  "admin-group",
 	}
 	host := &fakeModuleHost{}
@@ -393,9 +395,18 @@ func TestStatusPageRenderingIngestAndConfigJSONPB(t *testing.T) {
 
 	// Error cases on StatusConfigPath.
 	assert.That(t, getConfig("pipeline=1-svc").Code, should.Equal(http.StatusBadRequest))
+	assert.That(t, getConfig("pipeline=1-svc&config_set=bad-no-slash").Code, should.Equal(http.StatusBadRequest))
+	assert.That(t, getConfig("pipeline=1-svc&config_set=unknown/foo").Code, should.Equal(http.StatusBadRequest))
+	assert.That(t, getConfig("pipeline=1-svc&config_set=services/"+strings.Repeat("a", 300)).Code, should.Equal(http.StatusBadRequest))
 	assert.That(t, getConfig("pipeline=unknown&config_set=services/my-app").Code, should.Equal(http.StatusNotFound))
 	assert.That(t, getConfig("pipeline=2-proj&config_set=projects/missing").Code, should.Equal(http.StatusNotFound))
 	assert.That(t, getConfig("pipeline=4-write-only&config_set=services/my-app").Code, should.Equal(http.StatusBadRequest))
+
+	// Check security and cache headers on status HTML response.
+	assert.That(t, rec.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
+	assert.That(t, rec.Header().Get("X-Frame-Options"), should.Equal("DENY"))
+	assert.That(t, rec.Header().Get("Content-Security-Policy"), should.ContainSubstring("frame-ancestors 'none'"))
+	assert.That(t, rec.Header().Get("Cache-Control"), should.Equal("no-store"))
 
 	// Extract XSRF token from the rendered form.
 	m := xsrfInputRe.FindStringSubmatch(body)
@@ -421,6 +432,8 @@ func TestStatusPageRenderingIngestAndConfigJSONPB(t *testing.T) {
 	postRec := httptest.NewRecorder()
 	handler.ServeHTTP(postRec, postReq)
 	assert.That(t, postRec.Code, should.Equal(http.StatusOK))
+	assert.That(t, postRec.Header().Get("X-Frame-Options"), should.Equal("DENY"))
+	assert.That(t, postRec.Header().Get("Cache-Control"), should.Equal("no-store"))
 	postBody := postRec.Body.String()
 	assert.That(t, postBody, should.ContainSubstring("Import succeeded"))
 	assert.That(t, postBody, should.NotContainSubstring("VERSION_MISMATCH"))
@@ -439,4 +452,157 @@ func TestStatusPageRenderingIngestAndConfigJSONPB(t *testing.T) {
 	assert.That(t, afterIngestRec.Code, should.Equal(http.StatusOK))
 	assert.That(t, afterIngestRec.Body.String(), should.ContainSubstring(`"inputRevision": "from-luci-cfg"`))
 	assert.That(t, afterIngestRec.Header().Get("X-Cfgcache-Input-Revision"), should.NotEqual(""))
+}
+
+type failingGetStore struct {
+	memstore.Store[*durationpb.Duration]
+	getErr error
+}
+
+func (s *failingGetStore) Get(ctx context.Context, pipelineID string, sets map[config.Set]*cfgcachepb.Meta) iter.Seq2[*cfgcachecommon.StoredConfig[*durationpb.Duration], error] {
+	if s.getErr != nil {
+		return func(yield func(*cfgcachecommon.StoredConfig[*durationpb.Duration], error) bool) {
+			yield(nil, s.getErr)
+		}
+	}
+	return s.Store.Get(ctx, pipelineID, sets)
+}
+
+func TestStatusPageHardening(t *testing.T) {
+	t.Parallel()
+
+	withAuthDB := func(ctx context.Context) context.Context {
+		db := authtest.NewFakeDB()
+		return auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
+			cfg.DBProvider = func(context.Context) (authdb.DB, error) {
+				return db, nil
+			}
+			return cfg
+		})
+	}
+
+	t.Run("DisableInMemory skips RefreshInMemory on POST ingest", func(t *testing.T) {
+		t.Parallel()
+		ctx, ts := TestingContext(t.Context())
+		ctx = withAuthDB(secrets.Use(ctx, &testsecrets.Store{}))
+
+		store := &memstore.Store[*durationpb.Duration]{}
+		svc := (&PassthroughServicePipeline[*durationpb.Duration]{
+			ID:    "svc",
+			Store: store,
+			Files: []File{&SingleFile[*durationpb.Duration]{Path: "svc.cfg"}},
+		}).Register(ts.Registry)
+
+		opts := &ModuleOptions{
+			Registry:          ts.Registry,
+			Vars:              ts.Vars,
+			Rules:             &validation.RuleSet{Vars: ts.Vars},
+			CronDispatcher:    &cron.Dispatcher{},
+			DisableValidation: true,
+			DisableCron:       true,
+			DisableInMemory:   true,
+			StatusAdminGroup:  "admin-group",
+		}
+		host := &fakeModuleHost{}
+		_, err := NewModule(opts).Initialize(ctx, host, module.HostOptions{Prod: false})
+		assert.NoErr(t, err)
+		handler := host.Routes()
+
+		getReq := httptest.NewRequest(http.MethodGet, StatusPagePath, nil).WithContext(ctx)
+		getRec := httptest.NewRecorder()
+		handler.ServeHTTP(getRec, getReq)
+		m := xsrfInputRe.FindStringSubmatch(getRec.Body.String())
+		assert.That(t, len(m), should.Equal(2))
+
+		ts.SetConfig("services/my-app", "svc.cfg", &durationpb.Duration{Seconds: 42})
+		form := url.Values{"xsrf_token": {m[1]}}
+		postReq := httptest.NewRequest(http.MethodPost, StatusIngestPath, strings.NewReader(form.Encode())).WithContext(ctx)
+		postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		postRec := httptest.NewRecorder()
+		handler.ServeHTTP(postRec, postReq)
+		assert.That(t, postRec.Code, should.Equal(http.StatusOK))
+		assert.That(t, postRec.Body.String(), should.ContainSubstring("Import succeeded"))
+
+		// Storage has the config, while in-memory cache remains unpopulated.
+		metas, err := store.LoadMeta(ctx, "svc")
+		assert.NoErr(t, err)
+		assert.That(t, len(metas), should.Equal(1))
+		_, err = svc.GetData(ctx)
+		assert.ErrIsLike(t, err, "config was never refreshed")
+	})
+
+	t.Run("POST ingest joins both IngestToStorage and RefreshInMemory errors, and masks internal Get errors", func(t *testing.T) {
+		t.Parallel()
+		ctx, ts := TestingContext(t.Context())
+		ctx = withAuthDB(secrets.Use(ctx, &testsecrets.Store{}))
+
+		store := &failingGetStore{}
+		(&PassthroughServicePipeline[*durationpb.Duration]{
+			ID:    "svc",
+			Store: &memstore.Store[*durationpb.Duration]{},
+			Files: []File{&SingleFile[*durationpb.Duration]{Path: "svc.cfg"}},
+			Transform: func(c *validation.Context, snap *Snapshot) (*durationpb.Duration, error) {
+				c.Errorf("bad ingest transform")
+				return nil, nil
+			},
+		}).Register(ts.Registry)
+		(&ProjectPipeline[*durationpb.Duration, int64]{
+			ID:                 "proj",
+			Store:              store,
+			Files:              []File{&SingleFile[*durationpb.Duration]{Path: "proj.cfg"}},
+			TransformVersion:   1,
+			ToMemoryMinVersion: 1,
+			ToMemoryMaxVersion: 1,
+			ToMemory: func(ctx context.Context, cs config.Set, in *durationpb.Duration) (int64, error) {
+				return in.Seconds, nil
+			},
+		}).Register(ts.Registry)
+
+		opts := &ModuleOptions{
+			Registry:          ts.Registry,
+			Vars:              ts.Vars,
+			Rules:             &validation.RuleSet{Vars: ts.Vars},
+			CronDispatcher:    &cron.Dispatcher{},
+			DisableValidation: true,
+			DisableCron:       true,
+			DisableInMemory:   false,
+			StatusAdminGroup:  "admin-group",
+		}
+		host := &fakeModuleHost{}
+		_, err := NewModule(opts).Initialize(ctx, host, module.HostOptions{Prod: false})
+		assert.NoErr(t, err)
+		handler := host.Routes()
+
+		// Ingest projects/p1 into storage so SameInputs matches on subsequent ingests.
+		ts.SetConfig("projects/p1", "proj.cfg", &durationpb.Duration{Seconds: 10})
+		assert.NoErr(t, ts.IngestToStorage(ctx))
+
+		getReq := httptest.NewRequest(http.MethodGet, StatusPagePath, nil).WithContext(ctx)
+		getRec := httptest.NewRecorder()
+		handler.ServeHTTP(getRec, getReq)
+		assert.That(t, getRec.Code, should.Equal(http.StatusOK))
+		m := xsrfInputRe.FindStringSubmatch(getRec.Body.String())
+		assert.That(t, len(m), should.Equal(2))
+
+		// Inject a backend Get error containing internal details.
+		store.getErr = errors.New("secret-backend-rpc-detail")
+
+		// StatusConfigPath returns generic 500 without leaking raw backend error.
+		cfgReq := httptest.NewRequest(http.MethodGet, StatusConfigPath+"?pipeline=proj&config_set=projects/p1", nil).WithContext(ctx)
+		cfgRec := httptest.NewRecorder()
+		handler.ServeHTTP(cfgRec, cfgReq)
+		assert.That(t, cfgRec.Code, should.Equal(http.StatusInternalServerError))
+		assert.That(t, cfgRec.Body.String(), should.NotContainSubstring("secret-backend-rpc-detail"))
+
+		// Trigger POST ingest where both IngestToStorage (svc) and RefreshInMemory (proj) fail.
+		ts.SetConfig("services/my-app", "svc.cfg", &durationpb.Duration{Seconds: 20})
+		form := url.Values{"xsrf_token": {m[1]}}
+		postReq := httptest.NewRequest(http.MethodPost, StatusIngestPath, strings.NewReader(form.Encode())).WithContext(ctx)
+		postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		postRec := httptest.NewRecorder()
+		handler.ServeHTTP(postRec, postReq)
+		assert.That(t, postRec.Code, should.Equal(http.StatusOK))
+		assert.That(t, postRec.Body.String(), should.ContainSubstring("bad ingest transform"))
+		assert.That(t, postRec.Body.String(), should.ContainSubstring("secret-backend-rpc-detail"))
+	})
 }

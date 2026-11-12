@@ -136,9 +136,15 @@ type ModuleOptions struct {
 	MemoryRefreshEvery time.Duration
 
 	// StatusAdminGroup is the Chrome Infra Auth group authorized to view the
-	// [StatusPagePath] status page and trigger config imports in production.
+	// [StatusPagePath] status page, read the full contents of all stored service
+	// and project configs via [StatusConfigPath], and trigger config imports via
+	// [StatusIngestPath] in production.
 	//
-	// If this is unset (default), the status page is disabled.
+	// Note that granting access to this group bypasses per-project LUCI Config
+	// read ACLs for any [ProjectPipeline] backed by a [GettableStore].
+	//
+	// If this is unset (default), the status page and its sub-routes are
+	// disabled.
 	StatusAdminGroup string
 }
 
@@ -159,7 +165,7 @@ func (o *ModuleOptions) Register(f *flag.FlagSet) {
 	f.DurationVar(&o.MemoryRefreshEvery, "cfgcache-memory-refresh-every", time.Minute,
 		"How frequently to refresh in-memory configs.")
 	f.StringVar(&o.StatusAdminGroup, "cfgcache-status-admin-group", "",
-		fmt.Sprintf("Auth group allowed to access %q (empty disables status page).", StatusPagePath))
+		fmt.Sprintf("Auth group allowed to access %q, read all stored service/project configs, and trigger imports (empty disables status page).", StatusPagePath))
 }
 
 // NewModule returns a server module that registers cfgcache validation rules,

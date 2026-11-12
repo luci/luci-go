@@ -62,6 +62,7 @@ type Registry struct {
 	errs                 []error
 	finishedRegistration bool
 	initialized          bool
+	ingestMu             sync.Mutex
 
 	ingestConfigs map[string]*ingestConfig
 

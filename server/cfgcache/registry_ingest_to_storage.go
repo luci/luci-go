@@ -44,6 +44,12 @@ type loadedStoreMeta map[string]map[config.Set]*cfgcachepb.Meta
 func (r *Registry) IngestToStorage(ctx context.Context) error {
 	r.checkInitialized()
 
+	r.ingestMu.Lock()
+	defer r.ingestMu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	client := cfgclient.Client(ctx)
 
 	delta, err := r.findIngestDelta(ctx, client)
