@@ -13,10 +13,12 @@
 // limitations under the License.
 
 import {
+  constructArtifactName,
   createTVCmpFn,
   createTVPropGetter,
   getInvIdFromBuildId,
   getInvIdFromBuildNum,
+  parseArtifactName,
   TestVariant,
   TestVerdict_Status,
   TestVerdict_StatusOverride,
@@ -146,5 +148,38 @@ describe('createTVCmpFn', () => {
     expect(cmpFn(variant1, variant2)).toStrictEqual(-1);
     expect(cmpFn(variant2, variant1)).toStrictEqual(1);
     expect(cmpFn(variant2, variant3)).toStrictEqual(-1);
+  });
+});
+
+describe('constructArtifactName and parseArtifactName', () => {
+  test('encodes and decodes invocation-level artifact IDs', () => {
+    const ident = {
+      invocationId: 'inv-1',
+      artifactId: 'dir/sub dir/art?a=1#b',
+    };
+    const name = constructArtifactName(ident);
+    expect(name).toStrictEqual(
+      'invocations/inv-1/artifacts/dir%2Fsub%20dir%2Fart%3Fa%3D1%23b',
+    );
+    expect(parseArtifactName(name)).toStrictEqual({
+      invocationId: 'inv-1',
+      testId: undefined,
+      resultId: undefined,
+      artifactId: 'dir/sub dir/art?a=1#b',
+    });
+  });
+
+  test('encodes and decodes test-result-level artifact IDs', () => {
+    const ident = {
+      invocationId: 'inv-1',
+      testId: 'test/suite/case',
+      resultId: 'result-1',
+      artifactId: '../../../../../../other/endpoint',
+    };
+    const name = constructArtifactName(ident);
+    expect(name).toStrictEqual(
+      'invocations/inv-1/tests/test%2Fsuite%2Fcase/results/result-1/artifacts/..%2F..%2F..%2F..%2F..%2F..%2Fother%2Fendpoint',
+    );
+    expect(parseArtifactName(name)).toStrictEqual(ident);
   });
 });

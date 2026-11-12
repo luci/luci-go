@@ -33,6 +33,7 @@ describe('<TextArtifact />', () => {
   afterEach(() => {
     cleanup();
     resetMockFetch();
+    jest.restoreAllMocks();
     jest.useRealTimers();
   });
 
@@ -201,5 +202,77 @@ describe('<TextArtifact />', () => {
     expect(
       screen.getByText((s) => s.includes('failed to load content')),
     ).toBeInTheDocument();
+  });
+
+  it('encodes slashes and special characters in artifact ID', async () => {
+    mockFetchTextArtifact(
+      'invocations/inv-1/tests/test-1/results/result-1/artifacts/dir%2Fsub%20dir%2Flog%3Fa%3D1%23b.txt',
+      'nested artifact content',
+    );
+    render(
+      <FakeContextProvider>
+        <ArtifactContextProvider resultName="invocations/inv-1/tests/test-1/results/result-1">
+          <TextArtifact artifactId="dir/sub dir/log?a=1#b.txt" />
+        </ArtifactContextProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    const url = new URL((global.fetch as jest.Mock).mock.lastCall[0]);
+    expect(url.pathname).toBe(
+      '/raw-artifact/invocations/inv-1/tests/test-1/results/result-1/artifacts/dir%2Fsub%20dir%2Flog%3Fa%3D1%23b.txt',
+    );
+    expect(url.searchParams.has('a')).toBe(false);
+    expect(url.hash).toBe('');
+    expect(screen.getByTestId('text-artifact-content')).toHaveTextContent(
+      'nested artifact content',
+    );
+  });
+
+  it('encodes relative path segments in artifact ID', async () => {
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValue(new Response('not found', { status: 404 }));
+    render(
+      <FakeContextProvider>
+        <ArtifactContextProvider resultName="invocations/inv-1/tests/test-1/results/result-1">
+          <TextArtifact artifactId="../../../../../../../../other/endpoint" />
+        </ArtifactContextProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const url = new URL(fetchSpy.mock.lastCall![0] as string);
+    expect(url.pathname).toBe(
+      '/raw-artifact/invocations/inv-1/tests/test-1/results/result-1/' +
+        'artifacts/..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fother%2Fendpoint',
+    );
+  });
+
+  it('encodes relative path segments in invocation-level artifact ID', async () => {
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValue(new Response('not found', { status: 404 }));
+    render(
+      <FakeContextProvider>
+        <ArtifactContextProvider resultName="invocations/inv-1/tests/test-1/results/result-1">
+          <TextArtifact
+            artifactId="../../../../../../../../other/endpoint"
+            invLevel
+          />
+        </ArtifactContextProvider>
+      </FakeContextProvider>,
+    );
+
+    await act(() => jest.runAllTimersAsync());
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const url = new URL(fetchSpy.mock.lastCall![0] as string);
+    expect(url.pathname).toBe(
+      '/raw-artifact/invocations/inv-1/artifacts/..%2F..%2F..%2F..%2F..%2F..%2F..%2F..%2Fother%2Fendpoint',
+    );
   });
 });

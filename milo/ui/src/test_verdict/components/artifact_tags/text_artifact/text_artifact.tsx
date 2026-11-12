@@ -42,12 +42,13 @@ export function TextArtifact({
   const resultName = useResultName();
 
   const fetchUrl = useMemo(() => {
+    const encodedArtifactId = encodeURIComponent(artifactId);
     let artifactName = '';
     if (invLevel) {
       const invName = resultName.slice(0, resultName.indexOf('/tests/'));
-      artifactName = `${invName}/artifacts/${artifactId}`;
+      artifactName = `${invName}/artifacts/${encodedArtifactId}`;
     } else {
-      artifactName = `${resultName}/artifacts/${artifactId}`;
+      artifactName = `${resultName}/artifacts/${encodedArtifactId}`;
     }
     return getRawArtifactURLPath(artifactName);
   }, [invLevel, artifactId, resultName]);

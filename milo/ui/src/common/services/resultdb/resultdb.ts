@@ -500,7 +500,7 @@ export function parseArtifactName(artifactName: string): ArtifactIdentifier {
     invocationId,
     testId: testId ? decodeURIComponent(testId) : undefined,
     resultId: resultId ? resultId : undefined,
-    artifactId,
+    artifactId: decodeURIComponent(artifactId),
   };
 }
 
@@ -526,12 +526,13 @@ export interface TestResultArtifactIdentifier {
  * Constructs the name of the artifact.
  */
 export function constructArtifactName(identifier: ArtifactIdentifier) {
+  const encodedArtifactId = encodeURIComponent(identifier.artifactId);
   if (identifier.testId && identifier.resultId) {
     return `invocations/${identifier.invocationId}/tests/${encodeURIComponent(
       identifier.testId,
-    )}/results/${identifier.resultId}/artifacts/${identifier.artifactId}`;
+    )}/results/${identifier.resultId}/artifacts/${encodedArtifactId}`;
   } else {
-    return `invocations/${identifier.invocationId}/artifacts/${identifier.artifactId}`;
+    return `invocations/${identifier.invocationId}/artifacts/${encodedArtifactId}`;
   }
 }
 
