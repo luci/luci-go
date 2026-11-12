@@ -20,6 +20,10 @@ import (
 	"strings"
 )
 
+// MaxConfigSetLength imposes a strict limit on the total length of a
+// config.Set.
+const MaxConfigSetLength = 256
+
 // ServiceNamePattern is the regexp pattern string that matches valid service
 // name.
 const ServiceNamePattern = `[a-z0-9\-_]+`
@@ -124,6 +128,9 @@ func (cs Set) Domain() Domain {
 
 // Validate checks that the config set is well-formed.
 func (cs Set) Validate() error {
+	if len(cs) > MaxConfigSetLength {
+		return fmt.Errorf("config set is too long: %d > %d", len(cs), MaxConfigSetLength)
+	}
 	switch domain, target := cs.Split(); domain {
 	case "":
 		return fmt.Errorf("can not extract domain from config set %q. expected syntax \"domain/target\"", cs)
