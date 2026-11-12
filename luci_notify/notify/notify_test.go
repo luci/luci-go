@@ -38,10 +38,12 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/tq"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/common"
 	"go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/internal"
 )
 
 func TestNotify(t *testing.T) {
@@ -871,6 +873,109 @@ func TestComputeRecipients_NoAuth(t *testing.T) {
 				Email:    "oncall@example.com",
 				Template: "default",
 			},
+		}))
+	})
+}
+
+func TestIsRecipientAllowed(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("isRecipientAllowed", t, func(t *ftt.Test) {
+		ctx := gologger.StdConfig.Use(context.Background())
+		build := &buildbucketpb.Build{Id: 123}
+
+		allowedCases := []string{
+			"user@chromium.org",
+			"user@google.com",
+			"user+tag@google.com",
+			"first.last-1@chromium.org",
+			"sheriff@grotations.appspotmail.com",
+			"oncall@rotations.google.com",
+		}
+		for _, recipient := range allowedCases {
+			assert.Loosely(t, isRecipientAllowed(ctx, recipient, build), should.BeTrue, truth.Explain("expected %q to be allowed", recipient))
+		}
+
+		rejectedCases := []string{
+			"",
+			"not-an-email",
+			"@google.com",
+			"user@example.com",
+			"user@sub.google.com",
+			"user@othergoogle.com",
+			"user@GOOGLE.COM",
+			"other@example.com, x@google.com",
+			"x@google.com, other@example.com",
+			"a@google.com, b@chromium.org",
+			"grp: user@external.example; <a@google.com>",
+			"grp: user@external.example, a@google.com;",
+			"grp: a@google.com;",
+			"Display Name <a@google.com>",
+			`"user@external.example" <a@google.com>`,
+			"<a@google.com>",
+			"a@google.com (comment)",
+			" a@google.com",
+			"a@google.com ",
+			`"user@external.example"@google.com`,
+			"a@example.com@google.com",
+			"a\r\n@google.com",
+			"a@ google.com",
+		}
+		for _, recipient := range rejectedCases {
+			assert.Loosely(t, isRecipientAllowed(ctx, recipient, build), should.BeFalse, truth.Explain("expected %q to be rejected", recipient))
+		}
+	})
+
+	ftt.Run("Notify filters invalid recipient formats", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+		c = common.SetAppIDForTest(c, "luci-notify")
+		c = caching.WithEmptyProcessCache(c)
+		c = clock.Set(c, testclock.New(testclock.TestRecentTimeUTC))
+		c = gologger.StdConfig.Use(c)
+		c, sched := tq.TestingContext(c, nil)
+
+		project := &config.Project{Name: "chromium", Revision: "deadbeef"}
+		tmpl := &config.EmailTemplate{
+			ProjectKey:          datastore.KeyForObj(c, project),
+			Name:                "default",
+			SubjectTextTemplate: "Build {{.Build.Id}} completed",
+			BodyHTMLTemplate:    "Build {{.Build.Id}} completed",
+		}
+		assert.Loosely(t, datastore.Put(c, project, tmpl), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		input := &notifypb.TemplateInput{
+			BuildbucketHostname: "buildbucket.example.com",
+			Build: &buildbucketpb.Build{
+				Id: 99,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "linux-rel",
+				},
+				Status: buildbucketpb.Status_FAILURE,
+			},
+		}
+
+		recipients := []EmailNotify{
+			{Email: "valid@google.com"},
+			{Email: "other@example.com, valid@google.com"},
+			{Email: "grp: user@external.example; <valid@google.com>"},
+			{Email: "Display Name <valid@chromium.org>"},
+			{Email: "valid@chromium.org"},
+		}
+
+		assert.Loosely(t, Notify(c, recipients, input), should.BeNil)
+
+		var actualEmails []string
+		for _, task := range sched.Tasks() {
+			et := task.Payload.(*internal.EmailTask)
+			actualEmails = append(actualEmails, et.Recipients...)
+		}
+		sort.Strings(actualEmails)
+		assert.Loosely(t, actualEmails, should.Match([]string{
+			"valid@chromium.org",
+			"valid@google.com",
 		}))
 	})
 }

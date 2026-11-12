@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/mail"
 	"regexp"
 	"strings"
 	"sync"
@@ -110,13 +111,26 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *notify
 	return tasks, nil
 }
 
+// isAllowedRecipientAddress reports whether recipient is a single bare RFC 5322
+// email address whose domain matches validRecipientSuffixes.
+func isAllowedRecipientAddress(recipient string) bool {
+	addr, err := mail.ParseAddress(recipient)
+	if err != nil || addr.Address != recipient {
+		return false
+	}
+	for _, suffix := range validRecipientSuffixes {
+		if strings.HasSuffix(addr.Address, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
 // isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
 func isRecipientAllowed(c context.Context, recipient string, build *buildbucketpb.Build) bool {
 	// TODO(mknyszek): Do a real ACL check here.
-	for _, suffix := range validRecipientSuffixes {
-		if strings.HasSuffix(recipient, suffix) {
-			return true
-		}
+	if isAllowedRecipientAddress(recipient) {
+		return true
 	}
 	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", recipient, build.Id)
 	return false

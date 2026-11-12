@@ -292,6 +292,18 @@ func TestNotifyOwnersHelper(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(tasks), should.Equal(0))
 		})
+		t.Run("Malformed recipient with allowed suffix", func(t *ftt.Test) {
+			for _, badEmail := range []string{
+				"other@example.com, test@google.com",
+				"grp: user@external.example; <test@google.com>",
+				"Display Name <test@google.com>",
+			} {
+				mockBHN[0].OwnerEmail = badEmail
+				tasks, err := getNotifyOwnersTasks(c, mockBHN, mockBuildersClient, "chromium")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, len(tasks), should.Equal(0))
+			}
+		})
 		t.Run("Notify all when healthy true - all builders healthy", func(t *ftt.Test) {
 			mockBHN[0].NotifyAllHealthy = true
 			mockBHN[0].Builders = mockBHN[0].Builders[0:1]
