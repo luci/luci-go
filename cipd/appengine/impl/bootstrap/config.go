@@ -22,20 +22,52 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgcache"
+	cfgcacheLegacy "go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/cfgcache"
+	"go.chromium.org/luci/server/cfgcache/dsstore"
 
 	api "go.chromium.org/luci/cipd/api/config/v1"
 )
 
-var cachedCfg = cfgcache.Register(&cfgcache.Entry{
+var cachedCfg = (&cfgcache.PassthroughServicePipeline[*api.BootstrapConfigFile]{
+	ID:    "svc-bootstrap",
+	Store: &dsstore.Store[*api.BootstrapConfigFile]{},
+	Files: []cfgcache.File{
+		&cfgcache.SingleFile[*api.BootstrapConfigFile]{Path: "bootstrap.cfg"},
+	},
+})
+
+type Config struct {
+	handle *cfgcache.RegisteredService[*api.BootstrapConfigFile]
+}
+
+func RegisterConfig(reg *cfgcache.Registry) *Config {
+	return &Config{cachedCfg.Register(reg)}
+}
+
+// Get returns a matching bootstrap package config or nil.
+func (c *Config) Get(ctx context.Context, pkg string) (*api.BootstrapConfig, error) {
+	cfg, err := c.handle.GetData(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, bc := range cfg.GetBootstrapConfig() {
+		if matchesConfig(pkg, bc) {
+			return bc, nil
+		}
+	}
+	return nil, nil
+}
+
+var cachedCfgLegacy = cfgcacheLegacy.Register(&cfgcacheLegacy.Entry{
 	Path: "bootstrap.cfg",
 	Type: (*api.BootstrapConfigFile)(nil),
 })
 
 // ImportConfig is called from a cron to import bootstrap.cfg into datastore.
 func ImportConfig(ctx context.Context) error {
-	_, err := cachedCfg.Update(ctx, nil)
+	_, err := cachedCfgLegacy.Update(ctx, nil)
 	if errors.Unwrap(err) == config.ErrNoConfig {
 		logging.Warningf(ctx, "No bootstrap.cfg config file")
 		return nil
@@ -45,7 +77,7 @@ func ImportConfig(ctx context.Context) error {
 
 // BootstrapConfig returns a matching bootstrap package config or nil.
 func BootstrapConfig(ctx context.Context, pkg string) (*api.BootstrapConfig, error) {
-	cfg, err := cachedCfg.Get(ctx, nil)
+	cfg, err := cachedCfgLegacy.Get(ctx, nil)
 	if err != nil {
 		if errors.Contains(err, datastore.ErrNoSuchEntity) {
 			return nil, nil

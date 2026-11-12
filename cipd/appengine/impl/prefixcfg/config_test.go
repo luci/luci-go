@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth"
@@ -31,11 +32,13 @@ import (
 	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/cfgcache"
 
 	configpb "go.chromium.org/luci/cipd/api/config/v1"
 )
 
-func TestMain(m *testing.M) {
+func init() {
 	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(regexp.Regexp{}))
 }
 
@@ -47,7 +50,7 @@ func TestTransform(t *testing.T) {
 		want *Entry
 	}
 
-	pfx := func(path, proj string, billPercent int, allowedWriters []string) *configpb.Prefix {
+	pfx := func(path, proj string, billPercent int, allowedWriters []string, enableFallback *bool) *configpb.Prefix {
 		var billing *configpb.Prefix_Billing
 		if billPercent != 0 {
 			billing = &configpb.Prefix_Billing{
@@ -56,15 +59,16 @@ func TestTransform(t *testing.T) {
 		}
 
 		return &configpb.Prefix{
-			Path:                   path,
-			OwningLuciProject:      proj,
-			Billing:                billing,
-			AllowWritersFromRegexp: allowedWriters,
+			Path:                    path,
+			OwningLuciProject:       proj,
+			Billing:                 billing,
+			AllowWritersFromRegexp:  allowedWriters,
+			EnableLegacyAclFallback: enableFallback,
 		}
 	}
 
-	ent := func(path, proj string, billPercent int, allowedWriters []string) *Entry {
-		p := pfx(path, proj, billPercent, allowedWriters)
+	ent := func(path, proj string, billPercent int, allowedWriters []string, enableFallback *bool) *Entry {
+		p := pfx(path, proj, billPercent, allowedWriters, enableFallback)
 		ret := &Entry{
 			PrefixConfig: p,
 		}
@@ -74,6 +78,10 @@ func TestTransform(t *testing.T) {
 
 		return ret
 	}
+
+	unset := (*bool)(nil)
+	off := proto.Bool(false)
+	on := proto.Bool(true)
 
 	cases := []struct {
 		name    string
@@ -93,37 +101,37 @@ func TestTransform(t *testing.T) {
 		{
 			name: "explicit_root",
 			cfg: []*configpb.Prefix{
-				pfx("a/b", "ab", 0, nil),
-				pfx("", "root", 0, nil),
+				pfx("a/b", "ab", 0, nil, on),
+				pfx("", "root", 0, nil, unset),
 			},
 			queries: []query{
-				{"", ent("", "root", 0, nil)},
-				{"a", ent("", "root", 0, nil)},
-				{"a/b", ent("a/b/", "ab", 0, nil)},
-				{"a/b/c", ent("a/b/", "ab", 0, nil)},
-				{"a/d", ent("", "root", 0, nil)},
-				{"a/bc", ent("", "root", 0, nil)},
+				{"", ent("", "root", 0, nil, unset)},
+				{"a", ent("", "root", 0, nil, unset)},
+				{"a/b", ent("a/b/", "ab", 0, nil, on)},
+				{"a/b/c", ent("a/b/", "ab", 0, nil, on)},
+				{"a/d", ent("", "root", 0, nil, unset)},
+				{"a/bc", ent("", "root", 0, nil, unset)},
 			},
 		},
 
 		{
 			name: "inheritance",
 			cfg: []*configpb.Prefix{
-				pfx("a/b/replace/deep/deeper", "y", 0, []string{"re4"}),
-				pfx("a/b/replace", "x", 2, []string{"re3"}),
-				pfx("a/b/inherit", "", 0, nil),
-				pfx("a", "a", 1, []string{"re1", "re2"}),
+				pfx("a/b/replace/deep/deeper", "y", 0, []string{"re4"}, on),
+				pfx("a/b/replace", "x", 2, []string{"re3"}, off),
+				pfx("a/b/inherit", "", 0, nil, unset),
+				pfx("a", "a", 1, []string{"re1", "re2"}, on),
 			},
 			queries: []query{
-				{"", ent("", "", 0, nil)},
-				{"a", ent("a/", "a", 1, []string{"re1", "re2"})},
-				{"a/b", ent("a/", "a", 1, []string{"re1", "re2"})},
-				{"a/b/c", ent("a/", "a", 1, []string{"re1", "re2"})},
-				{"a/b/inherit", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"})},
-				{"a/b/inherit/deeper", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"})},
-				{"a/b/replace", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"})},
-				{"a/b/replace/deep", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"})},
-				{"a/b/replace/deep/deeper", ent("a/b/replace/deep/deeper/", "y", 2, []string{"re4", "re3", "re1", "re2"})},
+				{"", ent("", "", 0, nil, unset)},
+				{"a", ent("a/", "a", 1, []string{"re1", "re2"}, on)},
+				{"a/b", ent("a/", "a", 1, []string{"re1", "re2"}, on)},
+				{"a/b/c", ent("a/", "a", 1, []string{"re1", "re2"}, on)},
+				{"a/b/inherit", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"}, on)},
+				{"a/b/inherit/deeper", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"}, on)},
+				{"a/b/replace", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"}, off)},
+				{"a/b/replace/deep", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"}, off)},
+				{"a/b/replace/deep/deeper", ent("a/b/replace/deep/deeper/", "y", 2, []string{"re4", "re3", "re1", "re2"}, on)},
 			},
 		},
 	}
@@ -263,6 +271,61 @@ func TestConfig(t *testing.T) {
 	// Refresh picks it up.
 	assert.NoErr(t, cfg.refresh(ctx))
 	assert.That(t, cfg.queryable().tree.Len(), should.Equal(3))
+}
+
+func TestConfigV2(t *testing.T) {
+	t.Parallel()
+
+	ctx, cfgstate := cfgcache.TestingContext(memory.Use(t.Context()))
+	datastore.GetTestable(ctx).Consistent(true)
+
+	cfg := RegisterConfig(cfgstate.Registry)
+	assert.NoErr(t, cfgstate.Initialize(ctx))
+	assert.NoErr(t, cfgstate.RefreshInMemory(ctx))
+
+	// The config is missing initially, but it is OK.
+	ent, err := cfg.Lookup(ctx, "a/b/c")
+	assert.NoErr(t, err)
+	assert.That(t, ent, should.Match(&Entry{PrefixConfig: &configpb.Prefix{}}))
+
+	// Load the initial config into the datastore.
+	cfgstate.SetConfig("services/my-app", "prefixes.cfg", &configpb.PrefixesConfigFile{
+		Prefix: []*configpb.Prefix{
+			{Path: "a/b/c", OwningLuciProject: "proj-abc"},
+		},
+	})
+	assert.NoErr(t, cfgstate.IngestToStorage(ctx))
+
+	// Refresh picks it up.
+	assert.NoErr(t, cfgstate.RefreshInMemory(ctx))
+	ent, err = cfg.Lookup(ctx, "a/b/c/d")
+	assert.NoErr(t, err)
+	assert.That(t, ent, should.Match(&Entry{
+		PrefixConfig: &configpb.Prefix{
+			Path:              "a/b/c/",
+			OwningLuciProject: "proj-abc",
+		},
+	}))
+
+	// Config changes.
+	cfgstate.SetConfig("services/my-app", "prefixes.cfg", &configpb.PrefixesConfigFile{
+		Prefix: []*configpb.Prefix{
+			{Path: "a/b/c", OwningLuciProject: "proj-abc"},
+			{Path: "a/b/c/d", OwningLuciProject: "proj-abcd"},
+		},
+	})
+	assert.NoErr(t, cfgstate.IngestToStorage(ctx))
+
+	// Refresh picks it up.
+	assert.NoErr(t, cfgstate.RefreshInMemory(ctx))
+	ent, err = cfg.Lookup(ctx, "a/b/c/d")
+	assert.NoErr(t, err)
+	assert.That(t, ent, should.Match(&Entry{
+		PrefixConfig: &configpb.Prefix{
+			Path:              "a/b/c/d/",
+			OwningLuciProject: "proj-abcd",
+		},
+	}))
 }
 
 func withConfig(ctx context.Context, cfg *configpb.PrefixesConfigFile) context.Context {

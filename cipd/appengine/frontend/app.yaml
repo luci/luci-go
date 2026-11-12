@@ -17,6 +17,10 @@ luci_gae_vars:
     TINK_AEAD_KEY: sm://tink-aead-primary
     SOFTWARE_VERIFIER_HOST: "https://bcidsoftwareverifier-pa.googleapis.com"
     SLSA_RESOURCE_PREFIX: "cipd_package://dev/"
+    CFGCACHE_MAX_MEMORY_STALENESS: ""
+    CFGCACHE_MEMORY_REFRESH_TIMEOUT: ""
+    CFGCACHE_MEMORY_REFRESH_EVERY: ""
+    CFGCACHE_STATUS_ADMIN_GROUP: ""
 
 instance_class: ${FRONTEND_INSTANCE_CLASS}
 
@@ -59,3 +63,7 @@ entrypoint: >
   -bqlog-dataset cipd
   -software-verifier-host "${SOFTWARE_VERIFIER_HOST}"
   -slsa-resource-prefix "${SLSA_RESOURCE_PREFIX}"
+  -cfgcache-max-memory-staleness "${CFGCACHE_MAX_MEMORY_STALENESS}"
+  -cfgcache-memory-refresh-timeout "${CFGCACHE_MEMORY_REFRESH_TIMEOUT}"
+  -cfgcache-memory-refresh-every "${CFGCACHE_MEMORY_REFRESH_EVERY}"
+  -cfgcache-status-admin-group "${CFGCACHE_STATUS_ADMIN_GROUP}"

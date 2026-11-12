@@ -32,22 +32,64 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/server/cfgcache"
+	legacyCfgCache "go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/cfgcache"
+	"go.chromium.org/luci/server/cfgcache/dsstore"
 
 	configpb "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/common"
 )
 
-var cachedCfg = cfgcache.Register(&cfgcache.Entry{
+var cachedCfg = legacyCfgCache.Register(&legacyCfgCache.Entry{
 	Path: "prefixes.cfg",
 	Type: (*configpb.PrefixesConfigFile)(nil),
-	Validator: func(c *validation.Context, msg proto.Message) error {
-		validate(c, msg.(*configpb.PrefixesConfigFile))
-		return nil
+	// Validation done by serviceConfig now.
+})
+
+var prefixesCfgFile = &cfgcache.SingleFile[*configpb.PrefixesConfigFile]{
+	Path: "prefixes.cfg",
+}
+
+var serviceConfig = (&cfgcache.ServicePipeline[*configpb.PrefixesConfigFile, *queryable]{
+	ID:                 "cipd-prefixes",
+	Store:              &dsstore.Store[*configpb.PrefixesConfigFile]{},
+	Files:              []cfgcache.File{prefixesCfgFile},
+	TransformVersion:   1,
+	ToMemoryMaxVersion: 1,
+	Transform: func(c *validation.Context, snap *cfgcache.Snapshot) (*configpb.PrefixesConfigFile, error) {
+		msg := prefixesCfgFile.Get(snap)
+		validate(c, msg)
+		return msg, nil
+	},
+	ToMemory: func(ctx context.Context, cs config.Set, msg *configpb.PrefixesConfigFile) (*queryable, error) {
+		return transform(msg, "")
 	},
 })
+
+func RegisterConfig(reg *cfgcache.Registry) *ConfigV2 {
+	return &ConfigV2{
+		serviceConfig.Register(reg),
+	}
+}
+
+// ConfigV2 holds parsed and transformed configs in memory, refreshed in the
+// background.
+type ConfigV2 struct {
+	svcHandle *cfgcache.RegisteredService[*queryable]
+}
+
+func (c *ConfigV2) Lookup(ctx context.Context, path string) (*Entry, error) {
+	q, err := c.svcHandle.GetData(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if q == nil {
+		return &Entry{PrefixConfig: &configpb.Prefix{}}, nil
+	}
+	return q.lookup(path), nil
+}
 
 // ImportConfig is called from a cron to import prefixes.cfg into the datastore.
 func ImportConfig(ctx context.Context) error {
@@ -62,7 +104,7 @@ func ImportConfig(ctx context.Context) error {
 // Config holds parsed and transformed configs in memory, refetching them from
 // the datastore occasionally.
 type Config struct {
-	cur atomic.Value // contains *queryable that is periodically replaced
+	cur atomic.Pointer[queryable] // contains *queryable that is periodically replaced
 }
 
 // queryable is a queryable representation of the prefixes.cfg config.
@@ -124,7 +166,7 @@ func (c *Config) RefreshPeriodically(ctx context.Context) {
 
 // queryable is the queryable config stored in the atomic.
 func (c *Config) queryable() *queryable {
-	return c.cur.Load().(*queryable)
+	return c.cur.Load()
 }
 
 // refresh updates the in-memory config based on what's in the datastore.
@@ -190,7 +232,7 @@ func validate(c *validation.Context, cfg *configpb.PrefixesConfigFile) {
 // transform takes a validated config and transforms it into a queryable form.
 func transform(cfg *configpb.PrefixesConfigFile, rev string) (*queryable, error) {
 	// We are going to mutate entries.
-	entries := proto.Clone(cfg).(*configpb.PrefixesConfigFile).Prefix
+	entries := proto.CloneOf(cfg).GetPrefix()
 
 	// Normalize paths to be compatible with longest prefix match algo for paths.
 	// I.e. as a path "a/b/c" is a prefix of "a/b/c/d", but not a prefix of
@@ -252,7 +294,11 @@ func inheritFromAncestor(entry, ancestor *Entry) {
 	if prefix.Billing == nil {
 		prefix.Billing = ancestor.PrefixConfig.Billing
 	}
-
+	// Allow explicitly overriding the fallback in a deeper prefix, but it's
+	// otherwise sticky.
+	if entry.PrefixConfig.EnableLegacyAclFallback == nil && ancestor.PrefixConfig.EnableLegacyAclFallback != nil {
+		entry.PrefixConfig.EnableLegacyAclFallback = proto.Bool(ancestor.PrefixConfig.GetEnableLegacyAclFallback())
+	}
 	prefix.ExemptFromVerifySoftwareArtifacts = ancestor.PrefixConfig.ExemptFromVerifySoftwareArtifacts
 	prefix.AllowWritersFromRegexp = append(prefix.AllowWritersFromRegexp, ancestor.PrefixConfig.AllowWritersFromRegexp...)
 	entry.AllowWritersFromRegexp = append(entry.AllowWritersFromRegexp, ancestor.AllowWritersFromRegexp...)

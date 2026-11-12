@@ -13,6 +13,10 @@ luci_gae_vars:
     DS_CACHE: redis
     SOFTWARE_VERIFIER_HOST: "https://bcidsoftwareverifier-pa.googleapis.com"
     SLSA_RESOURCE_PREFIX: "cipd_package://dev/"
+    CFGCACHE_MAX_INGEST_MEMORY_MB: ""
+    CFGCACHE_MAX_MEMORY_STALENESS: ""
+    CFGCACHE_MEMORY_REFRESH_TIMEOUT: ""
+    CFGCACHE_MEMORY_REFRESH_EVERY: ""
 
 instance_class: ${BACKEND_INSTANCE_CLASS}
 basic_scaling:
@@ -42,3 +46,7 @@ entrypoint: >
   -bqlog-dataset cipd
   -software-verifier-host "${SOFTWARE_VERIFIER_HOST}"
   -slsa-resource-prefix "${SLSA_RESOURCE_PREFIX}"
+  -cfgcache-max-ingest-memory-mb "${CFGCACHE_MAX_INGEST_MEMORY_MB}"
+  -cfgcache-max-memory-staleness "${CFGCACHE_MAX_MEMORY_STALENESS}"
+  -cfgcache-memory-refresh-timeout "${CFGCACHE_MEMORY_REFRESH_TIMEOUT}"
+  -cfgcache-memory-refresh-every "${CFGCACHE_MEMORY_REFRESH_EVERY}"

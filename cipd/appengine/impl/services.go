@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgmodule"
 	"go.chromium.org/luci/server"
 	"go.chromium.org/luci/server/bqlog"
+	"go.chromium.org/luci/server/cfgcache"
 	"go.chromium.org/luci/server/cron"
 	"go.chromium.org/luci/server/dsmapper"
 	"go.chromium.org/luci/server/gaeemulation"
@@ -36,6 +37,7 @@ import (
 	admingrpcpb "go.chromium.org/luci/cipd/api/admin/v1/grpcpb"
 	casgrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/caspb/grpcpb"
 	"go.chromium.org/luci/cipd/appengine/impl/admin"
+	"go.chromium.org/luci/cipd/appengine/impl/bootstrap"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
@@ -68,8 +70,12 @@ type Services struct {
 
 // Main initializes the core server modules and launches the callback.
 func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) error) {
+	prefixcfg.RegisterConfig(nil)
+	bootstrap.RegisterConfig(nil)
+
 	modules := append([]module.Module{
 		bqlog.NewModuleFromFlags(),
+		cfgcache.NewModuleFromFlags(),
 		cfgmodule.NewModuleFromFlags(),
 		cron.NewModuleFromFlags(),
 		dsmapper.NewModuleFromFlags(),

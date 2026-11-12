@@ -25,10 +25,44 @@ import (
 	"go.chromium.org/luci/config/cfgclient"
 	"go.chromium.org/luci/config/impl/memory"
 	gae "go.chromium.org/luci/gae/impl/memory"
+	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/caching"
+	"go.chromium.org/luci/server/cfgcache"
+
+	api "go.chromium.org/luci/cipd/api/config/v1"
 )
 
 func TestConfig(t *testing.T) {
+	t.Parallel()
+
+	ctx, ts := cfgcache.TestingContext(gae.Use(t.Context()))
+	datastore.GetTestable(ctx).Consistent(true)
+	cfg := &Config{cachedCfg.Register(ts.Registry)}
+	assert.NoErr(t, ts.Initialize(ctx))
+
+	ts.SetConfig("services/my-app", "bootstrap.cfg", &api.BootstrapConfigFile{
+		BootstrapConfig: []*api.BootstrapConfig{
+			{Prefix: "pkg/a/specific"},
+			{Prefix: "pkg/a"},
+		},
+	})
+	assert.NoErr(t, ts.IngestToStorage(ctx))
+	assert.NoErr(t, ts.RefreshInMemory(ctx))
+
+	bs, err := cfg.Get(ctx, "pkg/a/specific/zzz")
+	assert.NoErr(t, err)
+	assert.That(t, bs.Prefix, should.Equal("pkg/a/specific"))
+
+	bs, err = cfg.Get(ctx, "pkg/a/specific")
+	assert.NoErr(t, err)
+	assert.Loosely(t, bs.Prefix, should.Equal("pkg/a/specific"))
+
+	bs, err = cfg.Get(ctx, "pkg/a/another")
+	assert.NoErr(t, err)
+	assert.Loosely(t, bs.Prefix, should.Equal("pkg/a"))
+}
+
+func TestConfigLegacy(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With mocks", t, func(t *ftt.Test) {
@@ -36,7 +70,7 @@ func TestConfig(t *testing.T) {
 			"services/${appid}": map[string]string{},
 		}
 		mockConfig := func(body string) {
-			configs["services/${appid}"][cachedCfg.Path] = body
+			configs["services/${appid}"][cachedCfgLegacy.Path] = body
 		}
 
 		ctx := gae.Use(context.Background())
