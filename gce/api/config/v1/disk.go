@@ -21,14 +21,18 @@ import (
 )
 
 // isValidImage returns whether or not the given string is a valid image name.
-// Image names must have the form projects/<project>/global/images/<image> or
-// global/images/<image>.
+// Image names must have the form projects/<project>/global/images/[family/]<image>
+// or global/images/[family/]<image>.
 func isValidImage(s string) bool {
 	switch parts := strings.Split(s, "/"); len(parts) {
 	case 3:
 		return parts[0] == "global" && parts[1] == "images"
+	case 4:
+		return parts[0] == "global" && parts[1] == "images" && parts[2] == "family"
 	case 5:
 		return parts[0] == "projects" && parts[2] == "global" && parts[3] == "images"
+	case 6:
+		return parts[0] == "projects" && parts[2] == "global" && parts[3] == "images" && parts[4] == "family"
 	}
 	return false
 }
@@ -88,7 +92,7 @@ func (d *Disk) Validate(c *validation.Context) {
 			c.Errorf("persistent disk must use SCSI")
 		}
 		if !isValidImage(d.GetImage()) {
-			c.Errorf("image must match projects/<project>/global/images/<image> or global/images/<image>")
+			c.Errorf("image must match projects/<project>/global/images/[family/]<image> or global/images/[family/]<image>")
 		}
 	}
 	if d.IsScratchDisk() && isValidImage(d.GetImage()) {

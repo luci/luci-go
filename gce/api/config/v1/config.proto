@@ -313,9 +313,10 @@ message Config {
   VM attributes = 2;
 
   // The lifetime of these VMs.
-  // At the end of their lifetime, each VM is deleted and replaced. But it
-  // won't happen immediately becasuse of scheduling reasons. The delay varies
-  // based on the specified lifetime.
+  // At the end of their lifetime, each VM is recycled according to
+  // recycle_strategy (deleted and replaced by default). It won't happen
+  // immediately because of scheduling reasons. The delay varies based on the
+  // specified lifetime.
   TimePeriod lifetime = 3;
 
   // The prefix to use when naming these VMs.
@@ -338,6 +339,10 @@ message Config {
   // TODO(b/318715067): Remove once Device Manager is ready.
   map<string, google.protobuf.Empty> duts = 10;
 
+  // How each VM is recycled at the end of its lifetime.
+  // Defaults to RECYCLE_STRATEGY_DELETE_AND_RECREATE.
+  RecycleStrategy recycle_strategy = 12;
+
   // Fields below should only be set by the server.
 
   // Should only be set by the server. The revision of this config.
@@ -350,6 +355,63 @@ message Config {
   // The Swarming pools are assosiated with prefix.
   // Any prefix is expected to be mapped to one Swarming pool.
   repeated string swarming_pools = 11;
+}
+
+// How a VM is recycled at the end of its lifetime.
+enum RecycleStrategy {
+  // Equivalent to RECYCLE_STRATEGY_DELETE_AND_RECREATE.
+  RECYCLE_STRATEGY_UNSPECIFIED = 0;
+
+  // Delete the GCE instance and create a new one in its place. The instance's
+  // capacity is released back to the zone, so recreation may fail if the zone
+  // is stocked out.
+  RECYCLE_STRATEGY_DELETE_AND_RECREATE = 1;
+
+  // Keep the GCE instance and recreate all of its disks from the currently
+  // configured images (even if they haven't changed) using Stable Compute v1
+  // instances.update with onUpdateAction=RECREATE_DISK and
+  // mostDisruptiveAllowedAction=RESTART. This retains the instance's capacity
+  // in the zone so it is not exposed to stockouts on refresh. The instance
+  // keeps its name (and therefore its Swarming bot ID) across lifetimes.
+  //
+  // Supported disk types:
+  //   - Boot and secondary disks: all networked GCE block disk types supported
+  //     by the machine family (e.g. pd-standard, pd-balanced, pd-ssd,
+  //     pd-extreme, hyperdisk-balanced), plus blank secondary disks with
+  //     size > 0 (e.g. hyperdisk-extreme, hyperdisk-throughput).
+  //
+  // Unsupported VM fields and configurations (rejected by config validation):
+  //   - Local SSD scratch disks (disk.type ending in "/local-ssd"): GCE
+  //     instances.update rejects RESTART with attached local SSDs and cannot
+  //     recreate SCRATCH disks via RECREATE_DISK.
+  //   - Disks without a valid boot image (disks[0].image must match
+  //     projects/<project>/global/images/[family/]<image> or
+  //     global/images/[family/]<image>), invalid secondary disk images, or
+  //     blank secondary disks without size > 0.
+  //   - Machine types with built-in local SSDs (*-lssd, z3-*, a2-ultragpu-*,
+  //     a3-highgpu-*, a3-megagpu-*, a3-ultragpu-*, a4-*) or bare-metal
+  //     instances (*-metal).
+  //   - Sole-tenant node affinity (scheduling.node_affinity): GCE
+  //     instances.update does not support RESTART on sole-tenant instances.
+  //   - Confidential Compute VMs (enable_confidential_compute).
+  //   - Non-stable GCP API channels (gcp_channel = GCP_CHANNEL_ALPHA or
+  //     GCP_CHANNEL_BETA) and alpha-only features
+  //     (performance_monitoring_unit): in-place reimaging calls Stable Compute
+  //     v1 instances.update exclusively.
+  //   - Custom raw API field overrides (force_send_fields, null_fields):
+  //     in-place reimaging mutates the live GCE Instance payload and does not
+  //     re-apply raw field overrides.
+  //
+  // Runtime limitations and automatic fallback behavior:
+  //   - Falls back to RECYCLE_STRATEGY_DELETE_AND_RECREATE when the VM is
+  //     drained or scaled down, when the Swarming bot never connects in the
+  //     current lifetime, or when any non-disk-image attribute changes (e.g.
+  //     machine_type, disk type/size/count/IOPS/throughput, metadata,
+  //     network_interface, service_account, zone, or swarming server).
+  //   - Transient 2x disk quota during reimage: GCE provisions a temporary
+  //     replacement disk (<disk>-temp) before deleting the old disk, briefly
+  //     holding 2x disk GB/IOPS quota for each VM actively mid-reimage.
+  RECYCLE_STRATEGY_REIMAGE_IN_PLACE = 2;
 }
 
 // A config for several types of VMs.

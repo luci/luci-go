@@ -52,15 +52,19 @@ func TestDisk(t *testing.T) {
 			t.Run("invalid", func(t *ftt.Test) {
 				assert.Loosely(t, isValidImage("image"), should.BeFalse)
 				assert.Loosely(t, isValidImage("global/image"), should.BeFalse)
+				assert.Loosely(t, isValidImage("global/images/notfamily/image"), should.BeFalse)
 				assert.Loosely(t, isValidImage("projects/image"), should.BeFalse)
 				assert.Loosely(t, isValidImage("projects/global/image"), should.BeFalse)
 				assert.Loosely(t, isValidImage("projects/project/region/image"), should.BeFalse)
 				assert.Loosely(t, isValidImage("projects/project/region/images/image"), should.BeFalse)
+				assert.Loosely(t, isValidImage("projects/project/global/images/notfamily/image"), should.BeFalse)
 			})
 
 			t.Run("valid", func(t *ftt.Test) {
 				assert.Loosely(t, isValidImage("global/images/image"), should.BeTrue)
+				assert.Loosely(t, isValidImage("global/images/family/family"), should.BeTrue)
 				assert.Loosely(t, isValidImage("projects/project/global/images/image"), should.BeTrue)
+				assert.Loosely(t, isValidImage("projects/project/global/images/family/family"), should.BeTrue)
 			})
 		})
 
