@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/turboci/rpc"
 	"go.chromium.org/luci/turboci/rpc/write"
-	"go.chromium.org/luci/turboci/workplan"
 	stagepb "go.chromium.org/turboci/proto/go/data/stage/v1"
 	idspb "go.chromium.org/turboci/proto/go/graph/ids/v1"
 	orchestratorpb "go.chromium.org/turboci/proto/go/graph/orchestrator/v1"
@@ -180,38 +179,53 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 
 	queryReq := orchestratorpb.QueryNodesRequest_builder{
 		Token: proto.String(c.Token),
-		TypeInfo: orchestratorpb.TypeInfo_builder{
-			Wanted: buildStageDetailsTypeSet,
+		Selected: orchestratorpb.QueryNodesRequest_NodeSetSelected_builder{
+			Nodes: []*idspb.Identifier{
+				ids.Wrap(stageID),
+			},
 		}.Build(),
-		Query: []*orchestratorpb.Query{
-			orchestratorpb.Query_builder{
-				NodesById: orchestratorpb.Query_NodesByID_builder{
-					Nodes: []*idspb.Identifier{
-						ids.Wrap(stageID),
-					},
-				}.Build(),
-				SelectStages: &orchestratorpb.Query_SelectStages{},
-				CollectStages: orchestratorpb.Query_CollectStages_builder{
-					Attempts: orchestratorpb.CollectStageAttempts_COLLECT_STAGE_ATTEMPTS_LATEST.Enum(),
-				}.Build(),
+		ValueFilter: orchestratorpb.ValueFilter_builder{
+			TypeInfo: orchestratorpb.TypeInfo_builder{
+				Wanted: buildStageDetailsTypeSet,
 			}.Build(),
-		},
+			IncludeData: []orchestratorpb.ValueSlot{
+				orchestratorpb.ValueSlot_VALUE_SLOT_ATTEMPT_DETAIL,
+			},
+		}.Build(),
+		CollectStageAttempts: orchestratorpb.CollectStageAttempts_COLLECT_STAGE_ATTEMPTS_LATEST.Enum(),
 	}.Build()
 
 	resp, err := QueryNodes(ctx, queryReq, grpc.PerRPCCredentials(c.Creds))
 	if err != nil {
 		return nil, AdjustTurboCIRPCError(err)
 	}
-	bag := workplan.ToNodeBag(resp.GetValueData(), resp.GetWorkplans()...)
-	stage := bag.Stage(stageID)
-	if stage == nil {
+
+	// The stage and BuildStageDetails are tiny and should fit into one page.
+	if resp.GetNextPageToken() != "" {
+		return nil, status.Errorf(codes.Internal, "QueryNodes unexpectedly returned a pagination token")
+	}
+
+	// There should be at most one stage in the response.
+	var stage *orchestratorpb.Stage
+	switch stages := resp.GetWorkplan().GetStages(); {
+	case len(stages) == 0:
 		return nil, status.Errorf(codes.FailedPrecondition, "the stage is unexpectedly missing")
+	case len(stages) > 1:
+		return nil, status.Errorf(codes.Internal, "QueryNodes returned more than one stage")
+	default:
+		stage = stages[0]
+		if !proto.Equal(stage.GetIdentifier(), stageID) {
+			return nil, status.Errorf(codes.Internal, "QueryNodes returned wrong stage: got %q, want %q",
+				ids.ToString(stage.GetIdentifier()),
+				ids.ToString(stageID),
+			)
+		}
 	}
 
 	// This in theory should not be possible (because the stage we wrote doesn't
 	// have any dependencies and can be attempted immediately), but check anyway.
 	if len(stage.GetAttempts()) == 0 {
-		logging.Warningf(ctx, "turbo-ci: %s: the stage has no attempts yet", ids.ToString(stageID.GetWorkPlan()))
+		logging.Warningf(ctx, "turbo-ci: %s: the stage has no attempts yet", ids.ToString(stageID))
 		return nil, nil
 	}
 
@@ -221,7 +235,7 @@ func (c *Client) QueryStage(ctx context.Context, stageID *idspb.Stage) (*pb.Buil
 	// pending states, or it is executing, or it has already finished with
 	// a fatal error.
 	attempt := stage.GetAttempts()[len(stage.GetAttempts())-1]
-	details, err := value.Lookup[*pb.BuildStageDetails](bag.DataSource, attempt.GetDetails())
+	details, err := value.Lookup[*pb.BuildStageDetails](value.SimpleDataSource(resp.GetValueData()), attempt.GetDetails())
 	if err != nil {
 		return nil, err
 	}

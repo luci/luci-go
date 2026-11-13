@@ -133,24 +133,22 @@ func TestLaunchTurboCIRoot(t *testing.T) {
 
 		assert.That(t, orch.LastQueryNodesRequest, should.Match(orchestratorpb.QueryNodesRequest_builder{
 			Token: proto.String(orch.Token),
-			TypeInfo: orchestratorpb.TypeInfo_builder{
-				Wanted: orchestratorpb.TypeSet_builder{
-					TypeUrls: []string{"type.googleapis.com/buildbucket.v2.BuildStageDetails"},
-				}.Build(),
+			Selected: orchestratorpb.QueryNodesRequest_NodeSetSelected_builder{
+				Nodes: []*idspb.Identifier{
+					ids.Wrap(stageID),
+				},
 			}.Build(),
-			Query: []*orchestratorpb.Query{
-				orchestratorpb.Query_builder{
-					NodesById: orchestratorpb.Query_NodesByID_builder{
-						Nodes: []*idspb.Identifier{
-							ids.Wrap(stageID),
-						},
-					}.Build(),
-					SelectStages: &orchestratorpb.Query_SelectStages{},
-					CollectStages: orchestratorpb.Query_CollectStages_builder{
-						Attempts: orchestratorpb.CollectStageAttempts_COLLECT_STAGE_ATTEMPTS_LATEST.Enum(),
+			ValueFilter: orchestratorpb.ValueFilter_builder{
+				TypeInfo: orchestratorpb.TypeInfo_builder{
+					Wanted: orchestratorpb.TypeSet_builder{
+						TypeUrls: []string{"type.googleapis.com/buildbucket.v2.BuildStageDetails"},
 					}.Build(),
 				}.Build(),
-			},
+				IncludeData: []orchestratorpb.ValueSlot{
+					orchestratorpb.ValueSlot_VALUE_SLOT_ATTEMPT_DETAIL,
+				},
+			}.Build(),
+			CollectStageAttempts: orchestratorpb.CollectStageAttempts_COLLECT_STAGE_ATTEMPTS_LATEST.Enum(),
 		}.Build()))
 
 		// Validate that all ValueRef have a digest (except for NO_ACCESS case).
@@ -322,18 +320,16 @@ func mockQueryNodesResponse(planID *idspb.WorkPlan, stageID *idspb.Stage, state 
 		)
 	}
 	return orchestratorpb.QueryNodesResponse_builder{
-		Workplans: []*orchestratorpb.WorkPlan{
-			orchestratorpb.WorkPlan_builder{
-				Identifier: planID,
-				Stages: []*orchestratorpb.Stage{
-					orchestratorpb.Stage_builder{
-						Identifier: stageID,
-						State:      state.Enum(),
-						Attempts:   attempts,
-					}.Build(),
-				},
-			}.Build(),
-		},
+		Workplan: orchestratorpb.WorkPlan_builder{
+			Identifier: planID,
+			Stages: []*orchestratorpb.Stage{
+				orchestratorpb.Stage_builder{
+					Identifier: stageID,
+					State:      state.Enum(),
+					Attempts:   attempts,
+				}.Build(),
+			},
+		}.Build(),
 	}.Build()
 }
 
@@ -364,11 +360,9 @@ func assertValueRefsHaveDigests(t *testing.T, resp *orchestratorpb.QueryNodesRes
 	t.Helper()
 
 	assert.Loosely(t, resp, should.NotBeNil, truth.LineContext())
-	for _, wp := range resp.GetWorkplans() {
-		for _, ref := range value.RefsInWorkplan(wp) {
-			if ref.GetOmitReason() != orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS {
-				assert.Loosely(t, ref.GetDigest(), should.NotBeEmpty)
-			}
+	for _, ref := range value.RefsInWorkplan(resp.GetWorkplan()) {
+		if ref.GetOmitReason() != orchestratorpb.OmitReason_OMIT_REASON_NO_ACCESS {
+			assert.Loosely(t, ref.GetDigest(), should.NotBeEmpty)
 		}
 	}
 }
@@ -406,32 +400,30 @@ func (d *dynamicChildOrch) QueryNodes(ctx context.Context, in *orchestratorpb.Qu
 	}.Build()
 
 	var stages []*orchestratorpb.Stage
-	for _, query := range in.GetQuery() {
-		for _, node := range query.GetNodesById().GetNodes() {
-			stageID := node.GetStage()
-			bID := d.stageToBuildID[stageID.GetId()]
+	for _, node := range in.GetSelected().GetNodes() {
+		stageID := node.GetStage()
+		bID := d.stageToBuildID[stageID.GetId()]
 
-			details := []*orchestratorpb.ValueRef{
-				buildStageDetails(bID, nil),
-				// To validate empty inline and empty digest, add a NO_ACCESS ValueRef.
-				buildNoAccessStageDetails(),
-			}
-
-			stages = append(stages, orchestratorpb.Stage_builder{
-				Identifier: stageID,
-				State:      orchestratorpb.StageState_STAGE_STATE_ATTEMPTING.Enum(),
-				Attempts: []*orchestratorpb.Stage_Attempt{
-					orchestratorpb.Stage_Attempt_builder{
-						State:   orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING.Enum(),
-						Details: details,
-					}.Build(),
-				},
-			}.Build())
+		details := []*orchestratorpb.ValueRef{
+			buildStageDetails(bID, nil),
+			// To validate empty inline and empty digest, add a NO_ACCESS ValueRef.
+			buildNoAccessStageDetails(),
 		}
+
+		stages = append(stages, orchestratorpb.Stage_builder{
+			Identifier: stageID,
+			State:      orchestratorpb.StageState_STAGE_STATE_ATTEMPTING.Enum(),
+			Attempts: []*orchestratorpb.Stage_Attempt{
+				orchestratorpb.Stage_Attempt_builder{
+					State:   orchestratorpb.StageAttemptState_STAGE_ATTEMPT_STATE_PENDING.Enum(),
+					Details: details,
+				}.Build(),
+			},
+		}.Build())
 	}
 	wp.SetStages(stages)
 	resp := orchestratorpb.QueryNodesResponse_builder{
-		Workplans: []*orchestratorpb.WorkPlan{wp},
+		Workplan: wp,
 	}.Build()
 	d.lastQueryNodesResponse = resp
 	return resp, d.FakeOrchestratorClient.Err

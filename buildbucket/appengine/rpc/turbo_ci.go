@@ -450,7 +450,9 @@ func pollingSchedule(ctx context.Context, attempt, errs int) time.Duration {
 
 // pollStage periodically queries the stage until it gets assigned a build ID.
 //
-// Returns gRPC status errors.
+// Returns gRPC status errors. If the client is using a stage attempt token,
+// may return a FAILED_PRECONDITION error if the stage attempt is not active
+// anymore.
 func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (int64, error) {
 	deadline := clock.Now(ctx).Add(30 * time.Second)
 	ctx, cancel := clock.WithDeadline(ctx, deadline)
@@ -535,14 +537,18 @@ func pollStage(ctx context.Context, cl *turboci.Client, stageID *idspb.Stage) (i
 	}
 }
 
-// pollStages periodically queries the stages until all of them get assigned a build ID.
+// pollStages periodically queries the stages until all of them get assigned
+// a build ID.
 //
 // Returns a slice of build IDs and a slice of gRPC status errors, both of the
-// same length as stageIDs.
+// same length as stageIDs. If the client is using a stage attempt token,
+// some of the errors may be FAILED_PRECONDITION errors if the stage attempt is
+// not active anymore.
 func pollStages(ctx context.Context, cl *turboci.Client, stageIDs []*idspb.Stage) ([]int64, errors.MultiError) {
 	buildIDs := make([]int64, len(stageIDs))
 	mErr := make(errors.MultiError, len(stageIDs))
 
+	// TODO: Switch to a single batch QueryNodes call.
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.SetLimit(64)
 	baseTime := clock.Now(ctx)
