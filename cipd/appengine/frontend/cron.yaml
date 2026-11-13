@@ -1,10 +1,5 @@
 cron:
 
-- description: Imports latest service configuration (legacy)
-  target: backend
-  url: /internal/cron/import-config
-  schedule: every 10 minutes
-
 - description: Imports latest configuration to datastore
   target: backend
   url: /internal/cron/cfgcache
