@@ -1,8 +1,9 @@
 Mailer
 ------
 
-Mailer is a simple pRPC => SMTP relay. Authorized clients can make pRPC calls
-to send mails through an SMTP server that the mailer service is configured to
-use.
+Mailer is a simple pRPC interface abstracting e-mail sending. This is a
+replacement for deprecated GAE Mail API.
 
-This is a replacement for deprecated GAE Mail API.
+The only known server implementation is in `luci_notify`.
+
+The client is implemented in `server/mailer`.
