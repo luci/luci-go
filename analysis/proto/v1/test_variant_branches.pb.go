@@ -1041,157 +1041,6 @@ func (x *QuerySourceVerdictsResponse) GetSourceVerdicts() []*QuerySourceVerdicts
 	return nil
 }
 
-type QueryChangepointAIAnalysisRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The LUCI project.
-	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	// The identifier of a test.
-	TestId string `protobuf:"bytes,2,opt,name=test_id,json=testId,proto3" json:"test_id,omitempty"`
-	// The hash of the variant.
-	VariantHash string `protobuf:"bytes,3,opt,name=variant_hash,json=variantHash,proto3" json:"variant_hash,omitempty"`
-	// Hash of the source branch, as 16 lowercase hexadecimal characters.
-	RefHash string `protobuf:"bytes,4,opt,name=ref_hash,json=refHash,proto3" json:"ref_hash,omitempty"`
-	// The nominal starting source position of the changepoint to query.
-	// As the change point analysis is constantly changing and the current
-	// nominal start position of the changepoint may have moved, the changepoint
-	// nearest the queried position is returned.
-	// If no changepoint is found near the given position, the error NOT_FOUND
-	// is returned.
-	StartSourcePosition int64 `protobuf:"varint,5,opt,name=start_source_position,json=startSourcePosition,proto3" json:"start_source_position,omitempty"`
-	// Settings to control the prompt used. To assist experimentation.
-	// Optional.
-	PromptOptions *QueryChangepointAIAnalysisRequest_PromptOptions `protobuf:"bytes,6,opt,name=prompt_options,json=promptOptions,proto3" json:"prompt_options,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *QueryChangepointAIAnalysisRequest) Reset() {
-	*x = QueryChangepointAIAnalysisRequest{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *QueryChangepointAIAnalysisRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryChangepointAIAnalysisRequest) ProtoMessage() {}
-
-func (x *QueryChangepointAIAnalysisRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryChangepointAIAnalysisRequest.ProtoReflect.Descriptor instead.
-func (*QueryChangepointAIAnalysisRequest) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *QueryChangepointAIAnalysisRequest) GetProject() string {
-	if x != nil {
-		return x.Project
-	}
-	return ""
-}
-
-func (x *QueryChangepointAIAnalysisRequest) GetTestId() string {
-	if x != nil {
-		return x.TestId
-	}
-	return ""
-}
-
-func (x *QueryChangepointAIAnalysisRequest) GetVariantHash() string {
-	if x != nil {
-		return x.VariantHash
-	}
-	return ""
-}
-
-func (x *QueryChangepointAIAnalysisRequest) GetRefHash() string {
-	if x != nil {
-		return x.RefHash
-	}
-	return ""
-}
-
-func (x *QueryChangepointAIAnalysisRequest) GetStartSourcePosition() int64 {
-	if x != nil {
-		return x.StartSourcePosition
-	}
-	return 0
-}
-
-func (x *QueryChangepointAIAnalysisRequest) GetPromptOptions() *QueryChangepointAIAnalysisRequest_PromptOptions {
-	if x != nil {
-		return x.PromptOptions
-	}
-	return nil
-}
-
-type QueryChangepointAIAnalysisResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The AI-generated analysis markdown. This content is produced by
-	// generative AI and is experimental.
-	AnalysisMarkdown string `protobuf:"bytes,1,opt,name=analysis_markdown,json=analysisMarkdown,proto3" json:"analysis_markdown,omitempty"`
-	// The prompt provided to generative AI. For debugging purposes only.
-	Prompt        string `protobuf:"bytes,2,opt,name=prompt,proto3" json:"prompt,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *QueryChangepointAIAnalysisResponse) Reset() {
-	*x = QueryChangepointAIAnalysisResponse{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *QueryChangepointAIAnalysisResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryChangepointAIAnalysisResponse) ProtoMessage() {}
-
-func (x *QueryChangepointAIAnalysisResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryChangepointAIAnalysisResponse.ProtoReflect.Descriptor instead.
-func (*QueryChangepointAIAnalysisResponse) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *QueryChangepointAIAnalysisResponse) GetAnalysisMarkdown() string {
-	if x != nil {
-		return x.AnalysisMarkdown
-	}
-	return ""
-}
-
-func (x *QueryChangepointAIAnalysisResponse) GetPrompt() string {
-	if x != nil {
-		return x.Prompt
-	}
-	return ""
-}
-
 // Run represents a test run at a source position.
 type InputBuffer_Run struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1206,7 +1055,7 @@ type InputBuffer_Run struct {
 
 func (x *InputBuffer_Run) Reset() {
 	*x = InputBuffer_Run{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1218,7 +1067,7 @@ func (x *InputBuffer_Run) String() string {
 func (*InputBuffer_Run) ProtoMessage() {}
 
 func (x *InputBuffer_Run) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1279,7 +1128,7 @@ type InputBuffer_Run_Counts struct {
 
 func (x *InputBuffer_Run_Counts) Reset() {
 	*x = InputBuffer_Run_Counts{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1291,7 +1140,7 @@ func (x *InputBuffer_Run_Counts) String() string {
 func (*InputBuffer_Run_Counts) ProtoMessage() {}
 
 func (x *InputBuffer_Run_Counts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1397,7 +1246,7 @@ type Segment_PositionDistribution struct {
 
 func (x *Segment_PositionDistribution) Reset() {
 	*x = Segment_PositionDistribution{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1409,7 +1258,7 @@ func (x *Segment_PositionDistribution) String() string {
 func (*Segment_PositionDistribution) ProtoMessage() {}
 
 func (x *Segment_PositionDistribution) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1508,7 +1357,7 @@ type Segment_Counts struct {
 
 func (x *Segment_Counts) Reset() {
 	*x = Segment_Counts{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1520,7 +1369,7 @@ func (x *Segment_Counts) String() string {
 func (*Segment_Counts) ProtoMessage() {}
 
 func (x *Segment_Counts) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1673,7 +1522,7 @@ type QuerySourceVerdictsResponse_TestVerdict struct {
 
 func (x *QuerySourceVerdictsResponse_TestVerdict) Reset() {
 	*x = QuerySourceVerdictsResponse_TestVerdict{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1685,7 +1534,7 @@ func (x *QuerySourceVerdictsResponse_TestVerdict) String() string {
 func (*QuerySourceVerdictsResponse_TestVerdict) ProtoMessage() {}
 
 func (x *QuerySourceVerdictsResponse_TestVerdict) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[17]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1752,7 +1601,7 @@ type QuerySourceVerdictsResponse_SourceVerdict struct {
 
 func (x *QuerySourceVerdictsResponse_SourceVerdict) Reset() {
 	*x = QuerySourceVerdictsResponse_SourceVerdict{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[18]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1764,7 +1613,7 @@ func (x *QuerySourceVerdictsResponse_SourceVerdict) String() string {
 func (*QuerySourceVerdictsResponse_SourceVerdict) ProtoMessage() {}
 
 func (x *QuerySourceVerdictsResponse_SourceVerdict) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[18]
+	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1799,62 +1648,6 @@ func (x *QuerySourceVerdictsResponse_SourceVerdict) GetVerdicts() []*QuerySource
 		return x.Verdicts
 	}
 	return nil
-}
-
-type QueryChangepointAIAnalysisRequest_PromptOptions struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The prompt prefix to use. If set, replaces the
-	// default prompt prefix. Optional.
-	Prefix string `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
-	// The prompt suffix to use. If set, replaces the
-	// default prompt suffix. Optional.
-	Suffix        string `protobuf:"bytes,2,opt,name=suffix,proto3" json:"suffix,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *QueryChangepointAIAnalysisRequest_PromptOptions) Reset() {
-	*x = QueryChangepointAIAnalysisRequest_PromptOptions{}
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[19]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *QueryChangepointAIAnalysisRequest_PromptOptions) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*QueryChangepointAIAnalysisRequest_PromptOptions) ProtoMessage() {}
-
-func (x *QueryChangepointAIAnalysisRequest_PromptOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes[19]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use QueryChangepointAIAnalysisRequest_PromptOptions.ProtoReflect.Descriptor instead.
-func (*QueryChangepointAIAnalysisRequest_PromptOptions) Descriptor() ([]byte, []int) {
-	return file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescGZIP(), []int{11, 0}
-}
-
-func (x *QueryChangepointAIAnalysisRequest_PromptOptions) GetPrefix() string {
-	if x != nil {
-		return x.Prefix
-	}
-	return ""
-}
-
-func (x *QueryChangepointAIAnalysisRequest_PromptOptions) GetSuffix() string {
-	if x != nil {
-		return x.Suffix
-	}
-	return ""
 }
 
 var File_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto protoreflect.FileDescriptor
@@ -1977,26 +1770,12 @@ const file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ra
 	"UNEXPECTED\x10\x01\x12\f\n" +
 	"\bEXPECTED\x10\x02\x12\t\n" +
 	"\x05FLAKY\x10\x03\x12\v\n" +
-	"\aSKIPPED\x10\x04\"\xf3\x02\n" +
-	"!QueryChangepointAIAnalysisRequest\x12\x18\n" +
-	"\aproject\x18\x01 \x01(\tR\aproject\x12\x17\n" +
-	"\atest_id\x18\x02 \x01(\tR\x06testId\x12!\n" +
-	"\fvariant_hash\x18\x03 \x01(\tR\vvariantHash\x12\x19\n" +
-	"\bref_hash\x18\x04 \x01(\tR\arefHash\x122\n" +
-	"\x15start_source_position\x18\x05 \x01(\x03R\x13startSourcePosition\x12h\n" +
-	"\x0eprompt_options\x18\x06 \x01(\v2A.luci.analysis.v1.QueryChangepointAIAnalysisRequest.PromptOptionsR\rpromptOptions\x1a?\n" +
-	"\rPromptOptions\x12\x16\n" +
-	"\x06prefix\x18\x01 \x01(\tR\x06prefix\x12\x16\n" +
-	"\x06suffix\x18\x02 \x01(\tR\x06suffix\"i\n" +
-	"\"QueryChangepointAIAnalysisResponse\x12+\n" +
-	"\x11analysis_markdown\x18\x01 \x01(\tR\x10analysisMarkdown\x12\x16\n" +
-	"\x06prompt\x18\x02 \x01(\tR\x06prompt2\xe2\x04\n" +
+	"\aSKIPPED\x10\x042\xd6\x03\n" +
 	"\x13TestVariantBranches\x12d\n" +
 	"\x06GetRaw\x120.luci.analysis.v1.GetRawTestVariantBranchRequest\x1a&.luci.analysis.v1.TestVariantBranchRaw\"\x00\x12u\n" +
 	"\bBatchGet\x122.luci.analysis.v1.BatchGetTestVariantBranchRequest\x1a3.luci.analysis.v1.BatchGetTestVariantBranchResponse\"\x00\x12l\n" +
 	"\x05Query\x12/.luci.analysis.v1.QueryTestVariantBranchRequest\x1a0.luci.analysis.v1.QueryTestVariantBranchResponse\"\x00\x12t\n" +
-	"\x13QuerySourceVerdicts\x12,.luci.analysis.v1.QuerySourceVerdictsRequest\x1a-.luci.analysis.v1.QuerySourceVerdictsResponse\"\x00\x12\x89\x01\n" +
-	"\x1aQueryChangepointAIAnalysis\x123.luci.analysis.v1.QueryChangepointAIAnalysisRequest\x1a4.luci.analysis.v1.QueryChangepointAIAnalysisResponse\"\x00B3Z1go.chromium.org/luci/analysis/proto/v1;analysispbb\x06proto3"
+	"\x13QuerySourceVerdicts\x12,.luci.analysis.v1.QuerySourceVerdictsRequest\x1a-.luci.analysis.v1.QuerySourceVerdictsResponse\"\x00B3Z1go.chromium.org/luci/analysis/proto/v1;analysispbb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDescOnce sync.Once
@@ -2011,78 +1790,72 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_raw
 }
 
 var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_goTypes = []any{
-	(QuerySourceVerdictsResponse_VerdictStatus)(0),          // 0: luci.analysis.v1.QuerySourceVerdictsResponse.VerdictStatus
-	(*GetRawTestVariantBranchRequest)(nil),                  // 1: luci.analysis.v1.GetRawTestVariantBranchRequest
-	(*TestVariantBranchRaw)(nil),                            // 2: luci.analysis.v1.TestVariantBranchRaw
-	(*InputBuffer)(nil),                                     // 3: luci.analysis.v1.InputBuffer
-	(*BatchGetTestVariantBranchRequest)(nil),                // 4: luci.analysis.v1.BatchGetTestVariantBranchRequest
-	(*BatchGetTestVariantBranchResponse)(nil),               // 5: luci.analysis.v1.BatchGetTestVariantBranchResponse
-	(*QueryTestVariantBranchRequest)(nil),                   // 6: luci.analysis.v1.QueryTestVariantBranchRequest
-	(*QueryTestVariantBranchResponse)(nil),                  // 7: luci.analysis.v1.QueryTestVariantBranchResponse
-	(*TestVariantBranch)(nil),                               // 8: luci.analysis.v1.TestVariantBranch
-	(*Segment)(nil),                                         // 9: luci.analysis.v1.Segment
-	(*QuerySourceVerdictsRequest)(nil),                      // 10: luci.analysis.v1.QuerySourceVerdictsRequest
-	(*QuerySourceVerdictsResponse)(nil),                     // 11: luci.analysis.v1.QuerySourceVerdictsResponse
-	(*QueryChangepointAIAnalysisRequest)(nil),               // 12: luci.analysis.v1.QueryChangepointAIAnalysisRequest
-	(*QueryChangepointAIAnalysisResponse)(nil),              // 13: luci.analysis.v1.QueryChangepointAIAnalysisResponse
-	(*InputBuffer_Run)(nil),                                 // 14: luci.analysis.v1.InputBuffer.Run
-	(*InputBuffer_Run_Counts)(nil),                          // 15: luci.analysis.v1.InputBuffer.Run.Counts
-	(*Segment_PositionDistribution)(nil),                    // 16: luci.analysis.v1.Segment.PositionDistribution
-	(*Segment_Counts)(nil),                                  // 17: luci.analysis.v1.Segment.Counts
-	(*QuerySourceVerdictsResponse_TestVerdict)(nil),         // 18: luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict
-	(*QuerySourceVerdictsResponse_SourceVerdict)(nil),       // 19: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict
-	(*QueryChangepointAIAnalysisRequest_PromptOptions)(nil), // 20: luci.analysis.v1.QueryChangepointAIAnalysisRequest.PromptOptions
-	(*Variant)(nil),                                         // 21: luci.analysis.v1.Variant
-	(*SourceRef)(nil),                                       // 22: luci.analysis.v1.SourceRef
-	(*anypb.Any)(nil),                                       // 23: google.protobuf.Any
-	(*timestamppb.Timestamp)(nil),                           // 24: google.protobuf.Timestamp
-	(*Changelist)(nil),                                      // 25: luci.analysis.v1.Changelist
+	(QuerySourceVerdictsResponse_VerdictStatus)(0),    // 0: luci.analysis.v1.QuerySourceVerdictsResponse.VerdictStatus
+	(*GetRawTestVariantBranchRequest)(nil),            // 1: luci.analysis.v1.GetRawTestVariantBranchRequest
+	(*TestVariantBranchRaw)(nil),                      // 2: luci.analysis.v1.TestVariantBranchRaw
+	(*InputBuffer)(nil),                               // 3: luci.analysis.v1.InputBuffer
+	(*BatchGetTestVariantBranchRequest)(nil),          // 4: luci.analysis.v1.BatchGetTestVariantBranchRequest
+	(*BatchGetTestVariantBranchResponse)(nil),         // 5: luci.analysis.v1.BatchGetTestVariantBranchResponse
+	(*QueryTestVariantBranchRequest)(nil),             // 6: luci.analysis.v1.QueryTestVariantBranchRequest
+	(*QueryTestVariantBranchResponse)(nil),            // 7: luci.analysis.v1.QueryTestVariantBranchResponse
+	(*TestVariantBranch)(nil),                         // 8: luci.analysis.v1.TestVariantBranch
+	(*Segment)(nil),                                   // 9: luci.analysis.v1.Segment
+	(*QuerySourceVerdictsRequest)(nil),                // 10: luci.analysis.v1.QuerySourceVerdictsRequest
+	(*QuerySourceVerdictsResponse)(nil),               // 11: luci.analysis.v1.QuerySourceVerdictsResponse
+	(*InputBuffer_Run)(nil),                           // 12: luci.analysis.v1.InputBuffer.Run
+	(*InputBuffer_Run_Counts)(nil),                    // 13: luci.analysis.v1.InputBuffer.Run.Counts
+	(*Segment_PositionDistribution)(nil),              // 14: luci.analysis.v1.Segment.PositionDistribution
+	(*Segment_Counts)(nil),                            // 15: luci.analysis.v1.Segment.Counts
+	(*QuerySourceVerdictsResponse_TestVerdict)(nil),   // 16: luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict
+	(*QuerySourceVerdictsResponse_SourceVerdict)(nil), // 17: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict
+	(*Variant)(nil),                                   // 18: luci.analysis.v1.Variant
+	(*SourceRef)(nil),                                 // 19: luci.analysis.v1.SourceRef
+	(*anypb.Any)(nil),                                 // 20: google.protobuf.Any
+	(*timestamppb.Timestamp)(nil),                     // 21: google.protobuf.Timestamp
+	(*Changelist)(nil),                                // 22: luci.analysis.v1.Changelist
 }
 var file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_depIdxs = []int32{
-	21, // 0: luci.analysis.v1.TestVariantBranchRaw.variant:type_name -> luci.analysis.v1.Variant
-	22, // 1: luci.analysis.v1.TestVariantBranchRaw.ref:type_name -> luci.analysis.v1.SourceRef
-	23, // 2: luci.analysis.v1.TestVariantBranchRaw.finalized_segments:type_name -> google.protobuf.Any
-	23, // 3: luci.analysis.v1.TestVariantBranchRaw.finalizing_segment:type_name -> google.protobuf.Any
-	23, // 4: luci.analysis.v1.TestVariantBranchRaw.statistics:type_name -> google.protobuf.Any
+	18, // 0: luci.analysis.v1.TestVariantBranchRaw.variant:type_name -> luci.analysis.v1.Variant
+	19, // 1: luci.analysis.v1.TestVariantBranchRaw.ref:type_name -> luci.analysis.v1.SourceRef
+	20, // 2: luci.analysis.v1.TestVariantBranchRaw.finalized_segments:type_name -> google.protobuf.Any
+	20, // 3: luci.analysis.v1.TestVariantBranchRaw.finalizing_segment:type_name -> google.protobuf.Any
+	20, // 4: luci.analysis.v1.TestVariantBranchRaw.statistics:type_name -> google.protobuf.Any
 	3,  // 5: luci.analysis.v1.TestVariantBranchRaw.hot_buffer:type_name -> luci.analysis.v1.InputBuffer
 	3,  // 6: luci.analysis.v1.TestVariantBranchRaw.cold_buffer:type_name -> luci.analysis.v1.InputBuffer
-	14, // 7: luci.analysis.v1.InputBuffer.runs:type_name -> luci.analysis.v1.InputBuffer.Run
+	12, // 7: luci.analysis.v1.InputBuffer.runs:type_name -> luci.analysis.v1.InputBuffer.Run
 	8,  // 8: luci.analysis.v1.BatchGetTestVariantBranchResponse.test_variant_branches:type_name -> luci.analysis.v1.TestVariantBranch
-	22, // 9: luci.analysis.v1.QueryTestVariantBranchRequest.ref:type_name -> luci.analysis.v1.SourceRef
+	19, // 9: luci.analysis.v1.QueryTestVariantBranchRequest.ref:type_name -> luci.analysis.v1.SourceRef
 	8,  // 10: luci.analysis.v1.QueryTestVariantBranchResponse.test_variant_branch:type_name -> luci.analysis.v1.TestVariantBranch
-	21, // 11: luci.analysis.v1.TestVariantBranch.variant:type_name -> luci.analysis.v1.Variant
-	22, // 12: luci.analysis.v1.TestVariantBranch.ref:type_name -> luci.analysis.v1.SourceRef
+	18, // 11: luci.analysis.v1.TestVariantBranch.variant:type_name -> luci.analysis.v1.Variant
+	19, // 12: luci.analysis.v1.TestVariantBranch.ref:type_name -> luci.analysis.v1.SourceRef
 	9,  // 13: luci.analysis.v1.TestVariantBranch.segments:type_name -> luci.analysis.v1.Segment
-	16, // 14: luci.analysis.v1.Segment.start_position_distribution:type_name -> luci.analysis.v1.Segment.PositionDistribution
-	24, // 15: luci.analysis.v1.Segment.start_hour:type_name -> google.protobuf.Timestamp
-	24, // 16: luci.analysis.v1.Segment.end_hour:type_name -> google.protobuf.Timestamp
-	17, // 17: luci.analysis.v1.Segment.counts:type_name -> luci.analysis.v1.Segment.Counts
-	19, // 18: luci.analysis.v1.QuerySourceVerdictsResponse.source_verdicts:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict
-	20, // 19: luci.analysis.v1.QueryChangepointAIAnalysisRequest.prompt_options:type_name -> luci.analysis.v1.QueryChangepointAIAnalysisRequest.PromptOptions
-	24, // 20: luci.analysis.v1.InputBuffer.Run.hour:type_name -> google.protobuf.Timestamp
-	15, // 21: luci.analysis.v1.InputBuffer.Run.counts:type_name -> luci.analysis.v1.InputBuffer.Run.Counts
-	24, // 22: luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict.partition_time:type_name -> google.protobuf.Timestamp
-	0,  // 23: luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict.status:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.VerdictStatus
-	25, // 24: luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict.changelists:type_name -> luci.analysis.v1.Changelist
-	0,  // 25: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.status:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.VerdictStatus
-	18, // 26: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.verdicts:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict
-	1,  // 27: luci.analysis.v1.TestVariantBranches.GetRaw:input_type -> luci.analysis.v1.GetRawTestVariantBranchRequest
-	4,  // 28: luci.analysis.v1.TestVariantBranches.BatchGet:input_type -> luci.analysis.v1.BatchGetTestVariantBranchRequest
-	6,  // 29: luci.analysis.v1.TestVariantBranches.Query:input_type -> luci.analysis.v1.QueryTestVariantBranchRequest
-	10, // 30: luci.analysis.v1.TestVariantBranches.QuerySourceVerdicts:input_type -> luci.analysis.v1.QuerySourceVerdictsRequest
-	12, // 31: luci.analysis.v1.TestVariantBranches.QueryChangepointAIAnalysis:input_type -> luci.analysis.v1.QueryChangepointAIAnalysisRequest
-	2,  // 32: luci.analysis.v1.TestVariantBranches.GetRaw:output_type -> luci.analysis.v1.TestVariantBranchRaw
-	5,  // 33: luci.analysis.v1.TestVariantBranches.BatchGet:output_type -> luci.analysis.v1.BatchGetTestVariantBranchResponse
-	7,  // 34: luci.analysis.v1.TestVariantBranches.Query:output_type -> luci.analysis.v1.QueryTestVariantBranchResponse
-	11, // 35: luci.analysis.v1.TestVariantBranches.QuerySourceVerdicts:output_type -> luci.analysis.v1.QuerySourceVerdictsResponse
-	13, // 36: luci.analysis.v1.TestVariantBranches.QueryChangepointAIAnalysis:output_type -> luci.analysis.v1.QueryChangepointAIAnalysisResponse
-	32, // [32:37] is the sub-list for method output_type
-	27, // [27:32] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	14, // 14: luci.analysis.v1.Segment.start_position_distribution:type_name -> luci.analysis.v1.Segment.PositionDistribution
+	21, // 15: luci.analysis.v1.Segment.start_hour:type_name -> google.protobuf.Timestamp
+	21, // 16: luci.analysis.v1.Segment.end_hour:type_name -> google.protobuf.Timestamp
+	15, // 17: luci.analysis.v1.Segment.counts:type_name -> luci.analysis.v1.Segment.Counts
+	17, // 18: luci.analysis.v1.QuerySourceVerdictsResponse.source_verdicts:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict
+	21, // 19: luci.analysis.v1.InputBuffer.Run.hour:type_name -> google.protobuf.Timestamp
+	13, // 20: luci.analysis.v1.InputBuffer.Run.counts:type_name -> luci.analysis.v1.InputBuffer.Run.Counts
+	21, // 21: luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict.partition_time:type_name -> google.protobuf.Timestamp
+	0,  // 22: luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict.status:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.VerdictStatus
+	22, // 23: luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict.changelists:type_name -> luci.analysis.v1.Changelist
+	0,  // 24: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.status:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.VerdictStatus
+	16, // 25: luci.analysis.v1.QuerySourceVerdictsResponse.SourceVerdict.verdicts:type_name -> luci.analysis.v1.QuerySourceVerdictsResponse.TestVerdict
+	1,  // 26: luci.analysis.v1.TestVariantBranches.GetRaw:input_type -> luci.analysis.v1.GetRawTestVariantBranchRequest
+	4,  // 27: luci.analysis.v1.TestVariantBranches.BatchGet:input_type -> luci.analysis.v1.BatchGetTestVariantBranchRequest
+	6,  // 28: luci.analysis.v1.TestVariantBranches.Query:input_type -> luci.analysis.v1.QueryTestVariantBranchRequest
+	10, // 29: luci.analysis.v1.TestVariantBranches.QuerySourceVerdicts:input_type -> luci.analysis.v1.QuerySourceVerdictsRequest
+	2,  // 30: luci.analysis.v1.TestVariantBranches.GetRaw:output_type -> luci.analysis.v1.TestVariantBranchRaw
+	5,  // 31: luci.analysis.v1.TestVariantBranches.BatchGet:output_type -> luci.analysis.v1.BatchGetTestVariantBranchResponse
+	7,  // 32: luci.analysis.v1.TestVariantBranches.Query:output_type -> luci.analysis.v1.QueryTestVariantBranchResponse
+	11, // 33: luci.analysis.v1.TestVariantBranches.QuerySourceVerdicts:output_type -> luci.analysis.v1.QuerySourceVerdictsResponse
+	30, // [30:34] is the sub-list for method output_type
+	26, // [26:30] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_init() }
@@ -2098,7 +1871,7 @@ func file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_ini
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDesc), len(file_go_chromium_org_luci_analysis_proto_v1_test_variant_branches_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   20,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -2138,9 +1911,6 @@ type TestVariantBranchesClient interface {
 	// Lists source verdicts for a given test and source ref. Deprecated,
 	// replaced by TestHistory.QuerySourceVerdictsV2.
 	QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsRequest, opts ...grpc.CallOption) (*QuerySourceVerdictsResponse, error)
-	// Query for AI analysis of the possible culprits of a test changepoint.
-	// Note: to use this RPC, you must be a member of the group `googlers`.
-	QueryChangepointAIAnalysis(ctx context.Context, in *QueryChangepointAIAnalysisRequest, opts ...grpc.CallOption) (*QueryChangepointAIAnalysisResponse, error)
 }
 type testVariantBranchesPRPCClient struct {
 	client *prpc.Client
@@ -2180,15 +1950,6 @@ func (c *testVariantBranchesPRPCClient) Query(ctx context.Context, in *QueryTest
 func (c *testVariantBranchesPRPCClient) QuerySourceVerdicts(ctx context.Context, in *QuerySourceVerdictsRequest, opts ...grpc.CallOption) (*QuerySourceVerdictsResponse, error) {
 	out := new(QuerySourceVerdictsResponse)
 	err := c.client.Call(ctx, "luci.analysis.v1.TestVariantBranches", "QuerySourceVerdicts", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *testVariantBranchesPRPCClient) QueryChangepointAIAnalysis(ctx context.Context, in *QueryChangepointAIAnalysisRequest, opts ...grpc.CallOption) (*QueryChangepointAIAnalysisResponse, error) {
-	out := new(QueryChangepointAIAnalysisResponse)
-	err := c.client.Call(ctx, "luci.analysis.v1.TestVariantBranches", "QueryChangepointAIAnalysis", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -2239,15 +2000,6 @@ func (c *testVariantBranchesClient) QuerySourceVerdicts(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *testVariantBranchesClient) QueryChangepointAIAnalysis(ctx context.Context, in *QueryChangepointAIAnalysisRequest, opts ...grpc.CallOption) (*QueryChangepointAIAnalysisResponse, error) {
-	out := new(QueryChangepointAIAnalysisResponse)
-	err := c.cc.Invoke(ctx, "/luci.analysis.v1.TestVariantBranches/QueryChangepointAIAnalysis", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // TestVariantBranchesServer is the server API for TestVariantBranches service.
 type TestVariantBranchesServer interface {
 	// Retrieves the raw state of test variant branch analysis.
@@ -2264,9 +2016,6 @@ type TestVariantBranchesServer interface {
 	// Lists source verdicts for a given test and source ref. Deprecated,
 	// replaced by TestHistory.QuerySourceVerdictsV2.
 	QuerySourceVerdicts(context.Context, *QuerySourceVerdictsRequest) (*QuerySourceVerdictsResponse, error)
-	// Query for AI analysis of the possible culprits of a test changepoint.
-	// Note: to use this RPC, you must be a member of the group `googlers`.
-	QueryChangepointAIAnalysis(context.Context, *QueryChangepointAIAnalysisRequest) (*QueryChangepointAIAnalysisResponse, error)
 }
 
 // UnimplementedTestVariantBranchesServer can be embedded to have forward compatible implementations.
@@ -2284,9 +2033,6 @@ func (*UnimplementedTestVariantBranchesServer) Query(context.Context, *QueryTest
 }
 func (*UnimplementedTestVariantBranchesServer) QuerySourceVerdicts(context.Context, *QuerySourceVerdictsRequest) (*QuerySourceVerdictsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QuerySourceVerdicts not implemented")
-}
-func (*UnimplementedTestVariantBranchesServer) QueryChangepointAIAnalysis(context.Context, *QueryChangepointAIAnalysisRequest) (*QueryChangepointAIAnalysisResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryChangepointAIAnalysis not implemented")
 }
 
 func RegisterTestVariantBranchesServer(s prpc.Registrar, srv TestVariantBranchesServer) {
@@ -2365,24 +2111,6 @@ func _TestVariantBranches_QuerySourceVerdicts_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TestVariantBranches_QueryChangepointAIAnalysis_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryChangepointAIAnalysisRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TestVariantBranchesServer).QueryChangepointAIAnalysis(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/luci.analysis.v1.TestVariantBranches/QueryChangepointAIAnalysis",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestVariantBranchesServer).QueryChangepointAIAnalysis(ctx, req.(*QueryChangepointAIAnalysisRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _TestVariantBranches_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "luci.analysis.v1.TestVariantBranches",
 	HandlerType: (*TestVariantBranchesServer)(nil),
@@ -2402,10 +2130,6 @@ var _TestVariantBranches_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QuerySourceVerdicts",
 			Handler:    _TestVariantBranches_QuerySourceVerdicts_Handler,
-		},
-		{
-			MethodName: "QueryChangepointAIAnalysis",
-			Handler:    _TestVariantBranches_QueryChangepointAIAnalysis_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

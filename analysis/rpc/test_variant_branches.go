@@ -33,34 +33,25 @@ import (
 	"go.chromium.org/luci/analysis/internal/changepoints/analyzer"
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/model"
-	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
 	"go.chromium.org/luci/analysis/internal/pagination"
 	"go.chromium.org/luci/analysis/internal/perms"
-	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/tracing"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
 
-type TestVerdictClient interface {
-	ReadTestVerdictAfterPosition(ctx context.Context, options testverdicts.ReadVerdictAtOrAfterPositionOptions) (*testverdicts.SourceVerdict, error)
-}
-
 // NewTestVariantBranchesServer returns a new pb.TestVariantBranchesServer.
-func NewTestVariantBranchesServer(tvc TestVerdictClient, sc sorbet.GenerateClient) pb.TestVariantBranchesServer {
+func NewTestVariantBranchesServer() pb.TestVariantBranchesServer {
 	return &pb.DecoratedTestVariantBranches{
-		Prelude: checkAllowedPrelude,
-		Service: &testVariantBranchesServer{
-			sorbetAnalyzer: sorbet.NewAnalyzer(sc, tvc),
-		},
+		Prelude:  checkAllowedPrelude,
+		Service:  &testVariantBranchesServer{},
 		Postlude: GRPCifyAndLogPostlude,
 	}
 }
 
 // testVariantBranchesServer implements pb.TestVariantAnalysesServer.
 type testVariantBranchesServer struct {
-	sorbetAnalyzer *sorbet.Analyzer
 }
 
 // Get fetches Spanner for test variant analysis.
@@ -402,61 +393,6 @@ func validateQueryTestVariantBranchRequest(req *pb.QueryTestVariantBranchRequest
 	}
 	if err := pbutil.ValidateSourceRef(req.Ref); err != nil {
 		return errors.Fmt("ref: %w", err)
-	}
-	return nil
-}
-
-func (s *testVariantBranchesServer) QueryChangepointAIAnalysis(ctx context.Context, req *pb.QueryChangepointAIAnalysisRequest) (*pb.QueryChangepointAIAnalysisResponse, error) {
-	if err := checkAllowed(ctx, googlerOnlyGroup); err != nil {
-		return nil, err
-	}
-	if err := validateQueryChangepointAIAnalysisRequest(req); err != nil {
-		return nil, InvalidArgumentError(err)
-	}
-	allowedRealms, err := perms.QueryRealmsNonEmpty(ctx, req.Project, nil, perms.ListTestResultsAndExonerations...)
-	if err != nil {
-		return nil, err
-	}
-
-	refHashBytes, err := hex.DecodeString(req.RefHash)
-	if err != nil {
-		// This line is unreachable as ref hash should be validated already.
-		return nil, InvalidArgumentError(errors.New("ref hash must be an encoded hexadecimal string"))
-	}
-
-	request := sorbet.AnalysisRequest{
-		Project:             req.Project,
-		TestID:              req.TestId,
-		VariantHash:         req.VariantHash,
-		RefHash:             testvariantbranch.RefHash(refHashBytes),
-		StartSourcePosition: req.StartSourcePosition,
-		AllowedRealms:       allowedRealms,
-	}
-	response, err := s.sorbetAnalyzer.Analyze(ctx, request)
-	if err != nil {
-		return nil, errors.Fmt("analyze: %w", err)
-	}
-	return &pb.QueryChangepointAIAnalysisResponse{
-		AnalysisMarkdown: response.Response,
-		Prompt:           response.Prompt,
-	}, nil
-}
-
-func validateQueryChangepointAIAnalysisRequest(req *pb.QueryChangepointAIAnalysisRequest) error {
-	if err := pbutil.ValidateProject(req.GetProject()); err != nil {
-		return errors.Fmt("project: %w", err)
-	}
-	if err := rdbpbutil.ValidateTestID(req.TestId, rdbpbutil.QuerySideTestIDLimitCallback); err != nil {
-		return errors.Fmt("test_id: %w", err)
-	}
-	if err := pbutil.ValidateVariantHash(req.VariantHash); err != nil {
-		return errors.Fmt("variant_hash: %w", err)
-	}
-	if err := ValidateRefHash(req.RefHash); err != nil {
-		return errors.Fmt("ref_hash: %w", err)
-	}
-	if req.StartSourcePosition <= 0 {
-		return errors.New("start_source_position: must be a positive number")
 	}
 	return nil
 }

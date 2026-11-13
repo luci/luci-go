@@ -23,7 +23,6 @@ import {
 } from '@mui/material';
 import { Stack } from '@mui/material';
 
-import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { DisableTestButton } from '@/monitoring/components/disable_button';
 import {
   AlertBuilderJson,
@@ -36,8 +35,6 @@ import { getBlamelistUrl } from '@/test_verdict/tools/url_utils';
 
 import { PrefillFilterIcon } from '../alert_table/prefill_filter_icon';
 import { TestHistorySparkline } from '../test_history_sparkline';
-
-import { AIAnalysis } from './ai_analysis';
 
 interface ReasonSectionProps {
   builder: AlertBuilderJson;
@@ -54,9 +51,6 @@ export const ReasonSection = ({
   reason,
   bug,
 }: ReasonSectionProps) => {
-  const [searchParams] = useSyncedSearchParams();
-  const useAIAnalysis = searchParams.get('aia');
-
   if (!reason?.tests?.length) {
     return <>No test result data available.</>;
   }
@@ -71,7 +65,6 @@ export const ReasonSection = ({
             <TableCell width={96}>Test Blamelist</TableCell>
             <TableCell width={250}>Links</TableCell>
             <TableCell width={80}>Actions</TableCell>
-            {useAIAnalysis && <TableCell width={80}></TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -165,9 +158,6 @@ const TestFailureRow = ({
   bug,
   failureBuildUrl,
 }: TestFailureRowProps) => {
-  const [searchParams] = useSyncedSearchParams();
-  const useAIAnalysis = searchParams.get('aia');
-
   const failureBuildId = /[0-9]+$/.exec(failureBuildUrl)?.[0];
   const blamelistUrl = getBlamelistUrl(
     {
@@ -242,11 +232,6 @@ const TestFailureRow = ({
           />
         ) : null}
       </TableCell>
-      {useAIAnalysis && (
-        <TableCell>
-          <AIAnalysis project={tree.project} test={test} />
-        </TableCell>
-      )}
     </TableRow>
   );
 };

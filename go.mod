@@ -32,7 +32,6 @@ require (
 	cloud.google.com/go/secretmanager v1.20.0
 	cloud.google.com/go/spanner v1.92.0
 	cloud.google.com/go/storage v1.62.0
-	cloud.google.com/go/vertexai v0.7.1
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.27.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/propagator v0.51.0
 	github.com/Microsoft/go-winio v0.6.2
@@ -122,7 +121,6 @@ require (
 require (
 	cel.dev/expr v0.25.2 // indirect
 	cloud.google.com/go v0.123.0 // indirect
-	cloud.google.com/go/aiplatform v1.125.0 // indirect
 	cloud.google.com/go/auth v0.20.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/longrunning v1.2.0 // indirect

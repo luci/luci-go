@@ -17,34 +17,27 @@ package rpc
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"testing"
 	"time"
 
-	"cloud.google.com/go/bigquery"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/grpc/grpcutil/testing/grpccode"
-	"go.chromium.org/luci/resultdb/rdbperms"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/luci/analysis/internal/changepoints/inputbuffer"
 	"go.chromium.org/luci/analysis/internal/changepoints/model"
 	cpb "go.chromium.org/luci/analysis/internal/changepoints/proto"
-	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/changepoints/testvariantbranch"
-	"go.chromium.org/luci/analysis/internal/gitiles"
 	"go.chromium.org/luci/analysis/internal/perms"
 	"go.chromium.org/luci/analysis/internal/testutil"
-	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/pbutil"
 	pb "go.chromium.org/luci/analysis/proto/v1"
 )
@@ -53,10 +46,7 @@ func TestTestVariantBranchesServer(t *testing.T) {
 	ftt.Run("TestVariantBranchesServer", t, func(t *ftt.Test) {
 		ctx := testutil.IntegrationTestContext(t)
 
-		tvc := testverdicts.FakeReadClient{}
-		sorbetClient := sorbet.NewFakeClient()
-
-		server := NewTestVariantBranchesServer(&tvc, sorbetClient)
+		server := NewTestVariantBranchesServer()
 		t.Run("GetRaw", func(t *ftt.Test) {
 			authState := &authtest.FakeState{
 				Identity:       "user:admin@example.com",
@@ -681,178 +671,6 @@ func TestTestVariantBranchesServer(t *testing.T) {
 				assert.Loosely(t, res.TestVariantBranch, should.Match([]*pb.TestVariantBranch{tvb2.buildProto()}))
 			})
 		})
-
-		t.Run("QueryChangepointAIAnalysis", func(t *ftt.Test) {
-			authState := &authtest.FakeState{
-				Identity: "user:someone@example.com",
-				IdentityGroups: []string{
-					"googlers",
-					"luci-analysis-access",
-				},
-				IdentityPermissions: []authtest.RealmPermission{
-					{
-						Realm:      "testproject:realm",
-						Permission: rdbperms.PermListTestResults,
-					},
-					{
-						Realm:      "testproject:realm",
-						Permission: rdbperms.PermListTestExonerations,
-					},
-				},
-			}
-			ctx = auth.WithState(ctx, authState)
-
-			var1 := pbutil.Variant("key1", "val1", "key2", "val1")
-			ref := &pb.SourceRef{
-				System: &pb.SourceRef_Gitiles{
-					Gitiles: &pb.GitilesRef{
-						Host:    "host",
-						Project: "project",
-						Ref:     "ref",
-					},
-				},
-			}
-			refHash := pbutil.SourceRefHash(ref)
-
-			tvb1 := newBuilder().WithProject("testproject").WithTestID("mytest").WithVariantHash(pbutil.VariantHash(var1)).WithRefHash(refHash)
-			var hs inputbuffer.HistorySerializer
-			tvb1.saveInDB(ctx, t, hs)
-
-			req := &pb.QueryChangepointAIAnalysisRequest{
-				Project:             "testproject",
-				TestId:              "mytest",
-				VariantHash:         pbutil.VariantHash(var1),
-				RefHash:             hex.EncodeToString(refHash),
-				StartSourcePosition: 97, // tvb1 has a changepoint at position 100 (99% confidence interval: 95-105)
-			}
-
-			t.Run("permission denied - not in group luci-analysis-accesss", func(t *ftt.Test) {
-				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "luci-analysis-access")
-
-				res, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike("not a member of luci-analysis-access"))
-				assert.Loosely(t, res, should.BeNil)
-			})
-			t.Run("permission denied - not in group googlers", func(t *ftt.Test) {
-				authState.IdentityGroups = removeGroup(authState.IdentityGroups, "googlers")
-
-				res, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike("not a member of googlers"))
-				assert.Loosely(t, res, should.BeNil)
-			})
-			t.Run("permission denied - no permissions to list test results", func(t *ftt.Test) {
-				authState.IdentityPermissions = nil
-
-				res, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike(`caller does not have permissions [resultdb.testResults.list resultdb.testExonerations.list] in any realm in project "testproject"`))
-				assert.Loosely(t, res, should.BeNil)
-			})
-			t.Run("invalid request", func(t *ftt.Test) {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity:       "user:someone@example.com",
-					IdentityGroups: []string{"googlers", "luci-analysis-access"},
-				})
-				t.Run("invalid project", func(t *ftt.Test) {
-					req.Project = ""
-
-					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("project"))
-				})
-				t.Run("invalid test id", func(t *ftt.Test) {
-					req.TestId = ""
-
-					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("test_id"))
-				})
-				t.Run("invalid variant hash", func(t *ftt.Test) {
-					req.VariantHash = ""
-
-					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("variant_hash"))
-				})
-				t.Run("invalid ref hash", func(t *ftt.Test) {
-					req.RefHash = ""
-
-					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("ref_hash"))
-				})
-				t.Run("invalid start source position", func(t *ftt.Test) {
-					req.StartSourcePosition = 0
-
-					_, err := server.QueryChangepointAIAnalysis(ctx, req)
-					assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
-					assert.Loosely(t, err, should.ErrLike("start_source_position"))
-				})
-			})
-			t.Run("test variant branch not found", func(t *ftt.Test) {
-				req.TestId = "not_exists"
-
-				_, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
-				assert.Loosely(t, err, should.ErrLike("test variant branch not found"))
-			})
-			t.Run("changepoint not found", func(t *ftt.Test) {
-				// This position is closer to the start of the first segment
-				// than it is to the second segment. Just the first segment
-				// does not give us enough information to analyse the changepoint,
-				// we need the prior segment too.
-				req.StartSourcePosition = 11
-
-				_, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, grpccode.ShouldBe(codes.NotFound))
-				assert.Loosely(t, err, should.ErrLike("test variant branch changepoint not found"))
-			})
-			t.Run("valid", func(t *ftt.Test) {
-				ctx = gitiles.UseFakeClient(ctx, makeFakeCommit)
-				tvc.SourceVerdictAfterPosition = &testverdicts.SourceVerdict{
-					Position:   110,
-					CommitHash: "0011223344556677889900112233445566778899",
-					Variant:    `{"key":"value"}`,
-					TestLocation: &testverdicts.TestLocation{
-						Repo:     "https://chromium.googlesource.com/chromium/src",
-						FileName: "//path/to/test",
-					},
-					Ref: &testverdicts.BQRef{
-						Gitiles: &testverdicts.BQGitiles{
-							Host:    bigquery.NullString{StringVal: "myproject.googlesource.com", Valid: true},
-							Project: bigquery.NullString{StringVal: "project", Valid: true},
-							Ref:     bigquery.NullString{StringVal: "refs/heads/main", Valid: true},
-						},
-					},
-					Results: []testverdicts.TestResult{
-						{
-							ParentInvocationID:   "some-inv",
-							ResultID:             "some-result",
-							Expected:             false,
-							Status:               "FAIL",
-							PrimaryFailureReason: bigquery.NullString{StringVal: "[blah.cc(55)] some failure reason", Valid: true},
-						},
-					},
-				}
-
-				sorbetClient.Response.Candidate = "Test response."
-
-				rsp, err := server.QueryChangepointAIAnalysis(ctx, req)
-				assert.Loosely(t, err, should.BeNil)
-
-				assert.Loosely(t, rsp.Prompt, should.NotBeEmpty)
-				assert.Loosely(t, rsp.Prompt, should.ContainSubstring(`testproject`))
-				assert.Loosely(t, rsp.Prompt, should.ContainSubstring(`mytest`))
-				assert.Loosely(t, rsp.Prompt, should.ContainSubstring(`{"key":"value"}`))
-				assert.Loosely(t, rsp.Prompt, should.ContainSubstring("/path/to/test"))
-				assert.Loosely(t, rsp.Prompt, should.ContainSubstring("[blah.cc(55)] some failure reason"))
-				assert.Loosely(t, rsp.Prompt, should.ContainSubstring("105"))
-				assert.Loosely(t, rsp.Prompt, should.ContainSubstring("95"))
-				assert.Loosely(t, rsp.AnalysisMarkdown, should.Equal("Test response."))
-			})
-		})
 	})
 }
 
@@ -956,42 +774,6 @@ func (b *testVariantBranchBuilder) buildProto() *pb.TestVariantBranch {
 					FlakyVerdicts:      0,
 					TotalVerdicts:      2,
 				},
-			},
-		},
-	}
-}
-
-func makeFakeCommit(i int32) *git.Commit {
-	return &git.Commit{
-		Id:      fmt.Sprintf("id %d", i),
-		Tree:    "tree",
-		Parents: []string{},
-		Author: &git.Commit_User{
-			Name:  "userX",
-			Email: "userx@google.com",
-			Time:  timestamppb.New(time.Unix(1000, 0)),
-		},
-		Committer: &git.Commit_User{
-			Name:  "userY",
-			Email: "usery@google.com",
-			Time:  timestamppb.New(time.Unix(1100, 0)),
-		},
-		Message: fmt.Sprintf("message %d", i),
-		TreeDiff: []*git.Commit_TreeDiff{
-			{
-				Type:    git.Commit_TreeDiff_DELETE,
-				OldPath: "/deleted/path",
-				NewPath: "/dev/null",
-			},
-			{
-				Type:    git.Commit_TreeDiff_MODIFY,
-				OldPath: "/modified/path",
-				NewPath: "/modified/path",
-			},
-			{
-				Type:    git.Commit_TreeDiff_ADD,
-				NewPath: "/dev/null",
-				OldPath: "/new/path",
 			},
 		},
 	}

@@ -90,20 +90,3 @@ func (s *DecoratedTestVariantBranches) QuerySourceVerdicts(ctx context.Context, 
 	}
 	return
 }
-
-func (s *DecoratedTestVariantBranches) QueryChangepointAIAnalysis(ctx context.Context, req *QueryChangepointAIAnalysisRequest) (rsp *QueryChangepointAIAnalysisResponse, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(ctx, "QueryChangepointAIAnalysis", req)
-		if err == nil {
-			ctx = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.QueryChangepointAIAnalysis(ctx, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(ctx, "QueryChangepointAIAnalysis", rsp, err)
-	}
-	return
-}

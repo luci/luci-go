@@ -43,7 +43,6 @@ import (
 	cpbq "go.chromium.org/luci/analysis/internal/changepoints/bqexporter"
 	bqupdator "go.chromium.org/luci/analysis/internal/changepoints/bqupdater"
 	"go.chromium.org/luci/analysis/internal/changepoints/groupscheduler"
-	"go.chromium.org/luci/analysis/internal/changepoints/sorbet"
 	"go.chromium.org/luci/analysis/internal/clustering/reclustering/orchestrator"
 	"go.chromium.org/luci/analysis/internal/clustering/rules"
 	"go.chromium.org/luci/analysis/internal/config"
@@ -61,7 +60,6 @@ import (
 	"go.chromium.org/luci/analysis/internal/services/workunitingester"
 	"go.chromium.org/luci/analysis/internal/span"
 	"go.chromium.org/luci/analysis/internal/testrealms"
-	"go.chromium.org/luci/analysis/internal/testverdicts"
 	"go.chromium.org/luci/analysis/internal/ui"
 	"go.chromium.org/luci/analysis/internal/views"
 	wuexporter "go.chromium.org/luci/analysis/internal/workunits/exporter"
@@ -109,19 +107,9 @@ func RegisterRPCHandlers(srv *luciserver.Server) error {
 		return errors.Fmt("creating changepoint client: %w", err)
 	}
 
-	tvc, err := testverdicts.NewReadClient(srv.Context, srv.Options.CloudProject)
-	if err != nil {
-		return errors.Fmt("creating test verdicts read client: %w", err)
-	}
-
 	tsc, err := testrealms.NewClient(srv.Context, srv.Options.CloudProject)
 	if err != nil {
 		return errors.Fmt("creating test search client: %w", err)
-	}
-
-	sc, err := sorbet.NewClient(srv.Context, srv.Options.CloudProject)
-	if err != nil {
-		return errors.Fmt("creating sorbet client: %w", err)
 	}
 
 	// May be nil on deployments where Buganizer is not configured.
@@ -146,7 +134,7 @@ func RegisterRPCHandlers(srv *luciserver.Server) error {
 	analysispb.RegisterTestVariantsServer(srv, rpc.NewTestVariantsServer())
 	analysispb.RegisterTestHistoryServer(srv, testhistory.NewTestHistoryServer(tsc))
 	analysispb.RegisterBuganizerTesterServer(srv, rpc.NewBuganizerTesterServer())
-	analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer(tvc, sc))
+	analysispb.RegisterTestVariantBranchesServer(srv, rpc.NewTestVariantBranchesServer())
 	analysispb.RegisterChangepointsServer(srv, rpc.NewChangepointsServer(cpc))
 	return nil
 }
