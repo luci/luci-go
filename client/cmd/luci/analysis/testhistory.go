@@ -50,15 +50,17 @@ const (
 // TestHistoryCmd returns the subcommand for `luci analysis test-history`.
 func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "test-history [-project <project>] [-testid <test_id> | -modulename <mod> -scheme <scheme> -case <case> [-coarse <coarse>] [-fine <fine>]] [-variant <k:v>] [-days <n>] [-limit <n>] [-subrealm <realm>] [<target>]",
+		UsageLine: "test-history [-project <project>] [-testid <test_id> | -test-substring <substr> [-case-insensitive] | -modulename <mod> -scheme <scheme> -case <case> [-coarse <coarse>] [-fine <fine>]] [-variant <k:v>] [-days <n>] [-limit <n>] [-subrealm <realm>] [<target>]",
 		ShortDesc: "Summarize cross-build pass/flaky/failed stats and recent verdicts for a test ID",
 		LongDesc: "Query LUCI Analysis TestHistory for a test ID across recent builds to inspect per-variant\n" +
 			"pass, flaky, failed, and exonerated counts (TestHistory.QueryStats) alongside recent verdicts\n" +
 			"(TestHistory.Query) with -invocationid and -varianthash flags ready for 'luci verdict get'.\n\n" +
-			"Accepts a positional URL/ID <target>, a flat/encoded -testid, or structured test ID flags (-modulename, -scheme, -coarse, -fine, -case).\n\n" +
+			"Accepts a positional URL/ID <target>, a flat/encoded -testid, a partial -test-substring\n" +
+			"(resolved via TestHistory.QueryTests), or structured test ID flags (-modulename, -scheme, -coarse, -fine, -case).\n\n" +
 			"Examples:\n" +
 			"  luci analysis test-history https://ci.chromium.org/ui/test/turquoise/fuchsia-pkg%3A%2F%2Ffuchsia.com%2Fnetstack-fidl-test%23meta%2Fnetstack-fidl-test.cm\n" +
 			"  luci analysis test-history -project turquoise -testid \"fuchsia-pkg://fuchsia.com/netstack-fidl-test#meta/netstack-fidl-test.cm\"\n" +
+			"  luci analysis test-history -project chromium -test-substring \"WebAppBrowserTest#BrowserDisplayNotInstallable\"\n" +
 			"  luci analysis test-history -project chromium -modulename \"//chrome/test:browser_tests\" -scheme gtest -fine WebAppBrowserTest -case \"BrowserDisplayNotInstallable/All.0\"",
 		CommandRun: func() subcommands.CommandRun {
 			r := &testHistoryRun{
@@ -73,6 +75,8 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.project, "project", "", "LUCI project (required, e.g. chromium, turquoise)")
 			r.Flags.StringVar(&r.testID, "testid", "", "Flat or structured test ID to query history for")
 			r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
+			r.Flags.StringVar(&r.testSubstring, "test-substring", "", "Substring of test ID or test name to search via TestHistory.QueryTests (e.g. Suite#Case or Suite.Case)")
+			r.Flags.BoolVar(&r.caseInsensitive, "case-insensitive", false, "Match -test-substring case-insensitively")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Structured test ID module name (e.g. //chrome/test:browser_tests)")
 			r.Flags.StringVar(&r.moduleName, "module-name", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.moduleScheme, "scheme", "", "Structured test ID scheme (e.g. gtest, junit, webtest)")
@@ -93,23 +97,27 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 
 type testHistoryRun struct {
 	subcommands.CommandRunBase
-	af            *base.AuthFlags
-	thClient      analysispb.TestHistoryClient
-	rdbClient     rdbpb.ResultDBClient
-	schemasClient rdbpb.SchemasClient
-	out           io.Writer
-	host          string
-	project       string
-	testID        string
-	moduleName    string
-	moduleScheme  string
-	coarseName    string
-	fineName      string
-	caseName      string
-	variants      stringlistflag.Flag
-	days          int
-	limit         int
-	subRealm      string
+	af              *base.AuthFlags
+	thClient        analysispb.TestHistoryClient
+	rdbClient       rdbpb.ResultDBClient
+	schemasClient   rdbpb.SchemasClient
+	out             io.Writer
+	errOut          io.Writer
+	now             time.Time
+	host            string
+	project         string
+	testID          string
+	testSubstring   string
+	caseInsensitive bool
+	moduleName      string
+	moduleScheme    string
+	coarseName      string
+	fineName        string
+	caseName        string
+	variants        stringlistflag.Flag
+	days            int
+	limit           int
+	subRealm        string
 }
 
 type variantStatsSummary struct {
@@ -134,20 +142,30 @@ type testHistoryVerdictEntry struct {
 }
 
 type testHistoryReport struct {
-	Project           string
-	TestID            string
-	TestIDStructured  *rdbpb.TestIdentifier
-	SubRealm          string
-	Days              int
-	StatsTruncated    bool
-	AllVerdictsPassed bool
-	NewerPassingCount int
-	TotalCounts       *rdbpb.TestAggregation_VerdictCounts
-	VariantStats      []variantStatsSummary
-	Verdicts          []testHistoryVerdictEntry
+	Project               string
+	TestID                string
+	TestIDStructured      *rdbpb.TestIdentifier
+	ResolvedFromSubstring string
+	SubRealm              string
+	Days                  int
+	StatsTruncated        bool
+	AllVerdictsPassed     bool
+	NewerPassingCount     int
+	TotalCounts           *rdbpb.TestAggregation_VerdictCounts
+	VariantStats          []variantStatsSummary
+	Verdicts              []testHistoryVerdictEntry
 }
 
 func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+	errOut := r.errOut
+	if errOut == nil {
+		errOut = os.Stderr
+	}
+
 	if base.HasHelpFlag(args) {
 		r.Flags.Usage()
 		return 0
@@ -155,22 +173,35 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 
 	target, err := base.ParsePositionalTarget(&r.Flags, args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(errOut, "%s\n", err)
 		return 1
 	}
 
 	limitExplicit := false
+	daysExplicit := false
+	testIDExplicit := false
+	testSubstringExplicit := false
 	for _, setFlag := range flagSetNames(&r.Flags) {
-		if setFlag == "limit" {
+		switch setFlag {
+		case "limit":
 			limitExplicit = true
+		case "days":
+			daysExplicit = true
+		case "testid", "test-id":
+			testIDExplicit = true
+		case "test-substring":
+			testSubstringExplicit = true
 		}
 	}
 
 	ctx := cli.GetContext(a, r, env)
 	schemasClient := r.schemasClient
+	explicitTestID := strings.TrimSpace(r.testID) != ""
+	testSubstring := strings.TrimSpace(r.testSubstring)
+	hasTestSubstring := testSubstringExplicit || testSubstring != ""
 	hasStructuredFlags := strings.TrimSpace(r.moduleName) != "" || strings.TrimSpace(r.moduleScheme) != "" || strings.TrimSpace(r.coarseName) != "" || strings.TrimSpace(r.fineName) != "" || strings.TrimSpace(r.caseName) != ""
 	var testIDBinding *string
-	if !hasStructuredFlags {
+	if !hasStructuredFlags && !hasTestSubstring {
 		testIDBinding = &r.testID
 	}
 
@@ -179,38 +210,76 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		TestID:  testIDBinding,
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
+		fmt.Fprintf(errOut, "failed to extract IDs from %q: %s\n", target, err)
 		return 1
 	}
 
-	resolvedTestID, err := resolveTestHistoryTestID(r.testID, r.moduleName, r.moduleScheme, r.coarseName, r.fineName, r.caseName)
-	if err != nil {
-		ids.PrintMissingFlagsError(os.Stderr, extracted, err.Error())
+	var resolvedTestID string
+	if hasTestSubstring {
+		if explicitTestID || testIDExplicit {
+			ids.PrintMissingFlagsError(errOut, extracted, "specify either -test-substring or -testid, not both")
+			return 1
+		}
+		if hasStructuredFlags {
+			ids.PrintMissingFlagsError(errOut, extracted, "specify either -test-substring or structured test ID flags (-modulename, -scheme, -case), not both")
+			return 1
+		}
+		if extracted != nil && extracted.TestID != "" {
+			ids.PrintMissingFlagsError(errOut, extracted, "specify either -test-substring or a positional target containing a test ID, not both")
+			return 1
+		}
+		if err := validateTestIDSubstring("-test-substring", testSubstring); err != nil {
+			ids.PrintMissingFlagsError(errOut, extracted, err.Error())
+			return 1
+		}
+	} else {
+		if r.caseInsensitive {
+			ids.PrintMissingFlagsError(errOut, extracted, "-case-insensitive requires -test-substring")
+			return 1
+		}
+		resolvedTestID, err = resolveTestHistoryTestID(r.testID, r.moduleName, r.moduleScheme, r.coarseName, r.fineName, r.caseName)
+		if err != nil {
+			ids.PrintMissingFlagsError(errOut, extracted, err.Error())
+			return 1
+		}
+	}
+
+	project := strings.TrimSpace(r.project)
+	if project == "" {
+		ids.PrintMissingFlagsError(errOut, extracted, "missing required -project flag (e.g. -project chromium)")
 		return 1
 	}
-	if strings.TrimSpace(r.project) == "" {
-		ids.PrintMissingFlagsError(os.Stderr, extracted, "missing required -project flag (e.g. -project chromium)")
+	if err := validateBareID("-project", project); err != nil {
+		ids.PrintMissingFlagsError(errOut, extracted, err.Error())
 		return 1
 	}
-	if strings.TrimSpace(resolvedTestID) == "" {
-		ids.PrintMissingFlagsError(os.Stderr, extracted, "missing required -testid flag (or -modulename, -scheme, -case)")
+	if !hasTestSubstring && strings.TrimSpace(resolvedTestID) == "" {
+		ids.PrintMissingFlagsError(errOut, extracted, "missing required -testid flag (or -test-substring, or -modulename, -scheme, -case)")
+		return 1
+	}
+	if r.days <= 0 {
+		fmt.Fprintf(errOut, "-days must be positive, got %d\n", r.days)
+		return 1
+	}
+	if _, err := parseVariantFilters(r.variants); err != nil {
+		fmt.Fprintf(errOut, "%s\n", err)
 		return 1
 	}
 
 	thClient := r.thClient
 	if thClient == nil {
 		if r.af == nil {
-			fmt.Fprintf(os.Stderr, "auth flags not configured\n")
+			fmt.Fprintf(errOut, "auth flags not configured\n")
 			return 1
 		}
 		if err := r.af.Parse(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			fmt.Fprintf(errOut, "failed to parse auth flags: %s\n", err)
 			return 1
 		}
 		var errClient error
 		_, _, thClient, errClient = r.af.NewAnalysisClients(ctx, r.host)
 		if errClient != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", errClient)
+			fmt.Fprintf(errOut, "%s\n", errClient)
 			return 1
 		}
 		if schemasClient == nil {
@@ -218,41 +287,78 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		}
 	}
 
+	now := r.now
+	if now.IsZero() {
+		now = time.Now()
+	}
+	now = now.UTC()
+	subRealm := normalizeSubRealm(project, r.subRealm)
+
+	var resolvedFromSubstring string
+	if testSubstring != "" {
+		searchRes, err := queryMatchingTests(ctx, thClient, project, subRealm, testSubstring, r.caseInsensitive)
+		if err != nil {
+			fmt.Fprintf(errOut, "%s\n", err)
+			return 1
+		}
+		resolvedCandidate, ranked := rankAndResolveSubstringCandidates(searchRes.TestIDs, searchRes.Truncated)
+		if len(ranked) == 0 {
+			ids.PrintDerivedIDs(out, extracted)
+			printNoSubstringMatches(out, project, subRealm, testSubstring)
+			return 0
+		}
+		if resolvedCandidate == "" {
+			ids.PrintDerivedIDs(out, extracted)
+			printSubstringDisambiguation(out, project, subRealm, testSubstring, ranked, searchRes.Truncated, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+			return 0
+		}
+
+		resolvedTestID = resolvedCandidate
+		resolvedFromSubstring = testSubstring
+	}
+
 	report, err := fetchTestHistory(
 		ctx,
 		thClient,
-		r.project,
+		project,
 		resolvedTestID,
-		r.subRealm,
+		subRealm,
 		r.variants,
 		r.days,
 		r.limit,
 		!limitExplicit,
-		time.Now().UTC(),
+		now,
 	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(errOut, "%s\n", err)
 		return 1
 	}
+	report.ResolvedFromSubstring = resolvedFromSubstring
 
-	out := r.out
-	if out == nil {
-		out = os.Stdout
-	}
-	if extracted != nil {
-		if extracted.TestID == "" {
-			extracted.TestID = resolvedTestID
-		}
-		if extracted.ModuleName == "" {
-			extracted.ModuleName = base.ExtractModuleNameFromTestID(extracted.TestID)
-		}
-	}
+	enrichExtractedWithTestID(extracted, resolvedTestID)
 	ids.PrintDerivedIDs(out, extracted)
 	if err := printTestHistoryReport(ctx, out, schemasClient, report); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(errOut, "%s\n", err)
 		return 1
 	}
 	return 0
+}
+
+func enrichExtractedWithTestID(extracted *ids.ExtractedIDs, resolvedTestID string) {
+	if extracted == nil || resolvedTestID == "" {
+		return
+	}
+	if extracted.TestID != resolvedTestID {
+		hadTestID := extracted.TestID != ""
+		extracted.TestID = resolvedTestID
+		if m := base.ExtractModuleNameFromTestID(resolvedTestID); m != "" || hadTestID {
+			extracted.ModuleName = m
+		}
+		return
+	}
+	if extracted.ModuleName == "" {
+		extracted.ModuleName = base.ExtractModuleNameFromTestID(extracted.TestID)
+	}
 }
 
 // resolveTestHistoryTestID resolves either a flat/encoded -testid or structured test identifier
@@ -324,11 +430,7 @@ func fetchTestHistory(
 		return nil, err
 	}
 
-	// LUCI Analysis TestVerdictPredicate.sub_realm expects the bare subrealm without "<project>:" prefix.
-	subRealm := strings.TrimSpace(subRealmFlag)
-	if idx := strings.IndexByte(subRealm, ':'); idx >= 0 && subRealm[:idx] == project {
-		subRealm = subRealm[idx+1:]
-	}
+	subRealm := normalizeSubRealm(project, subRealmFlag)
 
 	now = now.UTC()
 	earliest := now.Add(-time.Duration(days) * 24 * time.Hour)
@@ -623,6 +725,9 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 	fmt.Fprintf(out, "Project:   %s\n", report.Project)
 	if report.SubRealm != "" {
 		fmt.Fprintf(out, "SubRealm:  %s\n", report.SubRealm)
+	}
+	if report.ResolvedFromSubstring != "" {
+		fmt.Fprintf(out, "Resolved:  %q -> %s\n", report.ResolvedFromSubstring, report.TestID)
 	}
 	format.FprintTestID(out, ctx, schemasClient, &rdbpb.TestResult{
 		TestId:           report.TestID,

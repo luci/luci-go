@@ -37,6 +37,7 @@ type mockTestHistoryClient struct {
 	queryStats    func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error)
 	query         func(ctx context.Context, in *analysispb.QueryTestHistoryRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryResponse, error)
 	queryVariants func(ctx context.Context, in *analysispb.QueryVariantsRequest, opts ...grpc.CallOption) (*analysispb.QueryVariantsResponse, error)
+	queryTests    func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error)
 }
 
 func (m *mockTestHistoryClient) QueryStats(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
@@ -58,6 +59,24 @@ func (m *mockTestHistoryClient) QueryVariants(ctx context.Context, in *analysisp
 		return m.queryVariants(ctx, in, opts...)
 	}
 	return &analysispb.QueryVariantsResponse{}, nil
+}
+
+func (m *mockTestHistoryClient) QueryTests(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+	if m.queryTests != nil {
+		return m.queryTests(ctx, in, opts...)
+	}
+	return &analysispb.QueryTestsResponse{}, nil
+}
+
+func execTestHistoryCmd(thMock *mockTestHistoryClient, fixedNow time.Time, args ...string) (int, string, string) {
+	var out, errOut bytes.Buffer
+	cmd := TestHistoryCmd(&base.AuthFlags{})
+	run := cmd.CommandRun().(*testHistoryRun)
+	run.thClient = thMock
+	run.out = &out
+	run.errOut = &errOut
+	run.now = fixedNow
+	return run.Run(nil, args, nil), out.String(), errOut.String()
 }
 
 func TestTestHistorySubcommand(t *testing.T) {
@@ -88,6 +107,10 @@ func TestTestHistorySubcommand(t *testing.T) {
 			run2 := TestHistoryCmd(&base.AuthFlags{}).CommandRun().(*testHistoryRun)
 			assert.Loosely(t, run2.Flags.Parse([]string{"-modulescheme", "gtest"}), should.BeNil)
 			assert.Loosely(t, run2.moduleScheme, should.Equal("gtest"))
+
+			code, _, errStr := execTestHistoryCmd(nil, fixedNow, "-project", "chromium", "-test-id=", "-test-substring", "Suite#Case")
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, errStr, should.ContainSubstring("specify either -test-substring or -testid, not both"))
 		})
 
 		t.Run("Validates required flags and structured test ID resolution", func(t *ftt.Test) {
