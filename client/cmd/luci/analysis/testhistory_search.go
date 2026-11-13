@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 
@@ -28,13 +29,16 @@ import (
 )
 
 const (
-	maxTestSubstringLength = 512
-	maxMatchingTestsShown  = 20
+	maxTestSubstringLength     = 512
+	maxMatchingTestsShown      = 20
+	maxDidYouMeanSuggestions   = 10
+	maxOtherMatchesWithHistory = 3
 )
 
 type testSubstringSearchResult struct {
-	TestIDs   []string
-	Truncated bool
+	TestIDs         []string
+	Truncated       bool
+	CaseInsensitive bool
 }
 
 // normalizeSubRealm strips an optional "<project>:" prefix from subRealmFlag so it
@@ -61,8 +65,25 @@ func validateTestIDSubstring(flagName, val string) error {
 }
 
 // queryMatchingTests searches LUCI Analysis's 90-day test_realms index via TestHistory.QueryTests,
-// retrying once with CaseInsensitive: true if an exact-case query returns zero matches.
+// retrying once with CaseInsensitive: true if an exact-case query returns zero matches, and
+// falling back to a structured-delimiter rewrite (e.g. 'pkg:Class#method' for 'pkg.Class#method',
+// 'Suite#Case' for 'Suite.Case', or '\:\:' for C++ '::') when test_metadata.name is unpopulated
+// or uses a different separator than test_id.
 func queryMatchingTests(ctx context.Context, client analysispb.TestHistoryClient, project, subRealm, substring string, caseInsensitive bool) (*testSubstringSearchResult, error) {
+	res, err := queryTestsWithOptionalCaseRetry(ctx, client, project, subRealm, substring, caseInsensitive)
+	if err != nil || len(res.TestIDs) > 0 {
+		return res, err
+	}
+	if alt := alternateStructuredSubstring(substring); alt != "" && validateTestIDSubstring("-test-substring", alt) == nil {
+		altRes, altErr := queryTestsWithOptionalCaseRetry(ctx, client, project, subRealm, alt, caseInsensitive)
+		if altErr != nil || len(altRes.TestIDs) > 0 {
+			return altRes, altErr
+		}
+	}
+	return res, nil
+}
+
+func queryTestsWithOptionalCaseRetry(ctx context.Context, client analysispb.TestHistoryClient, project, subRealm, substring string, caseInsensitive bool) (*testSubstringSearchResult, error) {
 	req := &analysispb.QueryTestsRequest{
 		Project:         project,
 		TestIdSubstring: substring,
@@ -82,38 +103,94 @@ func queryMatchingTests(ctx context.Context, client analysispb.TestHistoryClient
 		}
 		if len(retryResp.GetTestIds()) > 0 {
 			resp = retryResp
+			caseInsensitive = true
 		}
 	}
 	return &testSubstringSearchResult{
-		TestIDs:   resp.GetTestIds(),
-		Truncated: resp.GetNextPageToken() != "",
+		TestIDs:         resp.GetTestIds(),
+		Truncated:       resp.GetNextPageToken() != "",
+		CaseInsensitive: caseInsensitive,
 	}, nil
 }
 
-// rankAndResolveSubstringCandidates deduplicates and ranks candidate test IDs (structured ':'
-// IDs before legacy IDs, then alphabetical) and returns an auto-resolved canonical test ID when
-// there is a single unique match and the response is not page-truncated.
-func rankAndResolveSubstringCandidates(candidates []string, truncated bool) (resolvedID string, ranked []string) {
-	if len(candidates) == 0 {
-		return "", nil
+// alternateStructuredSubstring rewrites common display test substrings ('pkg.Class#method',
+// 'Class.method', 'pkg.Class.method', or 'ns::Suite#Case') into their encoded structured
+// test_id substring equivalents ('pkg:Class#method', 'Class#method', 'ns\:\:Suite#Case')
+// for harnesses that omit test_metadata.name or use '#' instead of '.' in test_metadata.name.
+func alternateStructuredSubstring(s string) string {
+	if s == "" || strings.HasPrefix(s, ":") || strings.HasPrefix(s, "ninja:") || strings.Contains(s, "!") || strings.Contains(s, "://") {
+		return ""
 	}
-	seen := make(map[string]struct{}, len(candidates))
-	deduped := make([]string, 0, len(candidates))
-	for _, id := range candidates {
-		if id == "" {
-			continue
+	if strings.Contains(s, "::") && !strings.Contains(s, `\:`) {
+		escaped := strings.ReplaceAll(s, "::", `\:\:`)
+		if !strings.Contains(escaped, "#") && !strings.Contains(escaped, "/") {
+			if dot := strings.LastIndexByte(escaped, '.'); dot > 0 && dot < len(escaped)-1 && !isCommonTestFileExtension(escaped[dot+1:]) {
+				escaped = escaped[:dot] + "#" + escaped[dot+1:]
+			}
 		}
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		deduped = append(deduped, id)
+		return escaped
 	}
+	if hashIdx := strings.IndexByte(s, '#'); hashIdx >= 0 {
+		if hashIdx > 0 {
+			beforeHash := s[:hashIdx]
+			if !strings.ContainsAny(beforeHash, ":/") {
+				if pkgSuite, ok := replaceLastDotWithColon(beforeHash); ok {
+					return pkgSuite + s[hashIdx:]
+				}
+			}
+		}
+		return ""
+	}
+	if strings.ContainsAny(s, ":/") || strings.HasPrefix(strings.ToLower(s), "tast.") {
+		return ""
+	}
+	lastDot := strings.LastIndexByte(s, '.')
+	if lastDot <= 0 || lastDot >= len(s)-1 {
+		return ""
+	}
+	method := s[lastDot+1:]
+	if isCommonTestFileExtension(method) {
+		return ""
+	}
+	beforeMethod, _ := replaceLastDotWithColon(s[:lastDot])
+	return beforeMethod + "#" + method
+}
+
+func replaceLastDotWithColon(s string) (string, bool) {
+	if dot := strings.LastIndexByte(s, '.'); dot > 0 && dot < len(s)-1 {
+		return s[:dot] + ":" + s[dot+1:], true
+	}
+	return s, false
+}
+
+func isCommonTestFileExtension(ext string) bool {
+	switch strings.ToLower(ext) {
+	case "html", "htm", "xhtml", "js", "mjs", "cjs", "ts", "tsx", "py", "cm", "json", "xml", "java", "cc", "cpp", "mm", "rs", "go", "sh":
+		return true
+	default:
+		return false
+	}
+}
+
+// rankAndResolveSubstringCandidates deduplicates and ranks candidate test IDs (bounded-suffix
+// matches first, then structured ':' IDs before legacy IDs, then alphabetical) and returns
+// an auto-resolved canonical test ID when the match is unambiguous and not page-truncated.
+func rankAndResolveSubstringCandidates(candidates []string, query string, caseInsensitive, truncated bool) (resolvedID string, ranked []string) {
+	deduped := dedupeNonEmptyStrings(candidates)
 	if len(deduped) == 0 {
 		return "", nil
 	}
 
+	boundedCache := make(map[string]bool, len(deduped))
+	for _, id := range deduped {
+		boundedCache[id] = isBoundedSuffixMatch(id, query, caseInsensitive)
+	}
+
 	sort.Slice(deduped, func(i, j int) bool {
+		bi, bj := boundedCache[deduped[i]], boundedCache[deduped[j]]
+		if bi != bj {
+			return bi
+		}
 		si, sj := pbutil.IsStructuredTestID(deduped[i]), pbutil.IsStructuredTestID(deduped[j])
 		if si != sj {
 			return si
@@ -121,10 +198,443 @@ func rankAndResolveSubstringCandidates(candidates []string, truncated bool) (res
 		return deduped[i] < deduped[j]
 	})
 
-	if !truncated && len(deduped) == 1 {
-		return deduped[0], deduped
+	if truncated {
+		return "", deduped
 	}
-	return "", deduped
+	return resolveUnambiguousCandidate(deduped, boundedCache), deduped
+}
+
+func dedupeNonEmptyStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(values))
+	deduped := make([]string, 0, len(values))
+	for _, v := range values {
+		if v == "" {
+			continue
+		}
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		deduped = append(deduped, v)
+	}
+	return deduped
+}
+
+func resolveUnambiguousCandidate(ranked []string, boundedCache map[string]bool) string {
+	if len(ranked) == 1 {
+		return ranked[0]
+	}
+	var bounded []string
+	for _, id := range ranked {
+		if boundedCache[id] {
+			bounded = append(bounded, id)
+		}
+	}
+	if len(bounded) == 1 {
+		return bounded[0]
+	}
+	if len(bounded) < 2 {
+		return ""
+	}
+	var structuredBounded []string
+	var legacyBounded []string
+	for _, id := range bounded {
+		if pbutil.IsStructuredTestID(id) {
+			structuredBounded = append(structuredBounded, id)
+		} else {
+			legacyBounded = append(legacyBounded, id)
+		}
+	}
+	if len(structuredBounded) != 1 || len(legacyBounded) == 0 {
+		return ""
+	}
+	for _, leg := range legacyBounded {
+		if !isLegacyCounterpartOfStructured(leg, structuredBounded[0]) {
+			return ""
+		}
+	}
+	return structuredBounded[0]
+}
+
+// isBoundedSuffixMatch reports whether testID (or its unescaped structured suite/case display
+// forms such as '<FineName>.<CaseName>' for GTest or '<CoarseName>.<FineName>#<CaseName>' for JUnit)
+// ends with query on a '#./:!$' token boundary.
+func isBoundedSuffixMatch(testID, query string, caseInsensitive bool) bool {
+	if query == "" {
+		return false
+	}
+	if hasRawBoundedSuffix(testID, query, caseInsensitive) {
+		return true
+	}
+	if !pbutil.IsStructuredTestID(testID) {
+		return isLegacyNinjaParameterizedGTestMatch(testID, query, caseInsensitive)
+	}
+	parsed, err := pbutil.ParseAndValidateTestID(testID, pbutil.QuerySideTestIDLimitCallback)
+	if err != nil {
+		return false
+	}
+	for _, c := range structuredDisplayCandidates(parsed) {
+		if hasDisplayBoundedSuffix(c, query, caseInsensitive, 0) {
+			return true
+		}
+	}
+	// Match raw GTest parameterized display names (e.g. 'All/Suite.Case/0' or 'All/Suite/0.Case')
+	// rewritten by result_adapter into FineName='Suite', CaseName='Case/All.0' (or 'Case/0').
+	if parsed.ModuleScheme == "gtest" && parsed.FineName != "" && parsed.FineName != "-" {
+		unescapedCase := unescapeStructuredCase(parsed.CaseName)
+		return isParameterizedGTestDisplayMatch(parsed.FineName, unescapedCase, query, caseInsensitive)
+	}
+	return false
+}
+
+// structuredDisplayCandidates builds the unescaped display-form strings for a structured
+// test ID so callers can check suffix boundaries uniformly across schemes and field depths.
+func structuredDisplayCandidates(parsed pbutil.BaseTestIdentifier) []string {
+	caseParts := splitStructuredCaseComponents(parsed.CaseName)
+	unescapedCase := strings.Join(caseParts, ":")
+	caseForms := []string{unescapedCase}
+
+	candidates := []string{unescapedCase, "#" + unescapedCase}
+	if len(caseParts) > 1 {
+		dotCase := strings.Join(caseParts, ".")
+		caseForms = append(caseForms, dotCase)
+		candidates = append(candidates, dotCase, "#"+dotCase)
+		for k := 1; k < len(caseParts); k++ {
+			candidates = append(candidates, ":"+strings.Join(caseParts[k:], ":"))
+		}
+	}
+
+	hasFine := parsed.FineName != "" && parsed.FineName != "-"
+	if hasFine {
+		for _, c := range caseForms {
+			candidates = append(candidates,
+				parsed.FineName+"#"+c,
+				parsed.FineName+"."+c,
+				":"+parsed.FineName+"#"+c,
+				":"+parsed.FineName+"."+c,
+			)
+		}
+		candidates = append(candidates,
+			parsed.FineName+"/"+unescapedCase,
+			parsed.FineName+":"+unescapedCase,
+		)
+		if parsed.ModuleScheme == "tast" {
+			candidates = append(candidates, "tast."+parsed.FineName+"."+strings.Join(caseParts, "."))
+		}
+	}
+
+	if parsed.CoarseName == "" {
+		return candidates
+	}
+	coarseTrimmed := strings.TrimSuffix(parsed.CoarseName, "/")
+	if !hasFine {
+		for _, c := range caseForms {
+			candidates = append(candidates,
+				parsed.CoarseName+"."+c,
+				coarseTrimmed+"/"+c,
+			)
+		}
+		return candidates
+	}
+
+	coarseSlashFine := coarseTrimmed + "/" + parsed.FineName
+	for _, c := range caseForms {
+		candidates = append(candidates,
+			parsed.CoarseName+"."+parsed.FineName+"#"+c,
+			coarseSlashFine+"#"+c,
+		)
+	}
+	candidates = append(candidates,
+		parsed.CoarseName+":"+parsed.FineName+"#"+unescapedCase,
+		parsed.CoarseName+":"+parsed.FineName+":"+unescapedCase,
+		parsed.CoarseName+"."+parsed.FineName+"."+unescapedCase,
+		coarseSlashFine+"/"+unescapedCase,
+		coarseSlashFine+"."+unescapedCase,
+		":"+parsed.CoarseName+":"+parsed.FineName+"#"+unescapedCase,
+		":"+parsed.CoarseName+"."+parsed.FineName+"#"+unescapedCase,
+	)
+	if len(caseParts) > 1 {
+		dotCase := caseForms[1]
+		candidates = append(candidates,
+			parsed.CoarseName+"."+parsed.FineName+"."+dotCase,
+			coarseSlashFine+"/"+dotCase,
+		)
+	}
+	return candidates
+}
+
+type parameterizedGTestForm struct {
+	display       string
+	trailingToken string
+}
+
+// parameterizedGTestDisplayForms returns raw GTest launcher display names ('Inst/Suite.Case/Param',
+// 'Inst/Suite/Param.Case', and 'Suite/Param.Case') for result_adapter-rewritten gtest cases.
+func parameterizedGTestDisplayForms(suite, unescapedCase string) []parameterizedGTestForm {
+	baseCase, paramPart, ok := strings.Cut(unescapedCase, "/")
+	if !ok || baseCase == "" || paramPart == "" || strings.Contains(paramPart, "/") {
+		return nil
+	}
+	if inst, param, hasInst := strings.Cut(paramPart, "."); hasInst && inst != "" && param != "" {
+		return []parameterizedGTestForm{
+			{display: inst + "/" + suite + "." + baseCase + "/" + param, trailingToken: param},
+			{display: inst + "/" + suite + "/" + param + "." + baseCase, trailingToken: baseCase},
+		}
+	}
+	return []parameterizedGTestForm{
+		{display: suite + "/" + paramPart + "." + baseCase, trailingToken: baseCase},
+	}
+}
+
+// isParameterizedGTestDisplayMatch checks raw GTest launcher display forms while requiring query
+// to extend across the rewritten '/' or '.' parameter boundary so bare 'Case', '.Case', or '/Param'
+// queries do not falsely treat a single parameter instantiation as an exact leaf match.
+func isParameterizedGTestDisplayMatch(suite, unescapedCase, query string, caseInsensitive bool) bool {
+	for _, form := range parameterizedGTestDisplayForms(suite, unescapedCase) {
+		token := form.trailingToken
+		if caseInsensitive {
+			token = strings.ToLower(token)
+		}
+		// Require query to extend past "<sep><trailingToken>" (len(token)+2 bytes).
+		if hasDisplayBoundedSuffix(form.display, query, caseInsensitive, len(token)+2) {
+			return true
+		}
+	}
+	return false
+}
+
+func isLegacyNinjaParameterizedGTestMatch(testID, query string, caseInsensitive bool) bool {
+	if !strings.HasPrefix(testID, "ninja:") {
+		return false
+	}
+	afterNinja := strings.TrimPrefix(testID, "ninja:")
+	paramSlash := strings.LastIndexByte(afterNinja, '/')
+	if paramSlash <= 0 {
+		return false
+	}
+	beforeParam := afterNinja[:paramSlash]
+	paramPart := afterNinja[paramSlash+1:]
+	if paramPart == "" {
+		return false
+	}
+	modSlash := strings.LastIndexByte(beforeParam, '/')
+	if modSlash <= 0 {
+		return false
+	}
+	suiteAndCase := beforeParam[modSlash+1:]
+	dotIdx := strings.LastIndexByte(suiteAndCase, '.')
+	if dotIdx <= 0 || dotIdx >= len(suiteAndCase)-1 {
+		return false
+	}
+	suite := suiteAndCase[:dotIdx]
+	baseCase := suiteAndCase[dotIdx+1:]
+	return isParameterizedGTestDisplayMatch(suite, baseCase+"/"+paramPart, query, caseInsensitive)
+}
+
+func unescapeStructuredCase(caseName string) string {
+	return strings.Join(splitStructuredCaseComponents(caseName), ":")
+}
+
+// splitStructuredCaseComponents splits a parsed structured CaseName (where pbutil
+// leaves '\\' and '\:' escaped and uses unescaped ':' as the multi-component separator)
+// into its unescaped component strings.
+func splitStructuredCaseComponents(caseName string) []string {
+	var parts []string
+	var cur strings.Builder
+	for i := 0; i < len(caseName); i++ {
+		if caseName[i] == '\\' && i+1 < len(caseName) {
+			cur.WriteByte(caseName[i+1])
+			i++
+			continue
+		}
+		if caseName[i] == ':' {
+			parts = append(parts, cur.String())
+			cur.Reset()
+			continue
+		}
+		cur.WriteByte(caseName[i])
+	}
+	parts = append(parts, cur.String())
+	return parts
+}
+
+// hasRawBoundedSuffix reports whether raw encoded testID ends with suffix on a
+// '#./:!$' token boundary, respecting ResultDB '\' escapes before '#', '!', and ':'.
+func hasRawBoundedSuffix(target, suffix string, caseInsensitive bool) bool {
+	if suffix == "" {
+		return false
+	}
+	if caseInsensitive {
+		target = strings.ToLower(target)
+		suffix = strings.ToLower(suffix)
+	}
+	if !strings.HasSuffix(target, suffix) {
+		return false
+	}
+	if len(target) == len(suffix) {
+		return true
+	}
+	prefix := target[:len(target)-len(suffix)]
+	if len(suffix) > 1 && isTestIDBoundaryByte(suffix[0]) {
+		if (suffix[0] == '#' || suffix[0] == '!' || suffix[0] == ':') && hasOddTrailingBackslashes(prefix) {
+			return false
+		}
+		return true
+	}
+	return isTestIDBoundaryByte(prefix[len(prefix)-1])
+}
+
+// hasDisplayBoundedSuffix reports whether an already-unescaped display string ends
+// with suffix on a '#./:!$' token boundary and has length >= minSuffixBytes.
+// Leading structural delimiters ('!', '#', ':') are never matched mid-string inside
+// unescaped component values (where '\!', '\#', '\:' have already been decoded).
+func hasDisplayBoundedSuffix(display, suffix string, caseInsensitive bool, minSuffixBytes int) bool {
+	if suffix == "" {
+		return false
+	}
+	if caseInsensitive {
+		display = strings.ToLower(display)
+		suffix = strings.ToLower(suffix)
+	}
+	if len(suffix) < minSuffixBytes {
+		return false
+	}
+	if !strings.HasSuffix(display, suffix) {
+		return false
+	}
+	switch suffix[0] {
+	case '!':
+		return false
+	case '#', ':':
+		return len(display) == len(suffix)
+	}
+	if len(display) == len(suffix) {
+		return true
+	}
+	prefix := display[:len(display)-len(suffix)]
+	return hasBoundaryBeforeSuffix(prefix, suffix)
+}
+
+func hasBoundaryBeforeSuffix(prefix, suffix string) bool {
+	if len(suffix) > 1 && isTestIDBoundaryByte(suffix[0]) {
+		return true
+	}
+	return isTestIDBoundaryByte(prefix[len(prefix)-1])
+}
+
+func hasOddTrailingBackslashes(s string) bool {
+	n := 0
+	for i := len(s) - 1; i >= 0 && s[i] == '\\'; i-- {
+		n++
+	}
+	return n%2 == 1
+}
+
+func isTestIDBoundaryByte(b byte) bool {
+	switch b {
+	case '#', '.', '/', ':', '!', '$':
+		return true
+	default:
+		return false
+	}
+}
+
+// isLegacyCounterpartOfStructured reports whether legacyID is the pre-structured 'ninja:<module>/...'
+// counterpart of structuredID for the same module, coarse package/dir, fine suite/class, and case.
+func isLegacyCounterpartOfStructured(legacyID, structuredID string) bool {
+	if !strings.HasPrefix(legacyID, "ninja:") {
+		return false
+	}
+	parsed, err := pbutil.ParseAndValidateTestID(structuredID, pbutil.QuerySideTestIDLimitCallback)
+	if err != nil || parsed.ModuleName == "" || parsed.ModuleName == pbutil.LegacyModuleName {
+		return false
+	}
+	if parsed.CaseName == "" || parsed.CaseName == pbutil.FixtureCaseName {
+		return false
+	}
+	afterNinja := strings.TrimPrefix(legacyID, "ninja:")
+	prefix := parsed.ModuleName + "/"
+	if !strings.HasPrefix(afterNinja, prefix) {
+		return false
+	}
+	rest := afterNinja[len(prefix):]
+	unescapedCase := unescapeStructuredCase(parsed.CaseName)
+	return matchesLegacyNinjaRest(rest, parsed, unescapedCase)
+}
+
+func matchesLegacyNinjaRest(rest string, parsed pbutil.BaseTestIdentifier, unescapedCase string) bool {
+	if parsed.CoarseName == "" && (parsed.FineName == "" || parsed.FineName == "-") {
+		return rest == unescapedCase
+	}
+	coarseTrimmed := strings.TrimSuffix(parsed.CoarseName, "/")
+	if parsed.FineName == "" || parsed.FineName == "-" {
+		return rest == parsed.CoarseName+"."+unescapedCase || rest == coarseTrimmed+"/"+unescapedCase
+	}
+	if parsed.CoarseName == "" {
+		forms := []string{
+			parsed.FineName + "." + unescapedCase,
+			parsed.FineName + "/" + unescapedCase,
+			parsed.FineName + "#" + unescapedCase,
+			parsed.FineName + ":" + unescapedCase,
+		}
+		if slices.Contains(forms, rest) {
+			return true
+		}
+		if parsed.ModuleScheme == "gtest" {
+			for _, form := range parameterizedGTestDisplayForms(parsed.FineName, unescapedCase) {
+				if rest == form.display {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	coarseSlashFine := coarseTrimmed + "/" + parsed.FineName
+	forms := []string{
+		parsed.CoarseName + "." + parsed.FineName + "#" + unescapedCase,
+		parsed.CoarseName + "." + parsed.FineName + "." + unescapedCase,
+		coarseSlashFine + "/" + unescapedCase,
+		coarseSlashFine + "." + unescapedCase,
+		coarseSlashFine + "#" + unescapedCase,
+		parsed.CoarseName + ":" + parsed.FineName + "#" + unescapedCase,
+		parsed.CoarseName + ":" + parsed.FineName + ":" + unescapedCase,
+	}
+	return slices.Contains(forms, rest)
+}
+
+func populateAlternateMatches(
+	report *testHistoryReport,
+	ranked []string,
+	project, subRealm string,
+	variants []string,
+	daysExplicit bool,
+	days int,
+	limitExplicit bool,
+	limit int,
+) {
+	if report == nil || len(ranked) <= 1 {
+		return
+	}
+	var others []string
+	var legacyCounterparts []string
+	for _, id := range ranked {
+		if id == report.TestID {
+			continue
+		}
+		if isLegacyCounterpartOfStructured(id, report.TestID) {
+			legacyCounterparts = append(legacyCounterparts, id)
+		} else {
+			others = append(others, id)
+		}
+	}
+	others = append(others, legacyCounterparts...)
+	if len(others) > 0 {
+		report.DidYouMeanTestIDs = others
+		report.DidYouMeanNextStep = formatTestHistoryReRunCommand(project, others[0], subRealm, variants, daysExplicit, days, limitExplicit, limit)
+	}
 }
 
 func formatTestHistoryReRunCommand(
@@ -185,21 +695,38 @@ func printSubstringDisambiguation(
 	if truncated {
 		countDesc = fmt.Sprintf("%d+, page cap reached", len(ranked))
 	}
-	fmt.Fprintf(out, "\nMultiple matching test IDs found (%s); specify exact -testid to view history:\n", countDesc)
+	heading := fmt.Sprintf("Multiple matching test IDs found (%s); specify exact -testid to view history:", countDesc)
+	printCappedTestIDList(out, heading, ranked, maxMatchingTestsShown, " (pass a more specific -test-substring to narrow)")
 
-	shown := ranked
+	nextCmd := formatTestHistoryReRunCommand(project, ranked[0], subRealm, variants, daysExplicit, days, limitExplicit, limit)
+	fmt.Fprintf(out, "\nNext step:\n  %s\n", nextCmd)
+}
+
+func printDidYouMeanSuggestions(out io.Writer, heading string, suggestions []string, maxShown int, nextStep string) {
+	if len(suggestions) == 0 {
+		return
+	}
+	printCappedTestIDList(out, heading, suggestions, maxShown, "")
+	if nextStep != "" {
+		fmt.Fprintf(out, "\nNext step:\n  %s\n", nextStep)
+	}
+}
+
+func printCappedTestIDList(out io.Writer, heading string, testIDs []string, maxShown int, overflowSuffix string) {
+	if len(testIDs) == 0 {
+		return
+	}
+	fmt.Fprintf(out, "\n%s\n", heading)
+	shown := testIDs
 	extra := 0
-	if len(shown) > maxMatchingTestsShown {
-		extra = len(shown) - maxMatchingTestsShown
-		shown = shown[:maxMatchingTestsShown]
+	if maxShown > 0 && len(shown) > maxShown {
+		extra = len(shown) - maxShown
+		shown = shown[:maxShown]
 	}
 	for _, id := range shown {
 		fmt.Fprintf(out, "- %s\n", id)
 	}
 	if extra > 0 {
-		fmt.Fprintf(out, "  ... +%d more matching test IDs (pass a more specific -test-substring to narrow)\n", extra)
+		fmt.Fprintf(out, "  ... +%d more matching test IDs%s\n", extra, overflowSuffix)
 	}
-
-	nextCmd := formatTestHistoryReRunCommand(project, ranked[0], subRealm, variants, daysExplicit, days, limitExplicit, limit)
-	fmt.Fprintf(out, "\nNext step:\n  %s\n", nextCmd)
 }

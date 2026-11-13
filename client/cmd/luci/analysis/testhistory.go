@@ -146,6 +146,9 @@ type testHistoryReport struct {
 	TestID                string
 	TestIDStructured      *rdbpb.TestIdentifier
 	ResolvedFromSubstring string
+	MatchedTestIDCount    int
+	DidYouMeanTestIDs     []string
+	DidYouMeanNextStep    string
 	SubRealm              string
 	Days                  int
 	StatsTruncated        bool
@@ -295,13 +298,14 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	subRealm := normalizeSubRealm(project, r.subRealm)
 
 	var resolvedFromSubstring string
+	var resolvedRanked []string
 	if testSubstring != "" {
 		searchRes, err := queryMatchingTests(ctx, thClient, project, subRealm, testSubstring, r.caseInsensitive)
 		if err != nil {
 			fmt.Fprintf(errOut, "%s\n", err)
 			return 1
 		}
-		resolvedCandidate, ranked := rankAndResolveSubstringCandidates(searchRes.TestIDs, searchRes.Truncated)
+		resolvedCandidate, ranked := rankAndResolveSubstringCandidates(searchRes.TestIDs, testSubstring, searchRes.CaseInsensitive, searchRes.Truncated)
 		if len(ranked) == 0 {
 			ids.PrintDerivedIDs(out, extracted)
 			printNoSubstringMatches(out, project, subRealm, testSubstring)
@@ -315,6 +319,7 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 
 		resolvedTestID = resolvedCandidate
 		resolvedFromSubstring = testSubstring
+		resolvedRanked = ranked
 	}
 
 	report, err := fetchTestHistory(
@@ -334,6 +339,10 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 	report.ResolvedFromSubstring = resolvedFromSubstring
+	if len(resolvedRanked) > 0 {
+		report.MatchedTestIDCount = len(resolvedRanked)
+		populateAlternateMatches(report, resolvedRanked, project, subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+	}
 
 	enrichExtractedWithTestID(extracted, resolvedTestID)
 	ids.PrintDerivedIDs(out, extracted)
@@ -727,7 +736,12 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 		fmt.Fprintf(out, "SubRealm:  %s\n", report.SubRealm)
 	}
 	if report.ResolvedFromSubstring != "" {
-		fmt.Fprintf(out, "Resolved:  %q -> %s\n", report.ResolvedFromSubstring, report.TestID)
+		if report.MatchedTestIDCount > 1 {
+			fmt.Fprintf(out, "Resolved:  %q -> %s (from %d matching test IDs; pass -testid for another test)\n",
+				report.ResolvedFromSubstring, report.TestID, report.MatchedTestIDCount)
+		} else {
+			fmt.Fprintf(out, "Resolved:  %q -> %s\n", report.ResolvedFromSubstring, report.TestID)
+		}
 	}
 	format.FprintTestID(out, ctx, schemasClient, &rdbpb.TestResult{
 		TestId:           report.TestID,
@@ -737,6 +751,7 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 
 	if len(report.VariantStats) == 0 && len(report.Verdicts) == 0 {
 		fmt.Fprintf(out, "\nNo test history found in the last %d days.\n", report.Days)
+		printDidYouMeanSuggestions(out, "Other matching test IDs:", report.DidYouMeanTestIDs, maxDidYouMeanSuggestions, report.DidYouMeanNextStep)
 		return nil
 	}
 
@@ -779,39 +794,49 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 		}
 	}
 
+	var nextSteps []string
 	if len(report.Verdicts) == 0 {
 		fmt.Fprintf(out, "\nNo matching test verdicts found.\n")
-		return nil
-	}
-
-	if report.AllVerdictsPassed {
-		fmt.Fprintf(out, "\nRecent Passing Verdicts (no failing/flaky verdicts in window; showing %d):\n", len(report.Verdicts))
-	} else if report.NewerPassingCount > 0 {
-		fmt.Fprintf(out, "\nRecent Non-Passing Verdicts (showing %d; %d newer verdicts passed since latest non-passing):\n",
-			len(report.Verdicts), report.NewerPassingCount)
 	} else {
-		fmt.Fprintf(out, "\nRecent Non-Passing Verdicts (showing %d):\n", len(report.Verdicts))
-	}
-	for _, v := range report.Verdicts {
-		statusDisplay := v.Status
-		if v.Exonerated && statusDisplay != "EXONERATED" {
-			statusDisplay += " (EXONERATED)"
+		if report.AllVerdictsPassed {
+			fmt.Fprintf(out, "\nRecent Passing Verdicts (no failing/flaky verdicts in window; showing %d):\n", len(report.Verdicts))
+		} else if report.NewerPassingCount > 0 {
+			fmt.Fprintf(out, "\nRecent Non-Passing Verdicts (showing %d; %d newer verdicts passed since latest non-passing):\n",
+				len(report.Verdicts), report.NewerPassingCount)
+		} else {
+			fmt.Fprintf(out, "\nRecent Non-Passing Verdicts (showing %d):\n", len(report.Verdicts))
 		}
-		timeSuffix := ""
-		if v.PartitionTime != "" {
-			timeSuffix = fmt.Sprintf(" [%s]", v.PartitionTime)
+		for _, v := range report.Verdicts {
+			statusDisplay := v.Status
+			if v.Exonerated && statusDisplay != "EXONERATED" {
+				statusDisplay += " (EXONERATED)"
+			}
+			timeSuffix := ""
+			if v.PartitionTime != "" {
+				timeSuffix = fmt.Sprintf(" [%s]", v.PartitionTime)
+			}
+			fmt.Fprintf(out, "- %s %s%s\n", statusDisplay, v.InvocationID, timeSuffix)
+			if len(v.Variant) > 0 {
+				varStr := format.FormatVariant(&rdbpb.Variant{Def: v.Variant})
+				fmt.Fprintf(out, "    Variant: %s (hash: %s)\n", varStr, v.VariantHash)
+			} else if v.VariantHash != "" {
+				fmt.Fprintf(out, "    Variant Hash: %s\n", v.VariantHash)
+			}
 		}
-		fmt.Fprintf(out, "- %s %s%s\n", statusDisplay, v.InvocationID, timeSuffix)
-		if len(v.Variant) > 0 {
-			varStr := format.FormatVariant(&rdbpb.Variant{Def: v.Variant})
-			fmt.Fprintf(out, "    Variant: %s (hash: %s)\n", varStr, v.VariantHash)
-		} else if v.VariantHash != "" {
-			fmt.Fprintf(out, "    Variant Hash: %s\n", v.VariantHash)
-		}
-	}
 
-	first := report.Verdicts[0]
-	fmt.Fprintf(out, "\nNext step:\n  luci verdict get -invocationid %s -testid %q -varianthash %s\n",
-		first.InvocationID, report.TestID, first.VariantHash)
+		first := report.Verdicts[0]
+		nextSteps = append(nextSteps, fmt.Sprintf("luci verdict get -invocationid %s -testid %q -varianthash %s",
+			first.InvocationID, report.TestID, first.VariantHash))
+	}
+	printDidYouMeanSuggestions(out, "Other matching test IDs:", report.DidYouMeanTestIDs, maxOtherMatchesWithHistory, "")
+	if report.DidYouMeanNextStep != "" {
+		nextSteps = append(nextSteps, report.DidYouMeanNextStep)
+	}
+	if len(nextSteps) > 0 {
+		fmt.Fprintf(out, "\nNext step:\n")
+		for _, step := range nextSteps {
+			fmt.Fprintf(out, "  %s\n", step)
+		}
+	}
 	return nil
 }
