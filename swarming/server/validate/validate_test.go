@@ -39,6 +39,7 @@ func TestDimensionKey(t *testing.T) {
 		{"", "cannot be empty"},
 		{strings.Repeat("a", maxDimensionKeyLen+1), "should be no longer"},
 		{"bad key", "should match"},
+		{"swarming.terminate", "reserved"},
 	}
 
 	for _, cs := range cases {

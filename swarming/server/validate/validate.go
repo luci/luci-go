@@ -89,6 +89,9 @@ func DimensionKey(key string) error {
 	if !dimensionKeyRe.MatchString(key) {
 		return errors.Fmt("the key should match %s", dimensionKeyRe)
 	}
+	if reservedTags.Has(key) {
+		return errors.New("the key is reserved for internal use")
+	}
 	return nil
 }
 

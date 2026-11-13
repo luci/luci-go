@@ -822,6 +822,17 @@ func TestValidateNewTask(t *testing.T) {
 						err := validateNewTask(ctx, req, "pool")
 						assert.That(t, err, should.ErrLike("should match"))
 					})
+					t.Run("reserved_key", func(t *ftt.Test) {
+						req := simpliestValidRequest("pool")
+						req.TaskSlices[0].Properties.Dimensions = []*apipb.StringPair{
+							{
+								Key:   "swarming.terminate",
+								Value: "1",
+							},
+						}
+						err := validateNewTask(ctx, req, "pool")
+						assert.That(t, err, should.ErrLike("reserved"))
+					})
 
 					t.Run("multiple_id", func(t *ftt.Test) {
 						req := simpliestValidRequest("pool")
