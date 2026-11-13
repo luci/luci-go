@@ -19,6 +19,7 @@ import { CSSProperties, useEffect, useMemo, useRef } from 'react';
 
 import {
   calculateTooltipPosition,
+  ChartPoint,
   getTimeFormatters,
   TooltipSizeInfo,
 } from '@/crystal_ball/utils';
@@ -41,7 +42,7 @@ export interface TimeSeriesDataSet {
     x: number;
     y: number;
     count: number;
-    point?: Record<string, unknown>;
+    point?: ChartPoint;
     seriesId?: string;
     seriesIndex?: number;
   }>;

@@ -25,6 +25,14 @@ import {
 import { generateColor, getSafeCssColor } from './colors';
 
 /**
+ * A chart data point as returned by the backend: a map from column or
+ * dimension name (e.g. `build_id`, `test_name`, `value`) to that column's value
+ * at the point. Values are typically strings or numbers, but depend on the
+ * column type, hence `unknown`.
+ */
+export type ChartPoint = Record<string, unknown>;
+
+/**
  * Upper bound on palette lookups when searching for an unused color, to
  * guarantee termination even if every generated color is already taken.
  */
@@ -242,7 +250,7 @@ export function dataPointsToData(
   x: number;
   y: number;
   count: number;
-  point?: Record<string, unknown>;
+  point?: ChartPoint;
 }> {
   return dataPoints.map((pt) => {
     const xValue = pt[xAxisDataKey];
@@ -469,4 +477,34 @@ export function calculateTooltipPosition(
     y + tooltipH + offsetPx > chartH ? y - tooltipH - offsetPx : y + offsetPx;
 
   return [posX, posY];
+}
+
+/**
+ * Minimal shape of a chart series needed to look up neighboring points.
+ */
+export interface ChartSeriesPoints {
+  name: string;
+  data: ReadonlyArray<{ x: number; point?: ChartPoint }>;
+}
+
+/**
+ * Finds the data point immediately preceding `x` (i.e. the point with the
+ * largest x value strictly smaller than `x`) in the series named
+ * `seriesName`. Returns `undefined` if there is no such point.
+ */
+export function findPreviousPoint(
+  series: readonly ChartSeriesPoints[],
+  seriesName: string,
+  x: number,
+): ChartPoint | undefined {
+  const matchingSeries = series.find((s) => s.name === seriesName);
+  if (!matchingSeries) return undefined;
+
+  let previous: { x: number; point?: ChartPoint } | undefined;
+  for (const pt of matchingSeries.data) {
+    if (pt.x < x && (previous === undefined || pt.x > previous.x)) {
+      previous = pt;
+    }
+  }
+  return previous?.point;
 }

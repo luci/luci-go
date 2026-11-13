@@ -79,6 +79,35 @@ describe('RawSampleList', () => {
     expect(screen.getAllByText('target')).not.toHaveLength(0);
   });
 
+  it('should link to the CLs included in the build', () => {
+    render(
+      <RawSampleList
+        rows={mockRows}
+        expandedItems={mockExpandedItems}
+        onToggleExpand={mockOnToggleExpand}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: COMMON_MESSAGES.CLS }),
+    ).toHaveAttribute(
+      'href',
+      'https://android-build.corp.google.com/range_search/cls/from_id/123/to_id/123/?includeFrom=1&includeTo=1&selectedFromTarget=target',
+    );
+  });
+
+  it('should not render the CLs link without a build ID', () => {
+    render(
+      <RawSampleList
+        rows={[{ values: { value: '1' } }]}
+        expandedItems={mockExpandedItems}
+        onToggleExpand={mockOnToggleExpand}
+      />,
+    );
+    expect(
+      screen.queryByRole('link', { name: COMMON_MESSAGES.CLS }),
+    ).not.toBeInTheDocument();
+  });
+
   it('should expand accordion to show additional details', () => {
     render(
       <RawSampleList

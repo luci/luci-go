@@ -59,9 +59,11 @@ import {
 } from '@/crystal_ball/hooks';
 import {
   assignSeriesStrokeColors,
+  ChartPoint,
   dataPointsToData,
   detectRawUnit,
   findMatchingSeriesIndex,
+  findPreviousPoint,
   findUnitInfo,
   getSafeChartType,
   getScaleFactor,
@@ -96,7 +98,7 @@ export interface SelectedPointInfo {
   x: number;
   y: number;
   count: number;
-  point?: Record<string, unknown>;
+  point?: ChartPoint;
   seriesId?: string;
   seriesIndex?: number;
   rawY?: number;
@@ -150,7 +152,7 @@ function getChartSeries(
                 x: number;
                 y: number;
                 count: number;
-                point?: Record<string, unknown>;
+                point?: ChartPoint;
                 seriesId?: string;
                 seriesIndex?: number;
               } => {
@@ -316,7 +318,7 @@ export function ChartWidget({
         setIsStale(false);
         const [x, y, count, rawPointStr, seriesId, seriesIndex, rawY] =
           params.data;
-        let point: Record<string, unknown> | undefined;
+        let point: ChartPoint | undefined;
         if (rawPointStr) {
           try {
             point = JSON.parse(rawPointStr);
@@ -547,6 +549,20 @@ export function ChartWidget({
       };
     });
   }, [chartSeries, displayUnitStr]);
+
+  // The data point preceding the selected point in the same series. Used to
+  // list the CLs landed between the two points.
+  const previousPoint = useMemo(
+    () =>
+      selectedPoint
+        ? findPreviousPoint(
+            scaledChartSeries,
+            selectedPoint.seriesName,
+            selectedPoint.x,
+          )
+        : undefined,
+    [scaledChartSeries, selectedPoint],
+  );
 
   const xAxisBounds = useMemo(() => {
     let timeRangeStart: number | undefined;
@@ -796,6 +812,7 @@ export function ChartWidget({
             ) : (
               <SampleDetailsContent
                 selectedPoint={selectedPoint}
+                previousPoint={previousPoint}
                 widgetId={widgetId}
                 widget={widget}
                 globalFilters={globalFilters}

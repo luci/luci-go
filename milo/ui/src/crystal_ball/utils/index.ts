@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export * from './android_build_utils';
 export * from './breakdown_utils';
 export * from './colors';
 export * from './date_time';
 export * from './errors';
 export * from './filter_utils';
 export * from './markdown_utils';
+export * from './raw_samples_utils';
 export * from './string';
 export * from './unit_scaling';
 export * from './widget_utils';

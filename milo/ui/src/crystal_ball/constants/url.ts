@@ -27,3 +27,10 @@ export const INVOCATION_BASE_URL =
  * Base URL for Android Build (AB).
  */
 export const AB_BASE_URL = 'https://goto.google.com/ab';
+
+/**
+ * Base URL for the Android Build (AB) CL range search page, which lists the
+ * CLs included between two builds.
+ */
+export const AB_CL_RANGE_BASE_URL =
+  'https://android-build.corp.google.com/range_search/cls';

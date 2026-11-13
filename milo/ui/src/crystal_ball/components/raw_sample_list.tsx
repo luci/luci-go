@@ -19,7 +19,6 @@ import {
   AccordionSummary,
   Box,
   Card,
-  Link,
   Typography,
 } from '@mui/material';
 import React from 'react';
@@ -34,10 +33,13 @@ import {
 } from '@/crystal_ball/constants';
 import { useUserSettings } from '@/crystal_ball/hooks';
 import {
+  buildAbBuildClsUrl,
   formatTimestampWithZone,
   getDimensionLabel,
 } from '@/crystal_ball/utils';
 import type { RawSampleRow } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
+
+import { ExternalCaptionLink } from './external_caption_link';
 
 /**
  * A subtle badge displayed for columns/keys that start with 'dim.' to denote
@@ -114,6 +116,8 @@ function RawSampleItem({
   atpUrl.searchParams.set('buildTarget', buildTarget);
 
   const atiUrl = constructAtiUrl(row);
+  const buildId = String(row.values?.[Column.BUILD_ID] ?? '');
+  const buildClsUrl = buildId ? buildAbBuildClsUrl(buildId, buildTarget) : '';
 
   // Option A: Format Value
   const rawVal = row.values?.[Column.VALUE];
@@ -160,48 +164,28 @@ function RawSampleItem({
           </Typography>
         </Box>
 
-        {/* Action Links (Reordered: ATI, ATP, ARC, Perfetto) */}
+        {/* Action Links (ATI, ATP, CLs, Perfetto) */}
         <Box sx={{ display: 'flex', gap: 1.5 }}>
           {atiUrl && (
-            <Link
-              href={atiUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="caption"
-              sx={{
-                fontWeight: (theme) => theme.typography.fontWeightBold,
-                textDecoration: 'none',
-              }}
-            >
-              ATI
-            </Link>
+            <ExternalCaptionLink href={atiUrl}>ATI</ExternalCaptionLink>
           )}
-          <Link
-            href={atpUrl.toString()}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="caption"
-            sx={{
-              fontWeight: (theme) => theme.typography.fontWeightBold,
-              textDecoration: 'none',
-            }}
-          >
+          <ExternalCaptionLink href={atpUrl.toString()}>
             ATP
-          </Link>
-
+          </ExternalCaptionLink>
+          {buildClsUrl && (
+            <ExternalCaptionLink
+              href={buildClsUrl}
+              title={COMMON_MESSAGES.VIEW_CLS_IN_BUILD}
+            >
+              {COMMON_MESSAGES.CLS}
+            </ExternalCaptionLink>
+          )}
           {row.values?.[Column.PERFETTO_ARTIFACT_URL] && (
-            <Link
+            <ExternalCaptionLink
               href={String(row.values[Column.PERFETTO_ARTIFACT_URL])}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="caption"
-              sx={{
-                fontWeight: (theme) => theme.typography.fontWeightBold,
-                textDecoration: 'none',
-              }}
             >
               Perfetto
-            </Link>
+            </ExternalCaptionLink>
           )}
         </Box>
       </Box>
@@ -227,20 +211,12 @@ function RawSampleItem({
             {dimensionDisplayNames?.[Column.BUILD_ID] ?? 'Build'}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Link
-              href={`${AB_BASE_URL}/${row.values?.[Column.BUILD_ID]}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="caption"
-              sx={{
-                fontFamily: 'monospace',
-                textDecoration: 'none',
-                fontWeight: 'bold',
-                color: 'primary.main',
-              }}
+            <ExternalCaptionLink
+              href={`${AB_BASE_URL}/${buildId}`}
+              sx={{ fontFamily: 'monospace', color: 'primary.main' }}
             >
-              {String(row.values?.[Column.BUILD_ID] ?? '')}
-            </Link>
+              {buildId}
+            </ExternalCaptionLink>
             <Typography variant="caption" color="text.secondary">
               |
             </Typography>

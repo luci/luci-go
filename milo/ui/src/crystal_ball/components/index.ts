@@ -15,6 +15,7 @@
 export * from './add_widget_modal';
 export * from './breakdown_table_chart';
 export * from './breakdown_table_widget';
+export * from './changes_since_previous_point';
 export * from './chart_series_editor';
 export * from './chart_tooltip';
 export * from './chart_widget';
@@ -22,6 +23,7 @@ export * from './chart_widget_toolbar';
 export * from './dashboard_dialog';
 export * from './dashboard_list_table';
 export * from './dashboard_time_range_selector';
+export * from './external_caption_link';
 export * from './filter_editor';
 export * from './global_splits_editor';
 export * from './layout';

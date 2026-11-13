@@ -27,6 +27,7 @@ import {
   dataPointsToData,
   findMatchingSeriesConfig,
   findMatchingSeriesIndex,
+  findPreviousPoint,
   formatChange,
   getSafeChartType,
   getTrendInfo,
@@ -413,5 +414,36 @@ describe('assignSeriesStrokeColors', () => {
       generateColor(0),
       generateColor(1),
     ]);
+  });
+});
+
+describe('findPreviousPoint', () => {
+  const series = [
+    {
+      name: 'a',
+      data: [
+        { x: 30, point: { build_id: '30' } },
+        { x: 10, point: { build_id: '10' } },
+        { x: 20, point: { build_id: '20' } },
+      ],
+    },
+    { name: 'b', data: [{ x: 5, point: { build_id: '5' } }] },
+  ];
+
+  test('returns the closest preceding point regardless of order', () => {
+    expect(findPreviousPoint(series, 'a', 30)).toEqual({ build_id: '20' });
+    expect(findPreviousPoint(series, 'a', 25)).toEqual({ build_id: '20' });
+  });
+
+  test('returns undefined for the first point', () => {
+    expect(findPreviousPoint(series, 'a', 10)).toBeUndefined();
+  });
+
+  test('only looks at the matching series', () => {
+    expect(findPreviousPoint(series, 'b', 10)).toEqual({ build_id: '5' });
+  });
+
+  test('returns undefined for an unknown series', () => {
+    expect(findPreviousPoint(series, 'c', 100)).toBeUndefined();
   });
 });

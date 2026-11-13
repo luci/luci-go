@@ -77,6 +77,41 @@ describe('SampleDetailsContent', () => {
     jest.clearAllMocks();
   });
 
+  it('should show the changes section only when a previous point exists', () => {
+    mockUseFetchWidgetRawSamples.mockReturnValue(
+      createMockQueryResult(
+        FetchWidgetRawSamplesResponse.fromPartial({
+          nextPageToken: '',
+          rows: [{ values: { value: '1', build_id: '123' } }],
+        }),
+      ),
+    );
+    const { rerender } = render(
+      <SampleDetailsContent
+        selectedPoint={mockPoint}
+        widgetId="w1"
+        widget={mockWidget}
+        dashboardName="dashboard1"
+      />,
+    );
+    expect(
+      screen.queryByTestId('changes-since-previous-point'),
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <SampleDetailsContent
+        selectedPoint={mockPoint}
+        previousPoint={{ test_name: 'prev' }}
+        widgetId="w1"
+        widget={mockWidget}
+        dashboardName="dashboard1"
+      />,
+    );
+    expect(
+      screen.getByTestId('changes-since-previous-point'),
+    ).toBeInTheDocument();
+  });
+
   it('should display loading state', () => {
     mockUseFetchWidgetRawSamples.mockReturnValue(createMockPendingResult());
     render(

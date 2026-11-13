@@ -25,7 +25,11 @@ import {
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 
-import { RawSampleList, SelectedPointInfo } from '@/crystal_ball/components';
+import {
+  ChangesSincePreviousPoint,
+  RawSampleList,
+  SelectedPointInfo,
+} from '@/crystal_ball/components';
 import {
   AGGREGATION_FUNCTION_LABELS,
   Column,
@@ -36,21 +40,21 @@ import {
   useListMeasurementFilterColumns,
 } from '@/crystal_ball/hooks';
 import {
+  ChartPoint,
+  createRawSamplesRequest,
   getColumnDisplayNameMap,
   getSafeChartType,
   getSafeCssColor,
+  pointToSelectionContext,
 } from '@/crystal_ball/utils';
 import {
-  FetchWidgetRawSamplesRequest,
   ListMeasurementFilterColumnsRequest,
   PerfChartSeries_PerfAggregationFunction,
   perfChartSeries_PerfAggregationFunctionFromJSON,
   PerfChartWidget,
   PerfChartWidget_ChartType,
-  PerfDashboardContent,
   PerfDataSpec,
   PerfFilter,
-  PerfWidget,
   RawSampleRow,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
@@ -59,6 +63,11 @@ import {
  */
 interface SampleDetailsContentProps {
   selectedPoint: SelectedPointInfo;
+  /**
+   * The data point preceding the selected point in the same series, if any.
+   * Used to link to the CLs landed between the two points.
+   */
+  previousPoint?: ChartPoint;
   widgetId: string;
   widget: PerfChartWidget;
   globalFilters?: readonly PerfFilter[];
@@ -72,6 +81,7 @@ interface SampleDetailsContentProps {
  */
 export function SampleDetailsContent({
   selectedPoint,
+  previousPoint,
   widgetId,
   widget,
   globalFilters,
@@ -131,42 +141,14 @@ export function SampleDetailsContent({
   ]);
 
   const fetchRequest = useMemo(() => {
-    const selectionContext: Record<string, string> = {};
-    if (pointObj) {
-      Object.entries(pointObj).forEach(([key, val]) => {
-        if (key !== 'value' && key !== 'num_aggregated_rows') {
-          selectionContext[key] = String(val);
-        }
-      });
-    }
+    const selectionContext = pointToSelectionContext(pointObj);
     if (isDistribution) {
       selectionContext['value'] = String(selectedPoint.rawY ?? selectedPoint.y);
     }
 
-    const orderBy = `value ${sortDirection}`;
-
-    return FetchWidgetRawSamplesRequest.fromPartial({
-      name: dashboardName,
-      dashboardContent: PerfDashboardContent.fromPartial({
-        globalFilters: globalFilters ?? [],
-        dataSpecs: dataSpecs ?? {},
-        widgets: [
-          PerfWidget.fromPartial({
-            id: widgetId,
-            chart: PerfChartWidget.fromPartial({
-              ...widget,
-            }),
-          }),
-        ],
-      }),
-      widgetId,
-      seriesId,
-      seriesIndex:
-        seriesIndex !== undefined && seriesIndex >= 0 ? seriesIndex : undefined,
-      selectionContext,
-      pageSize: 100,
-      orderBy,
-      pageToken: currentPageToken,
+    return createRawSamplesRequest({
+      dashboardName,
+      dataSpecs,
       extraColumns: [
         Column.ATP_TEST_NAME,
         Column.BOARD,
@@ -187,6 +169,15 @@ export function SampleDetailsContent({
         Column.SERIAL,
         Column.DEVICE_VARIANT,
       ],
+      globalFilters,
+      orderBy: `value ${sortDirection}`,
+      pageSize: 100,
+      pageToken: currentPageToken,
+      selectionContext,
+      seriesId,
+      seriesIndex,
+      widget,
+      widgetId,
     });
   }, [
     globalFilters,
@@ -259,6 +250,19 @@ export function SampleDetailsContent({
         aggregation={seriesConfig?.aggregation}
         count={selectedPoint.count}
       />
+      {previousPoint && (
+        <ChangesSincePreviousPoint
+          dashboardName={dashboardName}
+          dataSpecs={dataSpecs}
+          globalFilters={globalFilters}
+          point={pointObj}
+          previousPoint={previousPoint}
+          seriesId={seriesId}
+          seriesIndex={seriesIndex}
+          widget={widget}
+          widgetId={widgetId}
+        />
+      )}
       <ListControlsArea
         count={accumulatedRows.length}
         sortDirection={sortDirection}
