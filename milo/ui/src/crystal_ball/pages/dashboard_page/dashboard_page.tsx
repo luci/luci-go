@@ -1465,6 +1465,7 @@ export function DashboardPage() {
                   disablePadding={
                     widgetType === WidgetType.CHART_BREAKDOWN_TABLE
                   }
+                  lazyLoadContent={widgetType !== WidgetType.MARKDOWN}
                   onMoveUp={
                     index > 0 ? () => handleMoveWidget(index, 'UP') : undefined
                   }

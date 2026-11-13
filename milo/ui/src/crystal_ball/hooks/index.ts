@@ -18,6 +18,7 @@ export * from './use_dashboard_workflows';
 export * from './use_editor_ui_state';
 export * from './use_export_to_sheets';
 export * from './use_filters_clipboard';
+export * from './use_has_been_visible';
 export * from './use_measurement_filter_api';
 export * from './use_toast';
 export * from './use_user_settings';

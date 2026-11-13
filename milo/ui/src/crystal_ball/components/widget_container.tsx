@@ -46,6 +46,7 @@ import {
 
 import { COMMON_MESSAGES } from '@/crystal_ball/constants';
 import { WidgetPortalContext } from '@/crystal_ball/context';
+import { useHasBeenVisible } from '@/crystal_ball/hooks';
 import { AI_BUTTON_STYLE } from '@/crystal_ball/styles';
 
 /**
@@ -72,7 +73,19 @@ export interface WidgetContainerProps {
    * Whether to remove the default padding from the container's content area.
    */
   disablePadding?: boolean;
+  /**
+   * Whether to defer rendering the children until the container is close to
+   * the viewport. Widgets fetch their data when they mount, so this avoids
+   * issuing queries for widgets the user has not scrolled to yet.
+   */
+  lazyLoadContent?: boolean;
 }
+
+/**
+ * How far outside the viewport a lazily loaded widget starts rendering, so its
+ * data is usually loaded by the time it scrolls into view.
+ */
+const LAZY_LOAD_ROOT_MARGIN = '100% 0px';
 
 /**
  * A container component for dashboard widgets.
@@ -91,10 +104,16 @@ export function WidgetContainer({
   onTitleChange,
   onSummarize,
   disablePadding = false,
+  lazyLoadContent = false,
 }: WidgetContainerProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const shouldRenderContent = useHasBeenVisible(contentRef, {
+    enabled: lazyLoadContent,
+    rootMargin: LAZY_LOAD_ROOT_MARGIN,
+  });
 
   const handleTitleSubmit = () => {
     setIsEditingTitle(false);
@@ -274,12 +293,20 @@ export function WidgetContainer({
                 }
               >
                 <Box
+                  ref={contentRef}
                   sx={{
                     display: 'grid',
                     gridTemplateColumns: 'minmax(0, 1fr)',
                   }}
                 >
-                  {children}
+                  {shouldRenderContent ? (
+                    children
+                  ) : (
+                    <Box
+                      data-testid="widget-content-placeholder"
+                      sx={{ minHeight: (theme) => theme.spacing(50) }}
+                    />
+                  )}
                 </Box>
               </CardContent>
               <Dialog

@@ -61,6 +61,7 @@ describe('use_widget_data_api', () => {
           },
         },
         {
+          refetchOnWindowFocus: false,
           queryKeyHashFn: expect.any(Function),
         },
       );
@@ -77,7 +78,27 @@ describe('use_widget_data_api', () => {
       });
 
       expect(mockedUseGapiQuery).toHaveBeenCalledWith(expect.any(Object), {
+        refetchOnWindowFocus: false,
         staleTime: 10000,
+        queryKeyHashFn: expect.any(Function),
+      });
+    });
+
+    it('should allow callers to re-enable refetch on window focus', () => {
+      mockedUseGapiQuery.mockReturnValue(
+        createMockQueryResult({ widgetId: 'w1' }),
+      );
+
+      renderHook(
+        () =>
+          useFetchDashboardWidgetData(request, { refetchOnWindowFocus: true }),
+        {
+          wrapper: FakeContextProvider,
+        },
+      );
+
+      expect(mockedUseGapiQuery).toHaveBeenCalledWith(expect.any(Object), {
+        refetchOnWindowFocus: true,
         queryKeyHashFn: expect.any(Function),
       });
     });

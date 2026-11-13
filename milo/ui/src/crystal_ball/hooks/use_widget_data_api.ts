@@ -49,6 +49,11 @@ const defaultQueryKeyHashFn = (queryKey: QueryKey) => {
 /**
  * Hook for FetchDashboardWidgetData.
  * Uses a stub REST path as the exact service endpoint mapping is unknown.
+ *
+ * Window focus refetching is disabled by default. A single widget request can
+ * fan out into many backend F1 queries, so refetching every widget on the
+ * dashboard whenever the tab regains focus creates large load bursts for data
+ * that rarely changes in that time. Callers can still opt in via `options`.
  * @param request - The fetch request payload containing widget and data spec.
  * @param options - Optional query options.
  * @returns The dashboard widget data response.
@@ -70,6 +75,7 @@ export const useFetchDashboardWidgetData = (
       body,
     },
     {
+      refetchOnWindowFocus: false,
       ...options,
       queryKeyHashFn: options?.queryKeyHashFn ?? defaultQueryKeyHashFn,
     },

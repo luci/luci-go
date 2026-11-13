@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+
+import { FakeIntersectionObserver } from '@/crystal_ball/tests';
 
 import { WidgetContainer } from './widget_container';
 
@@ -173,5 +175,64 @@ describe('WidgetContainer', () => {
     expect(handleTitleChange).not.toHaveBeenCalled();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
     expect(screen.getByText('Initial Title')).toBeInTheDocument();
+  });
+
+  describe('lazyLoadContent', () => {
+    const originalIntersectionObserver = window.IntersectionObserver;
+
+    beforeEach(() => {
+      FakeIntersectionObserver.reset();
+      window.IntersectionObserver = FakeIntersectionObserver;
+    });
+
+    afterEach(() => {
+      window.IntersectionObserver = originalIntersectionObserver;
+    });
+
+    it('renders a placeholder until the widget is near the viewport', () => {
+      render(
+        <WidgetContainer title="Test Widget" lazyLoadContent>
+          <div data-testid="child-content">Content</div>
+        </WidgetContainer>,
+      );
+
+      expect(screen.getByText('Test Widget')).toBeInTheDocument();
+      expect(screen.queryByTestId('child-content')).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId('widget-content-placeholder'),
+      ).toBeInTheDocument();
+
+      act(() => FakeIntersectionObserver.instances[0].trigger(true));
+
+      expect(screen.getByTestId('child-content')).toBeInTheDocument();
+      expect(
+        screen.queryByTestId('widget-content-placeholder'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('keeps rendering children after they scroll out of view', () => {
+      render(
+        <WidgetContainer title="Test Widget" lazyLoadContent>
+          <div data-testid="child-content">Content</div>
+        </WidgetContainer>,
+      );
+      const observer = FakeIntersectionObserver.instances[0];
+
+      act(() => observer.trigger(true));
+      act(() => observer.trigger(false));
+
+      expect(screen.getByTestId('child-content')).toBeInTheDocument();
+    });
+
+    it('renders children immediately when lazy loading is disabled', () => {
+      render(
+        <WidgetContainer title="Test Widget">
+          <div data-testid="child-content">Content</div>
+        </WidgetContainer>,
+      );
+
+      expect(screen.getByTestId('child-content')).toBeInTheDocument();
+      expect(FakeIntersectionObserver.instances).toHaveLength(0);
+    });
   });
 });

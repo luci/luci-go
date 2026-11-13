@@ -13,4 +13,5 @@
 // limitations under the License.
 
 export * from './constants';
+export * from './fake_intersection_observer';
 export * from './query_mocks';
