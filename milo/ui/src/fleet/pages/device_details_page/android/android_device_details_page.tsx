@@ -180,6 +180,7 @@ export const AndroidDeviceDetailsPage = ({
     enableSorting: false,
     enableTopToolbar: true,
     enableStickyHeader: true,
+    enableRowVirtualization: false,
     muiTableHeadRowProps: {
       sx: { minHeight: 'unset' },
     },

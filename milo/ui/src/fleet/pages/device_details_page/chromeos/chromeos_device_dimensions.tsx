@@ -210,6 +210,7 @@ export const ChromeOSDeviceDimensions = ({
     enableColumnFilters: false,
     enableTopToolbar: true,
     enableStickyHeader: true,
+    enableRowVirtualization: false,
     muiTableHeadRowProps: {
       sx: { minHeight: 'unset' },
     },

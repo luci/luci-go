@@ -146,6 +146,7 @@ export const BrowserDeviceDimensions = ({
     enableStickyHeader: true,
     enableBottomToolbar: false,
     enableRowSelection: false,
+    enableRowVirtualization: false,
     muiTableHeadRowProps: {
       sx: { minHeight: 'unset' },
     },

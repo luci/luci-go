@@ -15,6 +15,7 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 
+import * as fcDataTableModule from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { SettingsProvider } from '@/fleet/context/providers';
 import { Device } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
@@ -85,5 +86,23 @@ describe('ChromeOSDeviceDimensions', () => {
     fireEvent.change(searchInput, { target: { value: 'Some Other' } });
     expect(screen.getByText('Some Other Label')).toBeInTheDocument();
     expect(screen.queryByText('Model')).not.toBeInTheDocument();
+  });
+
+  it('disables row virtualization to allow browser in-page string search', () => {
+    const spy = jest.spyOn(fcDataTableModule, 'useFCDataTable');
+    render(
+      <FakeContextProvider>
+        <SettingsProvider>
+          <ChromeOSDeviceDimensions device={mockDevice} />
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enableRowVirtualization: false,
+      }),
+    );
+    spy.mockRestore();
   });
 });
