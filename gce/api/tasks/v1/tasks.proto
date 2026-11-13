@@ -37,6 +37,25 @@ message DestroyInstance {
   string id = 1;
   // The URL of the GCE instance to destroy.
   string url = 2;
+  // The VM's created time in Unix seconds (matching model.VM.Created) when this
+  // task was scheduled, i.e. the start of the instance's lifetime the task
+  // applies to. If non-zero and different from the VM's current created time
+  // (e.g. after an in-place reimage, which preserves its URL), the task is
+  // ignored; if 0, the lifetime check is skipped.
+  int64 created = 3;
+}
+
+// A task to reimage a GCE instance in place for a new VM lifetime.
+message ReimageInstance {
+  // The ID of the VM to reimage in place.
+  string id = 1;
+  // The URL of the GCE instance to reimage.
+  string url = 2;
+  // The VM's created time in Unix seconds (matching model.VM.Created) when this
+  // task was scheduled, i.e. the start of the lifetime being replaced. If
+  // non-zero and different from the VM's current created time, the task is
+  // ignored; if 0, the lifetime check is skipped.
+  int64 created = 3;
 }
 
 // A task to create a particular VM.
@@ -96,6 +115,11 @@ message TerminateBot {
   string id = 1;
   // The hostname of the Swarming bot to terminate.
   string hostname = 2;
+  // The VM's created time in Unix seconds (matching model.VM.Created) when this
+  // task was scheduled, i.e. the start of the instance's lifetime the task
+  // applies to. If non-zero and different from the VM's current created time,
+  // the task is ignored; if 0, the lifetime check is skipped.
+  int64 created = 3;
 }
 
 // A task to audit the project and instances alive within the project
@@ -128,6 +152,11 @@ message DeleteStaleSwarmingBot {
   string id = 1;
   // The first seen timestamp of the bot
   string firstSeenTs = 2;
+  // The VM's created time in Unix seconds (matching model.VM.Created) when this
+  // task was scheduled, i.e. the start of the instance's lifetime the task
+  // applies to. If non-zero and different from the VM's current created time,
+  // the task is ignored; if 0, the lifetime check is skipped.
+  int64 created = 3;
 }
 
 // A task to delete bots that are stale in swarming
