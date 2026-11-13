@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/client/cmd/luci/invocation"
 	"go.chromium.org/luci/client/cmd/luci/module"
+	"go.chromium.org/luci/client/cmd/luci/notify"
 	"go.chromium.org/luci/client/cmd/luci/testresult"
 	"go.chromium.org/luci/client/cmd/luci/verdict"
 	"go.chromium.org/luci/client/cmd/luci/workunit"
@@ -43,7 +44,7 @@ func getApplication() *cli.Application {
 	return &cli.Application{
 		Name: "luci",
 		Title: "Unified CLI tool to access LUCI resources.\n\n" +
-			"Commands are stateless and accept either a positional URL/ID <target> (Milo UI, LUCI Analysis, AnTS/ATI, Buganizer, or canonical resource names) or explicit resource ID flags (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid).\n" +
+			"Commands are stateless and accept either a positional URL/ID <target> (Milo UI, LUCI Analysis, LUCI Notify, AnTS/ATI, Buganizer, or canonical resource names) or explicit resource ID flags (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid, -rotation).\n" +
 			"When a positional <target> is passed, derived IDs are printed automatically so follow-up commands can use explicit flags.\n\n" +
 			base.AgentSkillHint + "\n\n" +
 			"Typical Investigation Workflow Examples:\n" +
@@ -73,7 +74,9 @@ func getApplication() *cli.Application {
 			"     $ luci artifact get -invocationid build-123 -workunitid run-tests -artifactid test.xml\n" +
 			"     $ luci artifact list -invocationid build-123 -testid ninja://chrome/test -resultid 0\n" +
 			"     $ luci artifact get -invocationid build-123 -testid ninja://chrome/test -resultid 0 -artifactid output.log\n" +
-			"     $ luci work-unit get -invocationid build-123 -workunitid run-tests",
+			"     $ luci work-unit get -invocationid build-123 -workunitid run-tests\n\n" +
+			"  9. Query LUCI Notify builder statuses:\n" +
+			"     $ luci notify builder list -rotation chrome_browser_release -status FAILURE",
 
 		Context: func(ctx context.Context) context.Context {
 			return gologger.StdConfig.Use(ctx)
@@ -86,6 +89,7 @@ func getApplication() *cli.Application {
 			build.Cmd(af),
 			invocation.Cmd(af),
 			module.Cmd(af),
+			notify.Cmd(af),
 			testresult.Cmd(af),
 			verdict.Cmd(af),
 			workunit.Cmd(af),

@@ -35,6 +35,7 @@ INTEGRATION_TESTS=1 go test ./...
 *   `invocation/`: Subpackage for `invocation` resource inspection (`luci invocation get`).
 *   `build/`: Subpackage for `build` resource management (`luci build get`, `luci build log`).
 *   `module/`: Subpackage for `module` resource inspection (`luci module get`).
+*   `notify/`: Subpackage for LUCI Notify builder status inspection (`luci notify builder list`).
 *   `testresult/`: Subpackage for `test-result` resource management (`luci test-result get`, `luci test-result artifact ...`).
 *   `workunit/`: Subpackage for `work-unit` resource management (`luci work-unit get`, `luci work-unit artifact ...`).
 *   `verdict/`: Subpackage for `verdict` resource management (`luci verdict get`, `luci verdict list`).

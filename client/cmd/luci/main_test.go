@@ -77,6 +77,10 @@ func TestGetApplication(t *testing.T) {
 			{"test-result", "artifact", "list", "-h"},
 			{"analysis", "rule", "-h"},
 			{"analysis", "rule", "get", "-h"},
+			{"notify"},
+			{"notify", "-h"},
+			{"notify", "builder", "-h"},
+			{"notify", "builder", "list", "-h"},
 		}
 
 		for _, rawArgs := range helpInvocations {
