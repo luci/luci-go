@@ -29,6 +29,7 @@ import {
   calculateChange,
   formatChange,
   formatTimestampWithZone,
+  getSafeCssColor,
   getTrendInfo,
 } from '@/crystal_ball/utils';
 
@@ -350,7 +351,9 @@ export function ChartTooltip({
                             borderRadius: '50%',
                             width: 10,
                             height: 10,
-                            bgcolor: currentSeries?.stroke || 'text.secondary',
+                            bgcolor:
+                              getSafeCssColor(currentSeries?.stroke) ??
+                              'text.secondary',
                             border: '1px solid',
                             borderColor: 'divider',
                           }}

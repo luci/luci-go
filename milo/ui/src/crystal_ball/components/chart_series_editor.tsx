@@ -94,6 +94,7 @@ import {
   generateColor,
   getColumnDisplayNameMap,
   getFilterLabel,
+  getSafeCssColor,
   getTrendInfo,
   isStringArray,
 } from '@/crystal_ball/utils';
@@ -608,7 +609,7 @@ export function ChartSeriesEditor({
                       sx={{
                         width: 16,
                         height: 16,
-                        bgcolor: d.stroke,
+                        bgcolor: getSafeCssColor(d.stroke),
                         borderRadius: '50%',
                         border: '1px solid',
                         borderColor: 'divider',
@@ -1227,7 +1228,7 @@ export function ChartSeriesItem({
             sx={{
               width: 16,
               height: 16,
-              bgcolor: series.color ?? color,
+              bgcolor: getSafeCssColor(series.color) ?? getSafeCssColor(color),
               borderRadius: '50%',
               border: '1px solid',
               borderColor: 'divider',

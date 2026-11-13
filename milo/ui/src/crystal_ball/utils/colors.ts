@@ -15,6 +15,49 @@
 import { GOLDEN_RATIO_CONJUGATE } from '@/crystal_ball/constants';
 
 /**
+ * Matches hex colors: #rgb, #rgba, #rrggbb and #rrggbbaa.
+ */
+const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+/**
+ * Matches CSS named colors (e.g. "red", "rebeccapurple"). Letters only, so it
+ * cannot contain CSS structural characters.
+ */
+const NAMED_COLOR_REGEX = /^[a-z]{1,32}$/i;
+
+/**
+ * Matches rgb()/rgba()/hsl()/hsla() colors whose arguments only contain
+ * numbers, units, separators and whitespace (e.g. "rgb(255, 0, 0)",
+ * "hsl(120deg 50% 50% / 0.5)").
+ */
+const FUNCTIONAL_COLOR_REGEX =
+  /^(?:rgba?|hsla?)\((?:[\d.\s,/%+-]|deg|turn|rad)*\)$/i;
+
+/**
+ * Returns whether `color` is a CSS color literal that is safe to interpolate
+ * into generated CSS (e.g. MUI `sx` props).
+ *
+ * Colors such as `PerfChartSeries.color` come from stored dashboard state and
+ * are passed to MUI style props, which do not escape values, so only known
+ * color formats are accepted.
+ */
+export function isSafeCssColor(color: unknown): color is string {
+  if (typeof color !== 'string') return false;
+  return (
+    HEX_COLOR_REGEX.test(color) ||
+    NAMED_COLOR_REGEX.test(color) ||
+    FUNCTIONAL_COLOR_REGEX.test(color)
+  );
+}
+
+/**
+ * Returns `color` if it is a safe CSS color literal, otherwise `undefined`.
+ */
+export function getSafeCssColor(color: unknown): string | undefined {
+  return isSafeCssColor(color) ? color : undefined;
+}
+
+/**
  * Generates a distinct HEX color for a given series index using the golden ratio.
  */
 export function generateColor(index: number): string {

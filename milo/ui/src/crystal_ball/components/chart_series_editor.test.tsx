@@ -645,6 +645,34 @@ describe('ChartSeriesItem', () => {
     expect(screen.queryByLabelText('Color')).not.toBeInTheDocument();
   });
 
+  it('does not render an unsafe series color', () => {
+    const malicious =
+      'red}*{position:fixed;inset:0;background:url(//example.com/hit)}.x{--x:';
+    render(
+      <ChartSeriesItem
+        {...itemProps}
+        series={PerfChartSeries.fromPartial({
+          ...itemProps.series,
+          color: malicious,
+        })}
+      />,
+    );
+    expect(screen.getByTestId('series-color-circle')).toBeInTheDocument();
+
+    const cssText = Array.from(document.styleSheets)
+      .flatMap((sheet) => Array.from(sheet.cssRules))
+      .map((rule) => rule.cssText)
+      .join('\n');
+    expect(cssText).not.toContain('example.com');
+    const universalRules = Array.from(document.styleSheets)
+      .flatMap((sheet) => Array.from(sheet.cssRules))
+      .filter(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule && rule.selectorText === '*',
+      );
+    expect(universalRules).toHaveLength(0);
+  });
+
   it('shows color options when hideColorPicker is false (default)', async () => {
     render(<ChartSeriesItem {...itemProps} />);
     expect(screen.getByTestId('series-color-circle')).toBeInTheDocument();

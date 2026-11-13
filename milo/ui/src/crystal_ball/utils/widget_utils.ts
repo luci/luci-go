@@ -22,7 +22,7 @@ import {
   PerfFilter,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
 
-import { generateColor } from './colors';
+import { generateColor, getSafeCssColor } from './colors';
 
 /**
  * Upper bound on palette lookups when searching for an unused color, to
@@ -102,6 +102,9 @@ export function findMatchingSeriesConfig(
  *    without a configured color) get a distinct palette color that is not
  *    already used by any configured series or previously assigned line.
  *
+ * Configured colors that are not safe CSS color literals (see
+ * `isSafeCssColor`) are ignored and treated as unconfigured.
+ *
  * Configured colors (rules 1 and 2) do not depend on the order in which the
  * backend returns lines.
  *
@@ -113,10 +116,9 @@ export function assignSeriesStrokeColors(
   lineSeriesIds: readonly (string | undefined)[],
   seriesList?: readonly PerfChartSeries[],
 ): string[] {
+  const safeColors = (seriesList ?? []).map((s) => getSafeCssColor(s.color));
   const usedColors = new Set<string>(
-    (seriesList ?? [])
-      .map((s) => s.color?.toLowerCase())
-      .filter((c): c is string => !!c),
+    safeColors.map((c) => c?.toLowerCase()).filter((c): c is string => !!c),
   );
   let paletteIndex = 0;
   const nextPaletteColor = (): string => {
@@ -142,8 +144,10 @@ export function assignSeriesStrokeColors(
   lineSeriesIds.forEach((id, i) => {
     const config =
       matchedIndices[i] >= 0 ? seriesList?.[matchedIndices[i]] : undefined;
-    if (config?.color && id === config.id) {
-      strokes[i] = config.color;
+    const color =
+      matchedIndices[i] >= 0 ? safeColors[matchedIndices[i]] : undefined;
+    if (color && id === config?.id) {
+      strokes[i] = color;
       claimedSeries.add(matchedIndices[i]);
     }
   });
@@ -154,7 +158,7 @@ export function assignSeriesStrokeColors(
   lineSeriesIds.forEach((id, i) => {
     const seriesIdx = matchedIndices[i];
     if (strokes[i] !== undefined || seriesIdx < 0) return;
-    if (claimedSeries.has(seriesIdx) || !seriesList?.[seriesIdx]?.color) return;
+    if (claimedSeries.has(seriesIdx) || !safeColors[seriesIdx]) return;
     const suffixMatch = id?.match(/_(\d+)$/);
     const suffix = suffixMatch ? Number(suffixMatch[1]) : Infinity;
     const current = inheritingLine.get(seriesIdx);
@@ -163,7 +167,7 @@ export function assignSeriesStrokeColors(
     }
   });
   inheritingLine.forEach(({ line }, seriesIdx) => {
-    strokes[line] = seriesList?.[seriesIdx]?.color;
+    strokes[line] = safeColors[seriesIdx];
   });
 
   // Pass 3: everything else gets a distinct, unused palette color.
@@ -187,7 +191,8 @@ export function getSafeChartType(
 
 /**
  * Sanitizes a PerfChartWidget by ensuring it has default group-by options
- * when x-axis column is unspecified.
+ * when x-axis column is unspecified, and by clearing series colors that are
+ * not safe CSS color literals.
  */
 export function sanitizeChartWidget(chart: PerfChartWidget): PerfChartWidget {
   return PerfChartWidget.fromPartial({
@@ -196,6 +201,7 @@ export function sanitizeChartWidget(chart: PerfChartWidget): PerfChartWidget {
       ...s,
       aggregation:
         s.aggregation === 0 || s.aggregation === undefined ? 1 : s.aggregation,
+      color: getSafeCssColor(s.color) ?? '',
     })),
     chartType: getSafeChartType(chart.chartType),
   });

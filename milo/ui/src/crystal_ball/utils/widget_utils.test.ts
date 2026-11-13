@@ -36,6 +36,20 @@ import {
 } from './widget_utils';
 
 describe('sanitizeChartWidget', () => {
+  test('preserves safe series colors and clears unsafe ones', () => {
+    const rawWidget = PerfChartWidget.fromPartial({
+      chartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
+      series: [
+        { metricField: 'metric_a', color: '#4285F4' },
+        { metricField: 'metric_b', color: 'red}*{position:fixed}.x{--x:' },
+      ],
+    });
+
+    const sanitized = sanitizeChartWidget(rawWidget);
+    expect(sanitized.series?.[0].color).toBe('#4285F4');
+    expect(sanitized.series?.[1].color).toBe('');
+  });
+
   test('sets default aggregation if unspecified or 0', () => {
     const rawWidget = PerfChartWidget.fromPartial({
       chartType: PerfChartWidget_ChartType.MULTI_METRIC_CHART,
@@ -329,6 +343,20 @@ describe('assignSeriesStrokeColors', () => {
     PerfChartSeries.fromPartial({ id: 'hwm', color: BLUE }),
     PerfChartSeries.fromPartial({ id: 'avg', color: RED }),
   ];
+
+  test('ignores unsafe configured colors', () => {
+    const malicious = 'red}*{position:fixed}.x{--x:';
+    const strokes = assignSeriesStrokeColors(
+      ['bad', 'bad2_0'],
+      [
+        PerfChartSeries.fromPartial({ id: 'bad', color: malicious }),
+        PerfChartSeries.fromPartial({ id: 'bad2', color: malicious }),
+      ],
+    );
+    expect(strokes).not.toContain(malicious);
+    expect(strokes[0]).toBe(generateColor(0));
+    expect(strokes[1]).toBe(generateColor(1));
+  });
 
   test('uses configured colors for exact matches', () => {
     expect(assignSeriesStrokeColors(['hwm', 'avg'], seriesList)).toEqual([

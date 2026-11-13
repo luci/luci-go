@@ -38,6 +38,7 @@ import {
 import {
   getColumnDisplayNameMap,
   getSafeChartType,
+  getSafeCssColor,
 } from '@/crystal_ball/utils';
 import {
   FetchWidgetRawSamplesRequest,
@@ -247,7 +248,7 @@ export function SampleDetailsContent({
       : seriesId !== undefined
         ? widget.series?.find((s) => s.id === seriesId)
         : undefined;
-  const seriesColor = seriesConfig?.color;
+  const seriesColor = getSafeCssColor(seriesConfig?.color);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

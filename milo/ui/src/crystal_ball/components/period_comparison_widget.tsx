@@ -47,7 +47,11 @@ import { useMemo } from 'react';
 import { ChartSeriesEditor } from '@/crystal_ball/components';
 import { Column } from '@/crystal_ball/constants';
 import { useFetchDashboardWidgetData } from '@/crystal_ball/hooks';
-import { generateColor, getTrendInfo } from '@/crystal_ball/utils';
+import {
+  generateColor,
+  getSafeCssColor,
+  getTrendInfo,
+} from '@/crystal_ball/utils';
 import {
   MeasurementFilterColumn,
   PerfChartSeries,
@@ -568,9 +572,9 @@ export function PeriodComparisonWidget({
                       s.displayName === series.legendLabel ||
                       s.metricField === series.metricField,
                   );
-                  const seriesColor = configuredSeries?.color
-                    ? configuredSeries.color
-                    : generateColor(seriesIdx);
+                  const seriesColor =
+                    getSafeCssColor(configuredSeries?.color) ??
+                    generateColor(seriesIdx);
 
                   return (series.aggregationData ?? []).map((agg, idx) => {
                     const netChange = agg.netChange ?? 0;
