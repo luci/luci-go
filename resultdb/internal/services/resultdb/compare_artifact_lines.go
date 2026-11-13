@@ -15,21 +15,27 @@
 package resultdb
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"sort"
 	"sync"
 
+	"cloud.google.com/go/storage"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/appstatus"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth/realms"
 	"go.chromium.org/luci/server/span"
 
@@ -249,28 +255,120 @@ func (s *resultDBServer) openArtifactReader(ctx context.Context, art *artifacts.
 	if err != nil {
 		return nil, err
 	}
+	wrapErr := func(err error) error {
+		return attachStorageAppStatus(ctx, art, project, err)
+	}
 
-	if art.GcsUri != "" {
+	switch {
+	case art.GcsUri != "":
 		bucket, object := gsutil.Split(art.GcsUri)
+		if bucket == "" || object == "" {
+			return nil, appstatus.Errorf(codes.InvalidArgument, "invalid GCS URI for artifact %s", art.Artifact.Name)
+		}
 		gsClient, err := getGSClient(ctx, project)
 		if err != nil {
 			return nil, err
 		}
 		reader, err := gsClient.NewReader(ctx, bucket, object, offset)
 		if err != nil {
-			return nil, errors.Fmt("creating GCS reader for artifact %s: %w", art.Artifact.Name, err)
+			var apiErr *googleapi.Error
+			if errors.As(err, &apiErr) && apiErr.Code == http.StatusRequestedRangeNotSatisfiable {
+				return io.NopCloser(bytes.NewReader(nil)), nil
+			}
+			return nil, errors.Fmt("creating GCS reader for artifact %s: %w", art.Artifact.Name, wrapErr(err))
 		}
-		return reader, nil
+		return &errorMappingReader{ReadCloser: reader, mapErr: wrapErr}, nil
+
+	case art.RBECASHash != "":
+		stream, err := s.contentServer.ReadCASBlob(ctx, &bytestream.ReadRequest{
+			ResourceName: artifactcontent.ResourceName(s.contentServer.RBECASInstanceName, art.RBECASHash, art.SizeBytes),
+			ReadOffset:   offset,
+		})
+		if err != nil {
+			return nil, errors.Fmt("creating byte read stream for artifact %s: %w", art.Artifact.Name, wrapErr(err))
+		}
+		return &errorMappingReader{ReadCloser: &bytestreamReader{stream: stream}, mapErr: wrapErr}, nil
+
+	case art.GetRbeUri() != "":
+		resourceName, err := artifactcontent.ResourceNameFromURI(art.GetRbeUri())
+		if err != nil {
+			return nil, appstatus.BadRequest(errors.Fmt("invalid RBE URI for artifact %s: %w", art.Artifact.Name, err))
+		}
+		stream, err := s.contentServer.ReadCASBlobByProject(ctx, &bytestream.ReadRequest{
+			ResourceName: resourceName,
+			ReadOffset:   offset,
+		}, project)
+		if err != nil {
+			return nil, errors.Fmt("creating byte read stream for artifact %s: %w", art.Artifact.Name, wrapErr(err))
+		}
+		return &errorMappingReader{ReadCloser: &bytestreamReader{stream: stream}, mapErr: wrapErr}, nil
+
+	default:
+		return nil, appstatus.Errorf(codes.NotFound, "artifact content not stored: %s", art.Artifact.Name)
+	}
+}
+
+func attachStorageAppStatus(ctx context.Context, art *artifacts.Artifact, project string, err error) error {
+	if _, ok := appstatus.Get(err); ok {
+		return err
+	}
+	code := grpcutil.Code(err)
+	if ctx.Err() != nil && (errors.Is(err, ctx.Err()) || code == codes.Canceled || code == codes.DeadlineExceeded) {
+		return err
 	}
 
-	comparisonStream, err := s.contentServer.ReadCASBlob(ctx, &bytestream.ReadRequest{
-		ResourceName: artifactcontent.ResourceName(s.contentServer.RBECASInstanceName, art.RBECASHash, art.SizeBytes),
-		ReadOffset:   offset,
-	})
-	if err != nil {
-		return nil, errors.Fmt("creating byte read stream for artifact %s: %w", art.Artifact.Name, err)
+	if art.GcsUri != "" {
+		var apiErr *googleapi.Error
+		switch {
+		case errors.Is(err, storage.ErrObjectNotExist), errors.Is(err, storage.ErrBucketNotExist):
+			code = codes.NotFound
+		case errors.As(err, &apiErr):
+			switch apiErr.Code {
+			case http.StatusBadRequest:
+				code = codes.InvalidArgument
+			case http.StatusUnauthorized:
+				code = codes.Unauthenticated
+			case http.StatusForbidden:
+				code = codes.PermissionDenied
+			case http.StatusNotFound:
+				code = codes.NotFound
+			}
+		}
 	}
-	return &bytestreamReader{stream: comparisonStream}, nil
+
+	isExternal := art.GcsUri != "" || art.GetRbeUri() != ""
+	switch {
+	case code == codes.NotFound:
+		logging.Warningf(ctx, "Artifact content not found for %s: %v", art.Artifact.Name, err)
+		return appstatus.Attachf(err, codes.NotFound, "artifact content not found: %s", art.Artifact.Name)
+	case code == codes.OutOfRange:
+		logging.Warningf(ctx, "Read offset out of range for %s: %v", art.Artifact.Name, err)
+		return appstatus.Attachf(err, codes.OutOfRange, "read offset out of range for artifact %s", art.Artifact.Name)
+	case isExternal && code == codes.PermissionDenied:
+		logging.Warningf(ctx, "Permission denied reading artifact %s (project %q): %v", art.Artifact.Name, project, err)
+		return appstatus.Attachf(err, codes.PermissionDenied, "project %q service account does not have permission to read artifact %s", project, art.Artifact.Name)
+	case isExternal && code == codes.Unauthenticated:
+		logging.Warningf(ctx, "Unauthenticated reading artifact %s (project %q): %v", art.Artifact.Name, project, err)
+		return appstatus.Attachf(err, codes.Unauthenticated, "unauthenticated reading artifact %s", art.Artifact.Name)
+	case isExternal && code == codes.InvalidArgument:
+		logging.Warningf(ctx, "Invalid storage request for artifact %s: %v", art.Artifact.Name, err)
+		return appstatus.Attachf(err, codes.InvalidArgument, "invalid storage reference for artifact %s", art.Artifact.Name)
+	default:
+		return err
+	}
+}
+
+type errorMappingReader struct {
+	io.ReadCloser
+	mapErr func(error) error
+}
+
+func (r *errorMappingReader) Read(p []byte) (int, error) {
+	n, err := r.ReadCloser.Read(p)
+	if err != nil && err != io.EOF {
+		err = r.mapErr(err)
+	}
+	return n, err
 }
 
 func (s *resultDBServer) projectForArtifact(ctx context.Context, name string) (string, error) {

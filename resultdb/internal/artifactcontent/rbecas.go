@@ -111,7 +111,7 @@ func (r *contentRequest) handleRBECASContent(c *router.Context, hash string) {
 // handleRBECASContentWithURI serves artifact content stored in RBE-CAS via RBE
 // URI. The artifact content will be accessed by a project-scoped account.
 func (r *contentRequest) handleRBECASContentWithURI(c *router.Context, rbeURI, project string) {
-	resourceName, err := resourceNameFromURI(rbeURI)
+	resourceName, err := ResourceNameFromURI(rbeURI)
 	if err != nil {
 		r.sendError(c.Request.Context(), appstatus.BadRequest(err))
 		return
@@ -205,15 +205,15 @@ func (r *contentRequest) handleContent(c *router.Context, resourceName string, s
 	}
 }
 
-// resourceNameFromURI parses the RBE URI and returns the resource name.
+// ResourceNameFromURI parses the RBE URI and returns the resource name.
 // The URI is expected to be in the format bytestream://<host>/<resource_name>.
-func resourceNameFromURI(uri string) (string, error) {
+func ResourceNameFromURI(uri string) (string, error) {
 	if !strings.HasPrefix(uri, "bytestream://") {
 		return "", errors.Fmt("invalid rbe uri scheme: %q", uri)
 	}
 	path := strings.TrimPrefix(uri, "bytestream://")
 	parts := strings.SplitN(path, "/", 2)
-	if len(parts) < 2 {
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
 		return "", errors.Fmt("invalid rbe uri format: %q", uri)
 	}
 	return parts[1], nil

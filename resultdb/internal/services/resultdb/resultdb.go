@@ -18,6 +18,7 @@ package resultdb
 
 import (
 	"context"
+	"sync"
 
 	"cloud.google.com/go/bigquery"
 	sppb "cloud.google.com/go/spanner/apiv1/spannerpb"
@@ -155,8 +156,9 @@ func newArtifactContentServer(ctx context.Context, opts Options) (*artifactconte
 	bs := bytestream.NewByteStreamClient(conn)
 
 	// Mapping of LUCI project to bytestream clients.
-	// Each client will sent request authenticated using the corresponding
+	// Each client will send requests authenticated using the corresponding
 	// project-scoped service account.
+	var bsMu sync.Mutex
 	bsClients := map[string]bytestream.ByteStreamClient{}
 	return &artifactcontent.Server{
 		InsecureURLs: opts.InsecureSelfURLs,
@@ -174,18 +176,22 @@ func newArtifactContentServer(ctx context.Context, opts Options) (*artifactconte
 				return nil, errors.New("project must be specified")
 			}
 
-			_, ok := bsClients[project]
+			bsMu.Lock()
+			client, ok := bsClients[project]
 			if !ok {
 				// Create a new bytestream client for the project-scoped
 				// account. This client will be reused for subsequent requests
 				// for the same project.
 				conn, err := artifactcontent.RBEConnWithProject(ctx, project)
 				if err != nil {
+					bsMu.Unlock()
 					return nil, err
 				}
-				bsClients[project] = bytestream.NewByteStreamClient(conn)
+				client = bytestream.NewByteStreamClient(conn)
+				bsClients[project] = client
 			}
-			return bsClients[project].Read(ctx, req)
+			bsMu.Unlock()
+			return client.Read(ctx, req)
 		},
 		RBECASInstanceName: opts.ArtifactRBEInstance,
 	}, nil

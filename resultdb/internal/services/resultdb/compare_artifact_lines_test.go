@@ -17,11 +17,13 @@ package resultdb
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/spanner"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/genproto/googleapis/bytestream"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -50,32 +52,45 @@ import (
 // newTestResultDBServiceForCompare creates a test service with a mock CAS
 // reader that can serve different content for different hashes.
 func newTestResultDBServiceForCompare(contentMap map[string][]byte) pb.ResultDBServer {
+	readBlob := func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
+		// The resource name is projects/{p}/instances/{i}/blobs/{hash}/{size}.
+		// We use the hash as the key in our contentMap.
+		parts := strings.Split(req.ResourceName, "/")
+		if len(parts) < 3 || parts[len(parts)-3] != "blobs" {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid resource name format: %s", req.ResourceName)
+		}
+		hash := parts[len(parts)-2]
+
+		switch hash {
+		case "recv-denied":
+			return &artifactcontenttest.FakeCASReader{ResErr: status.Error(codes.PermissionDenied, "permission denied on recv")}, nil
+		case "recv-notfound":
+			return &artifactcontenttest.FakeCASReader{ResErr: status.Error(codes.NotFound, "blob missing on recv")}, nil
+		case "open-unavailable":
+			return nil, status.Error(codes.Unavailable, "CAS unavailable")
+		}
+
+		content, ok := contentMap[hash]
+		if !ok {
+			return nil, status.Errorf(codes.NotFound, "hash %q not found in test content map", hash)
+		}
+
+		// Return a new fake reader configured with the correct content for this request.
+		return &artifactcontenttest.FakeCASReader{
+			Res: []*bytestream.ReadResponse{
+				{Data: content},
+			},
+		}, nil
+	}
 	svr := &resultDBServer{
 		contentServer: &artifactcontent.Server{
 			HostnameProvider: func(string) string {
 				return "signed-url.example.com"
 			},
 			RBECASInstanceName: "projects/example/instances/artifacts",
-			ReadCASBlob: func(ctx context.Context, req *bytestream.ReadRequest) (bytestream.ByteStream_ReadClient, error) {
-				// The resource name is projects/{p}/instances/{i}/blobs/{hash}/{size}.
-				// We use the hash as the key in our contentMap.
-				parts := strings.Split(req.ResourceName, "/")
-				if len(parts) < 3 || parts[len(parts)-3] != "blobs" {
-					return nil, status.Errorf(codes.InvalidArgument, "invalid resource name format: %s", req.ResourceName)
-				}
-				hash := parts[len(parts)-2]
-
-				content, ok := contentMap[hash]
-				if !ok {
-					return nil, status.Errorf(codes.NotFound, "hash %q not found in test content map", hash)
-				}
-
-				// Return a new fake reader configured with the correct content for this request.
-				return &artifactcontenttest.FakeCASReader{
-					Res: []*bytestream.ReadResponse{
-						{Data: content},
-					},
-				}, nil
+			ReadCASBlob:        readBlob,
+			ReadCASBlobByProject: func(ctx context.Context, req *bytestream.ReadRequest, project string) (bytestream.ByteStream_ReadClient, error) {
+				return readBlob(ctx, req)
 			},
 		},
 	}
@@ -181,12 +196,18 @@ func TestCompareArtifactLines(t *testing.T) {
 				"gs://testbucket/fail.log": []byte("failing line"),
 				"gs://testbucket/pass.log": []byte("passing line"),
 			},
+			Errors: map[string]error{
+				"gs://external-bucket/forbidden.log":   &googleapi.Error{Code: http.StatusForbidden, Message: "Access denied"},
+				"gs://external-bucket/unavailable.log": &googleapi.Error{Code: http.StatusServiceUnavailable, Message: "Backend error"},
+			},
 		}
 		ctx = context.WithValue(ctx, &gsutil.MockedGSClientKey, mockGS)
 
 		contentMap := map[string][]byte{
 			"rbscas-hash-pass": []byte("passing line"),
 			"rbscas-hash-fail": []byte("failing line"),
+			"rbeuri-hash-pass": []byte("passing line"),
+			"rbeuri-hash-fail": []byte("failing line\npassing line"),
 		}
 		srv := newTestResultDBServiceForCompare(contentMap)
 
@@ -528,6 +549,77 @@ func TestCompareArtifactLines(t *testing.T) {
 				assert.Loosely(t, art, should.NotContainSubstring("inv-pass-1/"))
 				assert.Loosely(t, art, should.NotContainSubstring("inv-pass-5/"))
 			}
+		})
+
+		t.Run("RbeUri and external storage errors", func(t *ftt.Test) {
+			const rbePrefix = "bytestream://remotebuildexecution.googleapis.com/projects/ext/instances/default_instance/blobs/"
+
+			t.Run("RbeUri happy path and skipping inaccessible comparison artifacts", func(t *ftt.Test) {
+				testutil.MustApply(ctx, t,
+					insert.Invocation("inv-fail-rbe", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact("inv-fail-rbe", "tr/t/r-fail", "a", map[string]any{"RbeURI": rbePrefix + "rbeuri-hash-fail/25"}),
+					insert.Invocation("inv-pass-gcs-403", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact("inv-pass-gcs-403", "tr/t/r-1", "a", map[string]any{"GcsURI": "gs://external-bucket/forbidden.log"}),
+					insert.Invocation("inv-pass-gcs-404", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact("inv-pass-gcs-404", "tr/t/r-2", "a", map[string]any{"GcsURI": "gs://external-bucket/missing.log"}),
+					insert.Invocation("inv-pass-rbe-denied", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact("inv-pass-rbe-denied", "tr/t/r-3", "a", map[string]any{"RbeURI": rbePrefix + "recv-denied/10"}),
+					insert.Invocation("inv-pass-rbe-404", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact("inv-pass-rbe-404", "tr/t/r-4", "a", map[string]any{"RbeURI": rbePrefix + "recv-notfound/10"}),
+					insert.Invocation("inv-pass-empty", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact("inv-pass-empty", "tr/t/r-5", "a", nil),
+					insert.Invocation("inv-pass-rbe-ok", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact("inv-pass-rbe-ok", "tr/t/r-6", "a", map[string]any{"RbeURI": rbePrefix + "rbeuri-hash-pass/12"}),
+				)
+
+				res, err := srv.CompareArtifactLines(ctx, &pb.CompareArtifactLinesRequest{
+					Name: "invocations/inv-fail-rbe/tests/t/results/r-fail/artifacts/a",
+					PassingResults: []string{
+						"invocations/inv-pass-gcs-403/tests/t/results/r-1",
+						"invocations/inv-pass-gcs-404/tests/t/results/r-2",
+						"invocations/inv-pass-rbe-denied/tests/t/results/r-3",
+						"invocations/inv-pass-rbe-404/tests/t/results/r-4",
+						"invocations/inv-pass-empty/tests/t/results/r-5",
+						"invocations/inv-pass-rbe-ok/tests/t/results/r-6",
+					},
+					View: pb.CompareArtifactLinesRequest_RANGES_WITH_CONTENT,
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res.Artifacts, should.Match([]string{"invocations/inv-pass-rbe-ok/tests/t/results/r-6/artifacts/a"}))
+				assert.Loosely(t, len(res.FailureOnlyRanges), should.Equal(1))
+				assert.Loosely(t, res.FailureOnlyRanges[0].Lines, should.Match([]string{"failing line"}))
+			})
+
+			t.Run("Failing artifact storage error mapping", func(t *ftt.Test) {
+				cases := []struct {
+					id       string
+					artProps map[string]any
+					wantCode codes.Code
+				}{
+					{"gcs-403", map[string]any{"GcsURI": "gs://external-bucket/forbidden.log"}, codes.PermissionDenied},
+					{"gcs-404", map[string]any{"GcsURI": "gs://external-bucket/missing.log"}, codes.NotFound},
+					{"gcs-503", map[string]any{"GcsURI": "gs://external-bucket/unavailable.log"}, codes.Internal},
+					{"rbe-denied", map[string]any{"RbeURI": rbePrefix + "recv-denied/10"}, codes.PermissionDenied},
+					{"rbe-unavailable", map[string]any{"RbeURI": rbePrefix + "open-unavailable/10"}, codes.Internal},
+					{"empty-storage", nil, codes.NotFound},
+				}
+				testutil.MustApply(ctx, t,
+					insert.Invocation("inv-pass", pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+					insert.Artifact("inv-pass", "tr/t/r-pass", "a", map[string]any{"RBECASHash": "rbscas-hash-pass"}),
+				)
+				for _, tc := range cases {
+					invID := invocations.ID("inv-fail-" + tc.id)
+					testutil.MustApply(ctx, t,
+						insert.Invocation(invID, pb.Invocation_FINALIZED, map[string]any{"Realm": "testproject:testrealm"}),
+						insert.Artifact(invID, "tr/t/r-fail", "a", tc.artProps),
+					)
+					_, err := srv.CompareArtifactLines(ctx, &pb.CompareArtifactLinesRequest{
+						Name:           fmt.Sprintf("invocations/%s/tests/t/results/r-fail/artifacts/a", invID),
+						PassingResults: []string{"invocations/inv-pass/tests/t/results/r-pass"},
+					})
+					assert.Loosely(t, err, grpccode.ShouldBe(tc.wantCode))
+				}
+			})
 		})
 	})
 }

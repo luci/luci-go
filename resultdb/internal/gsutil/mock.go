@@ -20,12 +20,15 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	"cloud.google.com/go/storage"
 )
 
 // MockClient is a mock implementation of the Client interface for testing.
 type MockClient struct {
 	luciProject string
 	Content     map[string][]byte
+	Errors      map[string]error
 }
 
 // GenerateSignedURL implements the Client interface for MockClient.
@@ -41,9 +44,12 @@ func (m *MockClient) Close() {
 // NewReader implements the Client interface for MockClient.
 func (m *MockClient) NewReader(ctx context.Context, bucket, object string, offset int64) (io.ReadCloser, error) {
 	key := fmt.Sprintf("gs://%s/%s", bucket, object)
+	if err, ok := m.Errors[key]; ok {
+		return nil, err
+	}
 	content, ok := m.Content[key]
 	if !ok {
-		return nil, fmt.Errorf("GCS object %q not found in mock content", key)
+		return nil, storage.ErrObjectNotExist
 	}
 	if offset > int64(len(content)) {
 		offset = int64(len(content))
