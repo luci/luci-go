@@ -89,7 +89,7 @@ func (*Builds) CustomMetricPreview(ctx context.Context, req *pb.CustomMetricPrev
 
 	res := &pb.CustomMetricPreviewResponse{}
 	// Evaluate predicates.
-	matched, err := buildcel.BoolEval(bp, req.MetricDefinition.Predicates)
+	matched, err := buildcel.BoolEval(ctx, bp, req.MetricDefinition.Predicates)
 	switch {
 	case err != nil:
 		res.Response = &pb.CustomMetricPreviewResponse_Error{
@@ -110,7 +110,7 @@ func (*Builds) CustomMetricPreview(ctx context.Context, req *pb.CustomMetricPrev
 	}
 	var extraFieldMap map[string]string
 	if len(req.MetricDefinition.ExtraFields) > 0 {
-		extraFieldMap, err = buildcel.StringMapEval(bp, req.MetricDefinition.ExtraFields)
+		extraFieldMap, err = buildcel.StringMapEval(ctx, bp, req.MetricDefinition.ExtraFields)
 		if err != nil {
 			res.Response = &pb.CustomMetricPreviewResponse_Error{
 				Error: fmt.Sprintf("failed to evaluate the build with extra_fields: %s", err),

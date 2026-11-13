@@ -513,7 +513,7 @@ func getBuildCustomMetrics(ctx context.Context, build *pb.Build, base pb.CustomM
 	}
 	for _, cmp := range toReport {
 		// Check if b fulfills the predicates.
-		matched, err := buildcel.BoolEval(build, cmp.Predicates)
+		matched, err := buildcel.BoolEval(ctx, build, cmp.Predicates)
 		if err != nil {
 			logging.Errorf(ctx, "failed to evaluate build %d with predicates: %s", build.Id, err)
 			continue
@@ -525,7 +525,7 @@ func getBuildCustomMetrics(ctx context.Context, build *pb.Build, base pb.CustomM
 		// Get metric fields.
 		var fieldMap map[string]string
 		if len(cmp.ExtraFields) > 0 {
-			fieldMap, err = buildcel.StringMapEval(build, cmp.ExtraFields)
+			fieldMap, err = buildcel.StringMapEval(ctx, build, cmp.ExtraFields)
 			if err != nil {
 				logging.Errorf(ctx, "failed to evaluate build %d with fields: %s", build.Id, err)
 				continue

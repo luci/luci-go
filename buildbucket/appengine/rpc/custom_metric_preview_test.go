@@ -303,6 +303,24 @@ func TestCustomMetricPreview(t *testing.T) {
 				}
 				assert.Loosely(t, rsp, should.Match(expected))
 			})
+
+			t.Run("predicate exceeds cost limit", func(t *ftt.Test) {
+				nested := `[0,1,2,3,4,5,6,7,8,9].all(a,[0,1,2,3,4,5,6,7,8,9].all(b,[0,1,2,3,4,5,6,7,8,9].all(c,[0,1,2,3,4,5,6,7,8,9].all(d,[0,1,2,3,4,5,6,7,8,9].all(e,[0,1,2,3,4,5,6,7,8,9].all(f,true))))))`
+				req := &pb.CustomMetricPreviewRequest{
+					BuildId: 1,
+					MetricDefinition: &pb.CustomMetricDefinition{
+						Name:       "chrome/infra/custom/builds/completed",
+						Predicates: []string{nested},
+					},
+					Class: &pb.CustomMetricPreviewRequest_MetricBase{
+						MetricBase: pb.CustomMetricBase_CUSTOM_METRIC_BASE_COMPLETED,
+					},
+				}
+				rsp, err := srv.CustomMetricPreview(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, rsp.GetError(), should.ContainSubstring("failed to evaluate the build with predicates"))
+				assert.Loosely(t, rsp.GetError(), should.ContainSubstring("cost limit exceeded"))
+			})
 		})
 	})
 }

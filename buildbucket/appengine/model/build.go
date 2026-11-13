@@ -625,7 +625,7 @@ func EvaluateBuildForCustomBuilderMetrics(ctx context.Context, bld *Build, bp *p
 		}
 
 		for _, cm := range cms {
-			matched, err := buildcel.BoolEval(bp, cm.Predicates)
+			matched, err := buildcel.BoolEval(ctx, bp, cm.Predicates)
 			if err != nil {
 				return err
 			}

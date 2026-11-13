@@ -15,6 +15,7 @@
 package buildcel
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -29,6 +30,14 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+)
+
+const (
+	// defaultCostLimit bounds the runtime evaluation cost of a CEL expression.
+	defaultCostLimit = 1_000_000
+	// defaultInterruptCheckFrequency is the number of comprehension iterations
+	// between context cancellation checks during ContextEval.
+	defaultInterruptCheckFrequency = 100
 )
 
 var env *buildCELEnv
@@ -119,7 +128,15 @@ func (bce *buildCELEnv) compile(expr string, celType *cel.Type) (*cel.Ast, error
 
 // Program generates an evaluable instance of the Ast within buildCELEnv.
 func (bce *buildCELEnv) program(ast *cel.Ast) (cel.Program, error) {
-	return bce.env.Program(ast)
+	return bce.env.Program(
+		ast,
+		// Enable runtime cost tracking and abort evaluation early if the
+		// estimated CPU cost exceeds defaultCostLimit.
+		cel.CostLimit(defaultCostLimit),
+		// Check whether ctx has been cancelled (via ContextEval) every
+		// defaultInterruptCheckFrequency comprehension iterations.
+		cel.InterruptCheckFrequency(defaultInterruptCheckFrequency),
+	)
 }
 
 type base struct {
@@ -143,8 +160,8 @@ func newBaseBuildCEL(expr string, celType *cel.Type) (*base, error) {
 	return bc, nil
 }
 
-func (bc *base) eval(b *pb.Build) (ref.Val, *cel.EvalDetails, error) {
-	return bc.prg.Eval(map[string]any{
+func (bc *base) eval(ctx context.Context, b *pb.Build) (ref.Val, *cel.EvalDetails, error) {
+	return bc.prg.ContextEval(ctx, map[string]any{
 		"build": b,
 	})
 }
@@ -207,8 +224,8 @@ func NewBool(predicates []string) (*Bool, error) {
 
 // Eval evaluates the given build.
 // If the build matchs all predicates, Eval returns true; Otherwise false.
-func (bbc *Bool) Eval(b *pb.Build) (bool, error) {
-	out, _, err := bbc.base.eval(b)
+func (bbc *Bool) Eval(ctx context.Context, b *pb.Build) (bool, error) {
+	out, _, err := bbc.base.eval(ctx, b)
 	if err != nil {
 		return false, err
 	}
@@ -217,12 +234,12 @@ func (bbc *Bool) Eval(b *pb.Build) (bool, error) {
 
 // BoolEval is a helper function to generate a Bool cel program then
 // evaluate b with it.
-func BoolEval(b *pb.Build, predicates []string) (bool, error) {
+func BoolEval(ctx context.Context, b *pb.Build, predicates []string) (bool, error) {
 	bbc, err := NewBool(predicates)
 	if err != nil {
 		return false, err
 	}
-	matched, err := bbc.Eval(b)
+	matched, err := bbc.Eval(ctx, b)
 	if err != nil {
 		return false, err
 	}
@@ -292,8 +309,8 @@ func NewStringMap(strMap map[string]string) (*StringMap, error) {
 }
 
 // Eval evaluates the build and returns the evaluation result.
-func (smbc *StringMap) Eval(b *pb.Build) (map[string]string, error) {
-	out, _, err := smbc.base.eval(b)
+func (smbc *StringMap) Eval(ctx context.Context, b *pb.Build) (map[string]string, error) {
+	out, _, err := smbc.base.eval(ctx, b)
 	if err != nil {
 		return nil, err
 	}
@@ -348,12 +365,12 @@ func stringStatus(intVal ref.Val) ref.Val {
 
 // StringMapEval is a helper function to generate a StringMap cel program then
 // evaluate b with it.
-func StringMapEval(b *pb.Build, fields map[string]string) (map[string]string, error) {
+func StringMapEval(ctx context.Context, b *pb.Build, fields map[string]string) (map[string]string, error) {
 	smbc, err := NewStringMap(fields)
 	if err != nil {
 		return nil, err
 	}
-	res, err := smbc.Eval(b)
+	res, err := smbc.Eval(ctx, b)
 	if err != nil {
 		return nil, err
 	}

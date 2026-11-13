@@ -15,6 +15,7 @@
 package buildcel
 
 import (
+	"context"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/structpb"
@@ -28,6 +29,8 @@ import (
 
 func TestBuildCEL(t *testing.T) {
 	t.Parallel()
+
+	ctx := context.Background()
 
 	ftt.Run("Bool", t, func(t *ftt.Test) {
 		t.Run("fail", func(t *ftt.Test) {
@@ -50,7 +53,7 @@ func TestBuildCEL(t *testing.T) {
 			}
 
 			t.Run("not match", func(t *ftt.Test) {
-				pass, err := BoolEval(&pb.Build{}, predicates)
+				pass, err := BoolEval(ctx, &pb.Build{}, predicates)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pass, should.BeFalse)
 			})
@@ -75,7 +78,7 @@ func TestBuildCEL(t *testing.T) {
 						},
 					},
 				}
-				pass, err := BoolEval(b, predicates)
+				pass, err := BoolEval(ctx, b, predicates)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pass, should.BeFalse)
 			})
@@ -108,7 +111,7 @@ func TestBuildCEL(t *testing.T) {
 						},
 					},
 				}
-				pass, err := BoolEval(b, predicates)
+				pass, err := BoolEval(ctx, b, predicates)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pass, should.BeTrue)
 			})
@@ -137,7 +140,7 @@ func TestBuildCEL(t *testing.T) {
 				"c": `build.cancellation_markdown`,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			out, err := smbc.Eval(&pb.Build{})
+			out, err := smbc.Eval(ctx, &pb.Build{})
 			expected := map[string]string{
 				"a": "",
 				"b": "random_string_literal",
@@ -151,7 +154,7 @@ func TestBuildCEL(t *testing.T) {
 				"d": `string(build.input.properties.key)`,
 			})
 			assert.Loosely(t, err, should.BeNil)
-			_, err = smbc.Eval(&pb.Build{})
+			_, err = smbc.Eval(ctx, &pb.Build{})
 			assert.Loosely(t, err, should.ErrLike("no such key: key"))
 		})
 		t.Run("work", func(t *ftt.Test) {
@@ -188,7 +191,7 @@ func TestBuildCEL(t *testing.T) {
 				"c": "cancel",
 				"d": "value",
 			}
-			out, err := StringMapEval(b, fields)
+			out, err := StringMapEval(ctx, b, fields)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, out, should.Match(expected))
 		})
@@ -210,7 +213,7 @@ func TestBuildCEL(t *testing.T) {
 						},
 					},
 				}
-				pass, err := bbc.Eval(b)
+				pass, err := bbc.Eval(ctx, b)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pass, should.BeFalse)
 			})
@@ -223,7 +226,7 @@ func TestBuildCEL(t *testing.T) {
 						},
 					},
 				}
-				pass, err := bbc.Eval(b)
+				pass, err := bbc.Eval(ctx, b)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, pass, should.BeTrue)
 			})
@@ -240,7 +243,7 @@ func TestBuildCEL(t *testing.T) {
 						},
 					},
 				}
-				res, err := bbc.Eval(b)
+				res, err := bbc.Eval(ctx, b)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(map[string]string{"os": ""}))
 			})
@@ -253,7 +256,7 @@ func TestBuildCEL(t *testing.T) {
 						},
 					},
 				}
-				res, err := bbc.Eval(b)
+				res, err := bbc.Eval(ctx, b)
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, res, should.Match(map[string]string{"os": "Mac"}))
 			})
@@ -265,7 +268,7 @@ func TestBuildCEL(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		t.Run("not found", func(t *ftt.Test) {
 			b := &pb.Build{}
-			res, err := bbc.Eval(b)
+			res, err := bbc.Eval(ctx, b)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.Match(map[string]string{"experiments": "None"}))
 		})
@@ -278,7 +281,7 @@ func TestBuildCEL(t *testing.T) {
 					},
 				},
 			}
-			res, err := bbc.Eval(b)
+			res, err := bbc.Eval(ctx, b)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.Match(map[string]string{"experiments": "luci.buildbucket.exp1|luci.buildbucket.exp2"}))
 		})
@@ -289,11 +292,11 @@ func TestBuildCEL(t *testing.T) {
 			b := &pb.Build{
 				Status: pb.Status_SUCCESS,
 			}
-			matched, err := BoolEval(b, []string{`build.status.to_string()=="SUCCESS"`})
+			matched, err := BoolEval(ctx, b, []string{`build.status.to_string()=="SUCCESS"`})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, matched, should.BeTrue)
 
-			matched, err = BoolEval(b, []string{`build.status.to_string()=="INFRA_FAILURE"`})
+			matched, err = BoolEval(ctx, b, []string{`build.status.to_string()=="INFRA_FAILURE"`})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, matched, should.BeFalse)
 		})
@@ -302,9 +305,33 @@ func TestBuildCEL(t *testing.T) {
 			b := &pb.Build{
 				Status: pb.Status_SUCCESS,
 			}
-			res, err := StringMapEval(b, map[string]string{"status": `build.status.to_string()`})
+			res, err := StringMapEval(ctx, b, map[string]string{"status": `build.status.to_string()`})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.Match(map[string]string{"status": "SUCCESS"}))
+		})
+	})
+
+	ftt.Run("limits", t, func(t *ftt.Test) {
+		nested := `[0,1,2,3,4,5,6,7,8,9].all(a,[0,1,2,3,4,5,6,7,8,9].all(b,[0,1,2,3,4,5,6,7,8,9].all(c,[0,1,2,3,4,5,6,7,8,9].all(d,[0,1,2,3,4,5,6,7,8,9].all(e,[0,1,2,3,4,5,6,7,8,9].all(f,true))))))`
+
+		t.Run("cost limit exceeded in BoolEval", func(t *ftt.Test) {
+			_, err := BoolEval(ctx, &pb.Build{}, []string{nested})
+			assert.Loosely(t, err, should.ErrLike("cost limit exceeded"))
+		})
+
+		t.Run("cost limit exceeded in StringMapEval", func(t *ftt.Test) {
+			_, err := StringMapEval(ctx, &pb.Build{}, map[string]string{
+				"k": nested + ` ? "y" : "n"`,
+			})
+			assert.Loosely(t, err, should.ErrLike("cost limit exceeded"))
+		})
+
+		t.Run("context cancelled", func(t *ftt.Test) {
+			cctx, cancel := context.WithCancel(ctx)
+			cancel()
+			expr := `[0,1,2,3,4,5,6,7,8,9].all(a,[0,1,2,3,4,5,6,7,8,9].all(b,[0,1,2,3,4,5,6,7,8,9].all(c,true)))`
+			_, err := BoolEval(cctx, &pb.Build{}, []string{expr})
+			assert.Loosely(t, err, should.ErrLike("operation interrupted"))
 		})
 	})
 }
