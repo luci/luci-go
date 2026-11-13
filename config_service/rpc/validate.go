@@ -198,12 +198,12 @@ func (vf validationFile) GetRawContent(ctx context.Context) ([]byte, error) {
 // LUCI Config derives corresponding Google Storage path from the file sha256.
 // The bucket name is read from c.GSValidationBucket and the object name is in
 // the format of:
-// "users/$(hex_encoding(sha256(requesterID))[:4])/configs/sha256/$(file_hash.sha256)"
+// "users/$(hex_encoding(sha256(requesterID)))/configs/sha256/$(file_hash.sha256)"
 // The object name will also be prefixed with `common.GSValidationCfgFolder`.
 //
 // For example, if requester is "user:foo@example.com" and file sha256 is
 // "abcdef0123456789", the corresponding GCS object is
-// "validation/users/b68cda84/configs/sha256/abcdef0123456789"
+// "validation/users/b68cda84.../configs/sha256/abcdef0123456789..."
 func (c Configs) makeValidationFiles(requesterID identity.Identity, fhs []*configpb.ValidateConfigsRequest_FileHash) []validation.File {
 	ret := make([]validation.File, len(fhs))
 	// use the hash of requester ID to avoid requester email show up in the gcs
@@ -213,7 +213,7 @@ func (c Configs) makeValidationFiles(requesterID identity.Identity, fhs []*confi
 	objectParts := []string{
 		common.GSValidationCfgFolder,
 		"users",
-		hex.EncodeToString(h.Sum(nil)[:4]),
+		hex.EncodeToString(h.Sum(nil)),
 		"configs",
 		"sha256",
 	}

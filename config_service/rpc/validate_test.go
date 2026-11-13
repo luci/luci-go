@@ -114,6 +114,7 @@ func TestValidate(t *testing.T) {
 				{Path: filePath, Sha256: fileSHA256},
 			},
 		}
+		userHash := fmt.Sprintf("%x", sha256.Sum256([]byte(requester)))
 
 		t.Run("Invalid input", func(t *ftt.Test) {
 			req := proto.Clone(validateRequest).(*configpb.ValidateConfigsRequest)
@@ -236,7 +237,7 @@ func TestValidate(t *testing.T) {
 			expectedValidationFiles := []validation.File{
 				validationFile{
 					path:   filePath,
-					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
+					gsPath: gs.MakePath("test-bucket", "validation", "users", userHash, "configs", "sha256", fileSHA256),
 				},
 			}
 			assert.Loosely(t, mv.recordedExamineFiles, should.Match(expectedValidationFiles))
@@ -255,7 +256,7 @@ func TestValidate(t *testing.T) {
 			t.Run("Require uploading file", func(t *ftt.Test) {
 				vf := validationFile{
 					path:   filePath,
-					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
+					gsPath: gs.MakePath("test-bucket", "validation", "users", userHash, "configs", "sha256", fileSHA256),
 				}
 				mv.examineResult = &validation.ExamineResult{
 					MissingFiles: []struct {
@@ -291,7 +292,7 @@ func TestValidate(t *testing.T) {
 			t.Run("Unvalidatable file", func(t *ftt.Test) {
 				vf := validationFile{
 					path:   filePath,
-					gsPath: gs.MakePath("test-bucket", "validation", "users", "b8a0858b", "configs", "sha256", fileSHA256),
+					gsPath: gs.MakePath("test-bucket", "validation", "users", userHash, "configs", "sha256", fileSHA256),
 				}
 				mv.examineResult = &validation.ExamineResult{
 					UnvalidatableFiles: []validation.File{vf},
