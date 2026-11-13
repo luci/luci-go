@@ -15,21 +15,16 @@
 package prefixcfg
 
 import (
-	"context"
 	"regexp"
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/testing/registry"
 	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/config/cfgclient"
-	cfgmem "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -138,7 +133,7 @@ func TestTransform(t *testing.T) {
 
 	for _, cs := range cases {
 		t.Run(cs.name, func(t *testing.T) {
-			qr, err := transform(&configpb.PrefixesConfigFile{Prefix: cs.cfg}, "")
+			qr, err := transform(&configpb.PrefixesConfigFile{Prefix: cs.cfg})
 			assert.NoErr(t, err)
 			for _, q := range cs.queries {
 				got := qr.lookup(q.path)
@@ -232,50 +227,6 @@ func TestValidate(t *testing.T) {
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	ctx := memory.Use(t.Context())
-
-	// The config is missing initially, but it is OK.
-	cfg, err := NewConfig(ctx)
-	assert.NoErr(t, err)
-	assert.That(t, cfg.queryable().tree.Len(), should.Equal(1)) // only the implicit root
-
-	// Refresh doesn't freak out.
-	assert.NoErr(t, cfg.refresh(ctx))
-
-	// Load the initial config into the datastore.
-	err = ImportConfig(withConfig(ctx, &configpb.PrefixesConfigFile{
-		Prefix: []*configpb.Prefix{
-			{Path: "a/b/c"},
-		},
-	}))
-	assert.NoErr(t, err)
-
-	// Refresh picks it up.
-	assert.NoErr(t, cfg.refresh(ctx))
-	assert.That(t, cfg.queryable().tree.Len(), should.Equal(2))
-	prev := cfg.queryable()
-
-	// Noop refresh.
-	assert.NoErr(t, cfg.refresh(ctx))
-	assert.That(t, cfg.queryable(), should.Equal(prev))
-
-	// Config changes.
-	err = ImportConfig(withConfig(ctx, &configpb.PrefixesConfigFile{
-		Prefix: []*configpb.Prefix{
-			{Path: "a/b/c"},
-			{Path: "a/b/c/d"},
-		},
-	}))
-	assert.NoErr(t, err)
-
-	// Refresh picks it up.
-	assert.NoErr(t, cfg.refresh(ctx))
-	assert.That(t, cfg.queryable().tree.Len(), should.Equal(3))
-}
-
-func TestConfigV2(t *testing.T) {
-	t.Parallel()
-
 	ctx, cfgstate := cfgcache.TestingContext(memory.Use(t.Context()))
 	datastore.GetTestable(ctx).Consistent(true)
 
@@ -325,15 +276,5 @@ func TestConfigV2(t *testing.T) {
 			Path:              "a/b/c/d/",
 			OwningLuciProject: "proj-abcd",
 		},
-	}))
-}
-
-func withConfig(ctx context.Context, cfg *configpb.PrefixesConfigFile) context.Context {
-	body, err := prototext.Marshal(cfg)
-	if err != nil {
-		panic(err)
-	}
-	return cfgclient.Use(ctx, cfgmem.New(map[config.Set]cfgmem.Files{
-		"services/${appid}": {"prefixes.cfg": string(body)},
 	}))
 }

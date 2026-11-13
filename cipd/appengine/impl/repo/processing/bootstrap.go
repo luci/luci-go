@@ -25,7 +25,7 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
-	"go.chromium.org/luci/cipd/appengine/impl/bootstrap"
+	api "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
@@ -37,6 +37,8 @@ const BootstrapPackageExtractorProcID = "bootstrap_extractor:v1"
 // packages (per bootstrap.cfg service config).
 type BootstrapPackageExtractor struct {
 	CAS cas.StorageServer
+
+	GetConfig func(context.Context, string) (*api.BootstrapConfig, error)
 
 	// For mocking in tests.
 	uploader func(ctx context.Context, size int64, uploadURL string) io.Writer
@@ -57,7 +59,7 @@ func (bs *BootstrapPackageExtractor) ID() string {
 
 // Applicable is a part of the Processor interface.
 func (bs *BootstrapPackageExtractor) Applicable(ctx context.Context, inst *model.Instance) (bool, error) {
-	cfg, err := bootstrap.BootstrapConfig(ctx, inst.Package.StringID())
+	cfg, err := bs.GetConfig(ctx, inst.Package.StringID())
 	return cfg != nil, err
 }
 

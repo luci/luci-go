@@ -70,8 +70,8 @@ type Services struct {
 
 // Main initializes the core server modules and launches the callback.
 func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) error) {
-	prefixcfg.RegisterConfig(nil)
-	bootstrap.RegisterConfig(nil)
+	pcfg := prefixcfg.RegisterConfig(nil)
+	bcfg := bootstrap.RegisterConfig(nil)
 
 	modules := append([]module.Module{
 		bqlog.NewModuleFromFlags(),
@@ -105,17 +105,11 @@ func Main(extra []module.Module, cb func(srv *server.Server, svc *Services) erro
 		}
 		srv.Context = ev.RegisterSink(srv.Context, &tq.Default, srv.Options.Prod)
 
-		pcfg, err := prefixcfg.NewConfig(srv.Context)
-		if err != nil {
-			return nil
-		}
-		srv.RunInBackground("cipd.prefixcfg", pcfg.RefreshPeriodically)
-
 		internalCAS := cas.Internal(&tq.Default, &bqlog.Default, s, &srv.Options)
 		return cb(srv, &Services{
 			InternalCAS: internalCAS,
 			PublicCAS:   cas.Public(internalCAS),
-			PublicRepo:  repo.Public(internalCAS, pcfg, &tq.Default, b),
+			PublicRepo:  repo.Public(internalCAS, pcfg, bcfg, &tq.Default, b),
 			AdminAPI:    admin.AdminAPI(&dsmapper.Default),
 			EventLogger: ev,
 		})

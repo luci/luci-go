@@ -76,8 +76,8 @@ func newMockImpl(meta *testutil.MetadataStore, cas *testutil.MockCAS) *repoImpl 
 		meta: meta,
 		cas:  cas,
 		vsa:  vsa.NewClient(),
-		lookupPrefixCfg: func(pkg string) *prefixcfg.Entry {
-			return &prefixcfg.Entry{PrefixConfig: &api.Prefix{}}
+		lookupPrefixCfg: func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{PrefixConfig: &api.Prefix{}}, nil
 		},
 	}
 }
@@ -955,11 +955,11 @@ func TestRegisterInstance(t *testing.T) {
 
 		impl := newMockImpl(&meta, &cas)
 		impl.registerTasks()
-		impl.lookupPrefixCfg = func(pkg string) *prefixcfg.Entry {
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
 			return &prefixcfg.Entry{
 				PrefixConfig:           &api.Prefix{},
 				AllowWritersFromRegexp: []*regexp.Regexp{regexp.MustCompile(`^.*@google.com$`)},
-			}
+			}, nil
 		}
 
 		ctx, sched := tq.TestingContext(ctx, impl.tq)
@@ -2724,8 +2724,8 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 
 		cas := testutil.MockCAS{}
 		impl := newMockImpl(&meta, &cas)
-		impl.lookupPrefixCfg = func(pkg string) *prefixcfg.Entry {
-			return &prefixCfgPb
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixCfgPb, nil
 		}
 		impl.lookupBillingProject = func(ctx context.Context, luciProject, prefix string) (string, error) {
 			return "gcs-" + luciProject, nil
@@ -4020,12 +4020,12 @@ func TestVSA(t *testing.T) {
 		})
 
 		t.Run("Exemption", func(t *ftt.Test) {
-			impl.lookupPrefixCfg = func(pkg string) *prefixcfg.Entry {
+			impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
 				return &prefixcfg.Entry{
 					PrefixConfig: &api.Prefix{
 						ExemptFromVerifySoftwareArtifacts: true,
 					},
-				}
+				}, nil
 			}
 
 			cas.BeginUploadImpl = func(context.Context, *caspb.BeginUploadRequest) (*caspb.UploadOperation, error) {

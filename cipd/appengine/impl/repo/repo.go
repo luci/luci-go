@@ -48,6 +48,7 @@ import (
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	repogrpcpb "go.chromium.org/luci/cipd/api/cipd/v1/repopb/grpcpb"
+	"go.chromium.org/luci/cipd/appengine/impl/bootstrap"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
@@ -67,7 +68,7 @@ const PrefixesViewers = "cipd-prefixes-viewers"
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS cas.StorageServer, pcfg *prefixcfg.Config, d *tq.Dispatcher, c vsa.Client) Server {
+func Public(internalCAS cas.StorageServer, pcfg *prefixcfg.Config, bcfg *bootstrap.Config, d *tq.Dispatcher, c vsa.Client) Server {
 	impl := &repoImpl{
 		tq:                   d,
 		meta:                 metadata.GetStorage(),
@@ -78,7 +79,7 @@ func Public(internalCAS cas.StorageServer, pcfg *prefixcfg.Config, d *tq.Dispatc
 	}
 	impl.registerTasks()
 	impl.registerProcessor(&processing.ClientExtractor{CAS: internalCAS})
-	impl.registerProcessor(&processing.BootstrapPackageExtractor{CAS: internalCAS})
+	impl.registerProcessor(&processing.BootstrapPackageExtractor{CAS: internalCAS, GetConfig: bcfg.Get})
 	return impl
 }
 
@@ -119,7 +120,7 @@ type repoImpl struct {
 	vsa  vsa.Client
 
 	// Looks up the service-side config that applies to this package.
-	lookupPrefixCfg func(pkg string) *prefixcfg.Entry
+	lookupPrefixCfg func(ctx context.Context, pkg string) (*prefixcfg.Entry, error)
 	// Mapping `(LUCI project, prefix) => custom billing project for GCS`.
 	lookupBillingProject func(ctx context.Context, luciProject, pkg string) (string, error)
 
@@ -347,7 +348,10 @@ func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.I
 			return nil, err
 		}
 	}
-	cfg := impl.lookupPrefixCfg(r.Prefix)
+	cfg, err := impl.lookupPrefixCfg(ctx, r.Prefix)
+	if err != nil {
+		return nil, err
+	}
 
 	roles, err := rolesInPrefix(ctx, ident, cfg, metas)
 	if err != nil {
@@ -379,7 +383,10 @@ func (impl *repoImpl) checkRole(ctx context.Context, prefix string, role repopb.
 	if err != nil {
 		return nil, err
 	}
-	cfg := impl.lookupPrefixCfg(prefix)
+	cfg, err := impl.lookupPrefixCfg(ctx, prefix)
+	if err != nil {
+		return nil, err
+	}
 
 	var reason string
 	switch yes, policy, err := hasRole(ctx, cfg, metas, role); {
@@ -444,7 +451,10 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *repopb.ListPrefixReques
 	// see some deeper prefix, thus we need to enumerate the metadata subtree.
 	var visibleRoots []string // sorted list of prefixes visible to the caller
 	err = impl.meta.VisitMetadata(ctx, r.Prefix, func(pfx string, md []*repopb.PrefixMetadata) (cont bool, err error) {
-		cfg := impl.lookupPrefixCfg(pfx)
+		cfg, err := impl.lookupPrefixCfg(ctx, pfx)
+		if err != nil {
+			return false, err
+		}
 		switch visible, _, err := hasRole(ctx, cfg, md, repopb.Role_READER); {
 		case err != nil:
 			return false, err
@@ -662,7 +672,11 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 	}
 
 	instance := (&model.Instance{}).FromProto(ctx, r)
-	prefix := impl.lookupPrefixCfg(r.Package).PrefixConfig
+	cfg, err := impl.lookupPrefixCfg(ctx, r.Package)
+	if err != nil {
+		return nil, err
+	}
+	prefix := cfg.PrefixConfig
 
 	var vsaResp *api.VerifySoftwareArtifactResponse
 	if prefix.ExemptFromVerifySoftwareArtifacts {
@@ -2349,7 +2363,11 @@ func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 //
 // Returns grpc-tagged errors returned to the caller as is.
 func (impl *repoImpl) StorageUserProject(ctx context.Context, pkg string) (string, error) {
-	prefix := impl.lookupPrefixCfg(pkg).PrefixConfig
+	cfg, err := impl.lookupPrefixCfg(ctx, pkg)
+	if err != nil {
+		return "", err
+	}
+	prefix := cfg.PrefixConfig
 	if prefix.OwningLuciProject == "" || prefix.Billing.GetDisableUserProjectBilling() {
 		return "", nil
 	}

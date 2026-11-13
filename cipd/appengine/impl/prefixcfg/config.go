@@ -17,36 +17,23 @@ package prefixcfg
 import (
 	"cmp"
 	"context"
-	"math/rand"
 	"regexp"
 	"slices"
 	"strings"
-	"sync/atomic"
-	"time"
 
 	"github.com/armon/go-radix"
 	"google.golang.org/protobuf/proto"
 
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-	legacyCfgCache "go.chromium.org/luci/config/server/cfgcache"
 	"go.chromium.org/luci/config/validation"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/cfgcache"
 	"go.chromium.org/luci/server/cfgcache/dsstore"
 
 	configpb "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/common"
 )
-
-var cachedCfg = legacyCfgCache.Register(&legacyCfgCache.Entry{
-	Path: "prefixes.cfg",
-	Type: (*configpb.PrefixesConfigFile)(nil),
-	// Validation done by serviceConfig now.
-})
 
 var prefixesCfgFile = &cfgcache.SingleFile[*configpb.PrefixesConfigFile]{
 	Path: "prefixes.cfg",
@@ -64,23 +51,23 @@ var serviceConfig = (&cfgcache.ServicePipeline[*configpb.PrefixesConfigFile, *qu
 		return msg, nil
 	},
 	ToMemory: func(ctx context.Context, cs config.Set, msg *configpb.PrefixesConfigFile) (*queryable, error) {
-		return transform(msg, "")
+		return transform(msg)
 	},
 })
 
-func RegisterConfig(reg *cfgcache.Registry) *ConfigV2 {
-	return &ConfigV2{
+func RegisterConfig(reg *cfgcache.Registry) *Config {
+	return &Config{
 		serviceConfig.Register(reg),
 	}
 }
 
-// ConfigV2 holds parsed and transformed configs in memory, refreshed in the
+// Config holds parsed and transformed configs in memory, refreshed in the
 // background.
-type ConfigV2 struct {
+type Config struct {
 	svcHandle *cfgcache.RegisteredService[*queryable]
 }
 
-func (c *ConfigV2) Lookup(ctx context.Context, path string) (*Entry, error) {
+func (c *Config) Lookup(ctx context.Context, path string) (*Entry, error) {
 	q, err := c.svcHandle.GetData(ctx)
 	if err != nil {
 		return nil, err
@@ -91,25 +78,8 @@ func (c *ConfigV2) Lookup(ctx context.Context, path string) (*Entry, error) {
 	return q.lookup(path), nil
 }
 
-// ImportConfig is called from a cron to import prefixes.cfg into the datastore.
-func ImportConfig(ctx context.Context) error {
-	_, err := cachedCfg.Update(ctx, nil)
-	if errors.Is(err, config.ErrNoConfig) {
-		logging.Warningf(ctx, "No prefixes.cfg config file")
-		return nil
-	}
-	return err
-}
-
-// Config holds parsed and transformed configs in memory, refetching them from
-// the datastore occasionally.
-type Config struct {
-	cur atomic.Pointer[queryable] // contains *queryable that is periodically replaced
-}
-
 // queryable is a queryable representation of the prefixes.cfg config.
 type queryable struct {
-	rev  string      // the revision this config was derived from
 	tree *radix.Tree // "<prefix>/" -> resolved *configpb.Prefix
 }
 
@@ -123,84 +93,6 @@ func (qr *queryable) lookup(path string) *Entry {
 	// will always return something.
 	_, cfg, _ := qr.tree.LongestPrefix(normPath(path))
 	return cfg.(*Entry)
-}
-
-// NewConfig loads the initial copy of the config from the datastore.
-func NewConfig(ctx context.Context) (*Config, error) {
-	raw, rev, err := fetch(ctx)
-	if err != nil {
-		return nil, err
-	}
-	cfg := &Config{}
-	transformed, err := transform(raw, rev)
-	if err != nil {
-		return nil, errors.Fmt("transforming initial config: %w", err)
-	}
-	cfg.cur.Store(transformed)
-	return cfg, nil
-}
-
-// Lookup returns a config entry to use for the given prefix or package.
-//
-// It is a fast local operation and it can't fail. If the prefix doesn't have
-// a config, returns a default one.
-func (c *Config) Lookup(path string) *Entry {
-	return c.queryable().lookup(path)
-}
-
-// RefreshPeriodically runs a loop that periodically refetches the config from
-// the datastore to update the local in-memory cache.
-func (c *Config) RefreshPeriodically(ctx context.Context) {
-	for {
-		jitter := time.Duration(rand.Int63n(int64(60 * time.Second)))
-		if r := <-clock.After(ctx, 60*time.Second+jitter); r.Err != nil {
-			return // the context is canceled
-		}
-		if err := c.refresh(ctx); err != nil {
-			if !errors.Is(err, context.Canceled) {
-				logging.Warningf(ctx, "Failed to refresh the local copy of the config: %s", err)
-			}
-		}
-	}
-}
-
-// queryable is the queryable config stored in the atomic.
-func (c *Config) queryable() *queryable {
-	return c.cur.Load()
-}
-
-// refresh updates the in-memory config based on what's in the datastore.
-func (c *Config) refresh(ctx context.Context) error {
-	fetched, rev, err := fetch(ctx)
-	if err != nil {
-		return errors.Fmt("fetching config from datastore: %w", err)
-	}
-	cur := c.queryable()
-	if cur.rev == rev {
-		logging.Infof(ctx, "Config is up-to-date at rev %q", rev)
-		return nil
-	}
-	logging.Infof(ctx, "Picking up config update: %q => %q", cur.rev, rev)
-	transformed, err := transform(fetched, rev)
-	if err != nil {
-		return errors.Fmt("transforming fetched config: %w", err)
-	}
-	c.cur.Store(transformed)
-	return nil
-}
-
-// fetch fetches the config from the datastore, returning a default one if
-// the datastore is empty.
-func fetch(ctx context.Context) (cfg *configpb.PrefixesConfigFile, rev string, err error) {
-	var meta config.Meta
-	switch raw, err := cachedCfg.Fetch(ctx, &meta); {
-	case err == nil:
-		return raw.(*configpb.PrefixesConfigFile), meta.Revision, nil
-	case errors.Is(err, datastore.ErrNoSuchEntity):
-		return &configpb.PrefixesConfigFile{}, "none", nil
-	default:
-		return nil, "", err
-	}
 }
 
 // validate validates correctness of the config.
@@ -230,7 +122,7 @@ func validate(c *validation.Context, cfg *configpb.PrefixesConfigFile) {
 }
 
 // transform takes a validated config and transforms it into a queryable form.
-func transform(cfg *configpb.PrefixesConfigFile, rev string) (*queryable, error) {
+func transform(cfg *configpb.PrefixesConfigFile) (*queryable, error) {
 	// We are going to mutate entries.
 	entries := proto.CloneOf(cfg).GetPrefix()
 
@@ -273,7 +165,7 @@ func transform(cfg *configpb.PrefixesConfigFile, rev string) (*queryable, error)
 
 		tree.Insert(prefix.Path, entry)
 	}
-	return &queryable{rev: rev, tree: tree}, nil
+	return &queryable{tree: tree}, nil
 }
 
 // normPath normalizes the prefix path for radix tree lookups.

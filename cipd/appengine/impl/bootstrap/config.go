@@ -18,12 +18,6 @@ import (
 	"context"
 	"strings"
 
-	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/config"
-	cfgcacheLegacy "go.chromium.org/luci/config/server/cfgcache"
-	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/cfgcache"
 	"go.chromium.org/luci/server/cfgcache/dsstore"
 
@@ -53,38 +47,6 @@ func (c *Config) Get(ctx context.Context, pkg string) (*api.BootstrapConfig, err
 		return nil, err
 	}
 	for _, bc := range cfg.GetBootstrapConfig() {
-		if matchesConfig(pkg, bc) {
-			return bc, nil
-		}
-	}
-	return nil, nil
-}
-
-var cachedCfgLegacy = cfgcacheLegacy.Register(&cfgcacheLegacy.Entry{
-	Path: "bootstrap.cfg",
-	Type: (*api.BootstrapConfigFile)(nil),
-})
-
-// ImportConfig is called from a cron to import bootstrap.cfg into datastore.
-func ImportConfig(ctx context.Context) error {
-	_, err := cachedCfgLegacy.Update(ctx, nil)
-	if errors.Unwrap(err) == config.ErrNoConfig {
-		logging.Warningf(ctx, "No bootstrap.cfg config file")
-		return nil
-	}
-	return err
-}
-
-// BootstrapConfig returns a matching bootstrap package config or nil.
-func BootstrapConfig(ctx context.Context, pkg string) (*api.BootstrapConfig, error) {
-	cfg, err := cachedCfgLegacy.Get(ctx, nil)
-	if err != nil {
-		if errors.Contains(err, datastore.ErrNoSuchEntity) {
-			return nil, nil
-		}
-		return nil, transient.Tag.Apply(errors.Fmt("failed to fetch the bootstrap config: %w", err))
-	}
-	for _, bc := range cfg.(*api.BootstrapConfigFile).BootstrapConfig {
 		if matchesConfig(pkg, bc) {
 			return bc, nil
 		}
