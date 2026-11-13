@@ -706,9 +706,11 @@ func TestQueryAllArtifacts(t *testing.T) {
 
 		t.Run(`queryParentArtifacts passes Predicate.ArtifactIdRegexp when non-empty`, func(t *ftt.Test) {
 			var gotPred *rdbpb.ArtifactPredicate
+			var gotMask []string
 			client := &mockResultDBClient{
 				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
 					gotPred = in.GetPredicate()
+					gotMask = in.GetReadMask().GetPaths()
 					return &rdbpb.ListArtifactsResponse{
 						Artifacts: []*rdbpb.Artifact{
 							{ArtifactId: "logcat.txt", Name: "parent/artifacts/logcat.txt"},
@@ -720,10 +722,12 @@ func TestQueryAllArtifacts(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, len(arts), should.Equal(1))
 			assert.Loosely(t, gotPred.GetArtifactIdRegexp(), should.Equal(`(?i).*(?:logcat).*`))
+			assert.Loosely(t, gotMask, should.Resemble([]string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"}))
 
 			_, err = queryParentArtifacts(ctx, client, "parent", "")
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, gotPred, should.BeNil)
+			assert.Loosely(t, gotMask, should.Resemble([]string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"}))
 		})
 	})
 }
@@ -913,6 +917,7 @@ func TestPrintAncestorWorkUnitNotices(t *testing.T) {
 					}, nil
 				},
 				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					assert.Loosely(t, in.GetReadMask().GetPaths(), should.Resemble([]string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"}))
 					if in.Parent == "rootInvocations/build-123/workUnits/root" {
 						return &rdbpb.ListArtifactsResponse{
 							Artifacts: []*rdbpb.Artifact{{ArtifactId: "root.log"}},

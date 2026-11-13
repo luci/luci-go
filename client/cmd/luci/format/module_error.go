@@ -22,8 +22,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
+
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
@@ -349,32 +352,58 @@ func QueryAncestorWorkUnits(ctx context.Context, client pb.ResultDBClient, targe
 	return ancestors
 }
 
-// QueryArtifactsForParent lists up to 1000 artifacts for parent, using the
-// context's DiscoveryCache if available to avoid duplicate ListArtifacts RPCs.
-// It returns the artifacts, whether additional pages exist (NextPageToken != ""),
-// and any RPC error.
-func QueryArtifactsForParent(ctx context.Context, client pb.ResultDBClient, parent string) ([]*pb.Artifact, bool, error) {
-	return queryArtifactsForParentWithMore(ctx, client, parent, cacheFromContext(ctx))
+const candidateTestResultXMLRegexp = `(?i).*(?:test_result|compatibility_result|sponge_log).*\.xml(?:\.gz)?`
+
+var failureArtifactRegexp = func() string {
+	prefixes := make([]string, len(interestingArtifactRules))
+	for i, rule := range interestingArtifactRules {
+		prefixes[i] = regexp.QuoteMeta(rule.prefix)
+	}
+	return fmt.Sprintf("(?:%s).*", strings.Join(prefixes, "|"))
+}()
+
+// ArtifactMetadataReadMask returns a ReadMask selecting artifact metadata fields
+// without fetch_url, avoiding unnecessary GCS signed-URL generation in ResultDB.
+func ArtifactMetadataReadMask() *fieldmaskpb.FieldMask {
+	return &fieldmaskpb.FieldMask{
+		Paths: []string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"},
+	}
 }
 
-func queryArtifactsForParent(ctx context.Context, client pb.ResultDBClient, parent string, cache *DiscoveryCache) ([]*pb.Artifact, error) {
-	arts, _, err := queryArtifactsForParentWithMore(ctx, client, parent, cache)
+// QueryArtifactsForParent lists up to 1000 artifact metadata entries for parent
+// (excluding fetch_url), using the context's DiscoveryCache if available to avoid
+// duplicate ListArtifacts RPCs. It returns the artifacts, whether additional pages
+// exist (NextPageToken != ""), and any RPC error.
+func QueryArtifactsForParent(ctx context.Context, client pb.ResultDBClient, parent string) ([]*pb.Artifact, bool, error) {
+	return queryArtifactsForParentWithMore(ctx, client, parent, "meta:"+parent, nil, ArtifactMetadataReadMask(), cacheFromContext(ctx))
+}
+
+func queryArtifactsForParentFiltered(ctx context.Context, client pb.ResultDBClient, parent, cachePrefix, artifactIDRegexp string, cache *DiscoveryCache) ([]*pb.Artifact, error) {
+	var predicate *pb.ArtifactPredicate
+	if artifactIDRegexp != "" {
+		predicate = &pb.ArtifactPredicate{
+			ArtifactIdRegexp: artifactIDRegexp,
+		}
+	}
+	arts, _, err := queryArtifactsForParentWithMore(ctx, client, parent, cachePrefix+parent, predicate, nil, cache)
 	return arts, err
 }
 
-func queryArtifactsForParentWithMore(ctx context.Context, client pb.ResultDBClient, parent string, cache *DiscoveryCache) ([]*pb.Artifact, bool, error) {
+func queryArtifactsForParentWithMore(ctx context.Context, client pb.ResultDBClient, parent, cacheKey string, predicate *pb.ArtifactPredicate, readMask *fieldmaskpb.FieldMask, cache *DiscoveryCache) ([]*pb.Artifact, bool, error) {
 	if cache != nil {
 		cache.mu.RLock()
-		if arts, ok := cache.artifacts[parent]; ok {
-			more := cache.artifactsMore[parent]
+		if arts, ok := cache.artifacts[cacheKey]; ok {
+			more := cache.artifactsMore[cacheKey]
 			cache.mu.RUnlock()
 			return arts, more, nil
 		}
 		cache.mu.RUnlock()
 	}
 	res, err := client.ListArtifacts(ctx, &pb.ListArtifactsRequest{
-		Parent:   parent,
-		PageSize: 1000,
+		Parent:    parent,
+		PageSize:  1000,
+		Predicate: predicate,
+		ReadMask:  readMask,
 	})
 	if err != nil {
 		return nil, false, err
@@ -382,8 +411,8 @@ func queryArtifactsForParentWithMore(ctx context.Context, client pb.ResultDBClie
 	more := res.NextPageToken != ""
 	if cache != nil {
 		cache.mu.Lock()
-		cache.artifacts[parent] = res.Artifacts
-		cache.artifactsMore[parent] = more
+		cache.artifacts[cacheKey] = res.Artifacts
+		cache.artifactsMore[cacheKey] = more
 		cache.mu.Unlock()
 	}
 	return res.Artifacts, more, nil
@@ -545,7 +574,7 @@ func discoverWorkUnitErrorUncached(ctx context.Context, rdbClient pb.ResultDBCli
 
 	if httpClient != nil {
 		for _, target := range targetsToCheck {
-			arts, err := queryArtifactsForParent(ctx, rdbClient, target, cache)
+			arts, err := queryArtifactsForParentFiltered(ctx, rdbClient, target, "xml:", candidateTestResultXMLRegexp, cache)
 			if err != nil || len(arts) == 0 {
 				continue
 			}
@@ -690,7 +719,7 @@ func DiscoverSingleWorkUnitFailure(ctx context.Context, rdbClient pb.ResultDBCli
 	if wuID == "" {
 		_, wuID = base.ExtractWorkUnitComponents(wu.GetName())
 	}
-	arts, _ := queryArtifactsForParent(ctx, rdbClient, wu.GetName(), cacheFromContext(ctx))
+	arts, _ := queryArtifactsForParentFiltered(ctx, rdbClient, wu.GetName(), "fail:", failureArtifactRegexp, cacheFromContext(ctx))
 	f := &WorkUnitFailure{
 		WorkUnitID:      wuID,
 		Kind:            wu.GetKind(),

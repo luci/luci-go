@@ -763,7 +763,7 @@ func TestCmdWorkUnit(t *testing.T) {
 			outChild := testutil.CaptureStdout(func() {
 				assert.Loosely(t, rChild.Run(nil, nil, nil), should.Equal(0))
 			})
-			assert.Loosely(t, childListArtCalls, should.Equal(1))
+			assert.Loosely(t, childListArtCalls, should.Equal(2))
 			assert.Loosely(t, outChild, should.ContainSubstring("Full summary from invocationFailed_summary_markdown"))
 			assert.Loosely(t, outChild, should.ContainSubstring("luci artifact get -invocationid=ants-i11400010573721720 -workunitid=ants-wu11400010573721720 -artifactid=invocationFailed_summary_markdown"))
 		})

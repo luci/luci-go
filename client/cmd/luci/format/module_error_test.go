@@ -240,6 +240,8 @@ func TestDiscoverWorkUnitError(t *testing.T) {
 					}, nil
 				},
 				listArtifactsFunc: func(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+					assert.Loosely(t, in.GetPredicate().GetArtifactIdRegexp(), should.Equal(candidateTestResultXMLRegexp))
+					assert.Loosely(t, in.GetReadMask(), should.BeNil)
 					if in.Parent == "rootInvocations/inv1/workUnits/wu1" {
 						return &pb.ListArtifactsResponse{
 							Artifacts: []*pb.Artifact{
@@ -426,6 +428,8 @@ func TestDiscoverFirstLevelWorkUnitFailures(t *testing.T) {
 				}, nil
 			},
 			listArtifactsFunc: func(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+				assert.Loosely(t, in.GetPredicate().GetArtifactIdRegexp(), should.Equal(failureArtifactRegexp))
+				assert.Loosely(t, in.GetReadMask(), should.BeNil)
 				mu.Lock()
 				listedParents = append(listedParents, in.Parent)
 				mu.Unlock()
@@ -463,5 +467,47 @@ func TestDiscoverFirstLevelWorkUnitFailures(t *testing.T) {
 		assert.Loosely(t, out, should.ContainSubstring("Invocation Failure Trace (invocationFailed_trace):"))
 		assert.Loosely(t, out, should.ContainSubstring("... (6 more lines)"))
 		assert.Loosely(t, out, should.ContainSubstring("luci artifact get -invocationid=ants-i11700010583257168 -workunitid=ants-wu11700010583257168 -artifactid=invocationFailed_trace_1"))
+	})
+
+	ftt.Run(`QueryArtifactsForParent uses metadata ReadMask without polluting XML cache`, t, func(t *ftt.Test) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(`<Result><Reason message="xml failure"/></Result>`))
+		}))
+		defer server.Close()
+
+		ctx := WithDiscoveryCache(context.Background())
+		var calls []*pb.ListArtifactsRequest
+		fakeClient := &fakeDiscoveryRDBClient{
+			getWorkUnitFunc: func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+				return &pb.WorkUnit{Name: in.Name, WorkUnitId: "wu1"}, nil
+			},
+			listArtifactsFunc: func(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+				calls = append(calls, in)
+				if in.GetReadMask() != nil {
+					return &pb.ListArtifactsResponse{
+						Artifacts: []*pb.Artifact{{ArtifactId: "test_result.xml"}},
+					}, nil
+				}
+				return &pb.ListArtifactsResponse{
+					Artifacts: []*pb.Artifact{{ArtifactId: "test_result.xml", FetchUrl: server.URL}},
+				}, nil
+			},
+		}
+
+		arts, more, err := QueryArtifactsForParent(ctx, fakeClient, "rootInvocations/inv1/workUnits/wu1")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, more, should.BeFalse)
+		assert.Loosely(t, len(arts), should.Equal(1))
+
+		dErr, err := DiscoverWorkUnitError(ctx, fakeClient, server.Client(), "rootInvocations/inv1/workUnits/wu1")
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, dErr, should.NotBeNil)
+		assert.Loosely(t, dErr.Message, should.Equal("xml failure"))
+
+		assert.Loosely(t, len(calls), should.Equal(2))
+		assert.Loosely(t, calls[0].GetPredicate(), should.BeNil)
+		assert.Loosely(t, calls[0].GetReadMask().GetPaths(), should.Resemble(ArtifactMetadataReadMask().GetPaths()))
+		assert.Loosely(t, calls[1].GetPredicate().GetArtifactIdRegexp(), should.Equal(candidateTestResultXMLRegexp))
+		assert.Loosely(t, calls[1].GetReadMask(), should.BeNil)
 	})
 }

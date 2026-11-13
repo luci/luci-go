@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
@@ -446,6 +445,7 @@ func PrintImmediateParentInvocationNotice(ctx context.Context, client rdbpb.Resu
 	res, err := client.ListArtifacts(ctx, &rdbpb.ListArtifactsRequest{
 		Parent:   parentInv,
 		PageSize: 1000,
+		ReadMask: format.ArtifactMetadataReadMask(),
 	})
 	if err == nil && len(res.Artifacts) > 0 {
 		artLabel := "artifacts"
@@ -871,6 +871,7 @@ func queryParentArtifacts(ctx context.Context, client rdbpb.ResultDBClient, pare
 			PageSize:  1000,
 			PageToken: pageToken,
 			Predicate: predicate,
+			ReadMask:  format.ArtifactMetadataReadMask(),
 		})
 		if err != nil {
 			if base.IsPermissionDenied(err) {
@@ -918,9 +919,7 @@ func queryInvocationArtifactsSorted(ctx context.Context, client rdbpb.ResultDBCl
 	if maxArtifacts > 0 && fetchLimit < maxQueryArtifactsPageSize {
 		fetchLimit = maxQueryArtifactsPageSize
 	}
-	artifacts, hasMorePages, err := queryInvocationArtifacts(ctx, client, cleanTarget, predicate, &fieldmaskpb.FieldMask{
-		Paths: []string{"name", "artifact_id", "content_type", "artifact_type", "size_bytes", "has_lines"},
-	}, fetchLimit)
+	artifacts, hasMorePages, err := queryInvocationArtifacts(ctx, client, cleanTarget, predicate, format.ArtifactMetadataReadMask(), fetchLimit)
 	if err != nil {
 		return nil, 0, false, err
 	}
