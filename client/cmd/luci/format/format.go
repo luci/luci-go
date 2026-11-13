@@ -1363,6 +1363,168 @@ func FprintRootInvocationCoreMetadata(out io.Writer, rootInv *rdbpb.RootInvocati
 	}
 }
 
+// extractSpongeInvocationUUID extracts the invocation UUID from a bare UUID or a
+// sponge2/fusion2 URL, returning "" if raw is empty or another URL host.
+func extractSpongeInvocationUUID(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return ""
+	}
+	if !strings.Contains(trimmed, "://") {
+		if strings.ContainsAny(trimmed, "/ \t\n") {
+			return ""
+		}
+		return trimmed
+	}
+	u, err := url.Parse(trimmed)
+	if err != nil {
+		return ""
+	}
+	host := strings.ToLower(u.Hostname())
+	if host != "sponge2" && host != "fusion2" && !strings.HasPrefix(host, "sponge2.") && !strings.HasPrefix(host, "fusion2.") {
+		return ""
+	}
+	p := strings.Trim(u.Path, "/")
+	p = strings.TrimPrefix(p, "invocations/")
+	if p != "" && p != "invocations" && !strings.Contains(p, "/") {
+		return p
+	}
+	if id := strings.TrimSpace(u.Query().Get("id")); id != "" && !strings.Contains(id, "/") {
+		return id
+	}
+	return ""
+}
+
+// FormatExternalResultHints returns ordered, actionable Next-steps bullets for
+// external Sponge2, Fusion2, or runner session links extracted from a RootInvocation.
+// When inner (SpongeInvocationID / TestURI) and outer (ResultLink) Sponge2 UUIDs
+// differ, it labels both and instructs callers to pass the bare UUID first.
+func FormatExternalResultHints(extInfo RootInvocationExternalInfo) []string {
+	testURIUUID := extractSpongeInvocationUUID(extInfo.TestURI)
+	innerUUID := extractSpongeInvocationUUID(extInfo.SpongeInvocationID)
+	if innerUUID == "" {
+		innerUUID = testURIUUID
+	}
+	resultUUID := extractSpongeInvocationUUID(extInfo.ResultLink)
+
+	if innerUUID != "" && resultUUID != "" && innerUUID != resultUUID {
+		innerLink := "http://sponge2/" + innerUUID
+		if testURIUUID == innerUUID && extInfo.TestURI != "" {
+			innerLink = extInfo.TestURI
+		}
+		hints := []string{
+			fmt.Sprintf("Inspect inner Sponge2 test targets/logs first (pass bare UUID --invocation_id=%s via sponge skill; %s)", innerUUID, innerLink),
+			fmt.Sprintf("Inspect outer session in Sponge2 if inner run is absent (pass bare UUID --invocation_id=%s; %s)", resultUUID, extInfo.ResultLink),
+		}
+		if extInfo.TestURI != "" && testURIUUID == "" && extInfo.TestURI != extInfo.ResultLink {
+			hints = append(hints, fmt.Sprintf("Inspect external test results at Test URI (%s)", extInfo.TestURI))
+		}
+		return hints
+	}
+
+	if innerUUID != "" {
+		link := "http://sponge2/" + innerUUID
+		if resultUUID == innerUUID && extInfo.ResultLink != "" {
+			link = extInfo.ResultLink
+		} else if testURIUUID == innerUUID && extInfo.TestURI != "" {
+			link = extInfo.TestURI
+		}
+		hints := []string{
+			fmt.Sprintf("Inspect external test results in Sponge2 (pass bare UUID --invocation_id=%s via sponge skill; %s)", innerUUID, link),
+		}
+		if extInfo.ResultLink != "" && resultUUID == "" {
+			hints = append(hints, fmt.Sprintf("Inspect external test results at Result Link (%s)", extInfo.ResultLink))
+		}
+		if extInfo.TestURI != "" && testURIUUID == "" && extInfo.TestURI != extInfo.ResultLink {
+			hints = append(hints, fmt.Sprintf("Inspect external test results at Test URI (%s)", extInfo.TestURI))
+		}
+		return hints
+	}
+
+	if resultUUID != "" {
+		link := extInfo.ResultLink
+		if link == "" {
+			link = "http://sponge2/" + resultUUID
+		}
+		hints := []string{
+			fmt.Sprintf("Inspect external test results in Sponge2 (pass bare UUID --invocation_id=%s via sponge skill; %s)", resultUUID, link),
+		}
+		if extInfo.TestURI != "" && testURIUUID == "" && extInfo.TestURI != extInfo.ResultLink {
+			hints = append(hints, fmt.Sprintf("Inspect external test results at Test URI (%s)", extInfo.TestURI))
+		}
+		return hints
+	}
+
+	switch {
+	case extInfo.ResultLink != "" && extInfo.TestURI != "" && extInfo.ResultLink != extInfo.TestURI:
+		return []string{fmt.Sprintf("Inspect external test results at Result Link (%s) or Test URI (%s)", extInfo.ResultLink, extInfo.TestURI)}
+	case extInfo.ResultLink != "":
+		return []string{fmt.Sprintf("Inspect external test results at Result Link (%s)", extInfo.ResultLink)}
+	case extInfo.TestURI != "":
+		return []string{fmt.Sprintf("Inspect external test results at Test URI (%s)", extInfo.TestURI)}
+	case extInfo.RunnerURL != "":
+		return []string{fmt.Sprintf("Inspect external test runner session at Runner URL (%s)", extInfo.RunnerURL)}
+	default:
+		return nil
+	}
+}
+
+// ZeroVerdictDiagnosticOptions configures contextual diagnostics printed when a
+// root invocation reports 0 ResultDB test verdicts ("0 tests ran").
+type ZeroVerdictDiagnosticOptions struct {
+	ModuleName         string
+	IncludeEmptyBanner bool
+	IncludeWorkUnitGet bool
+}
+
+// FprintZeroVerdictDiagnostics prints contextual 0-verdict notes (clarifying
+// Inv State: SUCCEEDED, static Failure Policy tags, and ants_cli boundaries)
+// and actionable Next steps (including outer vs. inner Sponge2 UUID hints) when
+// rootAgg reports 0 test verdicts. It is a no-op when rootAgg is nil or >0
+// verdicts exist.
+func FprintZeroVerdictDiagnostics(out io.Writer, invID string, rootInv *rdbpb.RootInvocation, rootAgg *rdbpb.TestAggregation, opts ZeroVerdictDiagnosticOptions) {
+	if out == nil || rootAgg == nil {
+		return
+	}
+	vc := rootAgg.GetTotalVerdictCounts()
+	if vc == nil || VerdictCountsTotal(vc) != 0 {
+		return
+	}
+
+	if opts.IncludeEmptyBanner {
+		fmt.Fprintf(out, "No test verdicts were uploaded to ResultDB for invocation %q (0 tests ran).\n", invID)
+	}
+
+	extInfo := ExtractRootInvocationExternalInfo(rootInv)
+	var notes []string
+	if rootInv != nil && rootInv.GetState() == rdbpb.RootInvocation_SUCCEEDED {
+		notes = append(notes, "Inv State: SUCCEEDED with 0 ResultDB verdicts only means the runner exited without a harness crash (it does not mean tests passed).")
+	}
+	if formatFailurePolicyTags(extInfo) != "" {
+		notes = append(notes, "Failure Policy reflects static test config, not a pass or failure verdict.")
+	}
+	if base.IsAntsInvocationID(invID) {
+		notes = append(notes, "Do not fall back to ants_cli when luci succeeds with 0 tests ran (ants_cli also reports 0 test results).")
+	}
+	if len(notes) > 0 {
+		fmt.Fprintf(out, "Note: %s\n", strings.Join(notes, " "))
+	}
+
+	quotedInv := base.ShellQuoteIfNeeded(invID)
+	fmt.Fprintln(out, "Next steps:")
+	if opts.ModuleName != "" {
+		fmt.Fprintf(out, "  - Inspect module state and setup errors: luci module get -invocationid=%s -modulename=%s\n",
+			quotedInv, base.ShellQuoteIfNeeded(opts.ModuleName))
+	}
+	if opts.IncludeWorkUnitGet {
+		fmt.Fprintf(out, "  - Inspect root work unit, child work units, and module states: luci work-unit get -invocationid=%s -workunitid=root\n", quotedInv)
+	}
+	fmt.Fprintf(out, "  - List invocation-level logs and artifacts: luci artifact list -invocationid=%s\n", quotedInv)
+	for _, hint := range FormatExternalResultHints(extInfo) {
+		fmt.Fprintf(out, "  - %s\n", hint)
+	}
+}
+
 // FprintRootInvocationMetadata prints populated RootInvocation build, branch, target,
 // sources, definition, external links, runner/failure policy tags, and state metadata to out.
 func FprintRootInvocationMetadata(out io.Writer, rootInv *rdbpb.RootInvocation) {

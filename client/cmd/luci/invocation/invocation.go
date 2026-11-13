@@ -267,5 +267,8 @@ func printInvocationDetails(ctx context.Context, out io.Writer, client pb.Result
 			fmt.Fprintln(out)
 			format.FprintRootInvocationAdditionalMetadata(out, rootInv)
 		}
+		format.FprintZeroVerdictDiagnostics(out, resolved.ID, rootInv, agg, format.ZeroVerdictDiagnosticOptions{
+			IncludeWorkUnitGet: true,
+		})
 	}
 }

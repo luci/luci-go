@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -605,29 +604,12 @@ func TestVerdictListRunAutoDetect(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   0 tests ran\n"))
 			assert.Loosely(t, out, should.NotContainSubstring("Summary:"))
 			assert.Loosely(t, out, should.ContainSubstring(`No test verdicts were uploaded to ResultDB for invocation "ants-i90900010658207079" (0 tests ran).`))
+			assert.Loosely(t, out, should.ContainSubstring("Note: Inv State: SUCCEEDED with 0 ResultDB verdicts only means the runner exited without a harness crash (it does not mean tests passed). Failure Policy reflects static test config, not a pass or failure verdict. Do not fall back to ants_cli when luci succeeds with 0 tests ran (ants_cli also reports 0 test results)."))
 			assert.Loosely(t, out, should.NotContainSubstring("-all-statuses"))
 			assert.Loosely(t, out, should.ContainSubstring("luci work-unit get -invocationid=ants-i90900010658207079 -workunitid=root"))
 			assert.Loosely(t, out, should.ContainSubstring("luci artifact list -invocationid=ants-i90900010658207079"))
-			assert.Loosely(t, out, should.ContainSubstring("Inspect external test results at Result Link (http://sponge2/3920feb1-7663-4085-b120-47a767784c3c) or Test URI (http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248)"))
-		})
-
-		t.Run(`formats single-link, identical-link, SpongeInvocationID, and RunnerURL external result hints`, func(t *ftt.Test) {
-			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
-				ResultLink: "http://sponge2/abc",
-			}), should.Equal("Inspect external test results at Result Link (http://sponge2/abc)"))
-			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
-				TestURI: "http://fusion2/def",
-			}), should.Equal("Inspect external test results at Test URI (http://fusion2/def)"))
-			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
-				ResultLink: "http://sponge2/same",
-				TestURI:    "http://sponge2/same",
-			}), should.Equal("Inspect external test results at Result Link (http://sponge2/same)"))
-			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
-				SpongeInvocationID: "19cd1c2a-4869-45ec-98a5-17651f29d248",
-			}), should.Equal("Inspect external test results for Sponge Invocation ID 19cd1c2a-4869-45ec-98a5-17651f29d248 (http://sponge2/19cd1c2a-4869-45ec-98a5-17651f29d248)"))
-			assert.Loosely(t, formatExternalResultHint(format.RootInvocationExternalInfo{
-				RunnerURL: "https://mobileharness-fe.corp.google.com/sessiondetailview/abc",
-			}), should.Equal("Inspect external test runner session at Runner URL (https://mobileharness-fe.corp.google.com/sessiondetailview/abc)"))
+			assert.Loosely(t, out, should.ContainSubstring("Inspect inner Sponge2 test targets/logs first (pass bare UUID --invocation_id=19cd1c2a-4869-45ec-98a5-17651f29d248 via sponge skill; http://fusion2/19cd1c2a-4869-45ec-98a5-17651f29d248)"))
+			assert.Loosely(t, out, should.ContainSubstring("Inspect outer session in Sponge2 if inner run is absent (pass bare UUID --invocation_id=3920feb1-7663-4085-b120-47a767784c3c; http://sponge2/3920feb1-7663-4085-b120-47a767784c3c)"))
 		})
 
 		t.Run(`prints distinct SummaryMarkdown on 0-verdict root invocation without external links`, func(t *ftt.Test) {

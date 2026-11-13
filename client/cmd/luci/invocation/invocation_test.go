@@ -345,6 +345,9 @@ func TestInvocationGet(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Module Statuses: [1 skipped] (1 total)\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   0 tests ran\n"))
 			assert.Loosely(t, out, should.NotContainSubstring("Summary:"))
+			assert.Loosely(t, out, should.ContainSubstring("Note: Inv State: SUCCEEDED with 0 ResultDB verdicts"))
+			assert.Loosely(t, out, should.ContainSubstring("luci work-unit get -invocationid=ants-i90900010658207079 -workunitid=root"))
+			assert.Loosely(t, out, should.ContainSubstring("--invocation_id=19cd1c2a-4869-45ec-98a5-17651f29d248 via sponge skill"))
 
 			// Distinct multi-line SummaryMarkdown is printed without trailing spaces on blank lines.
 			rootInv.SummaryMarkdown = "Setup failed\n\nDevice offline"

@@ -302,6 +302,9 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 
 	artifact.PrintWorkUnitAndAncestorNotices(rpcCtx, client, []string{clean}, os.Stdout)
+	if isRoot && resolved.RootInvocation != nil {
+		format.FprintZeroVerdictDiagnostics(os.Stdout, invID, resolved.RootInvocation, rootAgg, format.ZeroVerdictDiagnosticOptions{})
+	}
 
 	return 0
 }

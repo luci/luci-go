@@ -970,6 +970,95 @@ func TestPrintFailureReason(t *testing.T) {
 			assert.Loosely(t, FetchRootInvocationAggregation(context.Background(), errClient, "ants-i1"), should.BeNil)
 		})
 
+		t.Run(`FormatExternalResultHints and FprintZeroVerdictDiagnostics`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				ResultLink: "http://sponge2/abc",
+			}), should.Resemble([]string{
+				"Inspect external test results in Sponge2 (pass bare UUID --invocation_id=abc via sponge skill; http://sponge2/abc)",
+			}))
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				TestURI: "http://fusion2/def",
+			}), should.Resemble([]string{
+				"Inspect external test results in Sponge2 (pass bare UUID --invocation_id=def via sponge skill; http://fusion2/def)",
+			}))
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				ResultLink: "http://sponge2/same",
+				TestURI:    "http://sponge2/same",
+			}), should.Resemble([]string{
+				"Inspect external test results in Sponge2 (pass bare UUID --invocation_id=same via sponge skill; http://sponge2/same)",
+			}))
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				SpongeInvocationID: "19cd1c2a-4869-45ec-98a5-17651f29d248",
+			}), should.Resemble([]string{
+				"Inspect external test results in Sponge2 (pass bare UUID --invocation_id=19cd1c2a-4869-45ec-98a5-17651f29d248 via sponge skill; http://sponge2/19cd1c2a-4869-45ec-98a5-17651f29d248)",
+			}))
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				ResultLink:         "https://android-build.corp.google.com/test_investigate/invocation/I123",
+				SpongeInvocationID: "19cd1c2a-4869-45ec-98a5-17651f29d248",
+			}), should.Resemble([]string{
+				"Inspect external test results in Sponge2 (pass bare UUID --invocation_id=19cd1c2a-4869-45ec-98a5-17651f29d248 via sponge skill; http://sponge2/19cd1c2a-4869-45ec-98a5-17651f29d248)",
+				"Inspect external test results at Result Link (https://android-build.corp.google.com/test_investigate/invocation/I123)",
+			}))
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				ResultLink:         "http://sponge2/outer-uuid",
+				SpongeInvocationID: "inner-uuid",
+				TestURI:            "https://android-build.corp.google.com/test_investigate/invocation/I123",
+			}), should.Resemble([]string{
+				"Inspect inner Sponge2 test targets/logs first (pass bare UUID --invocation_id=inner-uuid via sponge skill; http://sponge2/inner-uuid)",
+				"Inspect outer session in Sponge2 if inner run is absent (pass bare UUID --invocation_id=outer-uuid; http://sponge2/outer-uuid)",
+				"Inspect external test results at Test URI (https://android-build.corp.google.com/test_investigate/invocation/I123)",
+			}))
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				ResultLink: "http://sponge2/outer-uuid",
+				TestURI:    "https://android-build.corp.google.com/test_investigate/invocation/I123",
+			}), should.Resemble([]string{
+				"Inspect external test results in Sponge2 (pass bare UUID --invocation_id=outer-uuid via sponge skill; http://sponge2/outer-uuid)",
+				"Inspect external test results at Test URI (https://android-build.corp.google.com/test_investigate/invocation/I123)",
+			}))
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				ResultLink: "http://sponge2/invocations",
+			}), should.Resemble([]string{
+				"Inspect external test results at Result Link (http://sponge2/invocations)",
+			}))
+			assert.Loosely(t, FormatExternalResultHints(RootInvocationExternalInfo{
+				RunnerURL: "https://mobileharness-fe.corp.google.com/sessiondetailview/abc",
+			}), should.Resemble([]string{
+				"Inspect external test runner session at Runner URL (https://mobileharness-fe.corp.google.com/sessiondetailview/abc)",
+			}))
+
+			rootInv := &rdbpb.RootInvocation{
+				State: rdbpb.RootInvocation_SUCCEEDED,
+				Tags: []*rdbpb.StringPair{
+					{Key: "failure_status", Value: "presubmit_error"},
+					{Key: "result_link", Value: "http://sponge2/outer-uuid"},
+					{Key: "sponge_invocation_id", Value: "inner-uuid"},
+					{Key: "test_uri", Value: "http://fusion2/inner-uuid"},
+				},
+			}
+			zeroAgg := &rdbpb.TestAggregation{TotalVerdictCounts: &rdbpb.TestAggregation_VerdictCounts{}}
+			var buf bytes.Buffer
+			FprintZeroVerdictDiagnostics(&buf, "ants-i123", rootInv, zeroAgg, ZeroVerdictDiagnosticOptions{
+				IncludeEmptyBanner: false,
+				IncludeWorkUnitGet: false,
+			})
+			out := buf.String()
+			assert.Loosely(t, out, should.NotContainSubstring("No test verdicts were uploaded"))
+			assert.Loosely(t, out, should.ContainSubstring("Note: Inv State: SUCCEEDED with 0 ResultDB verdicts"))
+			assert.Loosely(t, out, should.ContainSubstring("Failure Policy reflects static test config"))
+			assert.Loosely(t, out, should.ContainSubstring("Do not fall back to ants_cli"))
+			assert.Loosely(t, out, should.NotContainSubstring("luci work-unit get"))
+			assert.Loosely(t, out, should.ContainSubstring("luci artifact list -invocationid=ants-i123"))
+			assert.Loosely(t, out, should.ContainSubstring("--invocation_id=inner-uuid via sponge skill; http://fusion2/inner-uuid"))
+			assert.Loosely(t, out, should.ContainSubstring("--invocation_id=outer-uuid; http://sponge2/outer-uuid"))
+
+			// No-op when non-zero verdicts exist.
+			buf.Reset()
+			FprintZeroVerdictDiagnostics(&buf, "ants-i123", rootInv, &rdbpb.TestAggregation{
+				TotalVerdictCounts: &rdbpb.TestAggregation_VerdictCounts{Passed: 1},
+			}, ZeroVerdictDiagnosticOptions{IncludeEmptyBanner: true, IncludeWorkUnitGet: true})
+			assert.Loosely(t, buf.String(), should.BeEmpty)
+		})
+
 		t.Run(`FprintWorkUnitMetadata`, func(t *ftt.Test) {
 			wuProps, _ := structpb.NewStruct(map[string]any{"abi": "x86_64"})
 			wu := &rdbpb.WorkUnit{

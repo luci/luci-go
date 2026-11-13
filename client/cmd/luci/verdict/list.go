@@ -533,23 +533,6 @@ func QueryVerdictList(ctx context.Context, client pb.ResultDBClient, invID strin
 	return QueryRootInvocationListedVerdicts(ctx, client, invID, filter, maxVerdicts)
 }
 
-func formatExternalResultHint(extInfo format.RootInvocationExternalInfo) string {
-	switch {
-	case extInfo.ResultLink != "" && extInfo.TestURI != "" && extInfo.ResultLink != extInfo.TestURI:
-		return fmt.Sprintf("Inspect external test results at Result Link (%s) or Test URI (%s)", extInfo.ResultLink, extInfo.TestURI)
-	case extInfo.ResultLink != "":
-		return fmt.Sprintf("Inspect external test results at Result Link (%s)", extInfo.ResultLink)
-	case extInfo.TestURI != "":
-		return fmt.Sprintf("Inspect external test results at Test URI (%s)", extInfo.TestURI)
-	case extInfo.SpongeInvocationID != "":
-		return fmt.Sprintf("Inspect external test results for Sponge Invocation ID %s (http://sponge2/%s)", extInfo.SpongeInvocationID, extInfo.SpongeInvocationID)
-	case extInfo.RunnerURL != "":
-		return fmt.Sprintf("Inspect external test runner session at Runner URL (%s)", extInfo.RunnerURL)
-	default:
-		return ""
-	}
-}
-
 func printEmptyRootInvocationVerdicts(out io.Writer, invID string, rootInv *pb.RootInvocation, rootAgg *pb.TestAggregation, filter statusFilter) {
 	vc := rootAgg.GetTotalVerdictCounts()
 	total := format.VerdictCountsTotal(vc)
@@ -557,19 +540,11 @@ func printEmptyRootInvocationVerdicts(out io.Writer, invID string, rootInv *pb.R
 	if vc != nil && total == 0 {
 		format.FprintRootInvocationAggregationSummary(out, rootAgg)
 		format.FprintRootInvocationSummary(out, rootInv.GetSummaryMarkdown(), rootInv)
-		quotedInv := base.ShellQuoteIfNeeded(invID)
-		fmt.Fprintf(out, "No test verdicts were uploaded to ResultDB for invocation %q (0 tests ran).\n", invID)
-		fmt.Fprintln(out, "Next steps:")
-		if filter.moduleName != "" {
-			fmt.Fprintf(out, "  - Inspect module state and setup errors: luci module get -invocationid=%s -modulename=%s\n",
-				quotedInv, base.ShellQuoteIfNeeded(filter.moduleName))
-		}
-		fmt.Fprintf(out, "  - Inspect root work unit and module states: luci work-unit get -invocationid=%s -workunitid=root\n", quotedInv)
-		fmt.Fprintf(out, "  - List invocation-level logs and artifacts: luci artifact list -invocationid=%s\n", quotedInv)
-		extInfo := format.ExtractRootInvocationExternalInfo(rootInv)
-		if extHint := formatExternalResultHint(extInfo); extHint != "" {
-			fmt.Fprintf(out, "  - %s\n", extHint)
-		}
+		format.FprintZeroVerdictDiagnostics(out, invID, rootInv, rootAgg, format.ZeroVerdictDiagnosticOptions{
+			ModuleName:         filter.moduleName,
+			IncludeEmptyBanner: true,
+			IncludeWorkUnitGet: true,
+		})
 		return
 	}
 

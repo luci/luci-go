@@ -573,6 +573,45 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, strings.Count(outRootMeta, "Failure Policy:"), should.Equal(1))
 			assert.Loosely(t, outRootMeta, should.ContainSubstring("Primary Build: branch=git_main build_target=cf_x86_64_phone-trunk_staging-userdebug build_id=12345678\n"))
 
+			// Zero-verdict root invocation prints contextual Note and Next steps without duplicate work-unit get.
+			clientZero := &mockWorkUnitResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:              in.Name,
+						State:             pb.RootInvocation_SUCCEEDED,
+						FinalizationState: pb.RootInvocation_FINALIZED,
+						Tags: []*pb.StringPair{
+							{Key: "result_link", Value: "http://sponge2/outer-111"},
+							{Key: "sponge_invocation_id", Value: "inner-222"},
+							{Key: "test_uri", Value: "http://fusion2/inner-222"},
+							{Key: "failure_status", Value: "presubmit_error"},
+						},
+					}, nil
+				},
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{Name: in.Name, WorkUnitId: "root", State: pb.WorkUnit_SUCCEEDED}, nil
+				},
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{Skipped: 1},
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+							},
+						},
+					}, nil
+				},
+			}
+			rZero := &workUnitGetRun{client: clientZero, invocationID: "ants-i90900010658207079", workUnitID: "root"}
+			outZero := testutil.CaptureStdout(func() {
+				assert.Loosely(t, rZero.Run(nil, nil, nil), should.Equal(0))
+			})
+			assert.Loosely(t, outZero, should.ContainSubstring("Note: Inv State: SUCCEEDED with 0 ResultDB verdicts"))
+			assert.Loosely(t, outZero, should.NotContainSubstring("luci work-unit get"))
+			assert.Loosely(t, outZero, should.ContainSubstring("luci artifact list -invocationid=ants-i90900010658207079"))
+			assert.Loosely(t, outZero, should.ContainSubstring("--invocation_id=inner-222 via sponge skill; http://fusion2/inner-222"))
+			assert.Loosely(t, outZero, should.ContainSubstring("--invocation_id=outer-111; http://sponge2/outer-111"))
+
 			// Empty wu.SummaryMarkdown on root does not leak redundant RootInvocation.SummaryMarkdown via Layer 3.
 			origGetRootInv := client.getRootInvocation
 			origGetWU := client.getWorkUnit
