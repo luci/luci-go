@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -55,7 +56,7 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 		LongDesc: "Query LUCI Analysis TestHistory for a test ID across recent builds to inspect per-variant\n" +
 			"pass, flaky, failed, and exonerated counts (TestHistory.QueryStats) alongside recent verdicts\n" +
 			"(TestHistory.Query) with -invocationid and -varianthash flags ready for 'luci verdict get'.\n\n" +
-			"Accepts a positional URL/ID <target>, a flat/encoded -testid, a partial -test-substring\n" +
+			"Accepts a positional URL/ID <target>, a flat/encoded/partial -testid, a partial -test-substring\n" +
 			"(resolved via TestHistory.QueryTests), or structured test ID flags (-modulename, -scheme, -coarse, -fine, -case).\n\n" +
 			"Examples:\n" +
 			"  luci analysis test-history https://ci.chromium.org/ui/test/turquoise/fuchsia-pkg%3A%2F%2Ffuchsia.com%2Fnetstack-fidl-test%23meta%2Fnetstack-fidl-test.cm\n" +
@@ -73,10 +74,10 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.AnalysisHost, "LUCI Analysis host")
 			r.Flags.StringVar(&r.project, "project", "", "LUCI project (required, e.g. chromium, turquoise)")
-			r.Flags.StringVar(&r.testID, "testid", "", "Flat or structured test ID to query history for")
+			r.Flags.StringVar(&r.testID, "testid", "", "Flat, structured, or partial test ID to query history for")
 			r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 			r.Flags.StringVar(&r.testSubstring, "test-substring", "", "Substring of test ID or test name to search via TestHistory.QueryTests (e.g. Suite#Case or Suite.Case)")
-			r.Flags.BoolVar(&r.caseInsensitive, "case-insensitive", false, "Match -test-substring case-insensitively")
+			r.Flags.BoolVar(&r.caseInsensitive, "case-insensitive", false, "Match -test-substring (or partial -testid fallback) case-insensitively")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Structured test ID module name (e.g. //chrome/test:browser_tests)")
 			r.Flags.StringVar(&r.moduleName, "module-name", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.moduleScheme, "scheme", "", "Structured test ID scheme (e.g. gtest, junit, webtest)")
@@ -217,6 +218,7 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 
+	fromPositionalTarget := extracted != nil && extracted.TestID != "" && !explicitTestID
 	var resolvedTestID string
 	if hasTestSubstring {
 		if explicitTestID || testIDExplicit {
@@ -237,8 +239,14 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		}
 	} else {
 		if r.caseInsensitive {
-			ids.PrintMissingFlagsError(errOut, extracted, "-case-insensitive requires -test-substring")
-			return 1
+			if hasStructuredFlags {
+				ids.PrintMissingFlagsError(errOut, extracted, "-case-insensitive cannot be combined with structured test ID flags (-modulename, -scheme, -case)")
+				return 1
+			}
+			if fromPositionalTarget {
+				ids.PrintMissingFlagsError(errOut, extracted, "-case-insensitive cannot be combined with a positional target containing a test ID")
+				return 1
+			}
 		}
 		resolvedTestID, err = resolveTestHistoryTestID(r.testID, r.moduleName, r.moduleScheme, r.coarseName, r.fineName, r.caseName)
 		if err != nil {
@@ -259,6 +267,27 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	if !hasTestSubstring && strings.TrimSpace(resolvedTestID) == "" {
 		ids.PrintMissingFlagsError(errOut, extracted, "missing required -testid flag (or -test-substring, or -modulename, -scheme, -case)")
 		return 1
+	}
+	canonicalInput := isCanonicalTestIDInput(resolvedTestID, hasStructuredFlags, fromPositionalTarget)
+	directSubstringMode := hasTestSubstring
+	displayQuery := testSubstring
+	subQuery := testSubstring
+	if !hasTestSubstring {
+		if err := validateMalformedStructuredTestID(resolvedTestID); err != nil {
+			clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
+			ids.PrintMissingFlagsError(errOut, extracted, err.Error())
+			return 1
+		}
+		if !canonicalInput && pbutil.ValidateTestID(resolvedTestID, pbutil.QuerySideTestIDLimitCallback) != nil {
+			directSubstringMode = true
+			displayQuery = resolvedTestID
+			subQuery = strings.TrimLeft(resolvedTestID, ":")
+			if err := validateTestIDSubstring("-testid", subQuery); err != nil {
+				clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
+				ids.PrintMissingFlagsError(errOut, extracted, err.Error())
+				return 1
+			}
+		}
 	}
 	if r.days <= 0 {
 		fmt.Fprintf(errOut, "-days must be positive, got %d\n", r.days)
@@ -299,26 +328,35 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 
 	var resolvedFromSubstring string
 	var resolvedRanked []string
-	if testSubstring != "" {
-		searchRes, err := queryMatchingTests(ctx, thClient, project, subRealm, testSubstring, r.caseInsensitive)
+	// Route directly to TestHistory.QueryTests when -test-substring is specified or when
+	// a non-canonical -testid is not valid Spanner TestID syntax (e.g. ':Suite#Case' or '*fixture').
+	if directSubstringMode {
+		searchRes, err := queryMatchingTests(ctx, thClient, project, subRealm, subQuery, r.caseInsensitive)
 		if err != nil {
 			fmt.Fprintf(errOut, "%s\n", err)
 			return 1
 		}
-		resolvedCandidate, ranked := rankAndResolveSubstringCandidates(searchRes.TestIDs, testSubstring, searchRes.CaseInsensitive, searchRes.Truncated)
+		resolvedCandidate, ranked := rankAndResolveSubstringCandidates(searchRes.TestIDs, subQuery, searchRes.CaseInsensitive, searchRes.Truncated)
 		if len(ranked) == 0 {
+			var nextStep string
+			suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, subQuery, r.caseInsensitive)
+			if len(suggestions) > 0 {
+				nextStep = formatTestHistoryReRunCommand(project, suggestions[0], subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+			}
+			clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
 			ids.PrintDerivedIDs(out, extracted)
-			printNoSubstringMatches(out, project, subRealm, testSubstring)
+			printNoSubstringMatches(out, project, subRealm, displayQuery, suggestions, nextStep)
 			return 0
 		}
 		if resolvedCandidate == "" {
+			clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
 			ids.PrintDerivedIDs(out, extracted)
-			printSubstringDisambiguation(out, project, subRealm, testSubstring, ranked, searchRes.Truncated, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+			printSubstringDisambiguation(out, project, subRealm, displayQuery, ranked, searchRes.Truncated, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
 			return 0
 		}
 
 		resolvedTestID = resolvedCandidate
-		resolvedFromSubstring = testSubstring
+		resolvedFromSubstring = displayQuery
 		resolvedRanked = ranked
 	}
 
@@ -344,6 +382,57 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		populateAlternateMatches(report, resolvedRanked, project, subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
 	}
 
+	if len(report.VariantStats) == 0 && len(report.Verdicts) == 0 {
+		if !directSubstringMode && !canonicalInput && validateTestIDSubstring("-testid", resolvedTestID) == nil {
+			// Non-canonical -testid (e.g. 'Class#method' or 'Suite.Case') had 0 Spanner rows;
+			// fall back to TestHistory.QueryTests discovery.
+			if searchRes, qErr := queryMatchingTests(ctx, thClient, project, subRealm, resolvedTestID, r.caseInsensitive); qErr == nil {
+				resolvedCandidate, ranked := rankAndResolveSubstringCandidates(searchRes.TestIDs, resolvedTestID, searchRes.CaseInsensitive, searchRes.Truncated)
+				switch {
+				case slices.Contains(ranked, resolvedTestID):
+					if len(r.variants) == 0 {
+						populateAlternateMatches(report, ranked, project, subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+						if len(report.DidYouMeanTestIDs) == 0 {
+							if suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, resolvedTestID, r.caseInsensitive); len(suggestions) > 0 {
+								report.DidYouMeanTestIDs = suggestions
+								report.DidYouMeanNextStep = formatTestHistoryReRunCommand(project, suggestions[0], subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+							}
+						}
+					}
+				case resolvedCandidate != "" && resolvedCandidate != resolvedTestID:
+					subQuery := resolvedTestID
+					resolvedReport, hErr := fetchTestHistory(ctx, thClient, project, resolvedCandidate, subRealm, r.variants, r.days, r.limit, !limitExplicit, now)
+					if hErr != nil {
+						fmt.Fprintf(errOut, "%s\n", hErr)
+						return 1
+					}
+					resolvedReport.ResolvedFromSubstring = subQuery
+					resolvedReport.MatchedTestIDCount = len(ranked)
+					populateAlternateMatches(resolvedReport, ranked, project, subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+					report = resolvedReport
+					resolvedTestID = resolvedCandidate
+				case resolvedCandidate == "" && len(ranked) > 0:
+					clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
+					ids.PrintDerivedIDs(out, extracted)
+					printSubstringDisambiguation(out, project, subRealm, resolvedTestID, ranked, searchRes.Truncated, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+					return 0
+				case len(ranked) == 0 && len(r.variants) == 0:
+					if suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, resolvedTestID, r.caseInsensitive); len(suggestions) > 0 {
+						report.DidYouMeanTestIDs = suggestions
+						report.DidYouMeanNextStep = formatTestHistoryReRunCommand(project, suggestions[0], subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+					}
+				}
+			}
+		} else if canonicalInput && len(r.variants) == 0 {
+			// Canonical test ID had 0 Spanner rows and no variant filter narrowed it:
+			// never auto-resolve to a superstring, only offer best-effort leaf suggestions.
+			if suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, resolvedTestID, r.caseInsensitive); len(suggestions) > 0 {
+				report.DidYouMeanTestIDs = suggestions
+				report.DidYouMeanNextStep = formatTestHistoryReRunCommand(project, suggestions[0], subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+			}
+		}
+	}
+
 	enrichExtractedWithTestID(extracted, resolvedTestID)
 	ids.PrintDerivedIDs(out, extracted)
 	if err := printTestHistoryReport(ctx, out, schemasClient, report); err != nil {
@@ -367,6 +456,17 @@ func enrichExtractedWithTestID(extracted *ids.ExtractedIDs, resolvedTestID strin
 	}
 	if extracted.ModuleName == "" {
 		extracted.ModuleName = base.ExtractModuleNameFromTestID(extracted.TestID)
+	}
+}
+
+func clearUnresolvedExtractedTestID(extracted *ids.ExtractedIDs, fromPositionalTarget bool) {
+	if extracted == nil || fromPositionalTarget {
+		return
+	}
+	derivedMod := base.ExtractModuleNameFromTestID(extracted.TestID)
+	extracted.TestID = ""
+	if derivedMod != "" && extracted.ModuleName == derivedMod {
+		extracted.ModuleName = ""
 	}
 }
 
@@ -751,7 +851,11 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 
 	if len(report.VariantStats) == 0 && len(report.Verdicts) == 0 {
 		fmt.Fprintf(out, "\nNo test history found in the last %d days.\n", report.Days)
-		printDidYouMeanSuggestions(out, "Other matching test IDs:", report.DidYouMeanTestIDs, maxDidYouMeanSuggestions, report.DidYouMeanNextStep)
+		heading := "Did you mean one of these test IDs?"
+		if report.ResolvedFromSubstring != "" {
+			heading = "Other matching test IDs:"
+		}
+		printDidYouMeanSuggestions(out, heading, report.DidYouMeanTestIDs, maxDidYouMeanSuggestions, report.DidYouMeanNextStep)
 		return nil
 	}
 

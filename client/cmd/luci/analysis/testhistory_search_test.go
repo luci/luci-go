@@ -606,6 +606,318 @@ func TestTestHistorySubstringSearch(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("No matching test IDs found in the last 90 days."))
 		})
 
+		t.Run("Offers leaf Did-you-mean suggestions when -test-substring returns 0 matches", func(t *ftt.Test) {
+			const actualID = `://chrome/test\:browser_tests!gtest::WebAppBrowserTest#BrowserDisplayNotInstallable`
+			var substringsQueried []string
+			thMock := &mockTestHistoryClient{
+				queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+					substringsQueried = append(substringsQueried, in.GetTestIdSubstring())
+					if in.GetTestIdSubstring() == "BrowserDisplayNotInstallable" {
+						return &analysispb.QueryTestsResponse{TestIds: []string{actualID}}, nil
+					}
+					return &analysispb.QueryTestsResponse{}, nil
+				},
+			}
+
+			code, out, errOut := execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-variant", "builder:linux-rel", "-test-substring", "WrongSuite#BrowserDisplayNotInstallable")
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, errOut, should.BeEmpty)
+			assert.Loosely(t, substringsQueried, should.Match([]string{
+				"WrongSuite#BrowserDisplayNotInstallable",
+				"WrongSuite#BrowserDisplayNotInstallable",
+				"BrowserDisplayNotInstallable",
+			}))
+			assert.Loosely(t, out, should.ContainSubstring("No matching test IDs found in the last 90 days."))
+			assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- "+actualID))
+			assert.Loosely(t, out, should.ContainSubstring("Next step:\n  luci analysis test-history -project chromium -variant builder:linux-rel -testid '"+actualID+"'"))
+
+			// Common file extensions (e.g. .html, .cm, .js) are not extracted as leaf method tokens,
+			// and '#' takes precedence over '/' so parameterized GTest queries keep 'Case/Inst.Param'.
+			assert.Loosely(t, extractLeafSuggestionToken("external_wpt_test.html"), should.BeEmpty)
+			assert.Loosely(t, extractLeafSuggestionToken("Suite.BrowserDisplayNotInstallable"), should.Equal("BrowserDisplayNotInstallable"))
+			assert.Loosely(t, extractLeafSuggestionToken("WrongSuite#MyCase/All.0"), should.Equal("MyCase/All.0"))
+		})
+
+		t.Run("Implicit -testid fallback and canonical -testid guard", func(t *ftt.Test) {
+			const canonicalID = `://chrome/test\:browser_tests!gtest::WebAppBrowserTest#MyCase`
+			const interactiveID = `://chrome/test\:interactive_ui_tests!gtest::WebAppBrowserTest#MyCase`
+			const superstringID = `://chrome/test\:browser_tests!gtest::WebAppBrowserTest#MyCaseWithParam`
+
+			t.Run("Non-canonical -testid (e.g. Class#method) falls back to QueryTests when Spanner returns 0 rows", func(t *ftt.Test) {
+				var statsTestIDs []string
+				thMock := &mockTestHistoryClient{
+					queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+						assert.Loosely(t, in.GetTestIdSubstring(), should.Equal("WebAppBrowserTest#MyCase"))
+						assert.Loosely(t, in.GetSubRealm(), should.Equal("try"))
+						return &analysispb.QueryTestsResponse{TestIds: []string{canonicalID}}, nil
+					},
+					queryStats: func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
+						statsTestIDs = append(statsTestIDs, in.GetTestId())
+						if in.GetTestId() == canonicalID {
+							assert.Loosely(t, in.GetPredicate().GetVariantPredicate().GetContains().GetDef()["builder"], should.Equal("linux-rel"))
+							return &analysispb.QueryTestHistoryStatsResponse{
+								Groups: []*analysispb.QueryTestHistoryStatsResponse_Group{
+									{
+										VariantHash:   "hash-try",
+										VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Failed: 1},
+									},
+								},
+							}, nil
+						}
+						return &analysispb.QueryTestHistoryStatsResponse{}, nil
+					},
+				}
+
+				code, out, errOut := execTestHistoryCmd(
+					thMock,
+					fixedNow,
+					"-project", "chromium",
+					"-subrealm", "chromium:try",
+					"-variant", "builder:linux-rel",
+					"-testid", "WebAppBrowserTest#MyCase",
+				)
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, statsTestIDs, should.Match([]string{"WebAppBrowserTest#MyCase", canonicalID}))
+				assert.Loosely(t, out, should.ContainSubstring(`Resolved:  "WebAppBrowserTest#MyCase" -> `+canonicalID))
+			})
+
+			t.Run("Non-canonical -testid disambiguates multi-module matches without printing unresolved Test ID", func(t *ftt.Test) {
+				thMock := &mockTestHistoryClient{
+					queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+						return &analysispb.QueryTestsResponse{TestIds: []string{interactiveID, canonicalID}}, nil
+					},
+				}
+
+				// Pass a positional rule URL so extracted != nil and clearUnresolvedExtractedTestID is exercised.
+				ruleURL := "https://luci-analysis.appspot.com/p/chromium/rules/0123456789abcdef0123456789abcdef"
+				code, out, errOut := execTestHistoryCmd(thMock, fixedNow, ruleURL, "-testid", "WebAppBrowserTest#MyCase")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, out, should.ContainSubstring("Rule ID:           0123456789abcdef0123456789abcdef"))
+				assert.Loosely(t, out, should.NotContainSubstring("Test ID:"))
+				assert.Loosely(t, out, should.ContainSubstring("Multiple matching test IDs found (2); specify exact -testid to view history:"))
+			})
+
+			t.Run("Non-Spanner partial -testid (':' or '*' prefix) routes directly to QueryTests; malformed structured -testid fails fast", func(t *ftt.Test) {
+				var statsTestIDs []string
+				var queriedSubstrings []string
+				thMock := &mockTestHistoryClient{
+					queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+						queriedSubstrings = append(queriedSubstrings, in.GetTestIdSubstring())
+						return &analysispb.QueryTestsResponse{TestIds: []string{canonicalID}}, nil
+					},
+					queryStats: func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
+						statsTestIDs = append(statsTestIDs, in.GetTestId())
+						return &analysispb.QueryTestHistoryStatsResponse{
+							Groups: []*analysispb.QueryTestHistoryStatsResponse_Group{
+								{
+									VariantHash:   "hash-1",
+									VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Passed: 3},
+								},
+							},
+						}, nil
+					},
+				}
+
+				code, out, errOut := execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", ":WebAppBrowserTest.MyCase")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, statsTestIDs, should.Match([]string{canonicalID}))
+				assert.Loosely(t, out, should.ContainSubstring(`Resolved:  ":WebAppBrowserTest.MyCase" -> `+canonicalID))
+
+				// '*' prefix is invalid in Spanner ValidateTestID (`*fixture` reserved) and routes directly to QueryTests
+				statsTestIDs = nil
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", "*fixture")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, statsTestIDs, should.Match([]string{canonicalID}))
+				assert.Loosely(t, queriedSubstrings, should.Match([]string{"WebAppBrowserTest.MyCase", "*fixture"}))
+				assert.Loosely(t, out, should.ContainSubstring(`Resolved:  "*fixture" -> `+canonicalID))
+
+				code, _, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", ":")
+				assert.Loosely(t, code, should.Equal(1))
+				assert.Loosely(t, errOut, should.ContainSubstring("-testid cannot be empty"))
+
+				// Hand-constructed structured ID with unescaped ':' in module name fails fast with '\:' hint
+				// and does not print the invalid Test ID in derived IDs when a positional rule URL is passed.
+				ruleURL := "https://luci-analysis.appspot.com/p/chromium/rules/0123456789abcdef0123456789abcdef"
+				code, _, errOut = execTestHistoryCmd(thMock, fixedNow, ruleURL, "-testid", "://chrome/test:browser_tests!gtest::WebAppBrowserTest#MyCase")
+				assert.Loosely(t, code, should.Equal(1))
+				assert.Loosely(t, errOut, should.ContainSubstring("invalid structured -testid"))
+				assert.Loosely(t, errOut, should.ContainSubstring(`escape ':' in module names as '\:'`))
+				assert.Loosely(t, errOut, should.NotContainSubstring("Test ID:"))
+
+				// Hand-constructed structured ID with empty case after '#' also fails fast
+				code, _, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", `://chrome/test\:browser_tests!gtest::WebAppBrowserTest#`)
+				assert.Loosely(t, code, should.Equal(1))
+				assert.Loosely(t, errOut, should.ContainSubstring("invalid structured -testid"))
+			})
+
+			t.Run("Flat legacy -testid with 0 7d Spanner rows offers alternate 90d matches or leaf suggestions", func(t *ftt.Test) {
+				thMock := &mockTestHistoryClient{
+					queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+						switch in.GetTestIdSubstring() {
+						case "tast.arc.Boot":
+							// Exact legacy ID exists in 90d index alongside a sibling; resolvedCandidate == resolvedTestID
+							return &analysispb.QueryTestsResponse{TestIds: []string{"tast.arc.Boot", "tast.arc.BootV2"}}, nil
+						case "tast.arc.Boot.vm":
+							// Exact legacy ID coexists with structured Tast ID (resolvedCandidate == "")
+							return &analysispb.QueryTestsResponse{TestIds: []string{"tast.arc.Boot.vm", ":tast!tast::arc#Boot:vm"}}, nil
+						case "OldSuite.MyCase":
+							// Only the exact flat ID exists under "OldSuite.MyCase", so leaf fallback queries "MyCase"
+							return &analysispb.QueryTestsResponse{TestIds: []string{"OldSuite.MyCase"}}, nil
+						case "MyCase":
+							return &analysispb.QueryTestsResponse{TestIds: []string{canonicalID}}, nil
+						default:
+							return &analysispb.QueryTestsResponse{}, nil
+						}
+					},
+				}
+
+				code, out, errOut := execTestHistoryCmd(thMock, fixedNow, "-project", "chromeos", "-testid", "tast.arc.Boot")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, out, should.NotContainSubstring("Resolved:"))
+				assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- tast.arc.BootV2"))
+
+				// When resolvedCandidate == resolvedTestID has no sibling matches, falls back to leaf "MyCase"
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", "OldSuite.MyCase")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, out, should.NotContainSubstring("Resolved:"))
+				assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- "+canonicalID))
+
+				// Non-canonical -testid with 0 Spanner rows and 0 QueryTests("WrongSuite#MyCase") matches falls back to leaf "MyCase"
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", "WrongSuite#MyCase")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, out, should.NotContainSubstring("Resolved:"))
+				assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- "+canonicalID))
+
+				// Exact flat legacy -testid coexisting with structured ID renders empty report + Did you mean
+				// (rather than trapping in a self-referential disambiguation loop), and omits unfiltered suggestions with -variant.
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromeos", "-testid", "tast.arc.Boot.vm")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, out, should.NotContainSubstring("Multiple matching test IDs found"))
+				assert.Loosely(t, out, should.ContainSubstring("No test history found in the last 7 days."))
+				assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- :tast!tast::arc#Boot:vm"))
+
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromeos", "-variant", "board:eve", "-testid", "tast.arc.Boot.vm")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, out, should.NotContainSubstring("Multiple matching test IDs found"))
+				assert.Loosely(t, out, should.ContainSubstring("No test history found in the last 7 days."))
+				assert.Loosely(t, out, should.NotContainSubstring("Did you mean"))
+			})
+
+			t.Run("Does not call QueryTests when Spanner returns history", func(t *ftt.Test) {
+				queryTestsCalled := false
+				thMock := &mockTestHistoryClient{
+					queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+						queryTestsCalled = true
+						return &analysispb.QueryTestsResponse{}, nil
+					},
+					queryStats: func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
+						return &analysispb.QueryTestHistoryStatsResponse{
+							Groups: []*analysispb.QueryTestHistoryStatsResponse_Group{
+								{
+									VariantHash:   "hash-1",
+									VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Passed: 5},
+								},
+							},
+						}, nil
+					},
+				}
+
+				code, _, errOut := execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", "flat_test_with_history")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, queryTestsCalled, should.BeFalse)
+			})
+
+			t.Run("Canonical -testid or positional target with 0 Spanner rows never auto-resolves to superstrings", func(t *ftt.Test) {
+				var statsTestIDs []string
+				var leafQueries []string
+				thMock := &mockTestHistoryClient{
+					queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+						leafQueries = append(leafQueries, in.GetTestIdSubstring())
+						switch in.GetTestIdSubstring() {
+						case "Boot":
+							return &analysispb.QueryTestsResponse{TestIds: []string{"tast.arc.BootPerf"}}, nil
+						case "WebAppBrowserTest":
+							return &analysispb.QueryTestsResponse{TestIds: []string{canonicalID}}, nil
+						default:
+							assert.Loosely(t, in.GetTestIdSubstring(), should.Equal("MyCase"))
+							// Return canonicalID itself plus a superstring: canonicalID must be filtered out,
+							// and superstringID must ONLY appear as a suggestion, never auto-resolved.
+							return &analysispb.QueryTestsResponse{TestIds: []string{canonicalID, superstringID}}, nil
+						}
+					},
+					queryStats: func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
+						statsTestIDs = append(statsTestIDs, in.GetTestId())
+						return &analysispb.QueryTestHistoryStatsResponse{}, nil
+					},
+				}
+
+				code, out, errOut := execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", canonicalID)
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, statsTestIDs, should.Match([]string{canonicalID}))
+				assert.Loosely(t, leafQueries, should.Match([]string{"MyCase"}))
+				assert.Loosely(t, out, should.NotContainSubstring("Resolved:"))
+				assert.Loosely(t, out, should.ContainSubstring("No test history found in the last 7 days."))
+				assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- "+superstringID+"\n"))
+
+				// '<scheme>://' legacy test URI is also guarded as canonical and extracts leaf token via '/:' + '.'
+				statsTestIDs = nil
+				leafQueries = nil
+				legacyNinjaID := "ninja://chrome/test:browser_tests/WebAppBrowserTest.MyCase"
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", legacyNinjaID)
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, statsTestIDs, should.Match([]string{legacyNinjaID}))
+				assert.Loosely(t, leafQueries, should.Match([]string{"MyCase"}))
+				assert.Loosely(t, out, should.NotContainSubstring("Resolved:"))
+				assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- "+canonicalID+"\n"))
+
+				// Structured '*fixture' ID queries FineName instead of noisy '*fixture' across the project
+				statsTestIDs = nil
+				leafQueries = nil
+				fixtureID := `://chrome/test\:browser_tests!gtest::WebAppBrowserTest#*fixture`
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", fixtureID)
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, statsTestIDs, should.Match([]string{fixtureID}))
+				assert.Loosely(t, leafQueries, should.Match([]string{"WebAppBrowserTest"}))
+				assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- "+canonicalID+"\n"))
+
+				// When -variant is set on a canonical test ID, skip leaf QueryTests altogether.
+				leafQueries = nil
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-variant", "builder:linux-rel", "-testid", canonicalID)
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, leafQueries, should.BeEmpty)
+				assert.Loosely(t, out, should.NotContainSubstring("Did you mean"))
+
+				// Positional Milo URL with a flat non-`://` test ID is also guarded as canonical (fromPositionalTarget)
+				statsTestIDs = nil
+				code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "https://ci.chromium.org/ui/test/chromeos/tast.arc.Boot")
+				assert.Loosely(t, code, should.Equal(0))
+				assert.Loosely(t, errOut, should.BeEmpty)
+				assert.Loosely(t, statsTestIDs, should.Match([]string{"tast.arc.Boot"}))
+				assert.Loosely(t, out, should.NotContainSubstring("Resolved:"))
+				assert.Loosely(t, out, should.ContainSubstring("Did you mean one of these test IDs?\n- tast.arc.BootPerf\n"))
+
+				// Short escaped structured case (< 4 bytes unescaped) returns "" instead of raw escaped leaf,
+				// while non-tast multi-component CaseName uses the trailing case component.
+				assert.Loosely(t, extractLeafSuggestionToken(`:mod!gtest::Suite#a\:b`), should.BeEmpty)
+				assert.Loosely(t, extractLeafSuggestionToken(`:devtools!mocha:coarse:fine#describeA:describeB:itDoesThing`), should.Equal("itDoesThing"))
+				assert.Loosely(t, extractLeafSuggestionToken(`:tast!tast::arc#Boot:vm`), should.Equal("Boot.vm"))
+			})
+		})
+
 		t.Run("Validates -test-substring flag combinations, length limits, and positional project target", func(t *ftt.Test) {
 			thMock := &mockTestHistoryClient{}
 
@@ -630,15 +942,21 @@ func TestTestHistorySubstringSearch(t *testing.T) {
 			assert.Loosely(t, code, should.Equal(1))
 			assert.Loosely(t, errOut, should.ContainSubstring("invalid -test-substring"))
 
-			code, _, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", "foo", "-case-insensitive")
+			// -case-insensitive is rejected with structured flags or positional test ID targets,
+			// but accepted with partial -testid fallback.
+			code, _, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-modulename", "//m", "-scheme", "gtest", "-case", "c", "-case-insensitive")
 			assert.Loosely(t, code, should.Equal(1))
-			assert.Loosely(t, errOut, should.ContainSubstring("-case-insensitive requires -test-substring"))
+			assert.Loosely(t, errOut, should.ContainSubstring("-case-insensitive cannot be combined with structured test ID flags"))
+
+			miloURL := "https://ci.chromium.org/ui/test/turquoise/fuchsia-pkg%3A%2F%2Ffuchsia.com%2Fnetstack%23meta%2Ftest.cm"
+			code, _, errOut = execTestHistoryCmd(thMock, fixedNow, miloURL, "-case-insensitive")
+			assert.Loosely(t, code, should.Equal(1))
+			assert.Loosely(t, errOut, should.ContainSubstring("-case-insensitive cannot be combined with a positional target containing a test ID"))
 
 			code, _, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-modulename", "//m", "-scheme", "gtest", "-case", "c", "-test-substring", "bar")
 			assert.Loosely(t, code, should.Equal(1))
 			assert.Loosely(t, errOut, should.ContainSubstring("specify either -test-substring or structured test ID flags"))
 
-			miloURL := "https://ci.chromium.org/ui/test/turquoise/fuchsia-pkg%3A%2F%2Ffuchsia.com%2Fnetstack%23meta%2Ftest.cm"
 			code, _, errOut = execTestHistoryCmd(thMock, fixedNow, miloURL, "-test-substring", "netstack")
 			assert.Loosely(t, code, should.Equal(1))
 			assert.Loosely(t, errOut, should.ContainSubstring("specify either -test-substring or a positional target containing a test ID, not both"))
@@ -647,10 +965,15 @@ func TestTestHistorySubstringSearch(t *testing.T) {
 			assert.Loosely(t, code, should.Equal(1))
 			assert.Loosely(t, errOut, should.ContainSubstring("longer than 512 bytes"))
 
-			// Positional rule URL supplying -project (without a test ID) works alongside -test-substring
+			// Positional rule URL supplying -project (without a test ID) works alongside -test-substring,
+			// and -testid + -case-insensitive forwards CaseInsensitive: true on fallback.
 			const resolvedID = `://chrome/test\:browser_tests!gtest::WebAppBrowserTest#MyCase`
+			var sawCaseInsensitiveFallback bool
 			thMock.queryTests = func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
 				assert.Loosely(t, in.GetProject(), should.Equal("chromium"))
+				if in.GetTestIdSubstring() == "webappbrowsertest#mycase" {
+					sawCaseInsensitiveFallback = in.GetCaseInsensitive()
+				}
 				return &analysispb.QueryTestsResponse{TestIds: []string{resolvedID}}, nil
 			}
 			ruleURL := "https://luci-analysis.appspot.com/p/chromium/rules/0123456789abcdef0123456789abcdef"
@@ -659,6 +982,12 @@ func TestTestHistorySubstringSearch(t *testing.T) {
 			assert.Loosely(t, errOut, should.BeEmpty)
 			assert.Loosely(t, out, should.ContainSubstring("Module Name:       //chrome/test:browser_tests"))
 			assert.Loosely(t, out, should.ContainSubstring(`Resolved:  "WebAppBrowserTest#MyCase" -> `+resolvedID))
+
+			code, out, errOut = execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", "webappbrowsertest#mycase", "-case-insensitive")
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, errOut, should.BeEmpty)
+			assert.Loosely(t, sawCaseInsensitiveFallback, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring(`Resolved:  "webappbrowsertest#mycase" -> `+resolvedID))
 
 			// enrichExtractedWithTestID preserves pre-existing ModuleName when resolving to a legacy test ID without ':mod!'
 			ext := &ids.ExtractedIDs{ModuleName: "existing_module"}

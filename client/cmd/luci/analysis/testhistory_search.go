@@ -33,6 +33,7 @@ const (
 	maxMatchingTestsShown      = 20
 	maxDidYouMeanSuggestions   = 10
 	maxOtherMatchesWithHistory = 3
+	minLeafSuggestionTokenByte = 4
 )
 
 type testSubstringSearchResult struct {
@@ -62,6 +63,43 @@ func validateTestIDSubstring(flagName, val string) error {
 		return errors.Fmt("invalid %s: %w", flagName, err)
 	}
 	return nil
+}
+
+// isCanonicalTestIDInput reports whether testID came from an unambiguous canonical source
+// (structured flags, a positional URL/resource target, a syntactically valid ':module!scheme:...'
+// structured ID, or a '<scheme>://...' legacy test URI such as 'ninja://' or 'fuchsia-pkg://')
+// as opposed to a short/partial '-testid' input (e.g. 'Suite#Case' or ':Suite#Case').
+func isCanonicalTestIDInput(testID string, fromStructuredFlags, fromPositionalTarget bool) bool {
+	if fromStructuredFlags || fromPositionalTarget {
+		return true
+	}
+	if pbutil.IsStructuredTestID(testID) {
+		return pbutil.ValidateTestID(testID, pbutil.QuerySideTestIDLimitCallback) == nil
+	}
+	return strings.Contains(testID, "://")
+}
+
+// validateMalformedStructuredTestID returns an error when testID appears to be a hand-constructed
+// ':module!scheme:...' structured test ID (starts with ':' and has '!' before any '#') that fails
+// ResultDB structured test ID syntax validation, rather than a short ':Suite#Case' partial query.
+func validateMalformedStructuredTestID(testID string) error {
+	if !pbutil.IsStructuredTestID(testID) {
+		return nil
+	}
+	bang := strings.IndexByte(testID, '!')
+	hash := strings.IndexByte(testID, '#')
+	if bang < 0 || (hash >= 0 && bang > hash) {
+		return nil
+	}
+	err := pbutil.ValidateTestID(testID, pbutil.QuerySideTestIDLimitCallback)
+	if err == nil {
+		return nil
+	}
+	strippedMod := strings.ReplaceAll(strings.ReplaceAll(testID[1:bang], `\\`, ""), `\:`, "")
+	if strings.Contains(strippedMod, ":") {
+		return errors.Fmt("invalid structured -testid: %w (hint: escape ':' in module names as '\\:', or pass -modulename, -scheme, -case)", err)
+	}
+	return errors.Fmt("invalid structured -testid: %w", err)
 }
 
 // queryMatchingTests searches LUCI Analysis's 90-day test_realms index via TestHistory.QueryTests,
@@ -605,6 +643,70 @@ func matchesLegacyNinjaRest(rest string, parsed pbutil.BaseTestIdentifier, unesc
 	return slices.Contains(forms, rest)
 }
 
+// fetchLeafSuggestions runs a best-effort QueryTests search using the trailing case/leaf token
+// of query (e.g. 'MyCase' from 'WrongSuite#MyCase' or ':mod!gtest::Suite#MyCase') to populate
+// 'Did you mean' suggestions without ever auto-resolving.
+func fetchLeafSuggestions(ctx context.Context, client analysispb.TestHistoryClient, project, subRealm, query string, caseInsensitive bool) []string {
+	leaf := extractLeafSuggestionToken(query)
+	if leaf == "" || validateTestIDSubstring("-testid", leaf) != nil {
+		return nil
+	}
+	res, err := queryMatchingTests(ctx, client, project, subRealm, leaf, caseInsensitive)
+	if err != nil || res == nil || len(res.TestIDs) == 0 {
+		return nil
+	}
+	_, ranked := rankAndResolveSubstringCandidates(res.TestIDs, leaf, res.CaseInsensitive, res.Truncated)
+	filtered := make([]string, 0, len(ranked))
+	for _, id := range ranked {
+		if id != query {
+			filtered = append(filtered, id)
+		}
+	}
+	return filtered
+}
+
+func extractLeafSuggestionToken(query string) string {
+	if pbutil.IsStructuredTestID(query) {
+		if parsed, err := pbutil.ParseAndValidateTestID(query, pbutil.QuerySideTestIDLimitCallback); err == nil {
+			if parsed.CaseName == pbutil.FixtureCaseName {
+				if parsed.FineName != "" && parsed.FineName != "-" && len(parsed.FineName) >= minLeafSuggestionTokenByte {
+					return parsed.FineName
+				}
+				return ""
+			}
+			parts := splitStructuredCaseComponents(parsed.CaseName)
+			leaf := strings.Join(parts, ".")
+			if len(parts) > 1 && parsed.ModuleScheme != "tast" {
+				leaf = parts[len(parts)-1]
+			}
+			if leaf != "" && leaf != query && len(leaf) >= minLeafSuggestionTokenByte {
+				return leaf
+			}
+			return ""
+		}
+	}
+	var leaf string
+	if idx := strings.LastIndexByte(query, '#'); idx >= 0 {
+		leaf = query[idx+1:]
+	} else if idx := strings.LastIndexAny(query, "/:"); idx >= 0 {
+		leaf = query[idx+1:]
+		if dot := strings.LastIndexByte(leaf, '.'); dot >= 0 {
+			if cand := leaf[dot+1:]; !isCommonTestFileExtension(cand) && len(cand) >= minLeafSuggestionTokenByte {
+				leaf = cand
+			}
+		}
+	} else if idx := strings.LastIndexByte(query, '.'); idx >= 0 {
+		cand := query[idx+1:]
+		if !isCommonTestFileExtension(cand) {
+			leaf = cand
+		}
+	}
+	if leaf == "" || leaf == query || len(leaf) < minLeafSuggestionTokenByte {
+		return ""
+	}
+	return leaf
+}
+
 func populateAlternateMatches(
 	report *testHistoryReport,
 	ranked []string,
@@ -670,9 +772,10 @@ func printSubstringSearchHeader(out io.Writer, project, subRealm, query string) 
 	fmt.Fprintf(out, "Query:     %q\n", query)
 }
 
-func printNoSubstringMatches(out io.Writer, project, subRealm, query string) {
+func printNoSubstringMatches(out io.Writer, project, subRealm, query string, suggestions []string, nextStep string) {
 	printSubstringSearchHeader(out, project, subRealm, query)
 	fmt.Fprintf(out, "\nNo matching test IDs found in the last 90 days.\n")
+	printDidYouMeanSuggestions(out, "Did you mean one of these test IDs?", suggestions, maxDidYouMeanSuggestions, nextStep)
 }
 
 func printSubstringDisambiguation(
