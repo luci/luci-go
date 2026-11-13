@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 import { CommonStageAttemptDetails as CommonStageAttemptDetailsProto } from '@/proto/turboci/data/stage/v1/common_stage_attempt_details.pb';
 
 import { DetailRow } from './detail_row';
+import { SafeViewLink } from './safe_view_link';
 
 export function CommonStageAttemptDetails({
   data,
@@ -35,15 +36,7 @@ export function CommonStageAttemptDetails({
         <DetailRow
           key={idx}
           label={label}
-          value={
-            details.url ? (
-              <Link href={details.url} target="_blank" rel="noopener">
-                {details.url}
-              </Link>
-            ) : (
-              'N/A'
-            )
-          }
+          value={details.url ? <SafeViewLink url={details.url} /> : 'N/A'}
         />
       ))}
     </Box>

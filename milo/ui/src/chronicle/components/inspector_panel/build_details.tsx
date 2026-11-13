@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 import {
   BuildCheckOptions,
@@ -21,6 +21,7 @@ import {
 import { BuildCheckResults } from '@/proto/turboci/data/build/v1/build_check_results.pb';
 
 import { DetailRow } from './detail_row';
+import { SafeViewLink } from './safe_view_link';
 
 export function BuildCheckOptionsDetails({
   data,
@@ -51,11 +52,7 @@ export function BuildCheckResultDetails({ data }: { data: BuildCheckResults }) {
       {data.viewUrl && (
         <DetailRow
           label="View URL"
-          value={
-            <Link href={data.viewUrl} target="_blank" rel="noopener">
-              {data.viewUrl}
-            </Link>
-          }
+          value={<SafeViewLink url={data.viewUrl} />}
         />
       )}
       {data.androidBuildArtifacts && (

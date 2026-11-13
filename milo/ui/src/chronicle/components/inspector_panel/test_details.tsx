@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Link } from '@mui/material';
+import { Box } from '@mui/material';
 
 import { TestCheckDescriptionOption } from '@/proto/turboci/data/test/v1/test_check_description_option.pb';
 import { TestCheckSummaryResult } from '@/proto/turboci/data/test/v1/test_check_summary_result.pb';
 
 import { DetailRow } from './detail_row';
+import { SafeViewLink } from './safe_view_link';
 
 export function TestCheckDescriptionOptionDetails({
   data,
@@ -53,11 +54,7 @@ export function TestCheckSummaryResultDetails({
       {data.viewUrl && (
         <DetailRow
           label="View URL"
-          value={
-            <Link href={data.viewUrl} target="_blank" rel="noopener">
-              {data.viewUrl}
-            </Link>
-          }
+          value={<SafeViewLink url={data.viewUrl} />}
         />
       )}
     </Box>

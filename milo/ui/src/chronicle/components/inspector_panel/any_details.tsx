@@ -169,7 +169,12 @@ export function AnyDetails({
     return <ParseError />;
   }
 
-  const typeRenderer = typeUrl ? KNOWN_TYPE_RENDERERS[typeUrl] : undefined;
+  // `typeUrl` is untrusted. Only match own keys so that a value such as
+  // "toString" does not resolve to a property inherited from Object.prototype.
+  const typeRenderer =
+    typeUrl && Object.hasOwn(KNOWN_TYPE_RENDERERS, typeUrl)
+      ? KNOWN_TYPE_RENDERERS[typeUrl]
+      : undefined;
   if (typeRenderer && renderMode !== RenderMode.Json) {
     const { component: Renderer, fromJson } = typeRenderer;
     const typedData = fromJson ? fromJson(parsedData) : parsedData;
