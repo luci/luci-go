@@ -94,6 +94,7 @@ type verdictGetRun struct {
 	af           *base.AuthFlags
 	client       pb.ResultDBClient
 	out          io.Writer
+	errOut       io.Writer
 	host         string
 	invocationID string
 	testID       string
@@ -119,13 +120,17 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		r.Flags.Usage()
 		return 0
 	}
+	errOut := r.errOut
+	if errOut == nil {
+		errOut = os.Stderr
+	}
 	target, err := base.ParsePositionalTarget(&r.Flags, args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(errOut, "%s\n", err)
 		return 1
 	}
 	if target == "" && (r.invocationID == "" || r.testID == "") {
-		fmt.Fprintf(os.Stderr, "flags -invocationid and -testid (or a positional URL/ID) are required\n")
+		fmt.Fprintf(errOut, "flags -invocationid and -testid (or a positional URL/ID) are required\n")
 		return 1
 	}
 
@@ -136,13 +141,13 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 	var httpClient *http.Client
 	if client == nil && r.af != nil {
 		if err := r.af.Parse(); err != nil {
-			fmt.Fprintf(os.Stderr, "failed to parse auth flags: %s\n", err)
+			fmt.Fprintf(errOut, "failed to parse auth flags: %s\n", err)
 			return 1
 		}
 		var err error
 		client, schemasClient, httpClient, err = r.af.NewResultDBClient(ctx, r.host)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to create resultdb client: %s\n", err)
+			fmt.Fprintf(errOut, "failed to create resultdb client: %s\n", err)
 			return 1
 		}
 	}
@@ -153,17 +158,17 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		VariantHash:  &r.variantHash,
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to extract IDs from %q: %s\n", target, err)
+		fmt.Fprintf(errOut, "failed to extract IDs from %q: %s\n", target, err)
 		return 1
 	}
 	if r.invocationID == "" || r.testID == "" {
-		ids.PrintMissingFlagsError(os.Stderr, extracted, "flags -invocationid and -testid (or a positional URL/ID containing them) are required")
+		ids.PrintMissingFlagsError(errOut, extracted, "flags -invocationid and -testid (or a positional URL/ID containing them) are required")
 		return 1
 	}
 
 	resolved, err := base.ResolveInvocation(ctx, client, r.invocationID)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to query verdict: %s\n", err)
+		fmt.Fprintf(errOut, "failed to query verdict: %s\n", err)
 		return 1
 	}
 	format.CacheResolvedInvocation(ctx, resolved)
@@ -179,17 +184,16 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 
 	verdictResults, exList, hasMore, err := QueryVerdictResultsAndExonerations(ctx, client, invID, r.testID, r.variantHash, legacy, maxFetch)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to query verdict: %s\n", err)
+		fmt.Fprintf(errOut, "failed to query verdict: %s\n", err)
 		return 1
 	}
 	if len(verdictResults) == 0 {
+		fmt.Fprintf(errOut, "no results found for test %q in invocation %q (try 'luci verdict list -invocationid %s' to list failing verdicts in this invocation)\n", r.testID, invID, invID)
 		if strings.HasSuffix(r.testID, "#.") || strings.HasSuffix(r.testID, ".#") || !strings.Contains(r.testID, "#") {
 			modName := strings.TrimSuffix(r.testID, "#.")
 			modName = strings.TrimSuffix(modName, ".#")
 			modName = strings.TrimPrefix(modName, ":")
-			fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q (if this was a module error, try: luci module get -invocationid %s -modulename %s)\n", r.testID, invID, invID, modName)
-		} else {
-			fmt.Fprintf(os.Stderr, "no results found for test %q in invocation %q\n", r.testID, invID)
+			fmt.Fprintf(errOut, "Hint: if this was a module error, try: luci module get -invocationid %s -modulename %s\n", base.ShellQuoteIfNeeded(invID), base.ShellQuoteIfNeeded(modName))
 		}
 		return 1
 	}

@@ -318,6 +318,71 @@ func TestCmdVerdict(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Result ID:         res-1"))
 			assert.Loosely(t, out, should.ContainSubstring("Invocation:   ants-i123"))
 		})
+
+		t.Run(`verdictGetRun suggests verdict list when no results are found for a test ID`, func(t *ftt.Test) {
+			client := &mockAggResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+			}
+			var outBuf, errBuf bytes.Buffer
+			run := getCmd.CommandRun().(*verdictGetRun)
+			run.client = client
+			run.out = &outBuf
+			run.errOut = &errBuf
+			run.invocationID = "ants-i123"
+			run.testID = ":ModA!junit:pkg:Cls#testMissing"
+			rc := run.Run(nil, nil, nil)
+			assert.Loosely(t, rc, should.Equal(1))
+			assert.Loosely(t, outBuf.String(), should.BeEmpty)
+			assert.Loosely(t, errBuf.String(), should.Equal(
+				"no results found for test \":ModA!junit:pkg:Cls#testMissing\" in invocation \"ants-i123\" (try 'luci verdict list -invocationid ants-i123' to list failing verdicts in this invocation)\n",
+			))
+		})
+
+		t.Run(`verdictGetRun suggests verdict list and module get for module-style test ID with no results`, func(t *ftt.Test) {
+			client := &mockAggResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+			}
+			var outBuf, errBuf bytes.Buffer
+			run := getCmd.CommandRun().(*verdictGetRun)
+			run.client = client
+			run.out = &outBuf
+			run.errOut = &errBuf
+			run.invocationID = "ants-i123"
+			run.testID = ":MyModule#."
+			rc := run.Run(nil, nil, nil)
+			assert.Loosely(t, rc, should.Equal(1))
+			assert.Loosely(t, outBuf.String(), should.BeEmpty)
+			assert.Loosely(t, errBuf.String(), should.Equal(
+				"no results found for test \":MyModule#.\" in invocation \"ants-i123\" (try 'luci verdict list -invocationid ants-i123' to list failing verdicts in this invocation)\n"+
+					"Hint: if this was a module error, try: luci module get -invocationid ants-i123 -modulename MyModule\n",
+			))
+		})
+
+		t.Run(`verdictGetRun suggests verdict list for flat test ID without # when no results are found`, func(t *ftt.Test) {
+			client := &mockAggResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+			}
+			var outBuf, errBuf bytes.Buffer
+			run := getCmd.CommandRun().(*verdictGetRun)
+			run.client = client
+			run.out = &outBuf
+			run.errOut = &errBuf
+			run.invocationID = "build-123"
+			run.testID = "ninja://chrome/test:browser_tests/Suite.Test"
+			rc := run.Run(nil, nil, nil)
+			assert.Loosely(t, rc, should.Equal(1))
+			assert.Loosely(t, outBuf.String(), should.BeEmpty)
+			assert.Loosely(t, errBuf.String(), should.Equal(
+				"no results found for test \"ninja://chrome/test:browser_tests/Suite.Test\" in invocation \"build-123\" (try 'luci verdict list -invocationid build-123' to list failing verdicts in this invocation)\n"+
+					"Hint: if this was a module error, try: luci module get -invocationid build-123 -modulename ninja://chrome/test:browser_tests/Suite.Test\n",
+			))
+		})
 	})
 }
 
