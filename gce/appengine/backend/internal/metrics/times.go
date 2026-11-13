@@ -56,6 +56,16 @@ var (
 		field.String("server"),
 		field.String("zone"),
 	)
+
+	reimageTime = metric.NewCumulativeDistribution(
+		"gce/instances/times/reimage",
+		"Time between GCE Provider sending an instances.update reimage request and observing the reimaged instance RUNNING.",
+		&types.MetricMetadata{Units: types.Seconds},
+		distribution.GeometricBucketer(1.1, 100),
+		field.String("prefix"),
+		field.String("project"),
+		field.String("zone"),
+	)
 )
 
 // ReportCreationTime sets GCE instance creation time metric.
@@ -71,4 +81,10 @@ func ReportConnectionTime(c context.Context, secs float64, prefix, project, serv
 // ReportBotConnectionTime sets Swarming bot connection time metric.
 func ReportBotConnectionTime(c context.Context, secs float64, prefix, project, resourceGroup, server, zone string) {
 	botConnectionTime.Add(c, secs, prefix, project, resourceGroup, server, zone)
+}
+
+// ReportReimageTime records the duration in seconds of a completed in-place
+// GCE instance reimage.
+func ReportReimageTime(c context.Context, secs float64, prefix, project, zone string) {
+	reimageTime.Add(c, secs, prefix, project, zone)
 }

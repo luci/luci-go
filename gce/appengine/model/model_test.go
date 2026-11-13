@@ -170,6 +170,131 @@ func TestVM(t *testing.T) {
 		})
 	})
 
+	ftt.Run("ReimageDisks", t, func(t *ftt.Test) {
+		vm := &VM{
+			Attributes: config.VM{
+				Disk: []*config.Disk{
+					{
+						Image:     "global/images/new-boot",
+						Size:      50,
+						Type:      "zones/zone/diskTypes/hyperdisk-balanced",
+						Interface: config.DiskInterface_NVME,
+					},
+					{
+						Image:                 "global/images/new-data",
+						Size:                  100,
+						Type:                  "zones/zone/diskTypes/hyperdisk-balanced",
+						Interface:             config.DiskInterface_NVME,
+						ProvisionedIops:       3500,
+						ProvisionedThroughput: 150,
+					},
+				},
+			},
+		}
+		existing := []*compute.AttachedDisk{
+			{
+				AutoDelete:      true,
+				Boot:            true,
+				DeviceName:      "persistent-disk-0",
+				DiskSizeGb:      50,
+				GuestOsFeatures: []*compute.GuestOsFeature{{Type: "GVNIC"}},
+				Interface:       "NVME",
+				Licenses:        []string{"old-license"},
+				Mode:            "READ_WRITE",
+				Source:          "https://compute/disks/prefix-0-abcd",
+				Type:            "PERSISTENT",
+			},
+			{
+				AutoDelete: true,
+				Boot:       false,
+				DeviceName: "persistent-disk-1",
+				DiskSizeGb: 100,
+				Interface:  "NVME",
+				Mode:       "READ_WRITE",
+				Source:     "https://compute/disks/prefix-0-abcd-data",
+				Type:       "PERSISTENT",
+			},
+		}
+
+		t.Run("recreates all disks and clears source fields", func(t *ftt.Test) {
+			got, err := vm.ReimageDisks(existing)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, got, should.HaveLength(2))
+			assert.Loosely(t, got[0].Source, should.BeEmpty)
+			assert.Loosely(t, got[0].Licenses, should.BeEmpty)
+			assert.Loosely(t, got[0].GuestOsFeatures, should.BeEmpty)
+			assert.Loosely(t, got[0].DiskSizeGb, should.BeZero)
+			assert.Loosely(t, got[0].AutoDelete, should.BeTrue)
+			assert.Loosely(t, got[0].Boot, should.BeTrue)
+			assert.Loosely(t, got[0].DeviceName, should.Equal("persistent-disk-0"))
+			assert.Loosely(t, got[0].Interface, should.Equal("NVME"))
+			assert.Loosely(t, got[0].Mode, should.Equal("READ_WRITE"))
+			assert.Loosely(t, got[0].Type, should.Equal("PERSISTENT"))
+			assert.Loosely(t, got[0].InitializeParams.SourceImage, should.Equal("global/images/new-boot"))
+			assert.Loosely(t, got[0].InitializeParams.DiskSizeGb, should.Equal(int64(50)))
+			assert.Loosely(t, got[0].InitializeParams.DiskType, should.Equal("zones/zone/diskTypes/hyperdisk-balanced"))
+			assert.Loosely(t, got[0].InitializeParams.OnUpdateAction, should.Equal("RECREATE_DISK"))
+			assert.Loosely(t, got[1].AutoDelete, should.BeTrue)
+			assert.Loosely(t, got[1].Boot, should.BeFalse)
+			assert.Loosely(t, got[1].DeviceName, should.Equal("persistent-disk-1"))
+			assert.Loosely(t, got[1].Interface, should.Equal("NVME"))
+			assert.Loosely(t, got[1].Mode, should.Equal("READ_WRITE"))
+			assert.Loosely(t, got[1].Type, should.Equal("PERSISTENT"))
+			assert.Loosely(t, got[1].InitializeParams.SourceImage, should.Equal("global/images/new-data"))
+			assert.Loosely(t, got[1].InitializeParams.DiskSizeGb, should.Equal(int64(100)))
+			assert.Loosely(t, got[1].InitializeParams.DiskType, should.Equal("zones/zone/diskTypes/hyperdisk-balanced"))
+			assert.Loosely(t, got[1].InitializeParams.ProvisionedIops, should.Equal(int64(3500)))
+			assert.Loosely(t, got[1].InitializeParams.ProvisionedThroughput, should.Equal(int64(150)))
+			assert.Loosely(t, got[1].InitializeParams.OnUpdateAction, should.Equal("RECREATE_DISK"))
+		})
+
+		t.Run("empty disks", func(t *ftt.Test) {
+			_, err := (&VM{}).ReimageDisks(nil)
+			assert.Loosely(t, err, should.ErrLike("instance has 0 disk(s), config has 0"))
+		})
+
+		t.Run("count mismatch", func(t *ftt.Test) {
+			_, err := vm.ReimageDisks(existing[:1])
+			assert.Loosely(t, err, should.ErrLike("instance has 1 disk(s), config has 2"))
+		})
+
+		t.Run("nil disk", func(t *ftt.Test) {
+			_, err := vm.ReimageDisks([]*compute.AttachedDisk{existing[0], nil})
+			assert.Loosely(t, err, should.ErrLike("disk 1: existing disk is nil"))
+		})
+
+		t.Run("scratch disk", func(t *ftt.Test) {
+			scratch := *existing[1]
+			scratch.Type = "SCRATCH"
+			_, err := vm.ReimageDisks([]*compute.AttachedDisk{existing[0], &scratch})
+			assert.Loosely(t, err, should.ErrLike("disk 1: scratch disks cannot be recreated in place"))
+		})
+
+		t.Run("configured scratch disk", func(t *ftt.Test) {
+			scratchVM := &VM{
+				Attributes: config.VM{
+					Disk: []*config.Disk{
+						vm.Attributes.Disk[0],
+						{
+							Image: "global/images/new-data",
+							Size:  375,
+							Type:  "zones/zone/diskTypes/local-ssd",
+						},
+					},
+				},
+			}
+			_, err := scratchVM.ReimageDisks(existing)
+			assert.Loosely(t, err, should.ErrLike("disk 1: scratch disks cannot be recreated in place"))
+		})
+
+		t.Run("boot mismatch", func(t *ftt.Test) {
+			nonBoot := *existing[0]
+			nonBoot.Boot = false
+			_, err := vm.ReimageDisks([]*compute.AttachedDisk{&nonBoot, existing[1]})
+			assert.Loosely(t, err, should.ErrLike("disk 0: boot flag false does not match configured true"))
+		})
+	})
+
 	ftt.Run("getConfidentialInstanceConfig", t, func(t *ftt.Test) {
 		t.Run("zero", func(t *ftt.Test) {
 			t.Run("empty", func(t *ftt.Test) {

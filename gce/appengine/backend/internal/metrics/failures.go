@@ -56,6 +56,17 @@ var (
 		field.String("zone"),
 		field.Int("rotations"),
 	)
+
+	reimageCount = metric.NewCounter(
+		"gce/instances/reimages",
+		"Cumulative number of GCE instance in-place reimage counts by status and reason.",
+		nil,
+		field.String("prefix"),
+		field.String("project"),
+		field.String("zone"),
+		field.String("status"),
+		field.String("reason"),
+	)
 )
 
 // DefaultFailureReason is the fallback failure reason recorded when a specific
@@ -89,4 +100,15 @@ func UpdateZoneRotations(c context.Context, vm *model.VM) {
 		origZone = vm.Attributes.GetZone()
 	}
 	zoneRotations.Add(c, int64(1), vm.Prefix, vm.Attributes.GetProject(), origZone, vm.Attributes.GetZone(), vm.FallbackZoneRotations)
+}
+
+// UpdateReimageCount increments the in-place reimage outcome counter with the
+// given status ("success", "abandoned", or "skipped") and reason (e.g. "none",
+// "timeout", "drained", "operation_error", "instance_status", "api_error",
+// "disk_mismatch").
+func UpdateReimageCount(c context.Context, status, reason string, vm *model.VM) {
+	if reason == "" {
+		reason = DefaultFailureReason
+	}
+	reimageCount.Add(c, int64(1), vm.Prefix, vm.Attributes.GetProject(), vm.Attributes.GetZone(), status, reason)
 }

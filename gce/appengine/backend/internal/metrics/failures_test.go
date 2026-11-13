@@ -67,5 +67,13 @@ func TestFailures(t *testing.T) {
 		rotationFields := []any{"prefix", "project", "us-central1-c", "us-central1-b", 2}
 		UpdateZoneRotations(c, vm)
 		assert.Loosely(t, s.Get(c, zoneRotations, rotationFields).(int64), should.Equal(1))
+
+		reimageSuccessFields := []any{"prefix", "project", "us-central1-b", "success", "none"}
+		UpdateReimageCount(c, "success", "none", vm)
+		assert.Loosely(t, s.Get(c, reimageCount, reimageSuccessFields).(int64), should.Equal(1))
+
+		reimageUnknownFields := []any{"prefix", "project", "us-central1-b", "abandoned", DefaultFailureReason}
+		UpdateReimageCount(c, "abandoned", "", vm)
+		assert.Loosely(t, s.Get(c, reimageCount, reimageUnknownFields).(int64), should.Equal(1))
 	})
 }

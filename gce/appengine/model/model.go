@@ -22,6 +22,7 @@ import (
 	computealpha "google.golang.org/api/compute/v0.alpha"
 	compute "google.golang.org/api/compute/v1"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/gce/api/config/v1"
@@ -104,9 +105,11 @@ type VM struct {
 	// ConfigExpanded is the Unix time when the GCE instance was configured, i.e.
 	// the time we expand user config and decide to create the VM.
 	ConfigExpanded int64 `gae:"configured"`
-	// Connected is the Unix time when the GCE instance connected to Swarming.
+	// Connected is the Unix time when the GCE instance connected to Swarming in
+	// its current lifetime. Reset to 0 when the instance is reimaged in place.
 	Connected int64 `gae:"connected"`
-	// Created is the Unix time when the GCE instance was created.
+	// Created is the Unix time when the GCE instance's current lifetime started
+	// (either initial creation or completion of an in-place reimage).
 	Created int64 `gae:"created"`
 	// Drained indicates whether or not this VM is drained.
 	// A GCE instance should not be created for a drained VM.
@@ -128,6 +131,14 @@ type VM struct {
 	NetworkInterfaces []NetworkInterface `gae:"network_interfaces"`
 	// Prefix is the prefix to use when naming the GCE instance.
 	Prefix string `gae:"prefix"`
+	// ReimageOp is the name of the zonal GCE operation for an in-flight in-place
+	// reimage once the instances.update request has been sent, or empty when no
+	// reimage operation is recorded.
+	ReimageOp string `gae:"reimage_op,noindex"`
+	// Reimaging is the Unix time when an in-place reimage of the GCE instance
+	// started, or 0 when no reimage is in progress. While positive, the instance
+	// must not be destroyed or have its Swarming bot terminated.
+	Reimaging int64 `gae:"reimaging,noindex"`
 	// ScalingType is how the pool size is scaled.
 	ScalingType string `gae:"scaling_type"`
 	// Revision is the config revision this VM was created from.
@@ -167,6 +178,49 @@ type VM struct {
 	// across wrap-around passes and emitted via the
 	// gce/instances/zone_rotations metric when the instance is created.
 	FallbackZoneRotations int64 `gae:"fallback_zone_rotations,noindex"`
+}
+
+// ReimageDisks returns the attached disks payload for an instances.update
+// request that recreates every disk of the instance in place from this VM's
+// configured disks. existing must be the disks currently attached to the GCE
+// instance in order. Returns an error if the disks cannot be recreated in
+// place.
+func (vm *VM) ReimageDisks(existing []*compute.AttachedDisk) ([]*compute.AttachedDisk, error) {
+	want := vm.getDisks()
+	if len(existing) == 0 || len(existing) != len(want) {
+		return nil, errors.Fmt("instance has %d disk(s), config has %d", len(existing), len(want))
+	}
+	out := make([]*compute.AttachedDisk, len(existing))
+	for i, cur := range existing {
+		switch {
+		case cur == nil:
+			return nil, errors.Fmt("disk %d: existing disk is nil", i)
+		case cur.Type == "SCRATCH" || want[i].Type == "SCRATCH":
+			return nil, errors.Fmt("disk %d: scratch disks cannot be recreated in place", i)
+		case cur.Boot != want[i].Boot:
+			return nil, errors.Fmt("disk %d: boot flag %v does not match configured %v", i, cur.Boot, want[i].Boot)
+		case want[i].InitializeParams == nil:
+			return nil, errors.Fmt("disk %d: missing initialize params", i)
+		}
+		// Keep the attached disk's identity (DeviceName, Mode, Interface, Type) —
+		// note config.Disk.Interface defaults to SCSI when unset while GCE may
+		// attach NVME, and config interface changes are caught before reimaging —
+		// while dropping fields derived from the previous disk or image (Source,
+		// Licenses, GuestOsFeatures, DiskSizeGb, ShieldedInstanceInitialState). GCE
+		// rejects requests that set both Source and InitializeParams.
+		params := *want[i].InitializeParams
+		params.OnUpdateAction = "RECREATE_DISK"
+		out[i] = &compute.AttachedDisk{
+			AutoDelete:       cur.AutoDelete,
+			Boot:             cur.Boot,
+			DeviceName:       cur.DeviceName,
+			InitializeParams: &params,
+			Interface:        cur.Interface,
+			Mode:             cur.Mode,
+			Type:             cur.Type,
+		}
+	}
+	return out, nil
 }
 
 // IndexAttributes sets indexable fields of vm.Attributes in AttributesIndexed.

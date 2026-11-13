@@ -94,4 +94,21 @@ func TestTimes(t *testing.T) {
 		assert.Loosely(t, d.Count(), should.Equal(3))
 		assert.Loosely(t, d.Sum(), should.Equal(math.Inf(1)))
 	})
+
+	ftt.Run("ReportReimageTime", t, func(t *ftt.Test) {
+		c, _ := tsmon.WithDummyInMemory(t.Context())
+		s := tsmon.Store(c)
+
+		fields := []any{"prefix", "project", "zone"}
+
+		ReportReimageTime(c, 150.0, "prefix", "project", "zone")
+		d := s.Get(c, reimageTime, fields).(*distribution.Distribution)
+		assert.Loosely(t, d.Count(), should.Equal(1))
+		assert.Loosely(t, d.Sum(), should.Equal(150.0))
+
+		ReportReimageTime(c, 90.0, "prefix", "project", "zone")
+		d = s.Get(c, reimageTime, fields).(*distribution.Distribution)
+		assert.Loosely(t, d.Count(), should.Equal(2))
+		assert.Loosely(t, d.Sum(), should.Equal(240.0))
+	})
 }
