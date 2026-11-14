@@ -341,6 +341,43 @@ func TestDestroyInstance(t *testing.T) {
 				assert.Loosely(t, v.URL, should.Equal("new"))
 			})
 
+			t.Run("stale lifetime", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
+					ID:      "id",
+					URL:     "url",
+					Created: 200,
+				}), should.BeNil)
+				err := destroyInstance(c, &tasks.DestroyInstance{
+					Id:      "id",
+					Url:     "url",
+					Created: 100,
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
+				v := &model.VM{ID: "id"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.URL, should.Equal("url"))
+			})
+
+			t.Run("reimaging", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
+					ID:        "id",
+					URL:       "url",
+					Created:   100,
+					Reimaging: 150,
+				}), should.BeNil)
+				err := destroyInstance(c, &tasks.DestroyInstance{
+					Id:      "id",
+					Url:     "url",
+					Created: 100,
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
+				v := &model.VM{ID: "id"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.URL, should.Equal("url"))
+			})
+
 			t.Run("error", func(t *ftt.Test) {
 				t.Run("http", func(t *ftt.Test) {
 					rt.Handler = func(req any) (int, any) {

@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -98,19 +99,29 @@ func setConnected(c context.Context, id, hostname string, at time.Time) error {
 // minPendingForBotConnected is the minimal minutes (10 minutes) to wait for the swarming bot in the VM to connect to Swarming.
 const minPendingForBotConnected = 10 * time.Minute
 
+// botFromPreviousLifetime reports whether the Swarming bot record was last seen
+// prior to the VM's current lifetime (for example, right after an in-place
+// reimage before the rebooted bot reconnects).
+func botFromPreviousLifetime(bot *swarmingpb.BotInfo, vm *model.VM) bool {
+	seen := bot.GetLastSeenTs()
+	return seen != nil && seen.AsTime().Unix() < vm.Created
+}
+
 // manageMissingBot manages a missing Swarming bot.
 func manageMissingBot(c context.Context, vm *model.VM) error {
-	// Set that the bot has not yet connected to Swarming.
+	// A bot that never connected in its current lifetime may be dead-on-arrival,
+	// so always destroy and recreate the VM rather than reimaging in place.
+	now := clock.Now(c).Unix()
 	switch {
 	// the case that the VM is drained is not handled here due to b/264921632, that some newly created VM
 	// can be set to drained immidiately, but hasn't been connected to Swarming. If we destroy it here, there's
 	// a small chance that the bot is up during the destroyment and pick up a test but fail it.
-	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
+	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < now:
 		logging.Debugf(c, "deadline %d exceeded", vm.Created+vm.Lifetime)
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
-	case vm.Timeout > 0 && vm.Created+vm.Timeout < time.Now().Unix():
+		return destroyInstanceAsync(c, vm)
+	case vm.Timeout > 0 && vm.Created+vm.Timeout < now:
 		logging.Debugf(c, "timeout %d exceeded", vm.Created+vm.Timeout)
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
+		return destroyInstanceAsync(c, vm)
 	default:
 		return nil
 	}
@@ -156,8 +167,14 @@ func manageBot(c context.Context, payload proto.Message) error {
 		logGrpcError(c, vm.Hostname, err)
 		return errors.Fmt("failed to fetch bot: %w", err)
 	}
+	// After an in-place reimage, Swarming still returns the previous lifetime's
+	// BotInfo until the rebooted bot reconnects; treat it as not yet connected.
+	if botFromPreviousLifetime(bot, vm) {
+		logging.Debugf(c, "bot %q last seen in previous lifetime", vm.Hostname)
+		return manageMissingBot(c, vm)
+	}
 	if isDestroyable(c, bot, vm) {
-		return destroyInstanceAsync(c, vm.ID, vm.URL)
+		return recycleInstanceAsync(c, vm)
 	}
 	return nil
 }
@@ -227,19 +244,20 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 				logging.Debugf(c, "bot %s query error: %s", bot.BotId, err)
 				continue
 			}
+			// Skip VMs currently reimaging or whose Swarming bot record still
+			// reflects a previous lifetime; manageBot handles their timeouts.
+			if vm.Reimaging > 0 || botFromPreviousLifetime(bot, vm) {
+				continue
+			}
 			if isDestroyable(c, bot, vm) {
-				if err := getDispatcher(c).AddTask(c, &tq.Task{
-					Payload: &tasks.DestroyInstance{
-						Id:  vm.ID,
-						Url: vm.URL,
-					},
-				}); err != nil {
+				if err := recycleInstanceAsync(c, vm); err != nil {
 					subtaskErrs = append(subtaskErrs, err)
 				}
 			} else {
 				batchPayload.Bots = append(batchPayload.Bots, &tasks.DeleteStaleSwarmingBot{
 					Id:          vm.ID,
 					FirstSeenTs: bot.FirstSeenTs.AsTime().UTC().Format(utcRFC3339),
+					Created:     vm.Created,
 				})
 				if len(batchPayload.GetBots()) == deleteStaleSwarmingBotBatchSize {
 					// Schedule a task to check and delete the bot if needed
@@ -268,11 +286,12 @@ func inspectSwarming(c context.Context, payload proto.Message) error {
 }
 
 // terminateBotAsync schedules a task queue task to terminate a Swarming bot.
-func terminateBotAsync(c context.Context, id, hostname string) error {
+func terminateBotAsync(c context.Context, vm *model.VM) error {
 	t := &tq.Task{
 		Payload: &tasks.TerminateBot{
-			Id:       id,
-			Hostname: hostname,
+			Id:       vm.ID,
+			Hostname: vm.Hostname,
+			Created:  vm.Created,
 		},
 	}
 	if err := getDispatcher(c).AddTask(c, t); err != nil {
@@ -307,12 +326,20 @@ func terminateBot(c context.Context, payload proto.Message) error {
 		// Instance is already destroyed and replaced. Don't terminate the new bot.
 		logging.Debugf(c, "Terminate bot %q: vm does not exist. Skipping...", task.Hostname)
 		return nil
+	case vm.Reimaging > 0:
+		// Instance is reimaging in place; do not send a late terminate.
+		logging.Debugf(c, "Terminate bot %q: VM is reimaging. Skipping...", task.Hostname)
+		return nil
+	case task.GetCreated() != 0 && vm.Created != task.GetCreated():
+		// Instance started a new lifetime (e.g. reimaged in place). Don't terminate the new lifetime's bot.
+		logging.Debugf(c, "Terminate bot %q: stale lifetime (%d != %d). Skipping...", task.Hostname, task.GetCreated(), vm.Created)
+		return nil
 	}
 	// 1 terminate task should normally suffice to terminate a bot, but in case
-	// users or bugs interfere, resend terminate task after 1 hour. Even if
-	// memcache content is cleared, more frequent terminate requests can now be
-	// handled by the swarming server and after crbug/982840 will be auto-deduped.
-	mi := memcache.NewItem(c, fmt.Sprintf("terminate-%s/%s", vm.Swarming, vm.Hostname))
+	// users or bugs interfere, resend terminate task after 1 hour. Include
+	// vm.Created in the key so a new lifetime after an in-place reimage is not
+	// suppressed by the previous lifetime's 1-hour entry.
+	mi := memcache.NewItem(c, fmt.Sprintf("terminate-%s/%s/%d", vm.Swarming, vm.Hostname, vm.Created))
 	if err := memcache.Get(c, mi); err == nil {
 		logging.Debugf(c, "Terminate bot %q: already has a terminate task from us", task.Hostname)
 		return nil
@@ -467,6 +494,14 @@ func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBo
 	case vm.URL == "":
 		logging.Debugf(c, "deleteStaleSwarmingBot: instance %q does not exist", vm.Hostname)
 		return nil
+	case vm.Reimaging > 0:
+		// Skip VMs currently reimaging in place until the GCE update completes.
+		logging.Debugf(c, "deleteStaleSwarmingBot: instance %q is reimaging", vm.Hostname)
+		return nil
+	case task.GetCreated() != 0 && vm.Created != task.GetCreated():
+		// Skip tasks scheduled during a prior lifetime before an in-place reimage completed.
+		logging.Debugf(c, "deleteStaleSwarmingBot: instance %q started new lifetime (%d != %d)", vm.Hostname, task.GetCreated(), vm.Created)
+		return nil
 	}
 	// bot_terminate occurs when the bot starts the termination task and is normally followed
 	// by task_completed and bot_shutdown. Responses also include the full set of dimensions
@@ -486,16 +521,17 @@ func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBo
 	for _, e := range events.Items {
 		if e.EventType == "bot_terminate" {
 			logging.Debugf(c, "deleteStaleSwarmingBot: bot terminated (%s)", vm.Hostname)
-			return destroyInstanceAsync(c, vm.ID, vm.URL)
+			return recycleInstanceAsync(c, vm)
 		}
 	}
+	now := clock.Now(c)
 	switch {
-	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < time.Now().Unix():
+	case vm.Lifetime > 0 && vm.Created+vm.Lifetime < now.Unix():
 		logging.Debugf(c, "deleteStaleSwarmingBot: %s deadline %d exceeded", vm.ID, vm.Created+vm.Lifetime)
-		return terminateBotAsync(c, vm.ID, vm.Hostname)
+		return terminateBotAsync(c, vm)
 	case vm.Drained:
 		logging.Debugf(c, "deleteStaleSwarmingBot: VM %s drained", vm.ID)
-		return terminateBotAsync(c, vm.ID, vm.Hostname)
+		return terminateBotAsync(c, vm)
 	}
 	// This value of vm.Connected may be several seconds old, because the VM was fetched
 	// prior to sending an RPC to Swarming. Still, check it here to save a costly operation
@@ -504,6 +540,11 @@ func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBo
 		t, err := time.Parse(utcRFC3339, task.GetFirstSeenTs())
 		if err != nil {
 			return errors.Fmt("deleteStaleSwarmingBot: %s failed to parse bot connection time: %w", vm.ID, err)
+		}
+		// Swarming preserves FirstSeenTs across in-place reimages of the same
+		// BotId, so clamp connection timestamps from prior lifetimes.
+		if t.Unix() < vm.Created {
+			t = now
 		}
 		if err := setConnected(c, vm.ID, vm.Hostname, t); err != nil {
 			return errors.Fmt("deleteStaleSwarmingBot: %s failed to set connected time: %w", vm.ID, err)
@@ -520,16 +561,17 @@ func deleteStaleSwarmingBot(c context.Context, task *tasks.DeleteStaleSwarmingBo
 // An exception to the above logic is on VM first boot. The VM gets at
 // least 10 minute timeout (irrespective of the vm config timeout)
 func isDestroyable(ctx context.Context, bot *swarmingpb.BotInfo, vm *model.VM) bool {
+	now := clock.Now(ctx)
 	// botIsDeeeead represents that the bot is in dead state and was last seen more than `vm.Timeout` seconds ago
-	botIsDeeeead := bot.IsDead && time.Since(bot.LastSeenTs.AsTime()) > time.Duration(vm.Timeout*int64(time.Second))
+	botIsDeeeead := bot.IsDead && now.Sub(bot.LastSeenTs.AsTime()) > time.Duration(vm.Timeout*int64(time.Second))
 	// botIsTerminated is set if it has been terminated in swarming
 	botIsTerminated := bot.IsDead && bot.GetTerminationTaskId() != ""
 	if botIsDeeeead || bot.Deleted || botIsTerminated {
 		// If the bot is dead or deleted, schedule a task to destroy the instance
-		logging.Debugf(ctx, "isDestroyable: bot %s is_dead[%v] deleted[%v] terminated[%v]  time since last_seen[%s] timeout[%v]. Destroying instance", bot.BotId, bot.IsDead, bot.Deleted, bot.TerminationTaskId, time.Since(bot.LastSeenTs.AsTime()).String(), vm.Timeout)
+		logging.Debugf(ctx, "isDestroyable: bot %s is_dead[%v] deleted[%v] terminated[%v]  time since last_seen[%s] timeout[%v]. Destroying instance", bot.BotId, bot.IsDead, bot.Deleted, bot.TerminationTaskId, now.Sub(bot.LastSeenTs.AsTime()).String(), vm.Timeout)
 		// A bot may be returned as deleted or dead if a bot with the same ID was previously connected to Swarming, but this new VM's bot hasn't connected yet
-		if time.Since(time.Unix(vm.Created, 0)) <= minPendingForBotConnected {
-			logging.Debugf(ctx, "isDestroyable: bot %s is newly created, wait for %s minutes at least to destroy", vm.Hostname, minPendingForBotConnected.Minutes())
+		if now.Sub(time.Unix(vm.Created, 0)) <= minPendingForBotConnected {
+			logging.Debugf(ctx, "isDestroyable: bot %s is newly created, wait for %.0f minutes at least to destroy", vm.Hostname, minPendingForBotConnected.Minutes())
 			return false
 		}
 		return true

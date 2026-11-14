@@ -25,6 +25,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -281,7 +282,7 @@ func TestManageBot(t *testing.T) {
 						Drained:  true,
 						Hostname: "name",
 						URL:      "url",
-						Created:  time.Now().Unix() - 100,
+						Created:  clock.Now(c).Unix() - 100,
 					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -336,8 +337,8 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
-						Created: time.Now().Unix() - 10000,
+						// Has to be older than clock.Now(c).Unix() - minPendingMinutesForBotConnected * 10
+						Created: clock.Now(c).Unix() - 10000,
 					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -360,7 +361,7 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-						Created:  time.Now().Unix() - 10,
+						Created:  clock.Now(c).Unix() - 10,
 					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -381,8 +382,8 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-						// Has to be older than time.Now().Unix() - minPendingMinutesForBotConnected * 10
-						Created: time.Now().Unix() - 10000,
+						// Has to be older than clock.Now(c).Unix() - minPendingMinutesForBotConnected * 10
+						Created: clock.Now(c).Unix() - 10000,
 					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -407,7 +408,7 @@ func TestManageBot(t *testing.T) {
 						Config:   "config",
 						Hostname: "name",
 						URL:      "url",
-						Created:  time.Now().Unix() - 10,
+						Created:  clock.Now(c).Unix() - 10,
 					}), should.BeNil)
 					err := manageBot(c, &tasks.ManageBot{
 						Id: "id",
@@ -415,6 +416,47 @@ func TestManageBot(t *testing.T) {
 					assert.Loosely(t, err, should.BeNil)
 					// won't destroy the instance if it's a newly created VM
 					assert.Loosely(t, sched.Tasks(), should.HaveLength(0))
+				})
+
+				t.Run("previous lifetime", func(t *ftt.Test) {
+					c, _ = testclock.UseTime(c, time.Unix(120, 0).UTC())
+					swr.getBotResponse = &swarmingpb.BotInfo{
+						BotId:             "name",
+						LastSeenTs:        timestamppb.New(time.Unix(90, 0)),
+						IsDead:            true,
+						TerminationTaskId: "term-1",
+					}
+
+					t.Run("within timeout", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &model.VM{
+							ID:       "id",
+							Config:   "config",
+							Hostname: "name",
+							URL:      "url",
+							Created:  100,
+							Timeout:  60,
+						}), should.BeNil)
+						assert.Loosely(t, manageBot(c, &tasks.ManageBot{Id: "id"}), should.BeNil)
+						assert.Loosely(t, sched.Tasks(), should.BeEmpty)
+					})
+
+					t.Run("timeout exceeded destroys VM", func(t *ftt.Test) {
+						assert.Loosely(t, datastore.Put(c, &model.VM{
+							ID:       "id",
+							Config:   "config",
+							Hostname: "name",
+							URL:      "url",
+							Created:  100,
+							Timeout:  10,
+						}), should.BeNil)
+						assert.Loosely(t, manageBot(c, &tasks.ManageBot{Id: "id"}), should.BeNil)
+						assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+						assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&tasks.DestroyInstance{
+							Id:      "id",
+							Url:     "url",
+							Created: 100,
+						}))
+					})
 				})
 			})
 		})
@@ -520,6 +562,44 @@ func TestTerminateBot(t *testing.T) {
 					assert.Loosely(t, terminateBot(c, &terminateTask), should.BeNil)
 					assert.Loosely(t, swr.calls, should.Equal(2))
 				})
+
+				t.Run("new lifetime after in-place reimage ignores old task and bypasses old memcache", func(t *ftt.Test) {
+					assert.Loosely(t, datastore.Put(c, &model.VM{
+						ID:       "id",
+						Hostname: "name",
+						Created:  200,
+					}), should.BeNil)
+					// Late task from previous lifetime (Created=100) is ignored.
+					assert.Loosely(t, terminateBot(c, &tasks.TerminateBot{
+						Id:       "id",
+						Hostname: "name",
+						Created:  100,
+					}), should.BeNil)
+					assert.Loosely(t, swr.calls, should.Equal(1))
+
+					// New lifetime's task (Created=200) terminates immediately within 1h.
+					assert.Loosely(t, terminateBot(c, &tasks.TerminateBot{
+						Id:       "id",
+						Hostname: "name",
+						Created:  200,
+					}), should.BeNil)
+					assert.Loosely(t, swr.calls, should.Equal(2))
+				})
+			})
+
+			t.Run("reimaging", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
+					ID:        "id",
+					Hostname:  "name",
+					Created:   100,
+					Reimaging: 150,
+				}), should.BeNil)
+				assert.Loosely(t, terminateBot(c, &tasks.TerminateBot{
+					Id:       "id",
+					Hostname: "name",
+					Created:  100,
+				}), should.BeNil)
+				assert.Loosely(t, swr.calls, should.BeZero)
 			})
 		})
 	})
@@ -771,6 +851,39 @@ func TestInspectSwarming(t *testing.T) {
 			// One DeleteStaleSwarmingBots tasks and one inspectSwarming task with cursor
 			assert.Loosely(t, sched.Tasks(), should.HaveLength(2))
 		})
+		t.Run("Skips reimaging and previous lifetime bots", func(t *ftt.Test) {
+			assert.Loosely(t, datastore.Put(c, &model.VM{
+				ID:        "vm-1",
+				Hostname:  "vm-1-abcd",
+				Swarming:  "https://gce-swarming.appspot.com",
+				Reimaging: 100,
+			}), should.BeNil)
+			assert.Loosely(t, datastore.Put(c, &model.VM{
+				ID:       "vm-2",
+				Hostname: "vm-2-abcd",
+				Swarming: "https://gce-swarming.appspot.com",
+				Created:  someTimeAgo.AsTime().Unix() + 100,
+			}), should.BeNil)
+			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
+				Items: []*swarmingpb.BotInfo{
+					{
+						BotId:       "vm-1-abcd",
+						FirstSeenTs: someTimeAgo,
+						IsDead:      true,
+					},
+					{
+						BotId:       "vm-2-abcd",
+						FirstSeenTs: someTimeAgo,
+						LastSeenTs:  someTimeAgo,
+					},
+				},
+			}
+			err := inspectSwarming(c, &tasks.InspectSwarming{
+				Swarming: "https://gce-swarming.appspot.com",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, sched.Tasks(), should.BeEmpty)
+		})
 	})
 }
 
@@ -826,6 +939,22 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 			})
+			t.Run("Reimaging VM", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
+					ID:        "vm-3",
+					Hostname:  "vm-3-abcd",
+					URL:       "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
+					Swarming:  "https://gce-swarming.appspot.com",
+					Reimaging: 100,
+				}), should.BeNil)
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "vm-3",
+					FirstSeenTs: "2019-03-13T00:12:29",
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, swr.calls, should.Equal(0))
+				assert.Loosely(t, sched.Tasks(), should.BeEmpty)
+			})
 		})
 		t.Run("Swarming Issues", func(t *ftt.Test) {
 			t.Run("Failed to fetch", func(t *ftt.Test) {
@@ -874,7 +1003,7 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
 					Swarming: "https://gce-swarming.appspot.com",
 					Lifetime: 99,
-					Created:  time.Now().Unix() - 100,
+					Created:  clock.Now(c).Unix() - 100,
 				}), should.BeNil)
 				swr.getBotResponse = &swarmingpb.BotInfo{
 					BotId:       "vm-3-abcd",
@@ -897,7 +1026,7 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
 					Swarming: "https://gce-swarming.appspot.com",
 					Lifetime: 100000000,
-					Created:  time.Now().Unix(),
+					Created:  clock.Now(c).Unix(),
 					Drained:  true,
 				}), should.BeNil)
 				swr.getBotResponse = &swarmingpb.BotInfo{
@@ -913,6 +1042,50 @@ func TestDeleteStaleSwarmingBot(t *testing.T) {
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+			})
+			t.Run("Clamps FirstSeenTs from previous lifetime", func(t *ftt.Test) {
+				now := time.Date(2026, 11, 4, 0, 0, 0, 0, time.UTC)
+				c, _ = testclock.UseTime(c, now)
+				assert.Loosely(t, datastore.Put(c, &model.VM{
+					ID:       "vm-3",
+					Hostname: "vm-3-abcd",
+					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
+					Swarming: "https://gce-swarming.appspot.com",
+					Lifetime: 3600,
+					Created:  now.Unix() - 30,
+				}), should.BeNil)
+				swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{}
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "vm-3",
+					FirstSeenTs: "2019-03-13T00:12:29",
+					Created:     now.Unix() - 30,
+				})
+				assert.Loosely(t, err, should.BeNil)
+				v := &model.VM{ID: "vm-3"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Connected, should.Equal(now.Unix()))
+			})
+			t.Run("Ignores batch scheduled during previous lifetime", func(t *ftt.Test) {
+				now := time.Date(2026, 11, 4, 0, 0, 0, 0, time.UTC)
+				c, _ = testclock.UseTime(c, now)
+				assert.Loosely(t, datastore.Put(c, &model.VM{
+					ID:       "vm-3",
+					Hostname: "vm-3-abcd",
+					URL:      "https://www.googleapis.com/compute/v1/projects/vmleaser/zones/us-numba1-c/instances/vm-3-abcd",
+					Swarming: "https://gce-swarming.appspot.com",
+					Lifetime: 3600,
+					Created:  now.Unix(),
+				}), should.BeNil)
+				err := deleteStaleSwarmingBot(c, &tasks.DeleteStaleSwarmingBot{
+					Id:          "vm-3",
+					FirstSeenTs: "2019-03-13T00:12:29",
+					Created:     now.Unix() - 1800,
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, swr.calls, should.BeZero)
+				v := &model.VM{ID: "vm-3"}
+				assert.Loosely(t, datastore.Get(c, v), should.BeNil)
+				assert.Loosely(t, v.Connected, should.BeZero)
 			})
 		})
 	})

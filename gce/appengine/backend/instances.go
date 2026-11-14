@@ -168,11 +168,12 @@ func createInstance(ctx context.Context, payload proto.Message) error {
 }
 
 // destroyInstanceAsync schedules a task queue task to destroy a GCE instance.
-func destroyInstanceAsync(c context.Context, id, url string) error {
+func destroyInstanceAsync(c context.Context, vm *model.VM) error {
 	t := &tq.Task{
 		Payload: &tasks.DestroyInstance{
-			Id:  id,
-			Url: url,
+			Id:      vm.ID,
+			Url:     vm.URL,
+			Created: vm.Created,
 		},
 	}
 	if err := getDispatcher(c).AddTask(c, t); err != nil {
@@ -206,6 +207,14 @@ func destroyInstance(c context.Context, payload proto.Message) error {
 	case vm.URL != task.Url:
 		// Instance is already destroyed and replaced. Don't destroy the new one.
 		logging.Debugf(c, "Destroy instance %q: does not exist %s", vm.Hostname, task.Url)
+		return nil
+	case task.GetCreated() != 0 && task.GetCreated() != vm.Created:
+		// Instance was reimaged into a new lifetime since this task was scheduled.
+		logging.Debugf(c, "Destroy instance %q: stale lifetime %d != %d", vm.Hostname, task.GetCreated(), vm.Created)
+		return nil
+	case vm.Reimaging > 0:
+		// Instance is currently reimaging; let the reimage handler finish or abandon it.
+		logging.Debugf(c, "Destroy instance %q: reimaging in progress", vm.Hostname)
 		return nil
 	}
 	logging.Debugf(c, "Destroy instance %q: starting...", vm.Hostname)
