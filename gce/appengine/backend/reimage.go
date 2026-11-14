@@ -16,10 +16,16 @@ package backend
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"slices"
+	"time"
 
+	"github.com/google/uuid"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/gae/service/datastore"
@@ -31,8 +37,13 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
-// reimageInstanceQueue is the name of the reimage instance task handler queue.
-const reimageInstanceQueue = "reimage-instance"
+const (
+	// reimageInstanceQueue is the name of the reimage instance task handler queue.
+	reimageInstanceQueue = "reimage-instance"
+	// maxReimageDuration bounds how long an in-place reimage may remain in flight
+	// before falling back to full VM destruction.
+	maxReimageDuration = 20 * time.Minute
+)
 
 // recycleInstanceAsync schedules an in-place reimage when configured and
 // compatible, falling back to full VM destruction otherwise.
@@ -131,9 +142,9 @@ func reimageAttributes(cur, next *config.VM) (*config.VM, string) {
 	return target, ""
 }
 
-// reimageInstance handles a ReimageInstance task queue task. The GCE update and
-// operation polling implementation lands in subsequent CLs of this stack.
-func reimageInstance(_ context.Context, payload proto.Message) error {
+// reimageInstance handles a ReimageInstance task queue task by dispatching
+// initial GCE disk updates, polling in-flight operations, or abandoning timed-out updates.
+func reimageInstance(c context.Context, payload proto.Message) error {
 	task, ok := payload.(*tasks.ReimageInstance)
 	switch {
 	case !ok:
@@ -143,5 +154,189 @@ func reimageInstance(_ context.Context, payload proto.Message) error {
 	case task.GetUrl() == "":
 		return errors.New("URL is required")
 	}
+	vm := &model.VM{ID: task.Id}
+	switch err := datastore.Get(c, vm); {
+	case errors.Is(err, datastore.ErrNoSuchEntity) || vm.URL == "":
+		return nil
+	case err != nil:
+		return errors.Fmt("reimage instance: failed to fetch VM %q: %w", vm.ID, err)
+	case vm.URL != task.GetUrl():
+		// Instance was replaced with a different GCE instance URL; ignore stale task.
+		logging.Debugf(c, "Reimage instance %q: URL mismatch (%s != %s)", vm.Hostname, task.GetUrl(), vm.URL)
+		return nil
+	case task.GetCreated() != 0 && vm.Created != task.GetCreated():
+		// Instance already started a new lifetime; ignore duplicate/late task.
+		logging.Debugf(c, "Reimage instance %q: stale lifetime (%d != %d)", vm.Hostname, task.GetCreated(), vm.Created)
+		return nil
+	case vm.Reimaging > 0 && clock.Now(c).Sub(time.Unix(vm.Reimaging, 0)) > maxReimageDuration:
+		// Bound in-place reimage retries so wedged GCE updates fall back to recreate.
+		return abandonReimage(c, vm, "timeout", "reimage deadline exceeded")
+	case vm.ReimageOp != "":
+		return checkReimage(c, vm)
+	default:
+		return sendReimage(c, vm)
+	}
+}
+
+// timePeriodSeconds converts an optional TimePeriod proto to seconds.
+func timePeriodSeconds(tp *config.TimePeriod) (int64, error) {
+	if tp.GetTime() == nil {
+		return 0, nil
+	}
+	return tp.ToSeconds()
+}
+
+// sendReimage fetches the live GCE instance, builds an instances.update payload
+// that recreates every disk in place with RESTART, and records the operation on vm.
+func sendReimage(c context.Context, vm *model.VM) error {
+	cfg, targetAttrs, reason, err := reimageConfig(c, vm)
+	if err != nil {
+		return err
+	}
+	if cfg == nil {
+		// Config or pool changed while queued; abandon if already marked reimaging.
+		if vm.Reimaging > 0 {
+			if reason == "" {
+				reason = "config_changed"
+			}
+			return abandonReimage(c, vm, reason, "VM no longer eligible for reimage")
+		}
+		if reason != "" {
+			metrics.UpdateReimageCount(c, "skipped", reason, vm)
+		}
+		return destroyInstanceAsync(c, vm)
+	}
+	lifetime, err := timePeriodSeconds(cfg.Config.GetLifetime())
+	if err != nil {
+		return errors.Fmt("reimage instance %q: invalid lifetime: %w", vm.Hostname, err)
+	}
+	timeout, err := timePeriodSeconds(cfg.Config.GetTimeout())
+	if err != nil {
+		return errors.Fmt("reimage instance %q: invalid timeout: %w", vm.Hostname, err)
+	}
+	srv := getCompute(c).Stable.Instances
+	proj, zone := vm.Attributes.GetProject(), vm.Attributes.GetZone()
+	inst, err := srv.Get(proj, zone, vm.Hostname).Context(c).Do()
+	if err != nil {
+		return handleReimageError(c, vm, err)
+	}
+	disks, err := (&model.VM{Attributes: *targetAttrs}).ReimageDisks(inst.Disks)
+	if err != nil {
+		return abandonReimage(c, vm, "disk_mismatch", err.Error())
+	}
+	// Mutate the fetched compute.Instance in place to preserve GCE fingerprints.
+	inst.Disks = disks
+	// Key RequestId on (vm.URL, vm.Created): vm.Created advances on every completed
+	// reimage so retries within one lifetime are idempotent while subsequent lifetimes
+	// receive a distinct request ID.
+	rID := uuid.NewSHA1(uuid.Nil, []byte(fmt.Sprintf("reimage-%s-%d", vm.URL, vm.Created)))
+	op, err := srv.Update(proj, zone, vm.Hostname, inst).MostDisruptiveAllowedAction("RESTART").RequestId(rID.String()).Context(c).Do()
+	if err != nil {
+		return handleReimageError(c, vm, err)
+	}
+	if op.Error != nil && len(op.Error.Errors) > 0 {
+		return abandonReimage(c, vm, "operation_error", op.Error.Errors[0].Code)
+	}
+	if op.Name == "" {
+		return abandonReimage(c, vm, "operation_error", "missing operation name")
+	}
+	updated, err := mutateReimageVM(c, vm, func(cur *model.VM) {
+		if cur.Reimaging == 0 {
+			cur.Reimaging = clock.Now(c).Unix()
+		}
+		cur.ReimageOp = op.Name
+		cur.Attributes = *targetAttrs
+		cur.IndexAttributes()
+		cur.Lifetime = randomizeLifetime(lifetime)
+		cur.Timeout = timeout
+		cur.Revision = cfg.Config.GetRevision()
+		cur.ScalingType = getScalingType(cfg.Config)
+	})
+	if err != nil || updated == nil || op.Status != "DONE" {
+		return err
+	}
+	return completeReimage(c, updated, op.EndTime)
+}
+
+// mutateReimageVM updates vm inside a Datastore transaction if it still exists
+// with the same GCE instance URL and lifetime creation timestamp.
+func mutateReimageVM(c context.Context, vm *model.VM, fn func(*model.VM)) (*model.VM, error) {
+	var out *model.VM
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		cur := &model.VM{ID: vm.ID}
+		err := datastore.Get(c, cur)
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
+			out = nil
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if cur.URL != vm.URL || cur.Created != vm.Created {
+			out = nil
+			return nil
+		}
+		fn(cur)
+		out = cur
+		return datastore.Put(c, cur)
+	}, nil)
+	return out, errors.WrapIf(err, "failed to update VM %q", vm.ID)
+}
+
+// handleReimageError classifies GCE API errors, abandoning permanent failures
+// while recording Reimaging start time for bounded retries on transient errors.
+func handleReimageError(c context.Context, vm *model.VM, err error) error {
+	if gerr, ok := err.(*googleapi.Error); ok {
+		logErrors(c, "Reimage instance", vm.Hostname, gerr)
+		if gerr.Code == http.StatusNotFound {
+			return abandonReimage(c, vm, "not_found", gerr.Message)
+		}
+		// Permanent 4xx errors (excluding conflict, precondition, and GCE 429/403 rate limits) cannot succeed on retry.
+		if gerr.Code >= 400 && gerr.Code < 500 &&
+			gerr.Code != http.StatusConflict &&
+			gerr.Code != http.StatusPreconditionFailed &&
+			gerr.Code != http.StatusTooManyRequests &&
+			!rateLimitExceeded(gerr) {
+			return abandonReimage(c, vm, "api_error", fmt.Sprintf("HTTP %d", gerr.Code))
+		}
+	}
+	// Record Reimaging start time so repeated transient errors still hit maxReimageDuration.
+	if vm.Reimaging == 0 {
+		if _, mErr := mutateReimageVM(c, vm, func(cur *model.VM) {
+			if cur.Reimaging == 0 {
+				cur.Reimaging = clock.Now(c).Unix()
+			}
+		}); mErr != nil {
+			logging.Warningf(c, "Reimage instance %q: failed to record reimage start time: %v", vm.Hostname, mErr)
+		}
+	}
+	return errors.Fmt("reimage instance %q: %w", vm.Hostname, err)
+}
+
+// abandonReimage latches Drained on vm, clears in-flight reimage fields, and
+// schedules full VM destruction so subsequent ticks do not re-enter reimaging.
+func abandonReimage(c context.Context, vm *model.VM, metricReason, detail string) error {
+	logging.Warningf(c, "Reimage instance %q: abandoning (%s: %s), destroying instead", vm.Hostname, metricReason, detail)
+	metrics.UpdateReimageCount(c, "abandoned", metricReason, vm)
+	cur, err := mutateReimageVM(c, vm, func(v *model.VM) {
+		v.Drained = true
+		v.Reimaging = 0
+		v.ReimageOp = ""
+	})
+	if err != nil || cur == nil {
+		return err
+	}
+	return destroyInstanceAsync(c, cur)
+}
+
+// checkReimage polls an in-flight zonal reimage operation. Implemented in the
+// next CL of this stack.
+func checkReimage(_ context.Context, _ *model.VM) error {
+	return nil
+}
+
+// completeReimage verifies the updated instance state and advances vm to its
+// next lifetime. Implemented in the next CL of this stack.
+func completeReimage(_ context.Context, _ *model.VM, _ string) error {
 	return nil
 }
