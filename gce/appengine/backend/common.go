@@ -36,11 +36,12 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tq"
-	_ "go.chromium.org/luci/server/tq/txn/datastore"
 	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
+
+	_ "go.chromium.org/luci/server/tq/txn/datastore"
 )
 
 // Operation is a wrapper type over operation results in alpha and stable GCP operations.
@@ -213,6 +214,15 @@ func registerTasks(dsp *tq.Dispatcher) {
 		Kind:      tq.FollowsContext,
 		Handler: func(c context.Context, payload proto.Message) error {
 			return destroyInstance(c, payload)
+		},
+	})
+	dsp.RegisterTaskClass(tq.TaskClass{
+		ID:        "reimage-instance",
+		Prototype: &tasks.ReimageInstance{},
+		Queue:     reimageInstanceQueue,
+		Kind:      tq.FollowsContext,
+		Handler: func(c context.Context, payload proto.Message) error {
+			return reimageInstance(c, payload)
 		},
 	})
 	dsp.RegisterTaskClass(tq.TaskClass{
