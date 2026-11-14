@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -413,6 +414,143 @@ func TestSendReimage(t *testing.T) {
 			}
 			assert.Loosely(t, datastore.Put(c, cfg, vm), should.BeNil)
 			assert.Loosely(t, reimageInstance(c, reimageTaskForVM(vm)), should.BeNil)
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.HaveType[*tasks.DestroyInstance])
+			assert.Loosely(t, reimageMetricCount(c, "abandoned", "operation_error"), should.Equal(int64(1)))
+		})
+	})
+}
+
+func TestCheckAndFinishReimage(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("checkReimage and finishReimage", t, func(t *ftt.Test) {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+
+		start := time.Date(2026, 11, 4, 1, 0, 0, 0, time.UTC)
+		c, tc := testclock.UseTime(memory.Use(t.Context()), start)
+		c, _ = tsmon.WithDummyInMemory(c)
+		c, sched := tq.TestingContext(c, dsp)
+
+		var opGetCalls, putCalls int
+		polledOp := &compute.Operation{
+			Name:    "op-reimage-1",
+			Status:  "DONE",
+			EndTime: start.Add(20 * time.Second).Format(time.RFC3339),
+		}
+		polledInst := &compute.Instance{
+			Name:   "chrome-jammy-0-abcd",
+			Status: "RUNNING",
+			Disks: []*compute.AttachedDisk{
+				{
+					AutoDelete: true,
+					Boot:       true,
+					DeviceName: "persistent-disk-0",
+					Mode:       "READ_WRITE",
+					Type:       "PERSISTENT",
+					Source:     "projects/proj-1/zones/us-central1-a/disks/chrome-jammy-0-abcd",
+				},
+			},
+			NetworkInterfaces: []*compute.NetworkInterface{
+				{
+					NetworkIP:     "10.0.0.10",
+					AccessConfigs: []*compute.AccessConfig{{NatIP: "34.100.0.99"}},
+				},
+			},
+		}
+
+		rt := funcRoundTripper(func(req *http.Request) (*http.Response, error) {
+			if req.Method == http.MethodGet && strings.HasSuffix(req.URL.Path, "/projects/proj-1/zones/us-central1-a/operations/op-reimage-1") {
+				opGetCalls++
+				return jsonHTTPResponse(http.StatusOK, polledOp), nil
+			}
+			if req.Method == http.MethodGet && strings.HasSuffix(req.URL.Path, "/projects/proj-1/zones/us-central1-a/instances/chrome-jammy-0-abcd") {
+				return jsonHTTPResponse(http.StatusOK, polledInst), nil
+			}
+			if req.Method == http.MethodPut && strings.HasSuffix(req.URL.Path, "/projects/proj-1/zones/us-central1-a/instances/chrome-jammy-0-abcd") {
+				putCalls++
+				return jsonHTTPResponse(http.StatusOK, polledOp), nil
+			}
+			return jsonHTTPResponse(http.StatusNotFound, nil), nil
+		})
+		gceSrv, err := compute.New(&http.Client{Transport: rt})
+		assert.Loosely(t, err, should.BeNil)
+		c = withCompute(withDispatcher(c, dsp), ComputeService{Stable: gceSrv})
+
+		vm := baseReimageTestVM()
+		vm.Reimaging = start.Unix()
+		vm.ReimageOp = "op-reimage-1"
+
+		t.Run("RUNNING operation waits for next poll without mutating VM", func(t *ftt.Test) {
+			polledOp.Status = "RUNNING"
+			assert.Loosely(t, datastore.Put(c, vm), should.BeNil)
+			assert.Loosely(t, reimageInstance(c, reimageTaskForVM(vm)), should.BeNil)
+			assert.Loosely(t, sched.Tasks(), should.BeEmpty)
+
+			stored := &model.VM{ID: vm.ID}
+			assert.Loosely(t, datastore.Get(c, stored), should.BeNil)
+			assert.Loosely(t, stored.ReimageOp, should.Equal("op-reimage-1"))
+		})
+
+		t.Run("DONE operation advances Created to EndTime, refreshes IPs, emits metrics, and drops late old-lifetime tasks", func(t *ftt.Test) {
+			tc.Add(60 * time.Second)
+			oldTask := reimageTaskForVM(vm)
+			assert.Loosely(t, datastore.Put(c, vm), should.BeNil)
+
+			assert.Loosely(t, reimageInstance(c, oldTask), should.BeNil)
+			assert.Loosely(t, sched.Tasks(), should.BeEmpty)
+			assert.Loosely(t, opGetCalls, should.Equal(1))
+
+			stored := &model.VM{ID: vm.ID}
+			assert.Loosely(t, datastore.Get(c, stored), should.BeNil)
+			wantCreated := start.Add(20 * time.Second).Unix()
+			assert.Loosely(t, stored.Created, should.Equal(wantCreated))
+			assert.Loosely(t, stored.ConfigExpanded, should.Equal(wantCreated))
+			assert.Loosely(t, stored.Connected, should.Equal(int64(0)))
+			assert.Loosely(t, stored.Reimaging, should.Equal(int64(0)))
+			assert.Loosely(t, stored.ReimageOp, should.BeEmpty)
+			assert.Loosely(t, stored.NetworkInterfaces[0].ExternalIP, should.Equal("34.100.0.99"))
+			assert.Loosely(t, reimageMetricCount(c, "success", "none"), should.Equal(int64(1)))
+
+			// A delayed ReimageInstance task from the previous lifetime is a clean no-op.
+			assert.Loosely(t, reimageInstance(c, oldTask), should.BeNil)
+			assert.Loosely(t, putCalls, should.BeZero)
+			assert.Loosely(t, opGetCalls, should.Equal(1))
+		})
+
+		t.Run("synchronous DONE from sendReimage finishes without calling ZoneOperations.Get", func(t *ftt.Test) {
+			cfg := baseReimageTestConfig()
+			freshVM := baseReimageTestVM()
+			tc.Add(30 * time.Second)
+			assert.Loosely(t, datastore.Put(c, cfg, freshVM), should.BeNil)
+
+			assert.Loosely(t, reimageInstance(c, reimageTaskForVM(freshVM)), should.BeNil)
+			assert.Loosely(t, putCalls, should.Equal(1))
+			assert.Loosely(t, opGetCalls, should.BeZero)
+
+			stored := &model.VM{ID: freshVM.ID}
+			assert.Loosely(t, datastore.Get(c, stored), should.BeNil)
+			assert.Loosely(t, stored.Reimaging, should.Equal(int64(0)))
+			assert.Loosely(t, stored.ReimageOp, should.BeEmpty)
+			assert.Loosely(t, reimageMetricCount(c, "success", "none"), should.Equal(int64(1)))
+		})
+
+		t.Run("DONE operation with TERMINATED instance abandons and destroys", func(t *ftt.Test) {
+			polledInst.Status = "TERMINATED"
+			assert.Loosely(t, datastore.Put(c, vm), should.BeNil)
+			assert.Loosely(t, reimageInstance(c, reimageTaskForVM(vm)), should.BeNil)
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+			assert.Loosely(t, sched.Tasks().Payloads()[0], should.HaveType[*tasks.DestroyInstance])
+			assert.Loosely(t, reimageMetricCount(c, "abandoned", "instance_status"), should.Equal(int64(1)))
+		})
+
+		t.Run("DONE operation with async error abandons and destroys", func(t *ftt.Test) {
+			polledOp.Error = &compute.OperationError{
+				Errors: []*compute.OperationErrorErrors{{Code: "INTERNAL_ERROR"}},
+			}
+			assert.Loosely(t, datastore.Put(c, vm), should.BeNil)
+			assert.Loosely(t, reimageInstance(c, reimageTaskForVM(vm)), should.BeNil)
+			assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
 			assert.Loosely(t, sched.Tasks().Payloads()[0], should.HaveType[*tasks.DestroyInstance])
 			assert.Loosely(t, reimageMetricCount(c, "abandoned", "operation_error"), should.Equal(int64(1)))
 		})

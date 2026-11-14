@@ -153,6 +153,9 @@ func manageBot(c context.Context, payload proto.Message) error {
 	case vm.URL == "":
 		logging.Debugf(c, "instance %q does not exist", vm.Hostname)
 		return nil
+	case vm.Reimaging > 0:
+		// Poll the in-flight GCE reimage operation on each 1-minute manageBot tick.
+		return reimageInstanceAsync(c, vm)
 	}
 
 	logging.Debugf(c, "fetching bot %q: %s", vm.Hostname, vm.Swarming)

@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	compute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/protobuf/proto"
 
@@ -329,14 +330,79 @@ func abandonReimage(c context.Context, vm *model.VM, metricReason, detail string
 	return destroyInstanceAsync(c, cur)
 }
 
-// checkReimage polls an in-flight zonal reimage operation. Implemented in the
-// next CL of this stack.
-func checkReimage(_ context.Context, _ *model.VM) error {
-	return nil
+// checkReimage polls an in-flight zonal reimage operation and finalizes or
+// abandons the reimage once GCE marks the operation DONE.
+func checkReimage(c context.Context, vm *model.VM) error {
+	proj, zone := vm.Attributes.GetProject(), vm.Attributes.GetZone()
+	op, err := getCompute(c).Stable.ZoneOperations.Get(proj, zone, vm.ReimageOp).Context(c).Do()
+	if err != nil {
+		return handleReimageError(c, vm, err)
+	}
+	if op.Error != nil && len(op.Error.Errors) > 0 {
+		return abandonReimage(c, vm, "operation_error", op.Error.Errors[0].Code)
+	}
+	if op.Status != "DONE" {
+		logging.Debugf(c, "Reimage instance %q: operation %q status is %s", vm.Hostname, vm.ReimageOp, op.Status)
+		return nil
+	}
+	return completeReimage(c, vm, op.EndTime)
 }
 
-// completeReimage verifies the updated instance state and advances vm to its
-// next lifetime. Implemented in the next CL of this stack.
-func completeReimage(_ context.Context, _ *model.VM, _ string) error {
+// completeReimage verifies the updated GCE instance is RUNNING and transitions
+// vm to its new lifetime.
+func completeReimage(c context.Context, vm *model.VM, endTime string) error {
+	proj, zone := vm.Attributes.GetProject(), vm.Attributes.GetZone()
+	inst, err := getCompute(c).Stable.Instances.Get(proj, zone, vm.Hostname).Context(c).Do()
+	if err != nil {
+		return handleReimageError(c, vm, err)
+	}
+	// If the VM was externally stopped, instances.update recreates disks without
+	// starting the guest; destroy and recreate so the pool recovers a running VM.
+	if inst.Status != "RUNNING" {
+		return abandonReimage(c, vm, "instance_status", inst.Status)
+	}
+	return finishReimage(c, vm, endTime, inst)
+}
+
+// finishReimage advances vm.Created to the operation completion timestamp,
+// refreshes network interface IPs, clears in-flight reimage state, and emits metrics.
+func finishReimage(c context.Context, vm *model.VM, endTime string, inst *compute.Instance) error {
+	nowUnix := clock.Now(c).Unix()
+	endUnix := nowUnix
+	if endTime != "" {
+		if t, err := time.Parse(time.RFC3339, endTime); err == nil {
+			endUnix = min(nowUnix, t.Unix())
+		}
+	}
+	var reimageDur float64
+	updated, err := mutateReimageVM(c, vm, func(cur *model.VM) {
+		// Anchor Created to op.EndTime (clamped to [max(Reimaging, Created+1), now])
+		// so bots that reconnect before the next 1m manageBot poll have LastSeenTs >= Created.
+		createdUnix := max(cur.Reimaging, cur.Created+1, endUnix)
+		if nowUnix > cur.Created {
+			createdUnix = min(createdUnix, nowUnix)
+		}
+		reimageDur = max(0, float64(endUnix-cur.Reimaging))
+		if len(inst.NetworkInterfaces) > 0 {
+			nics := make([]model.NetworkInterface, len(inst.NetworkInterfaces))
+			for i, n := range inst.NetworkInterfaces {
+				if len(n.AccessConfigs) > 0 {
+					nics[i].ExternalIP = n.AccessConfigs[0].NatIP
+				}
+				nics[i].InternalIP = n.NetworkIP
+			}
+			cur.NetworkInterfaces = nics
+		}
+		cur.ConfigExpanded = createdUnix
+		cur.Created = createdUnix
+		cur.Connected = 0
+		cur.Reimaging = 0
+		cur.ReimageOp = ""
+	})
+	if err != nil || updated == nil {
+		return err
+	}
+	metrics.UpdateReimageCount(c, "success", "none", updated)
+	metrics.ReportReimageTime(c, reimageDur, updated.Prefix, updated.Attributes.GetProject(), updated.Attributes.GetZone())
 	return nil
 }

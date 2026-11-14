@@ -238,6 +238,26 @@ func TestManageBot(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 			})
 
+			t.Run("reimaging", func(t *ftt.Test) {
+				assert.Loosely(t, datastore.Put(c, &model.VM{
+					ID:        "id",
+					Config:    "config",
+					URL:       "url",
+					Created:   50,
+					Reimaging: 100,
+				}), should.BeNil)
+				err := manageBot(c, &tasks.ManageBot{
+					Id: "id",
+				})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, sched.Tasks(), should.HaveLength(1))
+				assert.Loosely(t, sched.Tasks().Payloads()[0], should.Match(&tasks.ReimageInstance{
+					Id:      "id",
+					Url:     "url",
+					Created: 50,
+				}))
+			})
+
 			t.Run("error", func(t *ftt.Test) {
 				swr.err = status.Errorf(codes.InvalidArgument, "unexpected error")
 				assert.Loosely(t, datastore.Put(c, &model.VM{

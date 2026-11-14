@@ -90,8 +90,6 @@ func (cfg *Config) Validate(c *validation.Context, metadataFromFileResolved bool
 	case RecycleStrategy_RECYCLE_STRATEGY_UNSPECIFIED, RecycleStrategy_RECYCLE_STRATEGY_DELETE_AND_RECREATE:
 	case RecycleStrategy_RECYCLE_STRATEGY_REIMAGE_IN_PLACE:
 		c.Enter("recycle_strategy")
-		// TODO(b/581087465): Remove once in-place reimaging is implemented.
-		c.Errorf("RECYCLE_STRATEGY_REIMAGE_IN_PLACE is not implemented yet")
 		cfg.validateRecycleStrategy(c)
 		c.Exit()
 	default:

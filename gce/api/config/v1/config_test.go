@@ -80,15 +80,6 @@ func TestConfig(t *testing.T) {
 				assert.Loosely(t, errs, should.UnwrapToErrStringLike("unknown recycle strategy"))
 			})
 
-			t.Run("reimage in place is not implemented yet", func(t *ftt.Test) {
-				cfg := &Config{
-					RecycleStrategy: RecycleStrategy_RECYCLE_STRATEGY_REIMAGE_IN_PLACE,
-				}
-				cfg.Validate(c, true)
-				errs := c.Finalize().(*validation.Error).Errors
-				assert.Loosely(t, errs, should.UnwrapToErrStringLike("RECYCLE_STRATEGY_REIMAGE_IN_PLACE is not implemented yet"))
-			})
-
 			t.Run("reimage in place with local ssd", func(t *ftt.Test) {
 				cfg := &Config{
 					Attributes: &VM{
@@ -308,6 +299,36 @@ func TestConfig(t *testing.T) {
 			}
 			cfg.Validate(c, true)
 			assert.Loosely(t, c.Finalize(), should.BeNil)
+
+			t.Run("reimage in place", func(t *ftt.Test) {
+				cfg.RecycleStrategy = RecycleStrategy_RECYCLE_STRATEGY_REIMAGE_IN_PLACE
+				cfg.Validate(c, true)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
+			})
+
+			t.Run("reimage in place with sized blank secondary disk", func(t *ftt.Test) {
+				cfg.RecycleStrategy = RecycleStrategy_RECYCLE_STRATEGY_REIMAGE_IN_PLACE
+				cfg.Attributes.Disk = append(cfg.Attributes.Disk, &Disk{
+					Type:      "zones/zone/diskTypes/hyperdisk-extreme",
+					Interface: DiskInterface_NVME,
+					Size:      200,
+				})
+				cfg.Validate(c, true)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
+			})
+
+			t.Run("reimage in place with image family", func(t *ftt.Test) {
+				cfg.RecycleStrategy = RecycleStrategy_RECYCLE_STRATEGY_REIMAGE_IN_PLACE
+				cfg.Attributes.Disk = []*Disk{
+					{
+						Type:      "zones/zone/diskTypes/pd-ssd",
+						Interface: DiskInterface_SCSI,
+						Image:     "projects/cos-cloud/global/images/family/cos-stable",
+					},
+				}
+				cfg.Validate(c, true)
+				assert.Loosely(t, c.Finalize(), should.BeNil)
+			})
 		})
 	})
 }
