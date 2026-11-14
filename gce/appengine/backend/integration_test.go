@@ -25,11 +25,15 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	compute "google.golang.org/api/compute/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/rand/mathrand"
@@ -42,6 +46,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/tq"
+	swarmingpb "go.chromium.org/luci/swarming/proto/api_v2"
+	swarminggrpcpb "go.chromium.org/luci/swarming/proto/api_v2/grpcpb"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
@@ -59,6 +65,8 @@ type gceCall struct {
 	RequestID   string
 	MachineType string
 	DiskType    string
+	SourceImage string
+	Action      string
 }
 
 // gceInsertOutcome defines a scripted response for an Instances.Insert call in
@@ -129,6 +137,9 @@ type fakeGCEServer struct {
 	calls       []gceCall
 	zoneScripts map[string][]gceInsertOutcome
 	instances   map[string]map[string]*storedGCEInstance
+	operations  map[string]map[string]*compute.Operation
+	opSeq       int
+	nowFunc     func() time.Time
 }
 
 // newFakeGCEServer creates an initialized fakeGCEServer.
@@ -136,6 +147,7 @@ func newFakeGCEServer() *fakeGCEServer {
 	return &fakeGCEServer{
 		zoneScripts: make(map[string][]gceInsertOutcome),
 		instances:   make(map[string]map[string]*storedGCEInstance),
+		operations:  make(map[string]map[string]*compute.Operation),
 	}
 }
 
@@ -179,15 +191,51 @@ func (f *fakeGCEServer) RoundTrip(req *http.Request) (*http.Response, error) {
 			break
 		}
 	}
-	if projIdx == -1 || len(parts) < projIdx+5 || parts[projIdx+2] != "zones" || parts[projIdx+4] != "instances" {
+	if projIdx == -1 || len(parts) < projIdx+5 || parts[projIdx+2] != "zones" {
 		return jsonHTTPResponse(http.StatusNotFound, map[string]any{"error": "unrecognized path: " + req.URL.Path}), nil
 	}
 	project := parts[projIdx+1]
 	zone := parts[projIdx+3]
-	var instanceName string
+	collection := parts[projIdx+4]
+	var resourceName string
 	if len(parts) > projIdx+5 {
-		instanceName = parts[projIdx+5]
+		resourceName = parts[projIdx+5]
 	}
+	if collection == "operations" && req.Method == http.MethodGet {
+		f.calls = append(f.calls, gceCall{
+			Method:  http.MethodGet,
+			Project: project,
+			Zone:    zone,
+			Name:    resourceName,
+		})
+		op := f.operations[zone][resourceName]
+		if op == nil {
+			return gceErrorHTTPResponse(http.StatusNotFound, "notFound", "operation not found"), nil
+		}
+		outcome := f.nextOutcomeLocked(zone)
+		if outcome.httpStatus != http.StatusOK {
+			return gceErrorHTTPResponse(outcome.httpStatus, outcome.errReason, outcome.errMessage), nil
+		}
+		op.Status = outcome.opStatus
+		if outcome.opErrCode != "" {
+			op.Error = &compute.OperationError{
+				Errors: []*compute.OperationErrorErrors{
+					{
+						Code:    outcome.opErrCode,
+						Message: outcome.opErrMsg,
+					},
+				},
+			}
+		}
+		if op.Status == "DONE" && f.nowFunc != nil {
+			op.EndTime = f.nowFunc().UTC().Format(time.RFC3339)
+		}
+		return jsonHTTPResponse(http.StatusOK, op), nil
+	}
+	if collection != "instances" {
+		return jsonHTTPResponse(http.StatusNotFound, map[string]any{"error": "unrecognized path: " + req.URL.Path}), nil
+	}
+	instanceName := resourceName
 	reqID := req.URL.Query().Get("requestId")
 
 	switch req.Method {
@@ -248,14 +296,42 @@ func (f *fakeGCEServer) RoundTrip(req *http.Request) (*http.Response, error) {
 			}), nil
 		}
 
+		ts := "2026-10-20T00:00:00.000-07:00"
+		if f.nowFunc != nil {
+			ts = f.nowFunc().UTC().Format(time.RFC3339)
+		}
+		attachedDisks := make([]*compute.AttachedDisk, len(inst.Disks))
+		for i, d := range inst.Disks {
+			devName := d.DeviceName
+			if devName == "" {
+				devName = fmt.Sprintf("persistent-disk-%d", i)
+			}
+			var srcImg string
+			if d.InitializeParams != nil {
+				srcImg = d.InitializeParams.SourceImage
+			}
+			attachedDisks[i] = &compute.AttachedDisk{
+				AutoDelete: d.AutoDelete,
+				Boot:       d.Boot,
+				DeviceName: devName,
+				Interface:  d.Interface,
+				Mode:       d.Mode,
+				Type:       d.Type,
+				Source:     srcImg,
+			}
+		}
 		selfLink := fmt.Sprintf("https://www.googleapis.com/compute/v1/projects/%s/zones/%s/instances/%s", project, zone, inst.Name)
 		f.instances[zone][inst.Name] = &storedGCEInstance{
 			requestID: reqID,
 			instance: &compute.Instance{
 				Name:              inst.Name,
+				Status:            "RUNNING",
+				Fingerprint:       "fp-1",
+				LabelFingerprint:  "lfp-1",
 				MachineType:       inst.MachineType,
-				CreationTimestamp: "2026-10-20T00:00:00.000-07:00",
+				CreationTimestamp: ts,
 				SelfLink:          selfLink,
+				Disks:             attachedDisks,
 				NetworkInterfaces: []*compute.NetworkInterface{
 					{
 						NetworkIP: "10.0.0.10",
@@ -268,9 +344,87 @@ func (f *fakeGCEServer) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		return jsonHTTPResponse(http.StatusOK, &compute.Operation{
 			Status:     outcome.opStatus,
-			EndTime:    "2026-10-20T00:00:00.000-07:00",
+			EndTime:    ts,
 			TargetLink: selfLink,
 		}), nil
+
+	case http.MethodPut:
+		var inst compute.Instance
+		if req.Body != nil {
+			defer req.Body.Close()
+			if err := json.NewDecoder(req.Body).Decode(&inst); err != nil {
+				return nil, err
+			}
+		}
+		var srcImg string
+		if len(inst.Disks) > 0 && inst.Disks[0].InitializeParams != nil {
+			srcImg = inst.Disks[0].InitializeParams.SourceImage
+		}
+		f.calls = append(f.calls, gceCall{
+			Method:      http.MethodPut,
+			Project:     project,
+			Zone:        zone,
+			Name:        instanceName,
+			RequestID:   reqID,
+			MachineType: inst.MachineType,
+			SourceImage: srcImg,
+			Action:      req.URL.Query().Get("mostDisruptiveAllowedAction"),
+		})
+		stored := f.instances[zone][instanceName]
+		if stored == nil {
+			return gceErrorHTTPResponse(http.StatusNotFound, "notFound", "instance not found"), nil
+		}
+		outcome := f.nextOutcomeLocked(zone)
+		if outcome.httpStatus != http.StatusOK {
+			return gceErrorHTTPResponse(outcome.httpStatus, outcome.errReason, outcome.errMessage), nil
+		}
+		if outcome.opErrCode == "" {
+			recreated := make([]*compute.AttachedDisk, len(inst.Disks))
+			for i, d := range inst.Disks {
+				var diskImg string
+				if d.InitializeParams != nil {
+					diskImg = d.InitializeParams.SourceImage
+				}
+				recreated[i] = &compute.AttachedDisk{
+					AutoDelete: d.AutoDelete,
+					Boot:       d.Boot,
+					DeviceName: d.DeviceName,
+					Interface:  d.Interface,
+					Mode:       d.Mode,
+					Type:       d.Type,
+					Source:     diskImg,
+				}
+			}
+			stored.instance.Disks = recreated
+			stored.instance.Status = "RUNNING"
+		}
+		f.opSeq++
+		opName := fmt.Sprintf("op-reimage-%d", f.opSeq)
+		if f.operations[zone] == nil {
+			f.operations[zone] = make(map[string]*compute.Operation)
+		}
+		endTS := "2026-10-20T00:00:00.000-07:00"
+		if f.nowFunc != nil {
+			endTS = f.nowFunc().UTC().Format(time.RFC3339)
+		}
+		op := &compute.Operation{
+			Name:       opName,
+			Status:     outcome.opStatus,
+			EndTime:    endTS,
+			TargetLink: stored.instance.SelfLink,
+		}
+		if outcome.opErrCode != "" {
+			op.Error = &compute.OperationError{
+				Errors: []*compute.OperationErrorErrors{
+					{
+						Code:    outcome.opErrCode,
+						Message: outcome.opErrMsg,
+					},
+				},
+			}
+		}
+		f.operations[zone][opName] = op
+		return jsonHTTPResponse(http.StatusOK, op), nil
 
 	case http.MethodGet:
 		f.calls = append(f.calls, gceCall{
@@ -887,6 +1041,276 @@ func TestVMCreationIntegration(t *testing.T) {
 			assert.Loosely(t, vm.Attributes.GetZone(), should.Equal("us-central1-c"))
 			assert.Loosely(t, vm.FallbackZoneRotations, should.Equal(int64(0)))
 			assert.Loosely(t, vm.URL, should.ContainSubstring("/zones/us-central1-c/instances/"+vm.Hostname))
+		})
+	})
+}
+
+func TestVMReimageIntegration(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("end-to-end in-place VM reimaging and DOA timeout fallback", t, func(t *ftt.Test) {
+		dsp := &tq.Dispatcher{}
+		registerTasks(dsp)
+		fakeGCE := newFakeGCEServer()
+		gceSrv, err := compute.New(&http.Client{Transport: fakeGCE})
+		assert.Loosely(t, err, should.BeNil)
+
+		start := time.Date(2026, 11, 4, 1, 0, 0, 0, time.UTC)
+		c, tc := testclock.UseTime(memory.Use(t.Context()), start)
+		fakeGCE.nowFunc = func() time.Time { return tc.Now() }
+		c = mathrand.Set(c, rand.New(rand.NewSource(1)))
+		c, _ = tsmon.WithDummyInMemory(c)
+		c = auth.WithState(c, &authtest.FakeState{
+			Identity:       "user:owner@example.com",
+			IdentityGroups: []string{"owners"},
+		})
+		swr := &mockSwarmingBotsClient{}
+		c, sched := tq.TestingContext(c, dsp)
+		c = withSwarming(withCompute(withDispatcher(c, dsp), ComputeService{Stable: gceSrv}), func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
+		datastore.GetTestable(c).AutoIndex(true)
+		datastore.GetTestable(c).Consistent(true)
+
+		cfgServer := &rpc.Config{}
+		resetScheduler := func() {
+			c, sched = tq.TestingContext(c, dsp)
+			c = withSwarming(withCompute(withDispatcher(c, dsp), ComputeService{Stable: gceSrv}), func(context.Context, string) swarminggrpcpb.BotsClient { return swr })
+		}
+
+		drainQueue := func() {
+			for len(sched.Tasks()) > 0 {
+				pending := sched.Tasks().Payloads()
+				resetScheduler()
+				for _, p := range pending {
+					switch tk := p.(type) {
+					case *tasks.ExpandConfig:
+						assert.Loosely(t, expandConfig(c, tk), should.BeNil)
+					case *tasks.CreateVM:
+						assert.Loosely(t, createVM(c, tk), should.BeNil)
+					case *tasks.CreateInstance:
+						assert.Loosely(t, createInstance(c, tk), should.BeNil)
+					case *tasks.ManageBot:
+						assert.Loosely(t, manageBot(c, tk), should.BeNil)
+					case *tasks.InspectSwarming:
+						assert.Loosely(t, inspectSwarming(c, tk), should.BeNil)
+					case *tasks.DeleteStaleSwarmingBots:
+						assert.Loosely(t, deleteStaleSwarmingBots(c, tk), should.BeNil)
+					case *tasks.TerminateBot:
+						assert.Loosely(t, terminateBot(c, tk), should.BeNil)
+					case *tasks.ReimageInstance:
+						assert.Loosely(t, reimageInstance(c, tk), should.BeNil)
+					case *tasks.DestroyInstance:
+						assert.Loosely(t, destroyInstance(c, tk), should.BeNil)
+					case *tasks.DeleteBot:
+						assert.Loosely(t, deleteBot(c, tk), should.BeNil)
+					}
+				}
+			}
+		}
+
+		makeReimageConfig := func(prefix, rev, img string) *config.Config {
+			return &config.Config{
+				Prefix:          prefix,
+				Revision:        rev,
+				Swarming:        "chromium-swarm-dev.appspot.com",
+				Owner:           []string{"owners"},
+				RecycleStrategy: config.RecycleStrategy_RECYCLE_STRATEGY_REIMAGE_IN_PLACE,
+				Amount:          &config.Amount{Min: 1, Max: 1},
+				Lifetime:        &config.TimePeriod{Time: &config.TimePeriod_Seconds{Seconds: 1800}},
+				Timeout:         &config.TimePeriod{Time: &config.TimePeriod_Seconds{Seconds: 600}},
+				Attributes: &config.VM{
+					Project:       "test-project",
+					Zone:          "us-central1-c",
+					FallbackZones: []string{"us-central1-a"},
+					MachineType:   "zones/{{.Zone}}/machineTypes/n2-standard-8",
+					Disk: []*config.Disk{
+						{
+							Image: img,
+							Type:  "zones/{{.Zone}}/diskTypes/pd-ssd",
+							Size:  100,
+						},
+					},
+				},
+			}
+		}
+
+		t.Run("reimages fallback-zone VM in place across image uprev and 2 short lifetimes without losing capacity", func(t *ftt.Test) {
+			// Primary zone us-central1-c stays stocked out; fallback us-central1-a
+			// creates the VM, starts an async RUNNING reimage on PUT, and completes on poll.
+			fakeGCE.scriptZone("us-central1-c",
+				gceOpError(errCodeZoneResourcePoolExhausted, "us-central1-c exhausted"),
+				gceOpError(errCodeZoneResourcePoolExhausted, "us-central1-c still exhausted"),
+			)
+			fakeGCE.scriptZone("us-central1-a",
+				gceDone(),    // Initial POST in fallback zone
+				gceRunning(), // PUT instances.update returns RUNNING
+				gceDone(),    // GET operations/op-reimage-1 returns DONE
+			)
+
+			_, err := cfgServer.Ensure(c, &config.EnsureRequest{
+				Id:     "reimage-fb",
+				Config: makeReimageConfig("reimage-fb", "rev-1", "projects/test-project/global/images/jammy-v1"),
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
+			drainQueue()
+			assert.Loosely(t, createInstancesAsync(c), should.BeNil)
+			drainQueue()
+
+			vm := &model.VM{ID: "reimage-fb-0"}
+			assert.Loosely(t, datastore.Get(c, vm), should.BeNil)
+			origHost, origURL, firstCreated := vm.Hostname, vm.URL, vm.Created
+			assert.Loosely(t, vm.Attributes.GetZone(), should.Equal("us-central1-a"))
+
+			// Lifetime 1: Swarming bot connects.
+			tc.Add(30 * time.Second)
+			firstSeen := tc.Now()
+			swr.listBotsResponse = &swarmingpb.BotInfoListResponse{
+				Items: []*swarmingpb.BotInfo{{
+					BotId:       origHost,
+					FirstSeenTs: timestamppb.New(firstSeen),
+					LastSeenTs:  timestamppb.New(firstSeen),
+				}},
+			}
+			swr.listBotEventsResponse = &swarmingpb.BotEventsResponse{}
+			assert.Loosely(t, inspectSwarmingAsync(c), should.BeNil)
+			drainQueue()
+			assert.Loosely(t, datastore.Get(c, vm), should.BeNil)
+			assert.Loosely(t, vm.Connected, should.Equal(firstSeen.Unix()))
+
+			// Config updates disk image to jammy-v2 and Lifetime 1 (30m) expires.
+			_, err = cfgServer.Ensure(c, &config.EnsureRequest{
+				Id:     "reimage-fb",
+				Config: makeReimageConfig("reimage-fb", "rev-2", "projects/test-project/global/images/jammy-v2"),
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
+			drainQueue()
+
+			tc.Add(35 * time.Minute)
+			swr.listBotsResponse.Items[0].LastSeenTs = timestamppb.New(tc.Now())
+			swr.terminateBotResponse = &swarmingpb.TerminateResponse{TaskId: "term-1"}
+			assert.Loosely(t, inspectSwarmingAsync(c), should.BeNil)
+			drainQueue()
+			assert.Loosely(t, swr.calls, should.BeGreaterThan(0))
+
+			// Bot finishes terminating -> manageBot triggers in-place reimage PUT (RUNNING).
+			deadAt := tc.Now()
+			swr.getBotResponse = &swarmingpb.BotInfo{
+				BotId:             origHost,
+				FirstSeenTs:       timestamppb.New(firstSeen),
+				LastSeenTs:        timestamppb.New(deadAt),
+				IsDead:            true,
+				TerminationTaskId: "term-1",
+			}
+			assert.Loosely(t, manageBot(c, &tasks.ManageBot{Id: vm.ID}), should.BeNil)
+			drainQueue()
+
+			assert.Loosely(t, datastore.Get(c, vm), should.BeNil)
+			assert.Loosely(t, vm.Reimaging, should.Equal(deadAt.Unix()))
+			assert.Loosely(t, vm.ReimageOp, should.Equal("op-reimage-1"))
+
+			// Next 1-minute manageBot tick polls ZoneOperations.Get -> DONE -> finishes reimage.
+			tc.Add(time.Minute)
+			reimageDoneAt := tc.Now()
+			assert.Loosely(t, manageBot(c, &tasks.ManageBot{Id: vm.ID}), should.BeNil)
+			drainQueue()
+
+			assert.Loosely(t, datastore.Get(c, vm), should.BeNil)
+			assert.Loosely(t, vm.Hostname, should.Equal(origHost))
+			assert.Loosely(t, vm.URL, should.Equal(origURL))
+			assert.Loosely(t, vm.Created, should.Equal(reimageDoneAt.Unix()))
+			assert.Loosely(t, vm.Created, should.BeGreaterThan(firstCreated))
+			assert.Loosely(t, vm.Connected, should.Equal(int64(0)))
+			assert.Loosely(t, vm.Reimaging, should.Equal(int64(0)))
+			assert.Loosely(t, vm.Revision, should.Equal("rev-2"))
+			assert.Loosely(t, vm.Attributes.GetDisk()[0].GetImage(), should.Equal("projects/test-project/global/images/jammy-v2"))
+			assert.Loosely(t, reimageMetricCount(c, "success", "none"), should.Equal(int64(1)))
+
+			// Delayed duplicate tasks from Lifetime 1 must be clean no-ops in Lifetime 2.
+			prevGCECalls, prevSwrCalls := len(fakeGCE.calls), swr.calls
+			assert.Loosely(t, reimageInstance(c, &tasks.ReimageInstance{Id: vm.ID, Url: origURL, Created: firstCreated}), should.BeNil)
+			assert.Loosely(t, terminateBot(c, &tasks.TerminateBot{Id: vm.ID, Hostname: origHost, Created: firstCreated}), should.BeNil)
+			assert.Loosely(t, deleteStaleSwarmingBots(c, &tasks.DeleteStaleSwarmingBots{
+				Bots: []*tasks.DeleteStaleSwarmingBot{{
+					Id:          vm.ID,
+					FirstSeenTs: firstSeen.UTC().Format(utcRFC3339),
+					Created:     firstCreated,
+				}},
+			}), should.BeNil)
+			assert.Loosely(t, len(fakeGCE.calls), should.Equal(prevGCECalls))
+			assert.Loosely(t, swr.calls, should.Equal(prevSwrCalls))
+			assert.Loosely(t, datastore.Get(c, vm), should.BeNil)
+			assert.Loosely(t, vm.Connected, should.Equal(int64(0)))
+
+			// Before the rebooted bot reconnects, Swarming still returns Lifetime 1's dead BotInfo;
+			// manageBot must NOT destroy the VM before Timeout (600s).
+			tc.Add(2 * time.Minute)
+			assert.Loosely(t, manageBot(c, &tasks.ManageBot{Id: vm.ID}), should.BeNil)
+			assert.Loosely(t, sched.Tasks(), should.BeEmpty)
+
+			// Rebooted bot reconnects in Lifetime 2 (preserving Lifetime 1's FirstSeenTs).
+			reconnectAt := tc.Now()
+			swr.listBotsResponse.Items[0].LastSeenTs = timestamppb.New(reconnectAt)
+			assert.Loosely(t, inspectSwarmingAsync(c), should.BeNil)
+			drainQueue()
+			assert.Loosely(t, datastore.Get(c, vm), should.BeNil)
+			assert.Loosely(t, vm.Connected, should.Equal(reconnectAt.Unix()))
+
+			// Lifetime 2 expires <1h after Lifetime 1's terminateBot; scoped terminate memcache key allows a second TerminateBot RPC.
+			prevCalls := swr.calls
+			tc.Add(35 * time.Minute)
+			swr.listBotsResponse.Items[0].LastSeenTs = timestamppb.New(tc.Now())
+			assert.Loosely(t, inspectSwarmingAsync(c), should.BeNil)
+			drainQueue()
+			assert.Loosely(t, swr.calls, should.Equal(prevCalls+3))
+
+			// Verify GCE saw PUT in us-central1-a with RESTART and jammy-v2, and zero DELETE calls.
+			var putCalls, deleteCalls int
+			for _, call := range fakeGCE.calls {
+				switch call.Method {
+				case http.MethodPut:
+					putCalls++
+					assert.Loosely(t, call.Zone, should.Equal("us-central1-a"))
+					assert.Loosely(t, call.Action, should.Equal("RESTART"))
+					assert.Loosely(t, call.SourceImage, should.Equal("projects/test-project/global/images/jammy-v2"))
+				case http.MethodDelete:
+					deleteCalls++
+				}
+			}
+			assert.Loosely(t, putCalls, should.Equal(1))
+			assert.Loosely(t, deleteCalls, should.Equal(0))
+		})
+
+		t.Run("dead-on-arrival unconnected VM exceeding Timeout is deleted instead of reimaged", func(t *ftt.Test) {
+			fakeGCE.scriptZone("us-central1-c", gceDone())
+			_, err := cfgServer.Ensure(c, &config.EnsureRequest{
+				Id:     "reimage-doa",
+				Config: makeReimageConfig("reimage-doa", "rev-1", "projects/test-project/global/images/jammy-v1"),
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, expandConfigsAsync(c), should.BeNil)
+			drainQueue()
+			assert.Loosely(t, createInstancesAsync(c), should.BeNil)
+			drainQueue()
+
+			// Bot never registers in Swarming (NotFound) and exceeds 600s Timeout.
+			swr.err = status.Errorf(codes.NotFound, "bot not found")
+			tc.Add(601 * time.Second)
+			assert.Loosely(t, manageBot(c, &tasks.ManageBot{Id: "reimage-doa-0"}), should.BeNil)
+			drainQueue()
+
+			assert.Loosely(t, datastore.Get(c, &model.VM{ID: "reimage-doa-0"}), should.Equal(datastore.ErrNoSuchEntity))
+			var putCalls, deleteCalls int
+			for _, call := range fakeGCE.calls {
+				if call.Method == http.MethodPut {
+					putCalls++
+				}
+				if call.Method == http.MethodDelete {
+					deleteCalls++
+				}
+			}
+			assert.Loosely(t, putCalls, should.Equal(0))
+			assert.Loosely(t, deleteCalls, should.Equal(1))
 		})
 	})
 }
