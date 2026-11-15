@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/sync/errgroup"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
@@ -600,25 +601,43 @@ func FetchWorkUnitAndAncestorNoticeFormatter(ctx context.Context, client rdbpb.R
 		inspectedTargets = inspectedTargets[:maxInspectedWorkUnits]
 	}
 
+	type listedWU struct {
+		name      string
+		artifacts []*rdbpb.Artifact
+		more      bool
+	}
+	directListed := make([]listedWU, len(inspectedTargets))
+	var eg errgroup.Group
+	eg.SetLimit(8)
+	for i, wuName := range inspectedTargets {
+		eg.Go(func() error {
+			arts, more, err := format.QueryArtifactsForParent(ctx, client, wuName)
+			if err == nil && len(arts) > 0 {
+				directListed[i] = listedWU{name: wuName, artifacts: arts, more: more}
+			}
+			return nil
+		})
+	}
+	_ = eg.Wait()
+
 	var directWithArtifacts []ancestorWUInfo
 	directArtifactIDs := make(map[string][]string)
-
-	for _, wuName := range inspectedTargets {
-		arts, more, err := format.QueryArtifactsForParent(ctx, client, wuName)
-		if err == nil && len(arts) > 0 {
-			directWithArtifacts = append(directWithArtifacts, ancestorWUInfo{
-				name:      wuName,
-				artifacts: arts,
-				more:      more,
-			})
-			artIDs := make([]string, 0, len(arts))
-			for _, a := range arts {
-				if a.GetArtifactId() != "" {
-					artIDs = append(artIDs, a.GetArtifactId())
-				}
-			}
-			directArtifactIDs[wuName] = artIDs
+	for _, item := range directListed {
+		if len(item.artifacts) == 0 {
+			continue
 		}
+		directWithArtifacts = append(directWithArtifacts, ancestorWUInfo{
+			name:      item.name,
+			artifacts: item.artifacts,
+			more:      item.more,
+		})
+		artIDs := make([]string, 0, len(item.artifacts))
+		for _, a := range item.artifacts {
+			if a.GetArtifactId() != "" {
+				artIDs = append(artIDs, a.GetArtifactId())
+			}
+		}
+		directArtifactIDs[item.name] = artIDs
 	}
 
 	var ancToCheck []string
@@ -631,14 +650,27 @@ func FetchWorkUnitAndAncestorNoticeFormatter(ctx context.Context, client rdbpb.R
 		}
 	}
 
+	ancListed := make([]listedWU, len(ancToCheck))
+	var ancEG errgroup.Group
+	ancEG.SetLimit(8)
+	for i, ancName := range ancToCheck {
+		ancEG.Go(func() error {
+			arts, more, err := format.QueryArtifactsForParent(ctx, client, ancName)
+			if err == nil && len(arts) > 0 {
+				ancListed[i] = listedWU{name: ancName, artifacts: arts, more: more}
+			}
+			return nil
+		})
+	}
+	_ = ancEG.Wait()
+
 	var ancestorsWithArtifacts []ancestorWUInfo
-	for _, ancName := range ancToCheck {
-		arts, more, err := format.QueryArtifactsForParent(ctx, client, ancName)
-		if err == nil && len(arts) > 0 {
+	for _, item := range ancListed {
+		if len(item.artifacts) > 0 {
 			ancestorsWithArtifacts = append(ancestorsWithArtifacts, ancestorWUInfo{
-				name:      ancName,
-				artifacts: arts,
-				more:      more,
+				name:      item.name,
+				artifacts: item.artifacts,
+				more:      item.more,
 			})
 		}
 	}

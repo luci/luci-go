@@ -16,15 +16,19 @@ package module
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/maruel/subcommands"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/client/cmd/luci/artifact"
@@ -183,6 +187,7 @@ const (
 	maxSucceededModuleWorkUnitsForArtifacts = 5
 	maxDisplayedModuleWorkUnits             = 20
 	maxModuleDetailsHeaderBytes             = 6000
+	maxModuleSummaryBytes                   = 4096
 )
 
 // ModuleDetails contains aggregate information, test counts, and work unit details for a module.
@@ -211,20 +216,21 @@ type VerdictCountsJSON struct {
 
 // WorkUnitInfo contains details about a work unit executing part of a module.
 type WorkUnitInfo struct {
-	WorkUnitID   string                  `json:"work_unit_id"`
-	FullName     string                  `json:"full_name,omitempty"`
-	Parent       string                  `json:"parent,omitempty"`
-	Kind         string                  `json:"kind,omitempty"`
-	State        string                  `json:"state"`
-	ShardKey     string                  `json:"shard_key,omitempty"`
-	ModuleScheme string                  `json:"module_scheme,omitempty"`
-	Variant      *pb.Variant             `json:"variant,omitempty"`
-	VariantHash  string                  `json:"variant_hash,omitempty"`
-	Tags         []*pb.StringPair        `json:"tags,omitempty"`
-	Properties   *structpb.Struct        `json:"properties,omitempty"`
-	Summary      string                  `json:"summary,omitempty"`
-	Error        *format.DiscoveredError `json:"error,omitempty"`
-	ArtifactList []string                `json:"artifacts,omitempty"`
+	WorkUnitID    string                    `json:"work_unit_id"`
+	FullName      string                    `json:"full_name,omitempty"`
+	Parent        string                    `json:"parent,omitempty"`
+	Kind          string                    `json:"kind,omitempty"`
+	State         string                    `json:"state"`
+	ShardKey      string                    `json:"shard_key,omitempty"`
+	ModuleScheme  string                    `json:"module_scheme,omitempty"`
+	Variant       *pb.Variant               `json:"variant,omitempty"`
+	VariantHash   string                    `json:"variant_hash,omitempty"`
+	Tags          []*pb.StringPair          `json:"tags,omitempty"`
+	Properties    *structpb.Struct          `json:"properties,omitempty"`
+	Summary       string                    `json:"summary,omitempty"`
+	Error         *format.DiscoveredError   `json:"error,omitempty"`
+	ChildFailures []*format.WorkUnitFailure `json:"-"`
+	ArtifactList  []string                  `json:"artifacts,omitempty"`
 }
 
 // FetchModuleDetails queries ResultDB for module aggregations and associated work units.
@@ -280,8 +286,12 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 		}
 	}
 
+	hasVerdictFailures := details.TotalVerdicts != nil &&
+		(details.TotalVerdicts.Failed > 0 || details.TotalVerdicts.ExecutionErrored > 0 || details.TotalVerdicts.Precluded > 0)
+	noTestsRan := details.TotalVerdicts != nil && details.TotalVerdicts.Total == 0
+
 	// 2. Discover Work Units for this module
-	workUnits, err := discoverModuleWorkUnits(ctx, client, httpClient, rootInvName, moduleName)
+	workUnits, err := discoverModuleWorkUnits(ctx, client, httpClient, rootInvName, moduleName, hasVerdictFailures, noTestsRan)
 	if err != nil {
 		return nil, errors.Fmt("discover module work units: %w", err)
 	}
@@ -289,27 +299,40 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 
 	allSucceeded := len(workUnits) > 0
 	anyFailed := false
+	shardHasFailed := make(map[string]bool)
+	shardHasClean := make(map[string]bool)
 	for _, wu := range workUnits {
 		if wu.State == pb.WorkUnit_FAILED.String() || wu.Error != nil {
 			anyFailed = true
 			allSucceeded = false
-		} else if wu.State != pb.WorkUnit_SUCCEEDED.String() && wu.State != pb.WorkUnit_SKIPPED.String() {
+			shardHasFailed[wu.ShardKey] = true
+		} else if wu.State == pb.WorkUnit_SUCCEEDED.String() || wu.State == pb.WorkUnit_SKIPPED.String() {
+			shardHasClean[wu.ShardKey] = true
+		} else {
 			allSucceeded = false
 		}
 	}
-
-	// If no tests ran and there were failed work units or discovered errors, the module execution failed
-	if details.TotalVerdicts == nil || details.TotalVerdicts.Total == 0 {
-		if anyFailed {
-			details.ModuleStatus = pb.TestAggregation_FAILED.String()
+	anyUnrecoveredShard := false
+	for shardKey := range shardHasFailed {
+		if !shardHasClean[shardKey] {
+			anyUnrecoveredShard = true
+			break
 		}
+	}
+
+	// Report FAILED when verdicts failed/errored/precluded or at least one shard
+	// failed without a clean retry; if failed shard attempts were all recovered by
+	// clean retries on the same shard key, preserve or upgrade to FLAKY.
+	if anyUnrecoveredShard || hasVerdictFailures {
+		details.ModuleStatus = pb.TestAggregation_FAILED.String()
+	} else if anyFailed && (details.ModuleStatus == pb.TestAggregation_SUCCEEDED.String() ||
+		details.ModuleStatus == "STATUS_UNSPECIFIED" || details.ModuleStatus == "MODULE_STATUS_UNSPECIFIED") {
+		details.ModuleStatus = pb.TestAggregation_FLAKY.String()
 	}
 
 	// If ModuleStatus was unspecified from aggregations but we found work units, infer status
 	if details.ModuleStatus == "STATUS_UNSPECIFIED" || details.ModuleStatus == "MODULE_STATUS_UNSPECIFIED" {
-		if anyFailed {
-			details.ModuleStatus = pb.TestAggregation_FAILED.String()
-		} else if allSucceeded {
+		if allSucceeded {
 			details.ModuleStatus = pb.TestAggregation_SUCCEEDED.String()
 		}
 	}
@@ -318,8 +341,13 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 		return nil, errors.Fmt("no module found matching %q in %s", moduleName, rootInvName)
 	}
 
+	orderedWUs := slices.Clone(workUnits)
+	slices.SortStableFunc(orderedWUs, func(a, b *WorkUnitInfo) int {
+		return cmp.Compare(workUnitSortRank(a), workUnitSortRank(b))
+	})
+
 	var targetWUNames []string
-	for _, wu := range workUnits {
+	for _, wu := range orderedWUs {
 		if anyFailed && wu.State != pb.WorkUnit_FAILED.String() && wu.Error == nil {
 			continue
 		}
@@ -350,14 +378,15 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 // Invariant: ResultDB enforces that if a work unit has module_id set, all child work
 // units must have the same module_id set. Therefore:
 //  1. If a work unit has module_id matching moduleName, it is a top-level module work unit
-//     (or shard). We collect it and do NOT explore its children.
+//     (or shard). We collect it and only fetch its direct children when it is a TF_MODULE
+//     (to inspect child TF_TEST_RUN work units without exploring individual test cases).
 //  2. If a work unit has module_id set to a different module, we prune the entire subtree
 //     and do NOT explore its children.
 //  3. Only intermediate container work units (module_id == nil) have their children explored.
 //
 // This bounds the traversal to O(modules + container_depth), requiring only a handful of
 // batch RPCs even on invocations with hundreds of thousands of test case work units.
-func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, httpClient *http.Client, rootInvName, moduleName string) ([]*WorkUnitInfo, error) {
+func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, httpClient *http.Client, rootInvName, moduleName string, hasVerdictFailures, noTestsRan bool) ([]*WorkUnitInfo, error) {
 	rootWUName := rootInvName + "/workUnits/root"
 	rootWU, err := client.GetWorkUnit(ctx, &pb.GetWorkUnitRequest{
 		Name: rootWUName,
@@ -447,9 +476,62 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 		}
 	}
 
-	var results []*WorkUnitInfo
-	failedDiscovered := 0
+	childrenByName := make(map[string]*pb.WorkUnit)
+	var childToFetch []string
+	seenChildren := make(map[string]bool)
 	for _, wu := range matchedWUs {
+		if wu.Kind != "TF_MODULE" {
+			continue
+		}
+		for _, childName := range wu.ChildWorkUnits {
+			if !seenChildren[childName] {
+				seenChildren[childName] = true
+				childToFetch = append(childToFetch, childName)
+			}
+		}
+	}
+	for i := 0; i < len(childToFetch); i += 500 {
+		end := i + 500
+		if end > len(childToFetch) {
+			end = len(childToFetch)
+		}
+		batchRes, err := client.BatchGetWorkUnits(ctx, &pb.BatchGetWorkUnitsRequest{
+			Parent: rootInvName,
+			Names:  childToFetch[i:end],
+			View:   pb.WorkUnitView_WORK_UNIT_VIEW_BASIC,
+		})
+		if err != nil {
+			if base.IsPermissionDenied(err) {
+				return nil, errors.Fmt("batch get work units (%s): %w", base.ResultDBPermissionReason(rootInvName, err), err)
+			}
+			return nil, errors.Fmt("batch get work units: %w", err)
+		}
+		for _, childWU := range batchRes.GetWorkUnits() {
+			if childWU == nil {
+				continue
+			}
+			format.CacheWorkUnit(ctx, childWU)
+			childrenByName[childWU.Name] = childWU
+		}
+	}
+
+	type shardPrep struct {
+		info                     *WorkUnitInfo
+		wu                       *pb.WorkUnit
+		wuIsFallback             bool
+		failedChildren           []*pb.WorkUnit
+		childSummaries           []string
+		hasNonGenericDirectLayer bool
+		fetchChildArtifacts      bool
+		hasAncestorLayer1        bool
+		hasFailedOrGenAncestor   bool
+		runWithHTTP              bool
+	}
+	preps := make([]*shardPrep, len(matchedWUs))
+	anyDirectFailed := false
+	childArtifactShards := 0
+
+	for i, wu := range matchedWUs {
 		info := &WorkUnitInfo{
 			WorkUnitID:   wu.WorkUnitId,
 			FullName:     wu.Name,
@@ -464,17 +546,203 @@ func discoverModuleWorkUnits(ctx context.Context, client pb.ResultDBClient, http
 			Properties:   wu.GetProperties(),
 			Summary:      wu.SummaryMarkdown,
 		}
-		if wu.State == pb.WorkUnit_FAILED && failedDiscovered < maxDisplayedModuleWorkUnits {
-			failedDiscovered++
-			discErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, wu.Name)
-			if discErr != nil {
-				info.Error = discErr
+		wuIsFallback := format.IsFallbackWorkUnitSummary(ctx, client, wu.Name, wu.SummaryMarkdown)
+		hasDirect := format.HasNonFallbackErrorSummary(ctx, client, wu)
+		var failedChildren []*pb.WorkUnit
+		var childSummaries []string
+		if wu.Kind == "TF_MODULE" {
+			for _, childName := range wu.ChildWorkUnits {
+				childWU := childrenByName[childName]
+				if childWU == nil || (childWU.Kind != "" && childWU.Kind != "TF_TEST_RUN") {
+					continue
+				}
+				if childWU.State == pb.WorkUnit_FAILED {
+					info.State = pb.WorkUnit_FAILED.String()
+					failedChildren = append(failedChildren, childWU)
+					cs := strings.TrimSpace(childWU.SummaryMarkdown)
+					if cs != "" && !format.IsGenericHarnessSummary(cs) {
+						hasDirect = true
+						if !slices.Contains(childSummaries, cs) {
+							childSummaries = append(childSummaries, cs)
+						}
+					}
+				}
 			}
 		}
-		results = append(results, info)
+		info.Summary = mergeModuleAndChildSummaries(wu.SummaryMarkdown, wuIsFallback, childSummaries)
+		if info.State == pb.WorkUnit_FAILED.String() {
+			anyDirectFailed = true
+		}
+		fetchChild := false
+		if len(failedChildren) > 0 && childArtifactShards < maxDisplayedModuleWorkUnits {
+			fetchChild = true
+			childArtifactShards++
+		}
+		preps[i] = &shardPrep{
+			info:                     info,
+			wu:                       wu,
+			wuIsFallback:             wuIsFallback,
+			failedChildren:           failedChildren,
+			childSummaries:           childSummaries,
+			hasNonGenericDirectLayer: hasDirect,
+			fetchChildArtifacts:      fetchChild,
+		}
 	}
 
+	order := make([]int, 0, len(preps))
+	for i, p := range preps {
+		if p.info.State == pb.WorkUnit_FAILED.String() {
+			order = append(order, i)
+		}
+	}
+	for i, p := range preps {
+		if p.info.State != pb.WorkUnit_FAILED.String() && p.info.State != pb.WorkUnit_SKIPPED.String() && (hasVerdictFailures || noTestsRan) {
+			order = append(order, i)
+		}
+	}
+
+	var prepGroup errgroup.Group
+	prepGroup.SetLimit(8)
+	for _, idx := range order {
+		p := preps[idx]
+		if !p.fetchChildArtifacts && (httpClient == nil || p.hasNonGenericDirectLayer) {
+			continue
+		}
+		prepGroup.Go(func() error {
+			if p.fetchChildArtifacts {
+				var enriched []string
+				for _, childWU := range p.failedChildren {
+					cf := format.DiscoverSingleWorkUnitFailure(ctx, client, httpClient, childWU)
+					if cf == nil {
+						continue
+					}
+					s := cf.FullSummaryText
+					if s == "" {
+						s = cf.SummaryMarkdown
+					}
+					if s != "" && !format.IsGenericHarnessSummary(s) {
+						p.hasNonGenericDirectLayer = true
+						if !slices.Contains(enriched, s) {
+							enriched = append(enriched, s)
+						}
+					}
+					if len(cf.Artifacts) > 0 {
+						p.info.ChildFailures = append(p.info.ChildFailures, cf)
+					}
+				}
+				if len(enriched) > 0 {
+					p.childSummaries = enriched
+					p.info.Summary = mergeModuleAndChildSummaries(p.wu.SummaryMarkdown, p.wuIsFallback, enriched)
+				}
+			}
+			if httpClient != nil && !p.hasNonGenericDirectLayer {
+				for _, anc := range format.QueryAncestorWorkUnits(ctx, client, p.wu.Name) {
+					if anc.GetState() == pb.WorkUnit_SKIPPED {
+						continue
+					}
+					if !strings.HasSuffix(anc.GetName(), "/workUnits/root") &&
+						(anc.GetState() == pb.WorkUnit_FAILED || format.IsGenericHarnessSummary(anc.GetSummaryMarkdown())) {
+						p.hasFailedOrGenAncestor = true
+					}
+					if format.HasNonFallbackErrorSummary(ctx, client, anc) {
+						p.hasAncestorLayer1 = true
+						break
+					}
+				}
+			}
+			return nil
+		})
+	}
+	_ = prepGroup.Wait()
+
+	failedLayer2 := 0
+	succeededLayer2 := 0
+	for _, idx := range order {
+		p := preps[idx]
+		if httpClient == nil {
+			continue
+		}
+		if p.hasNonGenericDirectLayer || p.hasAncestorLayer1 {
+			p.runWithHTTP = true
+			continue
+		}
+		if p.info.State == pb.WorkUnit_FAILED.String() || noTestsRan || p.hasFailedOrGenAncestor {
+			if failedLayer2 < maxDisplayedModuleWorkUnits {
+				failedLayer2++
+				p.runWithHTTP = true
+			}
+		} else if !anyDirectFailed && succeededLayer2 < maxSucceededModuleWorkUnitsForArtifacts {
+			succeededLayer2++
+			p.runWithHTTP = true
+		}
+	}
+
+	runErrorPass := func(withHTTP bool) {
+		var eg errgroup.Group
+		eg.SetLimit(8)
+		for _, idx := range order {
+			p := preps[idx]
+			if p.runWithHTTP != withHTTP {
+				continue
+			}
+			eg.Go(func() error {
+				var hc *http.Client
+				if withHTTP {
+					hc = httpClient
+				}
+				discErr, _ := format.DiscoverWorkUnitError(ctx, client, hc, p.wu.Name)
+				if discErr != nil && p.info.State != pb.WorkUnit_FAILED.String() &&
+					discErr.ArtifactID == "" && p.wu.Name != rootWUName &&
+					(discErr.SourceWorkUnit == rootWUName || discErr.SourceWorkUnit == rootInvName) {
+					discErr = nil
+				}
+				if discErr != nil {
+					cloned := *discErr
+					if len(p.childSummaries) > 0 && cloned.Message == "" &&
+						(cloned.SourceWorkUnit == p.wu.Name || childrenByName[cloned.SourceWorkUnit] != nil) {
+						cloned.RawSummary = p.info.Summary
+					}
+					p.info.Error = &cloned
+				}
+				if len(p.childSummaries) > 0 && len(p.failedChildren) > 0 &&
+					(p.info.Error == nil || (p.info.Error.SourceWorkUnit != p.wu.Name && childrenByName[p.info.Error.SourceWorkUnit] == nil)) {
+					child := p.failedChildren[0]
+					p.info.Error = &format.DiscoveredError{
+						Source:          fmt.Sprintf("Child Work Unit %s", child.Name),
+						SourceWorkUnit:  child.Name,
+						IsChildWorkUnit: true,
+						RawSummary:      p.info.Summary,
+					}
+				}
+				return nil
+			})
+		}
+		_ = eg.Wait()
+	}
+	if httpClient != nil {
+		runErrorPass(true)
+	}
+	runErrorPass(false)
+
+	results := make([]*WorkUnitInfo, len(preps))
+	for i, p := range preps {
+		results[i] = p.info
+	}
 	return results, nil
+}
+
+func mergeModuleAndChildSummaries(wuSummary string, wuIsFallback bool, childSummaries []string) string {
+	if len(childSummaries) == 0 {
+		return wuSummary
+	}
+	combined := strings.Join(childSummaries, "\n\n")
+	if strings.TrimSpace(wuSummary) == "" || wuIsFallback {
+		return combined
+	}
+	if strings.Contains(wuSummary, combined) {
+		return wuSummary
+	}
+	return strings.TrimSpace(wuSummary) + "\n\n" + combined
 }
 
 func (wu *WorkUnitInfo) toWorkUnitProto() *pb.WorkUnit {
@@ -496,6 +764,27 @@ func (wu *WorkUnitInfo) toWorkUnitProto() *pb.WorkUnit {
 		Tags:       wu.Tags,
 		Properties: wu.Properties,
 	}
+}
+
+func workUnitSortRank(w *WorkUnitInfo) int {
+	if w.State == pb.WorkUnit_FAILED.String() {
+		return 0
+	}
+	if w.Error != nil {
+		return 1
+	}
+	return 2
+}
+
+func truncateModuleSummary(s string, maxBytes int) string {
+	if len(s) <= maxBytes {
+		return s
+	}
+	end := maxBytes
+	for end > 0 && !utf8.RuneStart(s[end]) {
+		end--
+	}
+	return s[:end] + "\n... (truncated)"
 }
 
 func printModuleDetails(details *ModuleDetails, showMetadata bool) {
@@ -543,10 +832,15 @@ func fprintModuleDetails(out io.Writer, details *ModuleDetails, showMetadata boo
 
 	if len(details.WorkUnits) > 0 {
 		fmt.Fprintln(&buf, "\nShards & Work Units:")
+		displayWUs := slices.Clone(details.WorkUnits)
+		slices.SortStableFunc(displayWUs, func(a, b *WorkUnitInfo) int {
+			return cmp.Compare(workUnitSortRank(a), workUnitSortRank(b))
+		})
 		shownWUs := 0
-		for i, wu := range details.WorkUnits {
+		seenAncestorErrors := make(map[string]bool)
+		for i, wu := range displayWUs {
 			if !showMetadata && (shownWUs >= maxDisplayedModuleWorkUnits || (shownWUs > 0 && buf.Len() >= maxModuleDetailsHeaderBytes)) {
-				fmt.Fprintf(&buf, "  ... and %d more work units\n", len(details.WorkUnits)-i)
+				fmt.Fprintf(&buf, "  ... and %d more work units\n", len(displayWUs)-i)
 				break
 			}
 			var wuBuf bytes.Buffer
@@ -565,23 +859,43 @@ func fprintModuleDetails(out io.Writer, details *ModuleDetails, showMetadata boo
 			fmt.Fprintf(&wuBuf, "  [%s] %s%s\n", stateClean, wu.WorkUnitID, metaDesc)
 
 			if wu.Error != nil {
-				if wu.Error.Message != "" {
-					fmt.Fprintf(&wuBuf, "    Error: %s\n", wu.Error.Message)
-				} else if wu.Error.RawSummary != "" {
-					fmt.Fprintf(&wuBuf, "    Summary:\n      %s\n", strings.ReplaceAll(wu.Error.RawSummary, "\n", "\n      "))
-				}
-				if wu.Error.StackTrace != "" {
-					fmt.Fprintf(&wuBuf, "    Stack Trace:\n      %s\n", strings.ReplaceAll(wu.Error.StackTrace, "\n", "\n      "))
+				isAncestorErr := wu.Error.SourceWorkUnit != "" && wu.FullName != "" &&
+					wu.Error.SourceWorkUnit != wu.FullName && !wu.Error.IsChildWorkUnit &&
+					strings.TrimSpace(wu.Summary) == ""
+				errKey := wu.Error.SourceWorkUnit + "\x00" + wu.Error.RawSummary + "\x00" + wu.Error.Message
+				if !isAncestorErr || !seenAncestorErrors[errKey] {
+					if isAncestorErr {
+						seenAncestorErrors[errKey] = true
+					}
+					if wu.Error.Message != "" {
+						fmt.Fprintf(&wuBuf, "    Error: %s\n", wu.Error.Message)
+					} else if wu.Error.RawSummary != "" {
+						rawSummary := wu.Error.RawSummary
+						if !showMetadata {
+							rawSummary = truncateModuleSummary(rawSummary, maxModuleSummaryBytes)
+						}
+						fmt.Fprintf(&wuBuf, "    Summary:\n      %s\n", strings.ReplaceAll(rawSummary, "\n", "\n      "))
+					}
+					if wu.Error.StackTrace != "" {
+						fmt.Fprintf(&wuBuf, "    Stack Trace:\n      %s\n", strings.ReplaceAll(wu.Error.StackTrace, "\n", "\n      "))
+					}
 				}
 			} else if strings.TrimSpace(wu.Summary) != "" {
-				fmt.Fprintf(&wuBuf, "    Summary:\n      %s\n", strings.ReplaceAll(strings.TrimSpace(wu.Summary), "\n", "\n      "))
+				summary := strings.TrimSpace(wu.Summary)
+				if !showMetadata {
+					summary = truncateModuleSummary(summary, maxModuleSummaryBytes)
+				}
+				fmt.Fprintf(&wuBuf, "    Summary:\n      %s\n", strings.ReplaceAll(summary, "\n", "\n      "))
+			}
+			for _, cf := range wu.ChildFailures {
+				format.FprintWorkUnitFailureArtifacts(&wuBuf, details.InvocationID, cf, "    ")
 			}
 
 			if showMetadata {
 				format.FprintWorkUnitMetadata(&wuBuf, wu.toWorkUnitProto(), "    ", true)
 			}
 			if !showMetadata && shownWUs > 0 && buf.Len()+wuBuf.Len() > maxModuleDetailsHeaderBytes {
-				fmt.Fprintf(&buf, "  ... and %d more work units\n", len(details.WorkUnits)-i)
+				fmt.Fprintf(&buf, "  ... and %d more work units\n", len(displayWUs)-i)
 				break
 			}
 			buf.Write(wuBuf.Bytes())

@@ -22,10 +22,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
 
+	"golang.org/x/sync/singleflight"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
@@ -37,14 +39,15 @@ import (
 // 2. Tradefed test result XML (<Reason> element in test_result.xml, subprocess-test_result.xml, etc.)
 // 3. Harness / Root Invocation SummaryMarkdown
 type DiscoveredError struct {
-	Source         string `json:"source,omitempty"`           // e.g. "Work Unit summary", "Artifact subprocess-test_result.xml...", "Root invocation summary"
-	SourceWorkUnit string `json:"source_work_unit,omitempty"` // Resource name of the work unit or invocation where the error originated
-	ArtifactID     string `json:"artifact_id,omitempty"`      // Artifact ID where the error was found (if from artifact)
-	ErrorName      string `json:"error_name,omitempty"`       // e.g. "INSTRUMENTATION_NULL_METHOD"
-	ErrorCode      string `json:"error_code,omitempty"`       // e.g. "530002"
-	Message        string `json:"message,omitempty"`          // Failure message
-	StackTrace     string `json:"stack_trace,omitempty"`      // Extracted stack trace
-	RawSummary     string `json:"raw_summary,omitempty"`      // Markdown summary from WorkUnit / Invocation
+	Source          string `json:"source,omitempty"`             // e.g. "Work Unit summary", "Artifact subprocess-test_result.xml...", "Root invocation summary"
+	SourceWorkUnit  string `json:"source_work_unit,omitempty"`   // Resource name of the work unit or invocation where the error originated
+	IsChildWorkUnit bool   `json:"is_child_work_unit,omitempty"` // True when SourceWorkUnit is a child of the inspected work unit rather than an ancestor
+	ArtifactID      string `json:"artifact_id,omitempty"`        // Artifact ID where the error was found (if from artifact)
+	ErrorName       string `json:"error_name,omitempty"`         // e.g. "INSTRUMENTATION_NULL_METHOD"
+	ErrorCode       string `json:"error_code,omitempty"`         // e.g. "530002"
+	Message         string `json:"message,omitempty"`            // Failure message
+	StackTrace      string `json:"stack_trace,omitempty"`        // Extracted stack trace
+	RawSummary      string `json:"raw_summary,omitempty"`        // Markdown summary from WorkUnit / Invocation
 }
 
 // XMLReason represents a Tradefed XML <Reason> tag.
@@ -126,6 +129,7 @@ type discoveryCacheKey struct{}
 // in memory to prevent looking up the same work unit or fetching the same artifact multiple times.
 type DiscoveryCache struct {
 	mu              sync.RWMutex
+	sf              singleflight.Group
 	errors          map[string]*DiscoveredError
 	hasErrorChecked map[string]bool
 	workUnits       map[string]*pb.WorkUnit
@@ -294,11 +298,30 @@ func QueryAncestorWorkUnits(ctx context.Context, client pb.ResultDBClient, targe
 			cache.mu.RUnlock()
 			return anc
 		}
-		if wu := cache.workUnits[targetWorkUnit]; wu != nil && wu.Parent != "" {
-			parentName = wu.Parent
-			if anc, ok := cache.ancestors["parent:"+parentName]; ok {
+		if wu := cache.workUnits[targetWorkUnit]; wu != nil {
+			if strings.HasSuffix(wu.Name, "/workUnits/root") {
 				cache.mu.RUnlock()
-				return anc
+				return nil
+			}
+			var chain []*pb.WorkUnit
+			for cur := wu; cur != nil && cur.Parent != "" && len(chain) < 16; {
+				p := cache.workUnits[cur.Parent]
+				if p == nil {
+					break
+				}
+				chain = append(chain, p)
+				if strings.HasSuffix(p.Name, "/workUnits/root") {
+					cache.mu.RUnlock()
+					return chain
+				}
+				cur = p
+			}
+			if wu.Parent != "" {
+				parentName = wu.Parent
+				if anc, ok := cache.ancestors["parent:"+parentName]; ok {
+					cache.mu.RUnlock()
+					return anc
+				}
 			}
 		}
 		cache.mu.RUnlock()
@@ -323,33 +346,51 @@ func QueryAncestorWorkUnits(ctx context.Context, client pb.ResultDBClient, targe
 		}
 	}
 
-	qRes, err := client.QueryWorkUnits(ctx, &pb.QueryWorkUnitsRequest{
-		Parent: rootInv,
-		Predicate: &pb.WorkUnitPredicate{
-			AncestorsOf: targetWorkUnit,
-		},
-		PageSize: 1000,
-	})
-	if err != nil || qRes == nil {
-		return nil
+	fetch := func() (any, error) {
+		qRes, err := client.QueryWorkUnits(ctx, &pb.QueryWorkUnitsRequest{
+			Parent: rootInv,
+			Predicate: &pb.WorkUnitPredicate{
+				AncestorsOf: targetWorkUnit,
+			},
+			PageSize: 1000,
+		})
+		if err != nil || qRes == nil {
+			return ([]*pb.WorkUnit)(nil), err
+		}
+		ancestors := qRes.WorkUnits
+		if cache != nil {
+			cache.mu.Lock()
+			cache.ancestors[targetWorkUnit] = ancestors
+			if parentName != "" {
+				cache.ancestors["parent:"+parentName] = ancestors
+			}
+			if len(ancestors) > 0 && ancestors[0].GetName() != "" {
+				cache.ancestors["parent:"+ancestors[0].GetName()] = ancestors
+			}
+			for _, wu := range ancestors {
+				cache.workUnits[wu.Name] = wu
+			}
+			cache.mu.Unlock()
+		}
+		return ancestors, nil
 	}
 
-	ancestors := qRes.WorkUnits
 	if cache != nil {
-		cache.mu.Lock()
-		cache.ancestors[targetWorkUnit] = ancestors
+		sfKey := "anc:" + targetWorkUnit
 		if parentName != "" {
-			cache.ancestors["parent:"+parentName] = ancestors
+			sfKey = "anc:parent:" + parentName
 		}
-		if len(ancestors) > 0 && ancestors[0].GetName() != "" {
-			cache.ancestors["parent:"+ancestors[0].GetName()] = ancestors
+		val, err, _ := cache.sf.Do(sfKey, fetch)
+		if err != nil || val == nil {
+			return nil
 		}
-		for _, wu := range ancestors {
-			cache.workUnits[wu.Name] = wu
-		}
-		cache.mu.Unlock()
+		return val.([]*pb.WorkUnit)
 	}
-	return ancestors
+	val, err := fetch()
+	if err != nil || val == nil {
+		return nil
+	}
+	return val.([]*pb.WorkUnit)
 }
 
 const candidateTestResultXMLRegexp = `(?i).*(?:test_result|compatibility_result|sponge_log).*\.xml(?:\.gz)?`
@@ -399,33 +440,58 @@ func queryArtifactsForParentWithMore(ctx context.Context, client pb.ResultDBClie
 		}
 		cache.mu.RUnlock()
 	}
-	res, err := client.ListArtifacts(ctx, &pb.ListArtifactsRequest{
-		Parent:    parent,
-		PageSize:  1000,
-		Predicate: predicate,
-		ReadMask:  readMask,
-	})
+	type listRes struct {
+		arts []*pb.Artifact
+		more bool
+	}
+	fetch := func() (any, error) {
+		res, err := client.ListArtifacts(ctx, &pb.ListArtifactsRequest{
+			Parent:    parent,
+			PageSize:  1000,
+			Predicate: predicate,
+			ReadMask:  readMask,
+		})
+		if err != nil {
+			return nil, err
+		}
+		arts := res.GetArtifacts()
+		more := res.GetNextPageToken() != ""
+		if cache != nil {
+			cache.mu.Lock()
+			cache.artifacts[cacheKey] = arts
+			cache.artifactsMore[cacheKey] = more
+			cache.mu.Unlock()
+		}
+		return listRes{arts: arts, more: more}, nil
+	}
+	if cache != nil {
+		val, err, _ := cache.sf.Do("arts:"+cacheKey, fetch)
+		if err != nil {
+			return nil, false, err
+		}
+		r := val.(listRes)
+		return r.arts, r.more, nil
+	}
+	val, err := fetch()
 	if err != nil {
 		return nil, false, err
 	}
-	more := res.NextPageToken != ""
-	if cache != nil {
-		cache.mu.Lock()
-		cache.artifacts[cacheKey] = res.Artifacts
-		cache.artifactsMore[cacheKey] = more
-		cache.mu.Unlock()
+	r := val.(listRes)
+	return r.arts, r.more, nil
+}
+
+func artifactXMLCacheKey(art *pb.Artifact) string {
+	if art.Name != "" {
+		return art.Name
 	}
-	return res.Artifacts, more, nil
+	if art.ArtifactId != "" {
+		return art.ArtifactId
+	}
+	return art.FetchUrl
 }
 
 func fetchAndParseXMLReasonWithCache(ctx context.Context, httpClient *http.Client, art *pb.Artifact, cache *DiscoveryCache) (*XMLReason, error) {
-	key := art.Name
-	if key == "" {
-		key = art.ArtifactId
-	}
-	if key == "" {
-		key = art.FetchUrl
-	}
+	key := artifactXMLCacheKey(art)
 	if cache != nil {
 		cache.mu.RLock()
 		if cache.hasXMLChecked[key] {
@@ -436,26 +502,40 @@ func fetchAndParseXMLReasonWithCache(ctx context.Context, httpClient *http.Clien
 		cache.mu.RUnlock()
 	}
 
-	var buf bytes.Buffer
-	if err := FetchArtifactContent(ctx, httpClient, art.FetchUrl, &buf); err != nil {
+	fetch := func() (any, error) {
+		var buf bytes.Buffer
+		if err := FetchArtifactContent(ctx, httpClient, art.FetchUrl, &buf); err != nil {
+			return (*XMLReason)(nil), err
+		}
+		var r io.Reader = &buf
+		data := buf.Bytes()
+		if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b || strings.HasSuffix(art.ArtifactId, ".gz") {
+			gz, err := gzip.NewReader(bytes.NewReader(data))
+			if err == nil {
+				r = gz
+			}
+		}
+		reason, err := ParseTradefedXMLReason(r)
+		if cache != nil && err == nil {
+			cache.mu.Lock()
+			cache.hasXMLChecked[key] = true
+			cache.xmlReasons[key] = reason
+			cache.mu.Unlock()
+		}
+		return reason, err
+	}
+	if cache != nil {
+		val, err, _ := cache.sf.Do("xml:"+key, fetch)
+		if err != nil {
+			return nil, err
+		}
+		return val.(*XMLReason), nil
+	}
+	val, err := fetch()
+	if err != nil {
 		return nil, err
 	}
-	var r io.Reader = &buf
-	data := buf.Bytes()
-	if len(data) >= 2 && data[0] == 0x1f && data[1] == 0x8b || strings.HasSuffix(art.ArtifactId, ".gz") {
-		gz, err := gzip.NewReader(bytes.NewReader(data))
-		if err == nil {
-			r = gz
-		}
-	}
-	reason, err := ParseTradefedXMLReason(r)
-	if cache != nil && err == nil {
-		cache.mu.Lock()
-		cache.hasXMLChecked[key] = true
-		cache.xmlReasons[key] = reason
-		cache.mu.Unlock()
-	}
-	return reason, err
+	return val.(*XMLReason), nil
 }
 
 // IsGenericHarnessSummary reports whether s is a generic MobileHarness wrapper
@@ -468,10 +548,31 @@ func IsGenericHarnessSummary(s string) bool {
 	return strings.Contains(s, "ANDROID_TRADEFED_TEST_HAS_FAIL_SUBTEST")
 }
 
-func isFallbackWorkUnitSummary(ctx context.Context, rdbClient pb.ResultDBClient, wuName, summary string, cache *DiscoveryCache) bool {
-	if IsGenericHarnessSummary(summary) {
-		return true
+func canHaveErrorSummary(state pb.WorkUnit_State) bool {
+	return state != pb.WorkUnit_SUCCEEDED && state != pb.WorkUnit_SKIPPED
+}
+
+// IsFallbackWorkUnitSummary reports whether summary on wuName should be treated
+// as a low-priority fallback (generic wrapper summary or redundant root link)
+// rather than short-circuiting Layer 2 XML error discovery.
+func IsFallbackWorkUnitSummary(ctx context.Context, rdbClient pb.ResultDBClient, wuName, summary string) bool {
+	return isFallbackWorkUnitSummary(ctx, rdbClient, wuName, summary, cacheFromContext(ctx))
+}
+
+// HasNonFallbackErrorSummary reports whether wu carries a non-empty error
+// summary on a non-succeeded, non-skipped work unit that is neither a generic
+// harness wrapper nor a redundant root external link.
+func HasNonFallbackErrorSummary(ctx context.Context, rdbClient pb.ResultDBClient, wu *pb.WorkUnit) bool {
+	if wu == nil || !canHaveErrorSummary(wu.GetState()) {
+		return false
 	}
+	if strings.TrimSpace(wu.GetSummaryMarkdown()) == "" {
+		return false
+	}
+	return !isFallbackWorkUnitSummary(ctx, rdbClient, wu.GetName(), wu.GetSummaryMarkdown(), cacheFromContext(ctx))
+}
+
+func isRedundantRootWorkUnitSummary(ctx context.Context, rdbClient pb.ResultDBClient, wuName, summary string, cache *DiscoveryCache) bool {
 	if !strings.HasSuffix(wuName, "/workUnits/root") {
 		return false
 	}
@@ -482,6 +583,13 @@ func isFallbackWorkUnitSummary(ctx context.Context, rdbClient pb.ResultDBClient,
 	rootInvName := "rootInvocations/" + base.NormalizeInvocation(rootInvID)
 	rootInv := getRootInvocationWithCache(ctx, rdbClient, rootInvName, cache)
 	return rootInv != nil && IsRedundantExternalSummary(summary, rootInv)
+}
+
+func isFallbackWorkUnitSummary(ctx context.Context, rdbClient pb.ResultDBClient, wuName, summary string, cache *DiscoveryCache) bool {
+	if IsGenericHarnessSummary(summary) {
+		return true
+	}
+	return isRedundantRootWorkUnitSummary(ctx, rdbClient, wuName, summary, cache)
 }
 
 // DiscoverWorkUnitError executes the 3-layer discovery hierarchy to find module / work unit errors:
@@ -509,7 +617,7 @@ func DiscoverWorkUnitError(ctx context.Context, rdbClient pb.ResultDBClient, htt
 	}
 
 	res, err := discoverWorkUnitErrorUncached(ctx, rdbClient, httpClient, clean, cache)
-	if cache != nil && err == nil {
+	if cache != nil && err == nil && (httpClient != nil || res != nil) {
 		cache.mu.Lock()
 		cache.hasErrorChecked[clean] = true
 		cache.errors[clean] = res
@@ -524,8 +632,9 @@ func discoverWorkUnitErrorUncached(ctx context.Context, rdbClient pb.ResultDBCli
 	// Layer 1: Check WorkUnit SummaryMarkdown
 	if strings.Contains(clean, "/workUnits/") {
 		wu := getWorkUnitWithCache(ctx, rdbClient, clean, cache)
-		if wu != nil && strings.TrimSpace(wu.SummaryMarkdown) != "" {
-			if !isFallbackWorkUnitSummary(ctx, rdbClient, clean, wu.SummaryMarkdown, cache) {
+		if wu != nil && canHaveErrorSummary(wu.GetState()) && strings.TrimSpace(wu.SummaryMarkdown) != "" &&
+			!isRedundantRootWorkUnitSummary(ctx, rdbClient, clean, wu.SummaryMarkdown, cache) {
+			if !IsGenericHarnessSummary(wu.SummaryMarkdown) {
 				return &DiscoveredError{
 					Source:         fmt.Sprintf("Work Unit %s", clean),
 					SourceWorkUnit: clean,
@@ -538,13 +647,39 @@ func discoverWorkUnitErrorUncached(ctx context.Context, rdbClient pb.ResultDBCli
 				RawSummary:     strings.TrimSpace(wu.SummaryMarkdown),
 			}
 		}
+		if wu != nil && wu.GetKind() == "TF_MODULE" && len(wu.ChildWorkUnits) > 0 && cache != nil {
+			for _, childName := range wu.ChildWorkUnits {
+				cache.mu.RLock()
+				child := cache.workUnits[childName]
+				cache.mu.RUnlock()
+				if child != nil && (child.GetKind() == "" || child.GetKind() == "TF_TEST_RUN") && child.GetState() == pb.WorkUnit_FAILED && strings.TrimSpace(child.SummaryMarkdown) != "" {
+					if !IsGenericHarnessSummary(child.SummaryMarkdown) {
+						return &DiscoveredError{
+							Source:          fmt.Sprintf("Child Work Unit %s", child.Name),
+							SourceWorkUnit:  child.Name,
+							IsChildWorkUnit: true,
+							RawSummary:      strings.TrimSpace(child.SummaryMarkdown),
+						}, nil
+					}
+					if fallbackSummary == nil {
+						fallbackSummary = &DiscoveredError{
+							Source:          fmt.Sprintf("Child Work Unit %s", child.Name),
+							SourceWorkUnit:  child.Name,
+							IsChildWorkUnit: true,
+							RawSummary:      strings.TrimSpace(child.SummaryMarkdown),
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// Check Ancestors for Layer 1 SummaryMarkdown
 	ancestors := QueryAncestorWorkUnits(ctx, rdbClient, clean)
 	for _, anc := range ancestors {
-		if strings.TrimSpace(anc.SummaryMarkdown) != "" {
-			if !isFallbackWorkUnitSummary(ctx, rdbClient, anc.Name, anc.SummaryMarkdown, cache) {
+		if canHaveErrorSummary(anc.GetState()) && strings.TrimSpace(anc.SummaryMarkdown) != "" &&
+			!isRedundantRootWorkUnitSummary(ctx, rdbClient, anc.Name, anc.SummaryMarkdown, cache) {
+			if !IsGenericHarnessSummary(anc.SummaryMarkdown) {
 				return &DiscoveredError{
 					Source:         fmt.Sprintf("Ancestor Work Unit %s", anc.Name),
 					SourceWorkUnit: anc.Name,
@@ -572,28 +707,52 @@ func discoverWorkUnitErrorUncached(ctx context.Context, rdbClient pb.ResultDBCli
 		targetsToCheck = append(targetsToCheck, anc.Name)
 	}
 
-	if httpClient != nil {
-		for _, target := range targetsToCheck {
-			arts, err := queryArtifactsForParentFiltered(ctx, rdbClient, target, "xml:", candidateTestResultXMLRegexp, cache)
+	for _, target := range targetsToCheck {
+		var arts []*pb.Artifact
+		if httpClient != nil {
+			var err error
+			arts, err = queryArtifactsForParentFiltered(ctx, rdbClient, target, "xml:", candidateTestResultXMLRegexp, cache)
 			if err != nil || len(arts) == 0 {
 				continue
 			}
-			for _, art := range arts {
-				if isCandidateTestResultXML(art.ArtifactId) && art.FetchUrl != "" {
-					reason, err := fetchAndParseXMLReasonWithCache(ctx, httpClient, art, cache)
-					if err == nil && reason != nil {
-						msg, stack := cleanAndSplitReasonMessage(reason.Message)
-						return &DiscoveredError{
-							Source:         fmt.Sprintf("Artifact %s", art.ArtifactId),
-							SourceWorkUnit: target,
-							ArtifactID:     art.ArtifactId,
-							ErrorName:      reason.ErrorName,
-							ErrorCode:      reason.ErrorCode,
-							Message:        msg,
-							StackTrace:     stack,
-						}, nil
-					}
+		} else if cache != nil {
+			cache.mu.RLock()
+			arts = cache.artifacts["xml:"+target]
+			if len(arts) == 0 {
+				arts = cache.artifacts[target]
+			}
+			cache.mu.RUnlock()
+		}
+		for _, art := range arts {
+			if !isCandidateTestResultXML(art.ArtifactId) || art.FetchUrl == "" {
+				continue
+			}
+			var reason *XMLReason
+			if httpClient != nil {
+				var err error
+				reason, err = fetchAndParseXMLReasonWithCache(ctx, httpClient, art, cache)
+				if err != nil {
+					continue
 				}
+			} else if cache != nil {
+				key := artifactXMLCacheKey(art)
+				cache.mu.RLock()
+				if cache.hasXMLChecked[key] {
+					reason = cache.xmlReasons[key]
+				}
+				cache.mu.RUnlock()
+			}
+			if reason != nil {
+				msg, stack := cleanAndSplitReasonMessage(reason.Message)
+				return &DiscoveredError{
+					Source:         fmt.Sprintf("Artifact %s", art.ArtifactId),
+					SourceWorkUnit: target,
+					ArtifactID:     art.ArtifactId,
+					ErrorName:      reason.ErrorName,
+					ErrorCode:      reason.ErrorCode,
+					Message:        msg,
+					StackTrace:     stack,
+				}, nil
 			}
 		}
 	}
@@ -607,7 +766,10 @@ func discoverWorkUnitErrorUncached(ctx context.Context, rdbClient pb.ResultDBCli
 	if rootInvID != "" {
 		rootInvName := "rootInvocations/" + base.NormalizeInvocation(rootInvID)
 		rootInv := getRootInvocationWithCache(ctx, rdbClient, rootInvName, cache)
-		if rootInv != nil && strings.TrimSpace(rootInv.SummaryMarkdown) != "" {
+		if rootInv != nil &&
+			rootInv.GetState() != pb.RootInvocation_SUCCEEDED &&
+			rootInv.GetState() != pb.RootInvocation_SKIPPED &&
+			!IsRedundantExternalSummary(rootInv.SummaryMarkdown, rootInv) {
 			return &DiscoveredError{
 				Source:         fmt.Sprintf("Root Invocation %s", rootInvName),
 				SourceWorkUnit: rootInvName,
@@ -624,9 +786,13 @@ func PrintModuleError(err *DiscoveredError, indent string) {
 	PrintModuleErrorForTarget(err, "", indent)
 }
 
-// PrintModuleErrorForTarget prints a discovered module or work unit error, indicating if the error originated from an ancestor work unit or root invocation.
+// PrintModuleErrorForTarget prints a discovered module or work unit error, indicating if the error originated from a child or ancestor work unit or root invocation.
 func PrintModuleErrorForTarget(err *DiscoveredError, targetWorkUnit string, indent string) {
-	if err == nil {
+	fprintModuleErrorForTarget(os.Stdout, err, targetWorkUnit, indent)
+}
+
+func fprintModuleErrorForTarget(out io.Writer, err *DiscoveredError, targetWorkUnit string, indent string) {
+	if out == nil || err == nil {
 		return
 	}
 
@@ -634,10 +800,14 @@ func PrintModuleErrorForTarget(err *DiscoveredError, targetWorkUnit string, inde
 	if targetWorkUnit != "" && err.SourceWorkUnit != "" && err.SourceWorkUnit != targetWorkUnit {
 		if strings.Contains(err.SourceWorkUnit, "/workUnits/") {
 			_, wuID := base.ExtractWorkUnitComponents(err.SourceWorkUnit)
+			rel := "ancestor"
+			if err.IsChildWorkUnit {
+				rel = "child"
+			}
 			if wuID != "" {
-				sourceLabel = fmt.Sprintf(" (from ancestor work unit %s)", wuID)
+				sourceLabel = fmt.Sprintf(" (from %s work unit %s)", rel, wuID)
 			} else {
-				sourceLabel = fmt.Sprintf(" (from ancestor %s)", err.SourceWorkUnit)
+				sourceLabel = fmt.Sprintf(" (from %s %s)", rel, err.SourceWorkUnit)
 			}
 		} else if strings.HasPrefix(err.SourceWorkUnit, "rootInvocations/") || strings.HasPrefix(err.SourceWorkUnit, "invocations/") {
 			sourceLabel = fmt.Sprintf(" (from %s)", FormatWorkUnitBreadcrumb(err.SourceWorkUnit))
@@ -645,9 +815,9 @@ func PrintModuleErrorForTarget(err *DiscoveredError, targetWorkUnit string, inde
 	}
 
 	if err.RawSummary != "" {
-		fmt.Printf("%sSummary%s:\n", indent, sourceLabel)
+		fmt.Fprintf(out, "%sSummary%s:\n", indent, sourceLabel)
 		for _, l := range strings.Split(strings.TrimRight(err.RawSummary, "\n"), "\n") {
-			fmt.Printf("%s  %s\n", indent, l)
+			fmt.Fprintf(out, "%s  %s\n", indent, l)
 		}
 		return
 	}
@@ -666,19 +836,19 @@ func PrintModuleErrorForTarget(err *DiscoveredError, targetWorkUnit string, inde
 		lines := strings.Split(strings.TrimRight(fullMsg, "\n"), "\n")
 		title := fmt.Sprintf("Module Error%s:", sourceLabel)
 		if len(lines) == 1 {
-			fmt.Printf("%s%s %s\n", indent, title, lines[0])
+			fmt.Fprintf(out, "%s%s %s\n", indent, title, lines[0])
 		} else {
-			fmt.Printf("%s%s %s\n", indent, title, lines[0])
+			fmt.Fprintf(out, "%s%s %s\n", indent, title, lines[0])
 			for _, l := range lines[1:] {
-				fmt.Printf("%s  %s\n", indent, strings.TrimSpace(l))
+				fmt.Fprintf(out, "%s  %s\n", indent, strings.TrimSpace(l))
 			}
 		}
 	}
 
 	if err.StackTrace != "" {
-		fmt.Printf("%sStack Trace:\n", indent)
+		fmt.Fprintf(out, "%sStack Trace:\n", indent)
 		for _, l := range strings.Split(strings.TrimRight(err.StackTrace, "\n"), "\n") {
-			fmt.Printf("%s  %s\n", indent, l)
+			fmt.Fprintf(out, "%s  %s\n", indent, l)
 		}
 	}
 }
@@ -938,6 +1108,11 @@ var interestingArtifactRules = []failureArtifactRule{
 	{
 		prefix:    "invocationSkipped_summary_markdown",
 		label:     "skipped summary",
+		isSummary: true,
+	},
+	{
+		prefix:    "testRunFailed_full_summary_markdown",
+		label:     "failure summary",
 		isSummary: true,
 	},
 	{

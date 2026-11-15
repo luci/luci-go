@@ -138,6 +138,82 @@ func TestDiscoverWorkUnitError(t *testing.T) {
 			assert.Loosely(t, err.RawSummary, should.Equal("### Work Unit Failed: Runner crashed"))
 		})
 
+		t.Run(`Layer 1: Cached child Work Unit SummaryMarkdown`, func(t *ftt.Test) {
+			ctx := WithDiscoveryCache(ctx)
+			childWU := &pb.WorkUnit{
+				Name:            "rootInvocations/inv1/workUnits/wu1:u-run1",
+				Parent:          "rootInvocations/inv1/workUnits/wu1",
+				Kind:            "TF_TEST_RUN",
+				State:           pb.WorkUnit_FAILED,
+				SummaryMarkdown: "Instrumentation run failed due to 'Process crashed.'",
+			}
+			CacheWorkUnit(ctx, childWU)
+			fakeClient := &fakeDiscoveryRDBClient{
+				getWorkUnitFunc: func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:           in.Name,
+						Kind:           "TF_MODULE",
+						State:          pb.WorkUnit_SUCCEEDED,
+						ChildWorkUnits: []string{childWU.Name},
+					}, nil
+				},
+			}
+			err, dErr := DiscoverWorkUnitError(ctx, fakeClient, nil, "rootInvocations/inv1/workUnits/wu1")
+			assert.Loosely(t, dErr, should.BeNil)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, err.SourceWorkUnit, should.Equal(childWU.Name))
+			assert.Loosely(t, err.IsChildWorkUnit, should.BeTrue)
+			assert.Loosely(t, err.RawSummary, should.Equal("Instrumentation run failed due to 'Process crashed.'"))
+
+			var childBuf bytes.Buffer
+			fprintModuleErrorForTarget(&childBuf, err, "rootInvocations/inv1/workUnits/wu1", "  ")
+			assert.Loosely(t, childBuf.String(), should.ContainSubstring("Summary (from child work unit wu1:u-run1):"))
+
+			var ancBuf bytes.Buffer
+			fprintModuleErrorForTarget(&ancBuf, &DiscoveredError{
+				SourceWorkUnit: "rootInvocations/inv1/workUnits/task1",
+				RawSummary:     "Task crashed",
+			}, "rootInvocations/inv1/workUnits/wu1", "  ")
+			assert.Loosely(t, ancBuf.String(), should.ContainSubstring("Summary (from ancestor work unit task1):"))
+		})
+
+		t.Run(`Layer 1: Ignores SKIPPED work unit, child, and ancestor SummaryMarkdown`, func(t *ftt.Test) {
+			ctx := WithDiscoveryCache(ctx)
+			skippedChild := &pb.WorkUnit{
+				Name:            "rootInvocations/inv1/workUnits/wu1:u-run1",
+				Parent:          "rootInvocations/inv1/workUnits/wu1",
+				Kind:            "TF_TEST_RUN",
+				State:           pb.WorkUnit_SKIPPED,
+				SummaryMarkdown: "Skipped by shard filter",
+			}
+			CacheWorkUnit(ctx, skippedChild)
+			fakeClient := &fakeDiscoveryRDBClient{
+				getWorkUnitFunc: func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:            in.Name,
+						Kind:            "TF_MODULE",
+						State:           pb.WorkUnit_SKIPPED,
+						SummaryMarkdown: "Module skipped due to ABI mismatch",
+						ChildWorkUnits:  []string{skippedChild.Name},
+					}, nil
+				},
+				queryWorkUnitsFunc: func(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{
+								Name:            "rootInvocations/inv1/workUnits/task1",
+								State:           pb.WorkUnit_SKIPPED,
+								SummaryMarkdown: "Invocation skipped",
+							},
+						},
+					}, nil
+				},
+			}
+			err, dErr := DiscoverWorkUnitError(ctx, fakeClient, nil, "rootInvocations/inv1/workUnits/wu1")
+			assert.Loosely(t, dErr, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
+		})
+
 		t.Run(`Layer 2: Tradefed XML Artifact`, func(t *ftt.Test) {
 			var gzBuf bytes.Buffer
 			gw := gzip.NewWriter(&gzBuf)
@@ -261,6 +337,143 @@ func TestDiscoverWorkUnitError(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.ErrorName, should.Equal("APK_INSTALLATION_FAILED"))
 			assert.Loosely(t, err.Message, should.Equal("APK install failed"))
+		})
+
+		t.Run(`Ignores SUCCEEDED summaries and redundant external links on root and RootInvocation`, func(t *ftt.Test) {
+			atiURL := "https://android-build.corp.google.com/test_investigate/invocation/I12345"
+			fakeClient := &fakeDiscoveryRDBClient{
+				getWorkUnitFunc: func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:            in.Name,
+						Parent:          "rootInvocations/inv1/workUnits/root",
+						State:           pb.WorkUnit_SUCCEEDED,
+						SummaryMarkdown: "Completed 10 tests cleanly",
+					}, nil
+				},
+				queryWorkUnitsFunc: func(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{
+								Name:            "rootInvocations/inv1/workUnits/task1",
+								State:           pb.WorkUnit_SUCCEEDED,
+								SummaryMarkdown: "Task completed cleanly",
+							},
+							{
+								Name:            "rootInvocations/inv1/workUnits/root",
+								WorkUnitId:      "root",
+								State:           pb.WorkUnit_FAILED,
+								SummaryMarkdown: atiURL,
+							},
+						},
+					}, nil
+				},
+				getRootInvocationFunc: func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:            in.Name,
+						State:           pb.RootInvocation_FAILED,
+						SummaryMarkdown: atiURL,
+						Tags: []*pb.StringPair{
+							{Key: "result_link", Value: atiURL},
+						},
+					}, nil
+				},
+			}
+			err, dErr := DiscoverWorkUnitError(WithDiscoveryCache(ctx), fakeClient, nil, "rootInvocations/inv1/workUnits/wu1")
+			assert.Loosely(t, dErr, should.BeNil)
+			assert.Loosely(t, err, should.BeNil)
+
+			// SUCCEEDED RootInvocation non-link summary is also ignored.
+			fakeClient.queryWorkUnitsFunc = func(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+				return &pb.QueryWorkUnitsResponse{
+					WorkUnits: []*pb.WorkUnit{
+						{
+							Name:            "rootInvocations/inv1/workUnits/root",
+							WorkUnitId:      "root",
+							State:           pb.WorkUnit_SUCCEEDED,
+							SummaryMarkdown: "Invocation finished",
+						},
+					},
+				}, nil
+			}
+			fakeClient.getRootInvocationFunc = func(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
+				return &pb.RootInvocation{
+					Name:            in.Name,
+					State:           pb.RootInvocation_SUCCEEDED,
+					SummaryMarkdown: "Invocation finished",
+				}, nil
+			}
+			err2, dErr2 := DiscoverWorkUnitError(WithDiscoveryCache(ctx), fakeClient, nil, "rootInvocations/inv1/workUnits/wu1")
+			assert.Loosely(t, dErr2, should.BeNil)
+			assert.Loosely(t, err2, should.BeNil)
+		})
+
+		t.Run(`Reuses cached ancestor XML reason when httpClient is nil and does not cache suppressed Layer 2 miss`, func(t *ftt.Test) {
+			ctx := WithDiscoveryCache(ctx)
+			var gzBuf bytes.Buffer
+			gw := gzip.NewWriter(&gzBuf)
+			_, _ = gw.Write([]byte(`<?xml version="1.0"?><TestResult><Reason message="Device offline" error_name="DEVICE_UNAVAILABLE" error_code="501" /></TestResult>`))
+			_ = gw.Close()
+
+			var xmlFetches int
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				xmlFetches++
+				_, _ = w.Write(gzBuf.Bytes())
+			}))
+			defer server.Close()
+
+			var listCalls int
+			fakeClient := &fakeDiscoveryRDBClient{
+				getWorkUnitFunc: func(ctx context.Context, in *pb.GetWorkUnitRequest, opts ...grpc.CallOption) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:   in.Name,
+						Parent: "rootInvocations/inv1/workUnits/task1",
+						State:  pb.WorkUnit_FAILED,
+					}, nil
+				},
+				queryWorkUnitsFunc: func(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{Name: "rootInvocations/inv1/workUnits/task1", State: pb.WorkUnit_FAILED},
+						},
+					}, nil
+				},
+				listArtifactsFunc: func(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+					listCalls++
+					if in.Parent == "rootInvocations/inv1/workUnits/task1" {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:       in.Parent + "/artifacts/subprocess-test_result.xml.gz",
+									ArtifactId: "subprocess-test_result.xml.gz",
+									FetchUrl:   server.URL + "/xml",
+								},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			// Suppressed Layer 2 miss (httpClient == nil before cache is populated) is not cached.
+			miss, dErr := DiscoverWorkUnitError(ctx, fakeClient, nil, "rootInvocations/inv1/workUnits/wu1")
+			assert.Loosely(t, dErr, should.BeNil)
+			assert.Loosely(t, miss, should.BeNil)
+			assert.Loosely(t, listCalls, should.Equal(0))
+
+			// Subsequent call on wu1 with httpClient != nil runs Layer 2 and caches task1 XML reason.
+			hit1, dErr := DiscoverWorkUnitError(ctx, fakeClient, server.Client(), "rootInvocations/inv1/workUnits/wu1")
+			assert.Loosely(t, dErr, should.BeNil)
+			assert.Loosely(t, hit1, should.NotBeNil)
+			assert.Loosely(t, hit1.Message, should.Equal("Device offline"))
+			callsAfterFirst := listCalls
+
+			// Sibling wu2 with httpClient == nil reuses cached task1 XML reason with 0 extra RPCs or HTTP fetches.
+			hit2, dErr := DiscoverWorkUnitError(ctx, fakeClient, nil, "rootInvocations/inv1/workUnits/wu2")
+			assert.Loosely(t, dErr, should.BeNil)
+			assert.Loosely(t, hit2, should.NotBeNil)
+			assert.Loosely(t, hit2.Message, should.Equal("Device offline"))
+			assert.Loosely(t, listCalls, should.Equal(callsAfterFirst))
+			assert.Loosely(t, xmlFetches, should.Equal(1))
 		})
 	})
 }
