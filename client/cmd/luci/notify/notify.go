@@ -31,10 +31,11 @@ import (
 func Cmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "notify <subcommand>",
-		ShortDesc: "Query LUCI Notify builder statuses",
-		LongDesc: "Query LUCI Notify (notify.api.luci.app) builder statuses.\n\n" +
+		ShortDesc: "Query LUCI Notify builder statuses and alert groups",
+		LongDesc: "Query LUCI Notify (notify.api.luci.app) builder statuses and gardener rotation alert groups.\n\n" +
 			"Available subcommands:\n" +
-			"  builder   List builders and their latest status (e.g. 'luci notify builder list -rotation chrome_browser_release -status FAILURE')",
+			"  builder       List builders and their latest status (e.g. 'luci notify builder list -rotation chrome_browser_release -status FAILURE')\n" +
+			"  alert-group   List rotation alert groups (e.g. 'luci notify alert-group list -rotation chrome-browser-release')",
 		CommandRun: func() subcommands.CommandRun {
 			return &notifyRun{af: af}
 		},
@@ -49,6 +50,7 @@ type notifyRun struct {
 func (r *notifyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	return base.RunSubcommandApp(a, "luci notify", "LUCI Notify inspection", []*subcommands.Command{
 		BuilderCmd(r.af),
+		AlertGroupCmd(r.af),
 		subcommands.CmdHelp,
 	}, args)
 }

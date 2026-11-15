@@ -75,8 +75,9 @@ func getApplication() *cli.Application {
 			"     $ luci artifact list -invocationid build-123 -testid ninja://chrome/test -resultid 0\n" +
 			"     $ luci artifact get -invocationid build-123 -testid ninja://chrome/test -resultid 0 -artifactid output.log\n" +
 			"     $ luci work-unit get -invocationid build-123 -workunitid run-tests\n\n" +
-			"  9. Query LUCI Notify builder statuses:\n" +
-			"     $ luci notify builder list -rotation chrome_browser_release -status FAILURE",
+			"  9. Query LUCI Notify builder statuses and gardener rotation alert groups:\n" +
+			"     $ luci notify builder list -rotation chrome_browser_release -status FAILURE\n" +
+			"     $ luci notify alert-group list -rotation chrome-browser-release",
 
 		Context: func(ctx context.Context) context.Context {
 			return gologger.StdConfig.Use(ctx)
