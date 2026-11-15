@@ -15,6 +15,8 @@
 package build
 
 import (
+	"context"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -34,7 +36,10 @@ import (
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-const defaultBuildListLimit = 10
+const (
+	defaultBuildListLimit      = 10
+	maxPrecedingPatchsetProbes = 3
+)
 
 // ListCmd returns the subcommand for `luci build list`.
 func ListCmd(af *base.AuthFlags) *subcommands.Command {
@@ -43,6 +48,7 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "Search and list builds by builder, tag, status, or Gerrit CL",
 		LongDesc: "Search Buildbucket builds by builder, tag, status, or Gerrit CL.\n\n" +
 			"By default, prints up to 10 matching builds with their status, builder/number, -buildid and -invocationid flags, timing, and summary.\n" +
+			"When -cl is specified without a patchset, resolves the latest patchset and probes up to 3 preceding patchsets if the latest patchset has no builds.\n" +
 			"Use -limit / -n to change the maximum number of builds returned.\n\n" +
 			"Examples:\n" +
 			"  $ luci build list -builder \"chromium/ci/Linux UBSan Tests\" -n 5\n" +
@@ -61,7 +67,7 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.Var(&r.tags, "t", "Alias for -tag")
 			r.Flags.StringVar(&r.status, "status", "", "Filter by status (scheduled, started, ended, success, failure, infra_failure, canceled)")
 			r.Flags.StringVar(&r.cl, "cl", "", "Filter by Gerrit CL (URL, e.g. https://chromium-review.googlesource.com/c/..., crrev.com/c/..., or change ID)")
-			r.Flags.IntVar(&r.patchset, "patchset", 0, "Filter by specific patchset number (defaults to latest patchset or patchset in -cl URL)")
+			r.Flags.IntVar(&r.patchset, "patchset", 0, "Filter by specific patchset number (defaults to latest patchset with builds, or patchset in -cl URL)")
 			r.Flags.IntVar(&r.patchset, "ps", 0, "Alias for -patchset")
 			r.Flags.IntVar(&r.limit, "limit", defaultBuildListLimit, "Maximum number of builds to return (default: 10)")
 			r.Flags.IntVar(&r.limit, "n", defaultBuildListLimit, "Alias for -limit")
@@ -75,6 +81,7 @@ type buildListRun struct {
 	af           *base.AuthFlags
 	client       grpcpb.BuildsClient
 	gerritClient gerritpb.GerritClient
+	out          io.Writer
 
 	host     string
 	builder  string
@@ -100,6 +107,20 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 		fmt.Fprintf(os.Stderr, "flag -limit / -n must be a positive integer\n")
 		return 1
 	}
+	patchsetExplicit := r.patchset != 0
+	r.Flags.Visit(func(f *flag.Flag) {
+		if f.Name == "patchset" || f.Name == "ps" {
+			patchsetExplicit = true
+		}
+	})
+	if patchsetExplicit && r.patchset <= 0 {
+		fmt.Fprintf(os.Stderr, "flag -patchset / -ps must be a positive integer\n")
+		return 1
+	}
+	if patchsetExplicit && strings.TrimSpace(r.cl) == "" {
+		fmt.Fprintf(os.Stderr, "flag -patchset / -ps requires -cl\n")
+		return 1
+	}
 
 	var gerritChange *pb.GerritChange
 	if r.cl != "" {
@@ -121,7 +142,8 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 	}
 
 	ctx := cli.GetContext(a, r, env)
-	if gerritChange != nil && gerritChange.Patchset == 0 {
+	autoPatchset := gerritChange != nil && gerritChange.Patchset == 0
+	if autoPatchset {
 		if r.gerritClient == nil && r.af != nil {
 			if err := r.af.Parse(); err == nil {
 				r.gerritClient, _ = r.af.NewGerritClient(ctx, gerritChange.Host)
@@ -167,21 +189,116 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 		},
 	}
 
-	resp, err := client.SearchBuilds(ctx, &pb.SearchBuildsRequest{
-		Predicate: predicate,
-		Mask:      mask,
-		PageSize:  int32(r.limit),
-	})
+	builds, notice, err := searchBuildsWithFallback(ctx, client, predicate, mask, int32(r.limit), gerritChange, autoPatchset)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "SearchBuilds RPC failed: %s\n", err)
 		return 1
 	}
 
-	if err := FormatBuildList(os.Stdout, resp.GetBuilds()); err != nil {
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+	if notice != "" {
+		fmt.Fprintf(out, "%s\n\n", notice)
+	}
+	if err := FormatBuildList(out, builds); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to format builds: %s\n", err)
 		return 1
 	}
 	return 0
+}
+
+// searchBuildsWithFallback runs SearchBuilds for predicate, and when autoPatchset
+// is true and the latest patchset N (N > 1) has 0 builds in Buildbucket, probes up
+// to maxPrecedingPatchsetProbes preceding patchsets (N-1..max(1, N-3)).
+func searchBuildsWithFallback(ctx context.Context, client grpcpb.BuildsClient, predicate *pb.BuildPredicate, mask *pb.BuildMask, limit int32, gerritChange *pb.GerritChange, autoPatchset bool) ([]*pb.Build, string, error) {
+	resp, err := client.SearchBuilds(ctx, &pb.SearchBuildsRequest{
+		Predicate: predicate,
+		Mask:      mask,
+		PageSize:  limit,
+	})
+	if err != nil {
+		return nil, "", err
+	}
+	builds := resp.GetBuilds()
+
+	if !autoPatchset || gerritChange.Patchset <= 1 || len(builds) > 0 {
+		return builds, "", nil
+	}
+
+	hasExtraFilters := predicate.Builder != nil || len(predicate.Tags) > 0 || predicate.Status != pb.Status_STATUS_UNSPECIFIED
+	if hasExtraFilters {
+		anyBuilds, err := patchsetHasAnyBuilds(ctx, client, gerritChange)
+		if err != nil {
+			return nil, "", err
+		}
+		if anyBuilds {
+			return builds, "", nil
+		}
+	}
+
+	latestPatchset := gerritChange.Patchset
+	minPatchset := max(int64(1), latestPatchset-maxPrecedingPatchsetProbes)
+	for ps := latestPatchset - 1; ps >= minPatchset; ps-- {
+		candidate := &pb.GerritChange{
+			Host:     gerritChange.Host,
+			Project:  gerritChange.Project,
+			Change:   gerritChange.Change,
+			Patchset: ps,
+		}
+		probePredicate := &pb.BuildPredicate{
+			Builder:       predicate.Builder,
+			Tags:          predicate.Tags,
+			Status:        predicate.Status,
+			GerritChanges: []*pb.GerritChange{candidate},
+		}
+		probeResp, err := client.SearchBuilds(ctx, &pb.SearchBuildsRequest{
+			Predicate: probePredicate,
+			Mask:      mask,
+			PageSize:  limit,
+		})
+		if err != nil {
+			return nil, "", err
+		}
+		if len(probeResp.GetBuilds()) > 0 {
+			notice := fmt.Sprintf("Notice: No builds on latest patchset %d; showing builds from patchset %d", latestPatchset, ps)
+			return probeResp.GetBuilds(), notice, nil
+		}
+		if hasExtraFilters {
+			anyBuilds, err := patchsetHasAnyBuilds(ctx, client, candidate)
+			if err != nil {
+				return nil, "", err
+			}
+			if anyBuilds {
+				notice := fmt.Sprintf("Notice: No builds on latest patchset %d; patchset %d has builds, but none match the filters", latestPatchset, ps)
+				return nil, notice, nil
+			}
+		}
+	}
+
+	if minPatchset == latestPatchset-1 {
+		return nil, fmt.Sprintf("Notice: No builds on latest patchset %d (also checked patchset %d)", latestPatchset, minPatchset), nil
+	}
+	return nil, fmt.Sprintf("Notice: No builds on latest patchset %d (also checked patchsets %d..%d)", latestPatchset, latestPatchset-1, minPatchset), nil
+}
+
+// patchsetHasAnyBuilds reports whether Buildbucket has at least one build of any
+// status/builder/tag associated with gc.
+func patchsetHasAnyBuilds(ctx context.Context, client grpcpb.BuildsClient, gc *pb.GerritChange) (bool, error) {
+	resp, err := client.SearchBuilds(ctx, &pb.SearchBuildsRequest{
+		Predicate: &pb.BuildPredicate{
+			GerritChanges: []*pb.GerritChange{gc},
+		},
+		Mask: &pb.BuildMask{
+			Fields: &field_mask.FieldMask{Paths: []string{"id"}},
+		},
+		PageSize: 1,
+	})
+	if err != nil {
+		return false, err
+	}
+	return len(resp.GetBuilds()) > 0, nil
 }
 
 // buildSearchPredicate parses the CLI filter flags (-builder, -tag, -status, -cl)

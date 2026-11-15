@@ -300,9 +300,11 @@ func TestBuildListRun(t *testing.T) {
 				},
 			}
 
+			var out bytes.Buffer
 			cmd := ListCmd(af)
 			run := cmd.CommandRun().(*buildListRun)
 			run.client = mock
+			run.out = &out
 			err := run.Flags.Parse([]string{
 				"-builder", "chromium/ci/Linux UBSan Tests",
 				"-t", "dut-name:host1",
@@ -312,6 +314,7 @@ func TestBuildListRun(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, out.String(), should.NotContainSubstring("Notice:"))
 		})
 
 		t.Run(`RPC error returns 1`, func(t *ftt.Test) {
@@ -352,15 +355,18 @@ func TestBuildListRun(t *testing.T) {
 				},
 			}
 
+			var out bytes.Buffer
 			cmd := ListCmd(af)
 			run := cmd.CommandRun().(*buildListRun)
 			run.client = mock
+			run.out = &out
 			err := run.Flags.Parse([]string{
 				"-cl", "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529/10",
 			})
 			assert.Loosely(t, err, should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, out.String(), should.NotContainSubstring("Notice:"))
 		})
 
 		t.Run(`Returns builds for latest patchset when omitted from -cl`, func(t *ftt.Test) {
@@ -399,16 +405,19 @@ func TestBuildListRun(t *testing.T) {
 				},
 			}
 
+			var out bytes.Buffer
 			cmd := ListCmd(af)
 			run := cmd.CommandRun().(*buildListRun)
 			run.client = mockBB
 			run.gerritClient = mockGerrit
+			run.out = &out
 			err := run.Flags.Parse([]string{
 				"-cl", "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529",
 			})
 			assert.Loosely(t, err, should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, out.String(), should.NotContainSubstring("Notice:"))
 		})
 
 		t.Run(`Returns correct patchset with -patchset flag`, func(t *ftt.Test) {
@@ -432,9 +441,11 @@ func TestBuildListRun(t *testing.T) {
 				},
 			}
 
+			var out bytes.Buffer
 			cmd := ListCmd(af)
 			run := cmd.CommandRun().(*buildListRun)
 			run.client = mockBB
+			run.out = &out
 			err := run.Flags.Parse([]string{
 				"-cl", "8565529",
 				"-patchset", "4",
@@ -442,6 +453,401 @@ func TestBuildListRun(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, out.String(), should.NotContainSubstring("Notice:"))
+		})
+
+		t.Run(`Non-positive -patchset returns 1`, func(t *ftt.Test) {
+			cases := [][]string{
+				{"-cl", "8565529", "-patchset", "-1"},
+				{"-cl", "8565529", "-ps", "-1"},
+				{"-cl", "8565529", "-patchset", "0"},
+				{"-cl", "8565529", "-ps", "0"},
+				{"-cl", "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529/8", "-patchset", "0"},
+			}
+			for _, flagArgs := range cases {
+				cmd := ListCmd(af)
+				run := cmd.CommandRun().(*buildListRun)
+				err := run.Flags.Parse(flagArgs)
+				assert.Loosely(t, err, should.BeNil)
+				ret := run.Run(nil, run.Flags.Args(), nil)
+				assert.Loosely(t, ret, should.Equal(1))
+			}
+		})
+
+		t.Run(`-patchset without -cl returns 1`, func(t *ftt.Test) {
+			cases := [][]string{
+				{"-patchset", "4"},
+				{"-builder", "chromium/try/linux-rel", "-patchset", "4"},
+				{"-builder", "chromium/try/linux-rel", "-ps", "4"},
+			}
+			for _, flagArgs := range cases {
+				cmd := ListCmd(af)
+				run := cmd.CommandRun().(*buildListRun)
+				err := run.Flags.Parse(flagArgs)
+				assert.Loosely(t, err, should.BeNil)
+				ret := run.Run(nil, run.Flags.Args(), nil)
+				assert.Loosely(t, ret, should.Equal(1))
+			}
+		})
+
+		t.Run(`Falls back to N-1 when latest patchset has 0 builds`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						Project:         "infra/luci/luci-go",
+						CurrentRevision: "rev_8",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_8": {Number: 8},
+						},
+					}, nil
+				},
+			}
+
+			var queriedPatchsets []int64
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					ps := in.Predicate.GerritChanges[0].Patchset
+					queriedPatchsets = append(queriedPatchsets, ps)
+					if ps == 7 {
+						return &pb.SearchBuildsResponse{
+							Builds: []*pb.Build{
+								{Id: 8738491827364512350, Status: pb.Status_FAILURE},
+							},
+						}, nil
+					}
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			run.out = &out
+			err := run.Flags.Parse([]string{"-cl", "8565529"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, queriedPatchsets, should.Match([]int64{8, 7}))
+			assert.Loosely(t, out.String(), should.ContainSubstring(
+				"Notice: No builds on latest patchset 8; showing builds from patchset 7\n\n"+
+					"Builds (1):"))
+		})
+
+		t.Run(`Falls back up to N-3 when intermediate patchsets have 0 builds`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						CurrentRevision: "rev_8",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_8": {Number: 8},
+						},
+					}, nil
+				},
+			}
+
+			var queriedPatchsets []int64
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					ps := in.Predicate.GerritChanges[0].Patchset
+					queriedPatchsets = append(queriedPatchsets, ps)
+					if ps == 5 {
+						return &pb.SearchBuildsResponse{
+							Builds: []*pb.Build{
+								{Id: 8738491827364512351, Status: pb.Status_SUCCESS},
+							},
+						}, nil
+					}
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			run.out = &out
+			err := run.Flags.Parse([]string{"-cl", "8565529"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, queriedPatchsets, should.Match([]int64{8, 7, 6, 5}))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Notice: No builds on latest patchset 8; showing builds from patchset 5"))
+		})
+
+		t.Run(`Stops probing after 3 preceding patchsets when none have builds`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						CurrentRevision: "rev_8",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_8": {Number: 8},
+						},
+					}, nil
+				},
+			}
+
+			var queriedPatchsets []int64
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					queriedPatchsets = append(queriedPatchsets, in.Predicate.GerritChanges[0].Patchset)
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			run.out = &out
+			err := run.Flags.Parse([]string{"-cl", "8565529"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, queriedPatchsets, should.Match([]int64{8, 7, 6, 5}))
+			assert.Loosely(t, out.String(), should.ContainSubstring(
+				"Notice: No builds on latest patchset 8 (also checked patchsets 7..5)\n\n"+
+					"No matching builds found."))
+		})
+
+		t.Run(`Bounds fallback at patchset 1 when latest patchset is 2`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						CurrentRevision: "rev_2",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_2": {Number: 2},
+						},
+					}, nil
+				},
+			}
+
+			var queriedPatchsets []int64
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					queriedPatchsets = append(queriedPatchsets, in.Predicate.GerritChanges[0].Patchset)
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			run.out = &out
+			err := run.Flags.Parse([]string{"-cl", "8565529"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, queriedPatchsets, should.Match([]int64{2, 1}))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Notice: No builds on latest patchset 2 (also checked patchset 1)"))
+		})
+
+		t.Run(`Does not probe preceding patchsets when latest patchset is 1`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						CurrentRevision: "rev_1",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_1": {Number: 1},
+						},
+					}, nil
+				},
+			}
+
+			var queriedPatchsets []int64
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					queriedPatchsets = append(queriedPatchsets, in.Predicate.GerritChanges[0].Patchset)
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			run.out = &out
+			err := run.Flags.Parse([]string{"-cl", "8565529"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, queriedPatchsets, should.Match([]int64{1}))
+			assert.Loosely(t, out.String(), should.NotContainSubstring("Notice:"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("No matching builds found."))
+		})
+
+		t.Run(`Does not fall back when patchset is explicitly pinned`, func(t *ftt.Test) {
+			cases := [][]string{
+				{"-cl", "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529/8"},
+				{"-cl", "8565529", "-patchset", "8"},
+				{"-cl", "8565529", "-ps", "8"},
+			}
+			for _, flagArgs := range cases {
+				var queriedPatchsets []int64
+				mockBB := &mockBuildsClient{
+					searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+						queriedPatchsets = append(queriedPatchsets, in.Predicate.GerritChanges[0].Patchset)
+						return &pb.SearchBuildsResponse{}, nil
+					},
+				}
+
+				var out bytes.Buffer
+				cmd := ListCmd(af)
+				run := cmd.CommandRun().(*buildListRun)
+				run.client = mockBB
+				run.out = &out
+				err := run.Flags.Parse(flagArgs)
+				assert.Loosely(t, err, should.BeNil)
+				ret := run.Run(nil, run.Flags.Args(), nil)
+				assert.Loosely(t, ret, should.Equal(0))
+				assert.Loosely(t, queriedPatchsets, should.Match([]int64{8}))
+				assert.Loosely(t, out.String(), should.NotContainSubstring("Notice:"))
+			}
+		})
+
+		t.Run(`Combined -cl and -status failure stops at green latest patchset`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						CurrentRevision: "rev_5",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_5": {Number: 5},
+						},
+					}, nil
+				},
+			}
+
+			var queriedPatchsets []int64
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					ps := in.Predicate.GerritChanges[0].Patchset
+					queriedPatchsets = append(queriedPatchsets, ps)
+					// Patchset 5 has passing builds (unfiltered check finds 1 build, status=FAILURE finds 0).
+					if ps == 5 && in.Predicate.Status == pb.Status_STATUS_UNSPECIFIED {
+						assert.Loosely(t, in.PageSize, should.Equal(int32(1)))
+						return &pb.SearchBuildsResponse{
+							Builds: []*pb.Build{{Id: 100}},
+						}, nil
+					}
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			run.out = &out
+			err := run.Flags.Parse([]string{"-cl", "8565529", "-status", "failure"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, queriedPatchsets, should.Match([]int64{5, 5}))
+			assert.Loosely(t, out.String(), should.NotContainSubstring("Notice:"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("No matching builds found."))
+		})
+
+		t.Run(`Combined -cl and -status failure falls back past empty latest patchset`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						CurrentRevision: "rev_5",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_5": {Number: 5},
+						},
+					}, nil
+				},
+			}
+
+			var queriedPatchsets []int64
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					ps := in.Predicate.GerritChanges[0].Patchset
+					queriedPatchsets = append(queriedPatchsets, ps)
+					if ps == 4 && in.Predicate.Status == pb.Status_FAILURE {
+						return &pb.SearchBuildsResponse{
+							Builds: []*pb.Build{{Id: 200, Status: pb.Status_FAILURE}},
+						}, nil
+					}
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			run.out = &out
+			err := run.Flags.Parse([]string{"-cl", "8565529", "-status", "failure"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, queriedPatchsets, should.Match([]int64{5, 5, 4}))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Notice: No builds on latest patchset 5; showing builds from patchset 4"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Builds (1):"))
+		})
+
+		t.Run(`Combined -cl and -status failure stops at green fallback patchset`, func(t *ftt.Test) {
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8565529,
+						CurrentRevision: "rev_5",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"rev_5": {Number: 5},
+						},
+					}, nil
+				},
+			}
+
+			var queriedPatchsets []int64
+			mockBB := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					ps := in.Predicate.GerritChanges[0].Patchset
+					queriedPatchsets = append(queriedPatchsets, ps)
+					// Patchset 5 has 0 builds total; patchset 4 has passing builds only; patchset 3 has stale failures.
+					if ps == 4 && in.Predicate.Status == pb.Status_STATUS_UNSPECIFIED {
+						return &pb.SearchBuildsResponse{
+							Builds: []*pb.Build{{Id: 300}},
+						}, nil
+					}
+					if ps == 3 {
+						return &pb.SearchBuildsResponse{
+							Builds: []*pb.Build{{Id: 301, Status: pb.Status_FAILURE}},
+						}, nil
+					}
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			var out bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBB
+			run.gerritClient = mockGerrit
+			run.out = &out
+			err := run.Flags.Parse([]string{"-cl", "8565529", "-status", "failure"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, queriedPatchsets, should.Match([]int64{5, 5, 4, 4}))
+			assert.Loosely(t, out.String(), should.ContainSubstring("Notice: No builds on latest patchset 5; patchset 4 has builds, but none match the filters"))
+			assert.Loosely(t, out.String(), should.ContainSubstring("No matching builds found."))
 		})
 
 		t.Run(`Invalid -cl returns 1`, func(t *ftt.Test) {
