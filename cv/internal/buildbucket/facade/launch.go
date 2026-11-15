@@ -167,7 +167,7 @@ type batch struct {
 
 func prepareBatches(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, cls []*run.RunCL) ([]batch, error) {
 	gcs := makeGerritChanges(cls)
-	nonOptProp, optProp, err := makeProperties(ctx, r.Mode, r.Owner)
+	nonOptProp, optProp, err := makeProperties(ctx, r.Mode, cls)
 	if err != nil {
 		return nil, errors.Fmt("failed to make input properties: %w", err)
 	}
@@ -221,8 +221,8 @@ func prepareBatches(ctx context.Context, tryjobs []*tryjob.Tryjob, r *run.Run, c
 	return ret, nil
 }
 
-func makeProperties(ctx context.Context, mode run.Mode, owner identity.Identity) (nonOpt, opt *structpb.Struct, err error) {
-	isGoogler, err := auth.GetState(ctx).DB().IsMember(ctx, owner, []string{"googlers"})
+func makeProperties(ctx context.Context, mode run.Mode, cls []*run.RunCL) (nonOpt, opt *structpb.Struct, err error) {
+	isGoogler, err := areAllOwnersGooglers(ctx, cls)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -241,6 +241,33 @@ func makeProperties(ctx context.Context, mode run.Mode, owner identity.Identity)
 		return nil, nil, err
 	}
 	return nonOpt, opt, nil
+}
+
+// areAllOwnersGooglers returns true iff there is at least one CL and the owner
+// of every CL is a member of the "googlers" group.
+func areAllOwnersGooglers(ctx context.Context, cls []*run.RunCL) (bool, error) {
+	if len(cls) == 0 {
+		return false, nil
+	}
+	db := auth.GetState(ctx).DB()
+	seen := make(map[identity.Identity]struct{}, len(cls))
+	for _, cl := range cls {
+		ownerID, err := cl.Detail.OwnerIdentity()
+		if err != nil {
+			return false, err
+		}
+		if _, ok := seen[ownerID]; ok {
+			continue
+		}
+		seen[ownerID] = struct{}{}
+		switch isGoogler, err := db.IsMember(ctx, ownerID, []string{"googlers"}); {
+		case err != nil:
+			return false, err
+		case !isGoogler:
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func makeCVProperties(in *recipe.Input) (*structpb.Struct, error) {

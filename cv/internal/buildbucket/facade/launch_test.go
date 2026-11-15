@@ -62,7 +62,8 @@ func TestLaunch(t *testing.T) {
 		)
 		ownerIdentity, err := identity.MakeIdentity(fmt.Sprintf("user:%s", owner1Email))
 		assert.NoErr(t, err)
-		ct.AddMember(ownerIdentity.Email(), "googlers") // Run owner is a googler
+		ct.AddMember(owner1Email, "googlers")
+		ct.AddMember(owner2Email, "googlers")
 		builderID := &bbpb.BuilderID{
 			Project: lProject,
 			Bucket:  "testBucket",
@@ -437,6 +438,126 @@ func TestLaunch(t *testing.T) {
 			assert.NoErr(t, launchResults[0].Err)
 			secondExternalID := launchResults[0].ExternalID
 			assert.Loosely(t, secondExternalID, should.Equal(firstExternalID))
+		})
+
+		t.Run("ownerIsGoogler", func(t *ftt.Test) {
+			const externalEmail = "external@example.com"
+
+			launchAndGetBuild := func(t *ftt.Test, optional bool, runCLs []*run.RunCL) *bbpb.Build {
+				t.Helper()
+				tj := &tryjob.Tryjob{
+					ID: 65535,
+					Definition: &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host:    bbHost,
+								Builder: builderID,
+							},
+						},
+						Optional: optional,
+					},
+					Status: tryjob.Status_PENDING,
+				}
+				launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, runCLs)
+				assert.Loosely(t, launchResults, should.HaveLength(1))
+				assert.NoErr(t, launchResults[0].Err)
+				_, id, err := launchResults[0].ExternalID.ParseBuildbucketID()
+				assert.NoErr(t, err)
+				build, err := bbClient.GetBuild(ctx, &bbpb.GetBuildRequest{
+					Id:   id,
+					Mask: &bbpb.BuildMask{AllFields: true},
+				})
+				assert.NoErr(t, err)
+				return build
+			}
+
+			assertOwnerIsGoogler := func(t *ftt.Test, build *bbpb.Build, expected bool) {
+				t.Helper()
+				props := build.GetInput().GetProperties().GetFields()
+				assert.Loosely(t, props[propertyKey].GetStructValue().GetFields()["ownerIsGoogler"].GetBoolValue(), should.Equal(expected))
+				assert.Loosely(t, props[legacyPropertyKey].GetStructValue().GetFields()["ownerIsGoogler"].GetBoolValue(), should.Equal(expected))
+			}
+
+			t.Run("Single CL owned by Googler", func(t *ftt.Test) {
+				r.CLs = common.CLIDs{cl1.ID}
+				build := launchAndGetBuild(t, false, []*run.RunCL{cl1})
+				assertOwnerIsGoogler(t, build, true)
+			})
+
+			t.Run("Single CL owned by non-Googler even when Run.Owner is Googler", func(t *ftt.Test) {
+				cl1.Detail.GetGerrit().GetInfo().GetOwner().Email = externalEmail
+				r.CLs = common.CLIDs{cl1.ID}
+				build := launchAndGetBuild(t, false, []*run.RunCL{cl1})
+				assertOwnerIsGoogler(t, build, false)
+			})
+
+			t.Run("Combined Run with non-Googler first CL and Googler latest-triggered CL", func(t *ftt.Test) {
+				// Simulates combine_cls where external CL1 is combined with Googler CL2
+				// and Run.Owner was set to the Googler who voted last.
+				cl1.Detail.GetGerrit().GetInfo().GetOwner().Email = externalEmail
+				cl2.Detail.GetGerrit().GetInfo().GetOwner().Email = owner1Email
+				r.Owner = ownerIdentity
+
+				build := launchAndGetBuild(t, false, cls)
+				assertOwnerIsGoogler(t, build, false)
+				assert.That(t, build.GetInput().GetGerritChanges(), should.Match([]*bbpb.GerritChange{
+					{Host: gHost, Project: gRepo, Change: gChange1, Patchset: 4},
+					{Host: gHost, Project: gRepo, Change: gChange2, Patchset: 10},
+				}))
+			})
+
+			t.Run("Optional tryjob in mixed-owner combined Run", func(t *ftt.Test) {
+				cl1.Detail.GetGerrit().GetInfo().GetOwner().Email = externalEmail
+				cl2.Detail.GetGerrit().GetInfo().GetOwner().Email = owner1Email
+				r.Owner = ownerIdentity
+
+				optBuild := launchAndGetBuild(t, true, cls)
+				assertOwnerIsGoogler(t, optBuild, false)
+				assert.Loosely(t, optBuild.GetInput().GetProperties().GetFields()[propertyKey].GetStructValue().GetFields()["experimental"].GetBoolValue(), should.BeTrue)
+			})
+
+			t.Run("Combined Run with Googler first CL and non-Googler second CL", func(t *ftt.Test) {
+				cl1.Detail.GetGerrit().GetInfo().GetOwner().Email = owner1Email
+				cl2.Detail.GetGerrit().GetInfo().GetOwner().Email = externalEmail
+				r.Owner = ownerIdentity
+
+				build := launchAndGetBuild(t, false, cls)
+				assertOwnerIsGoogler(t, build, false)
+			})
+
+			t.Run("Combined Run with multiple CLs owned by the same Googler", func(t *ftt.Test) {
+				cl1.Detail.GetGerrit().GetInfo().GetOwner().Email = owner1Email
+				cl2.Detail.GetGerrit().GetInfo().GetOwner().Email = owner1Email
+
+				build := launchAndGetBuild(t, false, cls)
+				assertOwnerIsGoogler(t, build, true)
+			})
+
+			t.Run("Empty CL list fails closed", func(t *ftt.Test) {
+				nonOpt, opt, err := makeProperties(ctx, run.DryRun, nil)
+				assert.NoErr(t, err)
+				assert.Loosely(t, nonOpt.GetFields()[propertyKey].GetStructValue().GetFields()["ownerIsGoogler"].GetBoolValue(), should.BeFalse)
+				assert.Loosely(t, opt.GetFields()[propertyKey].GetStructValue().GetFields()["ownerIsGoogler"].GetBoolValue(), should.BeFalse)
+			})
+
+			t.Run("Malformed CL owner email fails launch", func(t *ftt.Test) {
+				cl1.Detail.GetGerrit().GetInfo().GetOwner().Email = ""
+				tj := &tryjob.Tryjob{
+					ID: 65535,
+					Definition: &tryjob.Definition{
+						Backend: &tryjob.Definition_Buildbucket_{
+							Buildbucket: &tryjob.Definition_Buildbucket{
+								Host:    bbHost,
+								Builder: builderID,
+							},
+						},
+					},
+					Status: tryjob.Status_PENDING,
+				}
+				launchResults := f.Launch(ctx, []*tryjob.Tryjob{tj}, r, cls)
+				assert.Loosely(t, launchResults, should.HaveLength(1))
+				assert.Loosely(t, launchResults[0].Err, should.ErrLike("failed to make input properties"))
+			})
 		})
 	})
 }

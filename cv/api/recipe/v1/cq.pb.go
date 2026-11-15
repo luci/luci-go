@@ -117,7 +117,7 @@ type Input struct {
 	TopLevel bool `protobuf:"varint,4,opt,name=top_level,json=topLevel,proto3" json:"top_level,omitempty"`
 	// The mode of the CQ Run that triggers this Tryjob.
 	RunMode string `protobuf:"bytes,5,opt,name=run_mode,json=runMode,proto3" json:"run_mode,omitempty"`
-	// Tells whether the Run owner is a Googler.
+	// Tells whether the owner of every CL in the Run is a Googler.
 	//
 	// DO NOT USE: This is a temporary workaround for crbug/1259887 which
 	// is supposed to be used by Chromium only.

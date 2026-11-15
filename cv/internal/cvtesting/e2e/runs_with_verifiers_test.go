@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/auth/identity"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -988,5 +989,143 @@ func TestCreatesMultiCLsFailPostStartMessage(t *testing.T) {
 		})
 
 		assert.Loosely(t, r.Status, should.Equal(run.Status_SUCCEEDED))
+	})
+}
+
+func TestCombinedRunOwnerIsGoogler(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("CV sets ownerIsGoogler based on all CL owners in a combined Run", t, func(t *ftt.Test) {
+		ct := Test{}
+		ctx := ct.SetUp(t)
+
+		const lProject = "infra"
+		const gHost = "g-review.example.com"
+		const gRepo = "re/po"
+		const gRef = "refs/heads/main"
+		const gChange1 = 11
+		const gChange2 = 22
+
+		cfg := MakeCfgCombinable("cg0", gHost, gRepo, gRef, &cfgpb.Verifiers_Tryjob_Builder{
+			Host: buildbucketHost,
+			Name: fmt.Sprintf("%s/try/test-builder", lProject),
+		})
+		ct.BuildbucketFake.EnsureBuilders(cfg)
+		prjcfgtest.Create(ctx, lProject, cfg)
+
+		ct.AddMember("googler-1", "googlers")
+		ct.AddCommitter("googler-1")
+		ct.AddMember("googler-2", "googlers")
+		ct.AddCommitter("googler-2")
+		ct.AddDryRunner("external")
+
+		t.Run("Mixed external and Googler CL owners sets ownerIsGoogler to false", func(t *ftt.Test) {
+			tVote1 := ct.Clock.Now()
+			// External contributor links their CL to the Googler's CL via Cq-Depend
+			// and votes CQ+1 first; purge is deferred by stabilization_delay.
+			ciExt := gf.CI(
+				gChange1, gf.Project(gRepo), gf.Ref(gRef),
+				gf.Owner("external"),
+				gf.Updated(tVote1),
+				gf.CQ(+1, tVote1, gf.U("external")),
+				gf.Desc(fmt.Sprintf("External CL\n\nCq-Depend: %d", gChange2)),
+			)
+			// Googler votes CQ+1 later (within stabilization_delay), becoming
+			// Run.Owner of the combined Run.
+			ct.Clock.Add(time.Minute)
+			tVote2 := ct.Clock.Now()
+			ciGoogler := gf.CI(
+				gChange2, gf.Project(gRepo), gf.Ref(gRef),
+				gf.Owner("googler-1"),
+				gf.Updated(tVote2),
+				gf.CQ(+1, tVote2, gf.U("googler-1")),
+				gf.Desc("Googler CL"),
+			)
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ciExt, ciGoogler))
+
+			assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
+			var r *run.Run
+			ct.RunUntil(ctx, func() bool {
+				r = ct.EarliestCreatedRunOf(ctx, lProject)
+				return r != nil && r.Status == run.Status_RUNNING
+			})
+			assert.Loosely(t, r.Mode, should.Equal(run.DryRun))
+			assert.Loosely(t, r.CLs, should.HaveLength(2))
+			// Run.Owner is still the owner of the latest-triggered CL (the Googler).
+			assert.That(t, r.Owner, should.Equal(identity.Identity("user:googler-1@example.com")))
+
+			var buildID int64
+			ct.RunUntil(ctx, func() bool {
+				r = ct.LoadRun(ctx, r.ID)
+				if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+					if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+						_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+						return true
+					}
+				}
+				return false
+			})
+
+			client := ct.BuildbucketFake.MustNewClient(ctx, buildbucketHost, lProject)
+			b, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
+				Id:   buildID,
+				Mask: &buildbucketpb.BuildMask{AllFields: true},
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, b.GetInput().GetGerritChanges(), should.HaveLength(2))
+			props := b.GetInput().GetProperties().GetFields()
+			assert.Loosely(t, props["$recipe_engine/cv"].GetStructValue().GetFields()["ownerIsGoogler"].GetBoolValue(), should.BeFalse)
+			assert.Loosely(t, props["$recipe_engine/cq"].GetStructValue().GetFields()["ownerIsGoogler"].GetBoolValue(), should.BeFalse)
+		})
+
+		t.Run("All Googler CL owners sets ownerIsGoogler to true", func(t *ftt.Test) {
+			tStart := ct.Clock.Now()
+			ci1 := gf.CI(
+				gChange1, gf.Project(gRepo), gf.Ref(gRef),
+				gf.Owner("googler-1"),
+				gf.Updated(tStart),
+				gf.CQ(+1, tStart, gf.U("googler-1")),
+				gf.Desc(fmt.Sprintf("First Googler CL\n\nCq-Depend: %d", gChange2)),
+			)
+			ci2 := gf.CI(
+				gChange2, gf.Project(gRepo), gf.Ref(gRef),
+				gf.Owner("googler-2"),
+				gf.Updated(tStart),
+				gf.CQ(+1, tStart, gf.U("googler-2")),
+				gf.Desc("Second Googler CL"),
+			)
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLRestricted(lProject), ci1, ci2))
+
+			assert.NoErr(t, ct.PMNotifier.UpdateConfig(ctx, lProject))
+			var r *run.Run
+			ct.RunUntil(ctx, func() bool {
+				r = ct.EarliestCreatedRunOf(ctx, lProject)
+				return r != nil && r.Status == run.Status_RUNNING
+			})
+			assert.Loosely(t, r.CLs, should.HaveLength(2))
+
+			var buildID int64
+			ct.RunUntil(ctx, func() bool {
+				r = ct.LoadRun(ctx, r.ID)
+				if executions := r.Tryjobs.GetState().GetExecutions(); len(executions) > 0 {
+					if eid := tryjob.LatestAttempt(executions[0]).GetExternalId(); eid != "" {
+						_, buildID = tryjob.ExternalID(eid).MustParseBuildbucketID()
+						return true
+					}
+				}
+				return false
+			})
+
+			client := ct.BuildbucketFake.MustNewClient(ctx, buildbucketHost, lProject)
+			b, err := client.GetBuild(ctx, &buildbucketpb.GetBuildRequest{
+				Id:   buildID,
+				Mask: &buildbucketpb.BuildMask{AllFields: true},
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, b.GetInput().GetGerritChanges(), should.HaveLength(2))
+			props := b.GetInput().GetProperties().GetFields()
+			assert.Loosely(t, props["$recipe_engine/cv"].GetStructValue().GetFields()["ownerIsGoogler"].GetBoolValue(), should.BeTrue)
+			assert.Loosely(t, props["$recipe_engine/cq"].GetStructValue().GetFields()["ownerIsGoogler"].GetBoolValue(), should.BeTrue)
+		})
 	})
 }
