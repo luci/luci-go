@@ -127,7 +127,7 @@ func (c Configs) GetProjectConfigs(ctx context.Context, req *pb.GetProjectConfig
 			}
 			cfgPb.Content = &pb.Config_RawContent{RawContent: rawContent}
 		case f.GcsURI != "" && m.MustIncludes("signed_url") != mask.Exclude:
-			urls, err := common.CreateSignedURLs(ctx, clients.GetGsClient(ctx), []gs.Path{f.GcsURI}, http.MethodGet, nil)
+			urls, err := clients.CreateSignedURLs(ctx, clients.GetGsClient(ctx), []gs.Path{f.GcsURI}, http.MethodGet, nil)
 			if err != nil {
 				logging.Errorf(ctx, "cannot generate a signed url for GCS object %s: %s", f.GcsURI, err)
 				return nil, status.Errorf(codes.Internal, "error while generating the config signed url")

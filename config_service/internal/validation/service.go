@@ -140,7 +140,7 @@ func (sv *serviceValidator) prepareRequest(ctx context.Context) (*cfgcommonpb.Va
 	for i, f := range sv.files {
 		gsPaths[i] = f.GetGSPath()
 	}
-	urls, err := common.CreateSignedURLs(ctx, sv.gsClient, gsPaths, http.MethodGet, nil)
+	urls, err := clients.CreateSignedURLs(ctx, sv.gsClient, gsPaths, http.MethodGet, nil)
 	if err != nil {
 		return nil, err
 	}

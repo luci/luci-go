@@ -15,20 +15,11 @@
 package common
 
 import (
-	"net/http"
 	"testing"
 
-	"cloud.google.com/go/storage"
-	"github.com/golang/mock/gomock"
-
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
-
-	"go.chromium.org/luci/config_service/internal/clients"
-	"go.chromium.org/luci/config_service/testutil"
 )
 
 func TestGitilesURL(t *testing.T) {
@@ -51,45 +42,4 @@ func TestGitilesURL(t *testing.T) {
 	assert.Loosely(t, GitilesURL(&cfgcommonpb.GitilesLocation{
 		Repo: "https://chromium.googlesource.com/infra/infra",
 	}), should.Equal("https://chromium.googlesource.com/infra/infra"))
-}
-
-func TestCreateSignedURLs(t *testing.T) {
-	t.Parallel()
-
-	ctx := testutil.SetupContext()
-	ctl := gomock.NewController(t)
-	mockGsClient := clients.NewMockGsClient(ctl)
-	paths := []gs.Path{
-		gs.MakePath("test-bucket-1", "test-object-1"),
-		gs.MakePath("test-bucket-2", "test-object-2"),
-	}
-
-	var recordedOpts *storage.SignedURLOptions
-	mockGsClient.EXPECT().SignedURL(
-		gomock.Eq("test-bucket-1"),
-		gomock.Eq("test-object-1"),
-		gomock.AssignableToTypeOf(recordedOpts),
-	).DoAndReturn(
-		func(_, _ string, opts *storage.SignedURLOptions) (string, error) {
-			recordedOpts = opts
-			return "signed-url-1", nil
-		},
-	)
-	mockGsClient.EXPECT().SignedURL(
-		gomock.Eq("test-bucket-2"),
-		gomock.Eq("test-object-2"),
-		gomock.Any(),
-	).Return("signed-url-2", nil)
-
-	urls, err := CreateSignedURLs(ctx, mockGsClient, paths, http.MethodGet, map[string]string{
-		"Custom-Header":         "Value",
-		"Another-Custom-Header": "Another-Value",
-	})
-	assert.Loosely(t, err, should.BeNil)
-	assert.Loosely(t, urls, should.Match([]string{"signed-url-1", "signed-url-2"}))
-	assert.Loosely(t, recordedOpts.GoogleAccessID, should.Equal(testutil.ServiceAccount))
-	assert.Loosely(t, recordedOpts.Scheme, should.Equal(storage.SigningSchemeV4))
-	assert.Loosely(t, recordedOpts.Method, should.Equal(http.MethodGet))
-	assert.Loosely(t, recordedOpts.Expires, should.Match(clock.Now(ctx).Add(signedURLExpireDur)))
-	assert.Loosely(t, recordedOpts.Headers, should.Match([]string{"Another-Custom-Header:Another-Value", "Custom-Header:Value"}))
 }

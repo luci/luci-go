@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 
+	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
 )
 
@@ -82,7 +83,7 @@ func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*
 				logging.Warningf(ctx, "touching config file %q is cancelled", file.GetPath())
 				return err
 			case errors.Is(err, storage.ErrObjectNotExist):
-				urls, err := common.CreateSignedURLs(ectx, v.GsClient, []gs.Path{file.GetGSPath()}, http.MethodPut, signedPutHeaders)
+				urls, err := clients.CreateSignedURLs(ectx, v.GsClient, []gs.Path{file.GetGSPath()}, http.MethodPut, signedPutHeaders)
 				switch {
 				case errors.Is(err, context.Canceled):
 					logging.Warningf(ctx, "creating signed url for GS path %q is cancelled", file.GetGSPath())

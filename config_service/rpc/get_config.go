@@ -31,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/config_service/internal/acl"
 	"go.chromium.org/luci/config_service/internal/clients"
-	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
 	pb "go.chromium.org/luci/config_service/proto"
 )
@@ -113,7 +112,7 @@ func (c Configs) GetConfig(ctx context.Context, req *pb.GetConfigRequest) (*pb.C
 			configPb.Content = &pb.Config_RawContent{RawContent: rawContent}
 		}
 	} else if m.MustIncludes("signed_url") != mask.Exclude {
-		urls, err := common.CreateSignedURLs(ctx, clients.GetGsClient(ctx), []gs.Path{f.GcsURI}, http.MethodGet, nil)
+		urls, err := clients.CreateSignedURLs(ctx, clients.GetGsClient(ctx), []gs.Path{f.GcsURI}, http.MethodGet, nil)
 		if err != nil {
 			logging.Errorf(ctx, "failed to generate signed url for %s-%s: %s", cs, f.Path, err)
 			return nil, status.Errorf(codes.Internal, "error while generating the config signed url")
