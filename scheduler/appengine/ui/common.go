@@ -19,11 +19,13 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"go.chromium.org/luci/appengine/gaeauth/server"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
@@ -130,11 +132,15 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 			},
 		},
 		DefaultArgs: func(c context.Context, e *templates.Extra) (templates.Args, error) {
-			loginURL, err := auth.LoginURL(c, e.Request.URL.RequestURI())
+			loginDest := "/"
+			if e.Request.Method == http.MethodGet {
+				loginDest = e.Request.URL.RequestURI()
+			}
+			loginURL, err := auth.LoginURL(c, loginDest)
 			if err != nil {
 				return nil, err
 			}
-			logoutURL, err := auth.LogoutURL(c, e.Request.URL.RequestURI())
+			logoutURL, err := auth.LogoutURL(c, "/")
 			if err != nil {
 				return nil, err
 			}
@@ -144,7 +150,7 @@ func prepareTemplates(templatesPath string) *templates.Bundle {
 			}
 			return templates.Args{
 				"AppVersion":  strings.Split(info.VersionID(c), ".")[0],
-				"IsAnonymous": auth.CurrentIdentity(c) == "anonymous:anonymous",
+				"IsAnonymous": auth.CurrentIdentity(c) == identity.AnonymousIdentity,
 				"User":        auth.CurrentUser(c),
 				"LoginURL":    loginURL,
 				"LogoutURL":   logoutURL,

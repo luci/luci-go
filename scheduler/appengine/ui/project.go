@@ -29,6 +29,9 @@ func projectPage(c *router.Context) {
 	if err != nil {
 		panic(err)
 	}
+	if len(jobs) == 0 && redirectToLogin(c) {
+		return
+	}
 
 	check := func(j *schedulerJob) bool { return true }
 
