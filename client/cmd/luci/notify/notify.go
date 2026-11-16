@@ -35,7 +35,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		LongDesc: "Query LUCI Notify (notify.api.luci.app) builder statuses and gardener rotation alert groups.\n\n" +
 			"Available subcommands:\n" +
 			"  builder       List builders and their latest status (e.g. 'luci notify builder list -rotation chrome_browser_release -status FAILURE')\n" +
-			"  alert-group   List rotation alert groups (e.g. 'luci notify alert-group list -rotation chrome-browser-release')",
+			"  alert-group   List or inspect rotation alert groups (e.g. 'luci notify alert-group list -rotation chrome-browser-release')",
 		CommandRun: func() subcommands.CommandRun {
 			return &notifyRun{af: af}
 		},

@@ -83,6 +83,7 @@ func TestGetApplication(t *testing.T) {
 			{"notify", "builder", "list", "-h"},
 			{"notify", "alert-group", "-h"},
 			{"notify", "alert-group", "list", "-h"},
+			{"notify", "alert-group", "get", "-h"},
 		}
 
 		for _, rawArgs := range helpInvocations {

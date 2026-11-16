@@ -44,7 +44,7 @@ func getApplication() *cli.Application {
 	return &cli.Application{
 		Name: "luci",
 		Title: "Unified CLI tool to access LUCI resources.\n\n" +
-			"Commands are stateless and accept either a positional URL/ID <target> (Milo UI, LUCI Analysis, LUCI Notify, AnTS/ATI, Buganizer, or canonical resource names) or explicit resource ID flags (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid, -rotation).\n" +
+			"Commands are stateless and accept either a positional URL/ID <target> (Milo UI, LUCI Analysis, LUCI Notify, AnTS/ATI, Buganizer, or canonical resource names) or explicit resource ID flags (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -modulename, -testid, -resultid, -workunitid, -artifactid, -rotation, -id).\n" +
 			"When a positional <target> is passed, derived IDs are printed automatically so follow-up commands can use explicit flags.\n\n" +
 			base.AgentSkillHint + "\n\n" +
 			"Typical Investigation Workflow Examples:\n" +
@@ -77,7 +77,8 @@ func getApplication() *cli.Application {
 			"     $ luci work-unit get -invocationid build-123 -workunitid run-tests\n\n" +
 			"  9. Query LUCI Notify builder statuses and gardener rotation alert groups:\n" +
 			"     $ luci notify builder list -rotation chrome_browser_release -status FAILURE\n" +
-			"     $ luci notify alert-group list -rotation chrome-browser-release",
+			"     $ luci notify alert-group list -rotation chrome-browser-release\n" +
+			"     $ luci notify alert-group get -rotation chrome-browser-release -id 12345",
 
 		Context: func(ctx context.Context) context.Context {
 			return gologger.StdConfig.Use(ctx)

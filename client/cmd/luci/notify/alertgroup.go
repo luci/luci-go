@@ -38,6 +38,7 @@ import (
 const (
 	defaultAlertGroupListLimit = 20
 	maxPreviewAlertKeys        = 5
+	maxDetailAlertKeys         = 50
 )
 
 var alertGroupRotationReplacer = strings.NewReplacer("_", "-", ".", "-")
@@ -56,7 +57,8 @@ func AlertGroupCmd(af *base.AuthFlags) *subcommands.Command {
 		ShortDesc: "Inspect LUCI Notify rotation alert groups",
 		LongDesc: "Query LUCI Notify alert groups for an on-call gardener rotation.\n\n" +
 			"Available subcommands:\n" +
-			"  list  List active alert groups for a rotation",
+			"  list  List active alert groups for a rotation\n" +
+			"  get   Get details of a specific alert group by rotation and ID",
 		CommandRun: func() subcommands.CommandRun {
 			return &alertGroupRun{af: af}
 		},
@@ -71,6 +73,7 @@ type alertGroupRun struct {
 func (r *alertGroupRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	return base.RunSubcommandApp(a, "luci notify alert-group", "LUCI Notify alert group inspection", []*subcommands.Command{
 		AlertGroupListCmd(r.af),
+		AlertGroupGetCmd(r.af),
 		subcommands.CmdHelp,
 	}, args)
 }
@@ -233,6 +236,138 @@ func fetchAlertGroups(ctx context.Context, client lucinotifypb.AlertGroupsClient
 	}
 }
 
+// AlertGroupGetCmd returns the subcommand for `luci notify alert-group get`.
+func AlertGroupGetCmd(af *base.AuthFlags) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "get [-rotation <rotation>] [-id <alert_group_id>] [-json] [<target>]",
+		ShortDesc: "Get details of an alert group",
+		LongDesc: "Retrieve a LUCI Notify alert group by rotation and alert group ID, or by positional\n" +
+			"resource name (rotations/<rotation>/alertGroups/<id>) or Milo monitoring URL.\n\n" +
+			"Examples:\n" +
+			"  luci notify alert-group get -rotation chrome-browser-release -id 12345\n" +
+			"  luci notify alert-group get rotations/chrome-browser-release/alertGroups/12345\n" +
+			"  luci notify alert-group get 'https://ci.chromium.org/ui/monitoring/chrome_browser_release?alerts_tab=group%3Arotations%2Fchrome-browser-release%2FalertGroups%2F12345'",
+		CommandRun: func() subcommands.CommandRun {
+			r := &alertGroupGetRun{af: af}
+			if r.af != nil {
+				r.af.Register(&r.Flags)
+			}
+			r.Flags.StringVar(&r.host, "host", chromeinfra.NotifyHost, "LUCI Notify host")
+			r.Flags.StringVar(&r.rotation, "rotation", "", "Rotation name (e.g. chrome-browser-release or chrome_browser_release)")
+			r.Flags.StringVar(&r.id, "id", "", "Alert group ID")
+			r.Flags.StringVar(&r.id, "alertgroupid", "", "Alias for -id")
+			r.Flags.BoolVar(&r.json, "json", false, "Output AlertGroup as JSON")
+			return r
+		},
+	}
+}
+
+type alertGroupGetRun struct {
+	subcommands.CommandRunBase
+	af                *base.AuthFlags
+	alertGroupsClient lucinotifypb.AlertGroupsClient
+	out               io.Writer
+	errOut            io.Writer
+
+	host     string
+	rotation string
+	id       string
+	json     bool
+}
+
+func (r *alertGroupGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if base.HasHelpFlag(args) {
+		r.Flags.Usage()
+		return 0
+	}
+
+	errOut := r.errOut
+	if errOut == nil {
+		errOut = os.Stderr
+	}
+
+	target, err := base.ParsePositionalTarget(&r.Flags, args)
+	if err != nil {
+		fmt.Fprintf(errOut, "%s\n", err)
+		return 1
+	}
+
+	r.rotation = strings.TrimSpace(r.rotation)
+	r.id = strings.TrimSpace(r.id)
+
+	ctx := cli.GetContext(a, r, env)
+	extracted, err := ids.ExtractWithAuth(ctx, r.af, nil, nil, target, ids.TargetBindings{
+		Rotation:     &r.rotation,
+		AlertGroupID: &r.id,
+	})
+	if err != nil {
+		fmt.Fprintf(errOut, "failed to extract IDs from %q: %s\n", target, err)
+		return 1
+	}
+	if target != "" && (extracted == nil || (extracted.Rotation == "" && extracted.AlertGroupID == "")) {
+		ids.PrintMissingFlagsError(errOut, extracted, "positional target must be a LUCI Notify alert group")
+		return 1
+	}
+
+	rot := normalizeAlertGroupRotation(r.rotation)
+	if extracted != nil && extracted.Rotation != "" {
+		extracted.Rotation = rot
+	}
+	id := strings.TrimSpace(r.id)
+	if extracted != nil && extracted.AlertGroupID != "" {
+		extracted.AlertGroupID = id
+	}
+	if rot == "" || id == "" {
+		ids.PrintMissingFlagsError(errOut, extracted, "flags -rotation and -id (or a positional alert group target) are required")
+		return 1
+	}
+
+	_, client, ok := ensureNotifyClients(ctx, r.af, r.host, nil, r.alertGroupsClient)
+	if !ok {
+		return 1
+	}
+
+	name := fmt.Sprintf("rotations/%s/alertGroups/%s", rot, id)
+	group, err := client.GetAlertGroup(ctx, &lucinotifypb.GetAlertGroupRequest{
+		Name: name,
+	})
+	if err != nil {
+		fmt.Fprintf(errOut, "GetAlertGroup(%s) RPC failed: %s\n", name, err)
+		return 1
+	}
+
+	out := r.out
+	if out == nil {
+		out = os.Stdout
+	}
+
+	if r.json {
+		ids.PrintDerivedIDs(errOut, extracted)
+		jsonOut, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(group)
+		if err != nil {
+			fmt.Fprintf(errOut, "failed to marshal alert group to JSON: %s\n", err)
+			return 1
+		}
+		fmt.Fprintln(out, string(jsonOut))
+		return 0
+	}
+
+	ids.PrintDerivedIDs(out, extracted)
+	if err := FormatAlertGroup(out, group); err != nil {
+		fmt.Fprintf(errOut, "failed to format alert group: %s\n", err)
+		return 1
+	}
+	return 0
+}
+
+func splitAlertGroupName(name, fallbackRotation string) (rotation, alertGroupID string) {
+	parts := strings.Split(strings.Trim(strings.TrimSpace(name), "/"), "/")
+	if len(parts) == 4 && parts[0] == "rotations" && parts[2] == "alertGroups" {
+		return parts[1], parts[3]
+	}
+	return fallbackRotation, ""
+}
+
 func formatAlertKey(raw string) string {
 	trimmed := strings.TrimPrefix(strings.TrimSpace(raw), "alerts/")
 	if unescaped, err := url.PathUnescape(trimmed); err == nil && unescaped != "" {
@@ -251,21 +386,38 @@ func formatBugList(bugs []int64) string {
 	return strings.Join(parts, ", ")
 }
 
-func printAlertGroupSummary(w io.Writer, g *lucinotifypb.AlertGroup) {
+func printAlertGroupHeader(w io.Writer, g *lucinotifypb.AlertGroup, fallbackRotation string, truncateStatus bool) (rotation, alertGroupID string) {
+	rotation, alertGroupID = splitAlertGroupName(g.GetName(), fallbackRotation)
 	if g.GetName() != "" {
 		fmt.Fprintf(w, "Name:          %s\n", g.GetName())
 	}
 	if g.GetDisplayName() != "" {
 		fmt.Fprintf(w, "Display Name:  %s\n", g.GetDisplayName())
 	}
+	if rotation != "" && alertGroupID != "" {
+		fmt.Fprintf(w, "Flags:         -rotation %s -id %s\n", rotation, alertGroupID)
+	}
 	if bugStr := formatBugList(g.GetBugs()); bugStr != "" {
 		fmt.Fprintf(w, "Bugs:          %s\n", bugStr)
 	}
-	if statusMsg, truncated := format.TruncateFirstLine(g.GetStatusMessage(), 160); statusMsg != "" {
-		if truncated {
-			fmt.Fprintf(w, "Status Msg (truncated): %s\n", statusMsg)
-		} else {
-			fmt.Fprintf(w, "Status Msg:    %s\n", statusMsg)
+	if truncateStatus {
+		if statusMsg, truncated := format.TruncateFirstLine(g.GetStatusMessage(), 160); statusMsg != "" {
+			if truncated {
+				fmt.Fprintf(w, "Status Msg (truncated): %s\n", statusMsg)
+			} else {
+				fmt.Fprintf(w, "Status Msg:    %s\n", statusMsg)
+			}
+		}
+	} else if statusMsg := strings.TrimSpace(g.GetStatusMessage()); statusMsg != "" {
+		lines := strings.Split(statusMsg, "\n")
+		fmt.Fprintf(w, "Status Msg:    %s\n", strings.TrimRight(lines[0], "\r"))
+		for _, line := range lines[1:] {
+			line = strings.TrimRight(line, "\r")
+			if line == "" {
+				fmt.Fprintln(w)
+			} else {
+				fmt.Fprintf(w, "               %s\n", line)
+			}
 		}
 	}
 	if ts := g.GetUpdateTime(); ts != nil && ts.IsValid() {
@@ -276,6 +428,7 @@ func printAlertGroupSummary(w io.Writer, g *lucinotifypb.AlertGroup) {
 			fmt.Fprintf(w, "Updated:       %s\n", tsStr)
 		}
 	}
+	return rotation, alertGroupID
 }
 
 // FormatAlertGroupList formats a slice of LUCI Notify AlertGroup messages into
@@ -295,11 +448,16 @@ func formatAlertGroupList(w io.Writer, rotation string, groups []*lucinotifypb.A
 	} else {
 		fmt.Fprintf(w, "Alert Groups (%d):\n", len(groups))
 	}
+	var firstRot, firstID string
 	for i, g := range groups {
 		if i > 0 {
 			fmt.Fprintln(w)
 		}
-		printAlertGroupSummary(w, g)
+		rot, agID := printAlertGroupHeader(w, g, rotation, true)
+		if firstID == "" && rot != "" && agID != "" {
+			firstRot = rot
+			firstID = agID
+		}
 		keys := g.GetAlertKeys()
 		fmt.Fprintf(w, "Alerts (%d):\n", len(keys))
 		for _, k := range keys[:min(len(keys), maxPreviewAlertKeys)] {
@@ -309,5 +467,68 @@ func formatAlertGroupList(w io.Writer, rotation string, groups []*lucinotifypb.A
 			fmt.Fprintf(w, "  ... and %d more\n", len(keys)-maxPreviewAlertKeys)
 		}
 	}
+
+	if firstRot != "" && firstID != "" {
+		fmt.Fprintf(w, "\n(Tip: To inspect an alert group in detail, run: luci notify alert-group get -rotation %s -id %s)\n", firstRot, firstID)
+	}
 	return nil
+}
+
+// FormatAlertGroup formats a single LUCI Notify AlertGroup message into
+// human-readable terminal output.
+func FormatAlertGroup(w io.Writer, g *lucinotifypb.AlertGroup) error {
+	printAlertGroupHeader(w, g, "", false)
+	if etag := strings.TrimSpace(g.GetEtag()); etag != "" {
+		fmt.Fprintf(w, "Etag:          %s\n", etag)
+	}
+
+	keys := g.GetAlertKeys()
+	fmt.Fprintf(w, "\nAlerts (%d):\n", len(keys))
+	var firstBuilder string
+	for i, k := range keys {
+		decoded := formatAlertKey(k)
+		if i < maxDetailAlertKeys {
+			fmt.Fprintf(w, "  - %s\n", decoded)
+		}
+		if firstBuilder == "" {
+			firstBuilder = builderFromAlertKey(decoded)
+		}
+	}
+	if len(keys) > maxDetailAlertKeys {
+		fmt.Fprintf(w, "  ... and %d more (use -json to see all)\n", len(keys)-maxDetailAlertKeys)
+	}
+
+	var firstBug int64
+	for _, b := range g.GetBugs() {
+		if b > 0 {
+			firstBug = b
+			break
+		}
+	}
+	if firstBuilder != "" || firstBug > 0 {
+		fmt.Fprintf(w, "\nNext steps:\n")
+		if firstBuilder != "" {
+			fmt.Fprintf(w, "  luci notify builder list -builder %q\n", firstBuilder)
+		}
+		if firstBug > 0 {
+			fmt.Fprintf(w, "  luci analysis rule get b/%d\n", firstBug)
+		}
+	}
+	return nil
+}
+
+func builderFromAlertKey(decoded string) string {
+	validPart := func(p string) bool {
+		return strings.TrimSpace(p) != "" && !strings.Contains(p, "/")
+	}
+	if strings.Contains(decoded, "$!") {
+		if parts := strings.SplitN(decoded, "$!", 5); len(parts) >= 4 && validPart(parts[1]) && validPart(parts[2]) && validPart(parts[3]) {
+			return fmt.Sprintf("%s/%s/%s", parts[1], parts[2], parts[3])
+		}
+		return ""
+	}
+	if parts := strings.SplitN(strings.Trim(decoded, "/"), "/", 4); len(parts) >= 3 && validPart(parts[0]) && validPart(parts[1]) && validPart(parts[2]) {
+		return fmt.Sprintf("%s/%s/%s", parts[0], parts[1], parts[2])
+	}
+	return ""
 }

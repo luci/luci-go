@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -45,10 +46,15 @@ func (m *mockBuildersClient) List(ctx context.Context, in *lucinotifypb.ListBuil
 type mockAlertGroupsClient struct {
 	lucinotifypb.AlertGroupsClient
 	listAlertGroups func(ctx context.Context, in *lucinotifypb.ListAlertGroupsRequest) (*lucinotifypb.ListAlertGroupsResponse, error)
+	getAlertGroup   func(ctx context.Context, in *lucinotifypb.GetAlertGroupRequest) (*lucinotifypb.AlertGroup, error)
 }
 
 func (m *mockAlertGroupsClient) ListAlertGroups(ctx context.Context, in *lucinotifypb.ListAlertGroupsRequest, opts ...grpc.CallOption) (*lucinotifypb.ListAlertGroupsResponse, error) {
 	return m.listAlertGroups(ctx, in)
+}
+
+func (m *mockAlertGroupsClient) GetAlertGroup(ctx context.Context, in *lucinotifypb.GetAlertGroupRequest, opts ...grpc.CallOption) (*lucinotifypb.AlertGroup, error) {
+	return m.getAlertGroup(ctx, in)
 }
 
 func TestBuildBuilderListFilter(t *testing.T) {
@@ -514,6 +520,140 @@ func TestAlertGroupCommands(t *testing.T) {
 				assert.Loosely(t, listCalls, should.BeZero)
 				assert.Loosely(t, errOut.String(), should.ContainSubstring("positional target is an alert group, not a rotation"))
 				assert.Loosely(t, errOut.String(), should.ContainSubstring("luci notify alert-group get -rotation chrome-browser-release -id m146-compile"))
+			}
+		})
+	})
+
+	ftt.Run("luci_notify_alert_group_get", t, func(t *ftt.Test) {
+		var getCalls int
+		mockClient := &mockAlertGroupsClient{
+			getAlertGroup: func(ctx context.Context, in *lucinotifypb.GetAlertGroupRequest) (*lucinotifypb.AlertGroup, error) {
+				getCalls++
+				switch in.Name {
+				case "rotations/chrome-browser-release/alertGroups/12345",
+					"rotations/chromium-gpu/alertGroups/12345",
+					"rotations/chrome-browser-release/alertGroups/override-id":
+					return sampleGroup, nil
+				default:
+					return nil, errors.Fmt("unexpected name %q", in.Name)
+				}
+			},
+		}
+
+		t.Run("syncs_derived_id_when_explicit_id_overrides_positional_target", func(t *ftt.Test) {
+			cmd := AlertGroupGetCmd(base.NewAuthFlags())
+			run := cmd.CommandRun().(*alertGroupGetRun)
+			var out bytes.Buffer
+			run.out = &out
+			run.alertGroupsClient = mockClient
+
+			code := run.Run(&cli.Application{Name: "luci"}, []string{
+				"-id", "override-id",
+				"rotations/chrome-browser-release/alertGroups/12345",
+			}, nil)
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, getCalls, should.Equal(1))
+			got := out.String()
+			assert.Loosely(t, got, should.ContainSubstring("Alert Group ID:    override-id"))
+			assert.Loosely(t, got, should.NotContainSubstring("Alert Group ID:    12345"))
+		})
+
+		t.Run("caps_detail_alert_keys_and_extracts_som_builder_hint", func(t *ftt.Test) {
+			manySOMKeys := make([]string, 53)
+			for i := range manySOMKeys {
+				manySOMKeys[i] = fmt.Sprintf("alerts/chromium$!chromium-m156$!ci$!Linux Tests (dbg)(1)$!browser_tests$!%d", i)
+			}
+			var out bytes.Buffer
+			err := FormatAlertGroup(&out, &lucinotifypb.AlertGroup{
+				Name:      "rotations/chrome-browser-release/alertGroups/som-only",
+				AlertKeys: manySOMKeys,
+			})
+			assert.Loosely(t, err, should.BeNil)
+			got := out.String()
+			assert.Loosely(t, got, should.ContainSubstring("Alerts (53):"))
+			assert.Loosely(t, got, should.ContainSubstring("browser_tests$!49"))
+			assert.Loosely(t, got, should.NotContainSubstring("browser_tests$!50"))
+			assert.Loosely(t, got, should.ContainSubstring("... and 3 more (use -json to see all)"))
+			assert.Loosely(t, got, should.ContainSubstring(`luci notify builder list -builder "chromium-m156/ci/Linux Tests (dbg)(1)"`))
+		})
+
+		t.Run("resolves_positional_milo_monitoring_alert_group_url", func(t *ftt.Test) {
+			cmd := AlertGroupGetCmd(base.NewAuthFlags())
+			run := cmd.CommandRun().(*alertGroupGetRun)
+			var out bytes.Buffer
+			run.out = &out
+			run.alertGroupsClient = mockClient
+
+			code := run.Run(&cli.Application{Name: "luci"}, []string{
+				"https://ci.chromium.org/ui/monitoring/chrome_browser_release?alerts_tab=group%3Arotations%2Fchrome-browser-release%2FalertGroups%2F12345",
+			}, nil)
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, getCalls, should.Equal(1))
+			got := out.String()
+			assert.Loosely(t, got, should.ContainSubstring("Rotation:          chrome-browser-release"))
+			assert.Loosely(t, got, should.ContainSubstring("Alert Group ID:    12345"))
+			assert.Loosely(t, got, should.ContainSubstring("Display Name:  M156 Linux compile failure"))
+			assert.Loosely(t, got, should.ContainSubstring("Status Msg:    Bisecting regression range\n               Second line details"))
+			assert.Loosely(t, got, should.NotContainSubstring("b/0"))
+			assert.Loosely(t, got, should.ContainSubstring(`Etag:          W/"abc123"`))
+			assert.Loosely(t, got, should.ContainSubstring(`luci notify builder list -builder "chromium-m156/ci/Linux Tests"`))
+			assert.Loosely(t, got, should.ContainSubstring("luci analysis rule get b/561846969"))
+		})
+
+		t.Run("json_output_and_flag_combinations", func(t *ftt.Test) {
+			cmd := AlertGroupGetCmd(base.NewAuthFlags())
+			run := cmd.CommandRun().(*alertGroupGetRun)
+			var out bytes.Buffer
+			run.out = &out
+			run.alertGroupsClient = mockClient
+
+			code := run.Run(&cli.Application{Name: "luci"}, []string{
+				"-rotation", "chrome_browser_release",
+				"-id", "12345",
+				"-json",
+			}, nil)
+			assert.Loosely(t, code, should.BeZero)
+			assert.Loosely(t, getCalls, should.Equal(1))
+
+			var parsed map[string]any
+			assert.Loosely(t, json.Unmarshal(out.Bytes(), &parsed), should.BeNil)
+			assert.Loosely(t, parsed["name"], should.Equal("rotations/chrome-browser-release/alertGroups/12345"))
+
+			for _, validArgs := range [][]string{
+				{"rotations/chrome-browser-release/alertGroups/12345"},
+				{"-id", "12345", "rotations/chrome_browser_release"},
+				{"-rotation", "Rotations/chrome_browser_release", "-id", "12345"},
+				{"https://ci.chromium.org/ui/monitoring/chromium.gpu?alerts_tab=group%3Arotations%2Fchromium-gpu%2FalertGroups%2F12345"},
+			} {
+				getCalls = 0
+				cmd2 := AlertGroupGetCmd(base.NewAuthFlags())
+				run2 := cmd2.CommandRun().(*alertGroupGetRun)
+				var out2, errOut2 bytes.Buffer
+				run2.out = &out2
+				run2.errOut = &errOut2
+				run2.alertGroupsClient = mockClient
+				assert.Loosely(t, run2.Run(&cli.Application{Name: "luci"}, validArgs, nil), should.BeZero)
+				assert.Loosely(t, getCalls, should.Equal(1))
+			}
+		})
+
+		t.Run("rejects_missing_flags_or_non_notify_targets_without_rpc", func(t *ftt.Test) {
+			for _, badArgs := range [][]string{
+				{},
+				{"-rotation", "chrome-browser-release"},
+				{"https://ci.chromium.org/ui/monitoring/chromium.gpu"},
+				{"https://ci.chromium.org/ui/b/8765432109876543210"},
+				{"b/581174243"},
+			} {
+				getCalls = 0
+				cmd := AlertGroupGetCmd(base.NewAuthFlags())
+				run := cmd.CommandRun().(*alertGroupGetRun)
+				var out, errOut bytes.Buffer
+				run.out = &out
+				run.errOut = &errOut
+				run.alertGroupsClient = mockClient
+				assert.Loosely(t, run.Run(&cli.Application{Name: "luci"}, badArgs, nil), should.Equal(1))
+				assert.Loosely(t, getCalls, should.BeZero)
 			}
 		})
 	})
