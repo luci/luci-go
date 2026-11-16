@@ -16,11 +16,13 @@ package encryptedcookies
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/base64"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/tink/go/tink"
 	"golang.org/x/oauth2"
@@ -394,11 +396,12 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 
 		// Generate `state` that will be passed back to us in the callbackHandler.
 		state := &encryptedcookiespb.OpenIDState{
-			SessionId:    session.GenerateID(),
-			Nonce:        internal.GenerateNonce(),
-			CodeVerifier: internal.GenerateCodeVerifier(),
-			DestHost:     r.Host,
-			DestPath:     dest,
+			SessionId:     session.GenerateID(),
+			Nonce:         internal.GenerateNonce(),
+			CodeVerifier:  internal.GenerateCodeVerifier(),
+			BindingCookie: internal.GenerateNonce(),
+			DestHost:      r.Host,
+			DestPath:      dest,
 			// We could get the scope from the exchange code response[1]. However
 			// OpenID provider can replace scopes with their aliases or add other
 			// scopes, making it hard to check the scope during authentication.
@@ -433,6 +436,25 @@ func (m *AuthMethod) loginHandler(ctx *router.Context) {
 			"state":                 {stateEnc},
 		}
 
+		// Put a random string (that is part of the round-tripped encrypted state)
+		// into a short-lived cookie. This is used to make sure that the browser
+		// than comes back to us in callbackHandler(...) is the same that initiated
+		// the login flow in the first place.
+		http.SetCookie(rw, &http.Cookie{
+			Name:     internal.BindingCookieName,
+			Value:    base64.RawURLEncoding.EncodeToString(state.BindingCookie),
+			Expires:  time.Now().Add(30 * time.Minute),
+			HttpOnly: true,
+			Secure:   !m.Insecure,
+			// Expose this cookie only on our own routes.
+			Path: internal.LimitedCookiePath,
+			// We need Lax, since Strict instructs the browser not to send the cookie
+			// if the redirect chain was initiated by an "unknown" origin. But this is
+			// exactly what happens in our case (the redirect is initiated by the
+			// OpenID provider page).
+			SameSite: http.SameSiteLaxMode,
+		})
+
 		// Finally, redirect to the OpenID provider's authorization endpoint.
 		// It will eventually redirect user's browser to callbackHandler.
 		http.Redirect(rw, r, discovery.AuthorizationEndpoint+"?"+v.Encode(), http.StatusFound)
@@ -463,6 +485,7 @@ func (m *AuthMethod) logoutHandler(ctx *router.Context) {
 		// Nuke all session cookies to get to a completely clean state.
 		internal.RemoveCookie(rw, r, internal.SessionCookieName, internal.UnlimitedCookiePath)
 		internal.RemoveCookie(rw, r, internal.SessionCookieName, internal.LimitedCookiePath)
+		internal.RemoveCookie(rw, r, internal.BindingCookieName, internal.LimitedCookiePath)
 		for _, name := range m.IncompatibleCookies {
 			internal.RemoveCookie(rw, r, name, "/")
 		}
@@ -526,6 +549,27 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 			url.Host = statepb.DestHost
 			http.Redirect(rw, r, url.String(), http.StatusFound)
 			return nil
+		}
+
+		// Verify the calling browser is the one that initiated the flow. The field
+		// can be missing if the login was initiated by an older version of this
+		// code (so just skip this check in that case).
+		if len(statepb.BindingCookie) != 0 {
+			switch cookie, err := r.Cookie(internal.BindingCookieName); {
+			case errors.Is(err, http.ErrNoCookie):
+				return errors.New("the login session has expired, please start again")
+			case err != nil:
+				return errors.Fmt("bad login session cookie: %s", err)
+			default:
+				blob, err := base64.RawURLEncoding.DecodeString(cookie.Value)
+				if err != nil {
+					return errors.Fmt("bad login session cookie: %s", err)
+				}
+				if subtle.ConstantTimeCompare(statepb.BindingCookie, blob) == 0 {
+					logging.Errorf(ctx, "Mismatching %s cookie, ignoring the login attempt", internal.BindingCookieName)
+					return errors.New("mismatching login session cookie, ignoring the login attempt")
+				}
+			}
 		}
 
 		// Check there is no such session in the store. If there's, `code` has been
@@ -686,6 +730,7 @@ func (m *AuthMethod) callbackHandler(ctx *router.Context) {
 		httpCookie.Secure = !m.Insecure
 		http.SetCookie(rw, httpCookie)
 		internal.RemoveCookie(rw, r, internal.SessionCookieName, prevPath)
+		internal.RemoveCookie(rw, r, internal.BindingCookieName, internal.LimitedCookiePath)
 		for _, name := range m.IncompatibleCookies {
 			internal.RemoveCookie(rw, r, name, "/")
 		}

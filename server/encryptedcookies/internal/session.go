@@ -39,6 +39,14 @@ const (
 	// SessionCookieName is the name of the session cookie.
 	SessionCookieName = "LUCISID"
 
+	// BindingCookieName is the name of a temporary cookie with binding nonce.
+	//
+	// It is used only to make sure the browser that performs the redirect
+	// callback is the same that initiated the login flow.
+	//
+	// "LUCISBC" stands for "LUCI Session Binding Cookie".
+	BindingCookieName = "LUCISBC"
+
 	// UnlimitedCookiePath is a path to set the cookie on by default.
 	UnlimitedCookiePath = "/"
 

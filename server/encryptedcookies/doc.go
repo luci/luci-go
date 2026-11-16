@@ -147,4 +147,20 @@
 // encrypted cookies, but require no extra configuration. They are absolutely
 // insecure and must never be used outside of local runs. They exist only to
 // simplify the local development of servers that use LoginURL/LogoutURL APIs.
+//
+// To exercise the production code path locally (e.g. when modifying the
+// encryptedcookies own code), follow this steps:
+//
+// 1. Pick a Cloud Project you own and have Datastore writer permission in.
+// 2. Create an OAuth Client of type "Web Application" (or use an existing one).
+// 3. Add authorized redirect URI "http://127.0.0.1:8800/auth/openid/callback".
+// 4. Notice its Client ID and Client Secret.
+// 5. Run the server locally with the following flags:
+//
+//	go run main.go \
+//		-cloud-project <project> \
+//		-encrypted-cookies-client-id <client-id> \
+//		-encrypted-cookies-client-secret "devsecret-text://<client-secret>" \
+//		-encrypted-cookies-redirect-url "http://127.0.0.1:8800/auth/openid/callback" \
+//		-encrypted-cookies-tink-aead-key "devsecret-gen://tink/aead"
 package encryptedcookies

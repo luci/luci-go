@@ -22,7 +22,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -65,7 +67,7 @@ func TestMethod(t *testing.T) {
 		provider := openIDProviderFake{
 			ExpectedClientID:     "client_id",
 			ExpectedClientSecret: "client_secret",
-			ExpectedRedirectURI:  "https://primary.example.com/auth/openid/callback",
+			ExpectedRedirectURI:  "http://primary.example.com/auth/openid/callback",
 			UserSub:              "user-sub",
 			UserEmail:            "someone@example.com",
 			UserName:             "Someone Example",
@@ -88,6 +90,21 @@ func TestMethod(t *testing.T) {
 		ctx = authtest.MockAuthConfig(ctx)
 
 		sessionStore := &datastore.Store{}
+		cookies, _ := cookiejar.New(nil)
+
+		setCookie := func(host, path, cookie, val string) {
+			age := 3600
+			if val == "" {
+				age = -1
+			}
+			cookies.SetCookies(&url.URL{
+				Scheme: "http",
+				Host:   host,
+				Path:   path,
+			}, []*http.Cookie{
+				{Name: cookie, Value: val, Path: path, Domain: host, MaxAge: age},
+			})
+		}
 
 		makeMethod := func(requiredScopes, optionalScopes []string) *AuthMethod {
 			return &AuthMethod{
@@ -104,22 +121,42 @@ func TestMethod(t *testing.T) {
 				RequiredScopes:      requiredScopes,
 				OptionalScopes:      optionalScopes,
 				ExposeStateEndpoint: true,
+				Insecure:            true, // the cookiejar is sensitive to that
 			}
 		}
 
 		methodV1 := makeMethod([]string{"scope1"}, []string{"scope2"})
 
 		call := func(h router.Handler, host string, url *url.URL, header http.Header) *http.Response {
+			fullURL := *url
+			fullURL.Scheme = "http"
+			fullURL.Host = host
+
+			req := httptest.NewRequestWithContext(ctx, http.MethodGet, fullURL.String(), nil)
+			req.Header = header.Clone()
+			if req.Header == nil {
+				req.Header = http.Header{}
+			}
+			for _, cookie := range cookies.Cookies(&fullURL) {
+				req.AddCookie(cookie)
+			}
+
 			rw := httptest.NewRecorder()
 			h(&router.Context{
-				Request: (&http.Request{
-					URL:    url,
-					Host:   host,
-					Header: header,
-				}).WithContext(ctx),
-				Writer: rw,
+				Request: req,
+				Writer:  rw,
 			})
-			return rw.Result()
+
+			resp := rw.Result()
+			cookies.SetCookies(&fullURL, resp.Cookies())
+			return resp
+		}
+
+		callCallback := func(method *AuthMethod, host, callbackRawQuery string) *http.Response {
+			return call(method.callbackHandler, host, &url.URL{
+				Path:     "/auth/openid/callback",
+				RawQuery: callbackRawQuery,
+			}, nil)
 		}
 
 		performLogin := func(method *AuthMethod) (callbackRawQuery string) {
@@ -144,18 +181,14 @@ func TestMethod(t *testing.T) {
 
 		performCallback := func(method *AuthMethod, callbackRawQuery string) (cookie *http.Cookie, deleted []*http.Cookie) {
 			// Provider calls us back on our primary host (not "dest.example.com").
-			resp := call(method.callbackHandler, "primary.example.com", &url.URL{
-				RawQuery: callbackRawQuery,
-			}, nil)
+			resp := callCallback(method, "primary.example.com", callbackRawQuery)
 
 			// We got a redirect to "dest.example.com".
 			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusFound))
-			assert.Loosely(t, resp.Header.Get("Location"), should.Equal("https://dest.example.com?"+callbackRawQuery))
+			assert.Loosely(t, resp.Header.Get("Location"), should.Equal("http://dest.example.com/auth/openid/callback?"+callbackRawQuery))
 
 			// Now hitting the same callback on "dest.example.com".
-			resp = call(method.callbackHandler, "dest.example.com", &url.URL{
-				RawQuery: callbackRawQuery,
-			}, nil)
+			resp = callCallback(method, "dest.example.com", callbackRawQuery)
 
 			// Got a redirect to the final destination URL.
 			assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusFound))
@@ -176,11 +209,16 @@ func TestMethod(t *testing.T) {
 		}
 
 		phonyRequest := func(cookie *http.Cookie) auth.RequestMetadata {
-			req, _ := http.NewRequest("GET", "https://dest.example.com/phony", nil)
+			req, _ := http.NewRequest("GET", "http://dest.example.com/phony", nil)
 			if cookie != nil {
 				req.Header.Add("Cookie", fmt.Sprintf("%s=%s", cookie.Name, cookie.Value))
 			}
 			return auth.RequestMetadataForHTTP(req)
+		}
+
+		responseBody := func(resp *http.Response) string {
+			blob, _ := io.ReadAll(resp.Body)
+			return string(blob)
 		}
 
 		t.Run("Full flow", func(t *ftt.Test) {
@@ -190,8 +228,8 @@ func TestMethod(t *testing.T) {
 			// Set the cookie on the correct path.
 			assert.Loosely(t, cookieV1.Path, should.Equal(internal.UnlimitedCookiePath))
 
-			// Removed a potentially stale cookie on a different path.
-			assert.Loosely(t, deleted, should.HaveLength(1))
+			// Removed a potentially stale cookie on a different path + LUCISBC.
+			assert.Loosely(t, deleted, should.HaveLength(2))
 			assert.Loosely(t, deleted[0].Path, should.Equal(internal.LimitedCookiePath))
 
 			// Handed out 1 access token thus far.
@@ -199,9 +237,7 @@ func TestMethod(t *testing.T) {
 
 			t.Run("Code reuse is forbidden", func(t *ftt.Test) {
 				// Trying to use the authorization code again fails.
-				resp := call(methodV1.callbackHandler, "dest.example.com", &url.URL{
-					RawQuery: callbackRawQueryV1,
-				}, nil)
+				resp := callCallback(methodV1, "dest.example.com", callbackRawQueryV1)
 				assert.Loosely(t, resp.StatusCode, should.Equal(http.StatusBadRequest))
 			})
 
@@ -322,14 +358,17 @@ func TestMethod(t *testing.T) {
 
 				// Cookies are removed.
 				cookies := resp.Cookies()
-				paths := []string{}
+				removed := []string{}
 				for _, c := range cookies {
-					assert.Loosely(t, c.Name, should.Equal(internal.SessionCookieName))
 					assert.Loosely(t, c.Value, should.Equal("deleted"))
 					assert.Loosely(t, c.MaxAge, should.Equal(-1))
-					paths = append(paths, c.Path)
+					removed = append(removed, fmt.Sprintf("%s:%s", c.Name, c.Path))
 				}
-				assert.Loosely(t, paths, should.Match([]string{internal.UnlimitedCookiePath, internal.LimitedCookiePath}))
+				assert.Loosely(t, removed, should.Match([]string{
+					internal.SessionCookieName + ":" + internal.UnlimitedCookiePath,
+					internal.SessionCookieName + ":" + internal.LimitedCookiePath,
+					internal.BindingCookieName + ":" + internal.LimitedCookiePath,
+				}))
 
 				// It also no longer works.
 				user, session, err := methodV1.Authenticate(ctx, phonyRequest(cookieV1))
@@ -437,8 +476,8 @@ func TestMethod(t *testing.T) {
 			assert.Loosely(t, cookie.Path, should.Equal(internal.LimitedCookiePath))
 			assert.Loosely(t, cookie.SameSite, should.Equal(http.SameSiteStrictMode))
 
-			// Removed a potentially stale cookie on a different path.
-			assert.Loosely(t, deleted, should.HaveLength(1))
+			// Removed a potentially stale cookie on a different path + LUCISBC.
+			assert.Loosely(t, deleted, should.HaveLength(2))
 			assert.Loosely(t, deleted[0].Path, should.Equal(internal.UnlimitedCookiePath))
 
 			user, _, _ := method.Authenticate(ctx, phonyRequest(cookie))
@@ -448,6 +487,22 @@ func TestMethod(t *testing.T) {
 				Name:     provider.UserName,
 				Picture:  provider.UserPicture,
 			}))
+		})
+
+		t.Run("Missing binding cookie", func(t *ftt.Test) {
+			callbackRawQuery := performLogin(methodV1)
+			setCookie("dest.example.com", internal.LimitedCookiePath, internal.BindingCookieName, "")
+			resp := callCallback(methodV1, "dest.example.com", callbackRawQuery)
+			assert.That(t, resp.StatusCode, should.Equal(400))
+			assert.That(t, responseBody(resp), should.ContainSubstring("the login session has expired"))
+		})
+
+		t.Run("Wrong binding cookie", func(t *ftt.Test) {
+			callbackRawQuery := performLogin(methodV1)
+			setCookie("dest.example.com", internal.LimitedCookiePath, internal.BindingCookieName, "wat")
+			resp := callCallback(methodV1, "dest.example.com", callbackRawQuery)
+			assert.That(t, resp.StatusCode, should.Equal(400))
+			assert.That(t, responseBody(resp), should.ContainSubstring("mismatching login session cookie"))
 		})
 
 		t.Run("State endpoint works", func(t *ftt.Test) {
@@ -749,8 +804,7 @@ func jwksForTest(keyID string, pubKey *rsa.PublicKey) *openid.JSONWebKeySetStruc
 }
 
 func jwtForTest(ctx context.Context, body []byte, keyID string, signer *signingtest.Signer) string {
-	b64hdr := base64.RawURLEncoding.EncodeToString([]byte(
-		fmt.Sprintf(`{"alg": "RS256","kid": "%s"}`, keyID)))
+	b64hdr := base64.RawURLEncoding.EncodeToString(fmt.Appendf(nil, `{"alg": "RS256","kid": "%s"}`, keyID))
 	b64bdy := base64.RawURLEncoding.EncodeToString(body)
 	_, sig, err := signer.SignBytes(ctx, []byte(b64hdr+"."+b64bdy))
 	if err != nil {

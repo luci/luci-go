@@ -21,8 +21,9 @@ option go_package = "go.chromium.org/luci/server/encryptedcookies/internal/encry
 // OpenIDState is encrypted and used as `state` in OpenID Connect protocol.
 message OpenIDState {
   bytes session_id = 1;     // the future session ID (must not exist yet)
-  bytes nonce = 2;          // random string used as `nonce` in the protocol
-  string code_verifier = 3; // random string used in PKCE protocol
+  bytes nonce = 2;          // a random string used as `nonce` in the protocol
+  string code_verifier = 3; // a random string used in PKCE protocol
+  bytes binding_cookie = 7; // a random string used as a LUCISBC cookie
   string dest_host = 4;     // the destination redirect host
   string dest_path = 5;     // the destination redirect path
   // the scopes that were requested in the authorization request, in addition
