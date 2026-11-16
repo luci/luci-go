@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/model"
 )
 
 var (
@@ -42,8 +43,8 @@ var (
 
 func getACLCfgCached(ctx context.Context) (*cfgcommonpb.AclCfg, error) {
 	item, err := aclCfgCache.Fetch(ctx, func(ctx context.Context, _ *cfgcommonpb.AclCfg) (*cfgcommonpb.AclCfg, time.Duration, error) {
-		aclCfg := &cfgcommonpb.AclCfg{}
-		if err := common.LoadSelfConfig(ctx, common.ACLRegistryFilePath, aclCfg); err != nil {
+		aclCfg, err := model.LoadSelfConfig[*cfgcommonpb.AclCfg](ctx, common.ACLRegistryFilePath)
+		if err != nil {
 			return nil, 0, err
 		}
 		return aclCfg, aclCfgCacheExpiration, nil

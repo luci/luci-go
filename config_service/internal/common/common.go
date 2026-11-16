@@ -22,18 +22,13 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"google.golang.org/protobuf/encoding/prototext"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
-	"go.chromium.org/luci/config"
-	"go.chromium.org/luci/gae/service/info"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/config_service/internal/clients"
-	"go.chromium.org/luci/config_service/internal/model"
 )
 
 const (
@@ -90,25 +85,6 @@ func GitilesURL(loc *cfgcommonpb.GitilesLocation) string {
 		url = fmt.Sprintf("%s/%s", url, loc.Path)
 	}
 	return url
-}
-
-// LoadSelfConfig reads LUCI Config self config and parse it to the provided
-// message.
-//
-// Return model.NoSuchConfigError if the provided config file can not be found.
-func LoadSelfConfig[T proto.Message](ctx context.Context, fileName string, configMsg T) error {
-	file, err := model.GetLatestConfigFile(ctx, config.MustServiceSet(info.AppID(ctx)), fileName)
-	if err != nil {
-		return err
-	}
-	rawContent, err := file.GetRawContent(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get raw content of file %q: %w", fileName, err)
-	}
-	if err := prototext.Unmarshal(rawContent, configMsg); err != nil {
-		return fmt.Errorf("failed to unmarshal file %q: %w", fileName, err)
-	}
-	return nil
 }
 
 // CreateSignedURLs create signed urls for the given GS paths.

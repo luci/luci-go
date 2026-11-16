@@ -182,9 +182,9 @@ func importAllConfigs(ctx context.Context, dispatcher *tq.Dispatcher) error {
 
 // getAllProjCfgSets fetches all "projects/*" config sets
 func getAllProjCfgSets(ctx context.Context) ([]string, error) {
-	projectsCfg := &cfgcommonpb.ProjectsCfg{}
 	var nerr *model.NoSuchConfigError
-	switch err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, common.ProjRegistryFilePath, projectsCfg); {
+	projectsCfg, err := model.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, common.ProjRegistryFilePath)
+	switch {
 	case errors.As(err, &nerr) && nerr.IsUnknownConfigSet():
 		// May happen on the cron job first run. Just log the warning.
 		logging.Warningf(ctx, "failed to compose all project config sets because the self config set is missing")
@@ -261,8 +261,8 @@ func (i *Importer) ImportConfigSet(ctx context.Context, cfgSet config.Set) error
 
 // importProject imports a project config set.
 func (i *Importer) importProject(ctx context.Context, projectID string) error {
-	projectsCfg := &cfgcommonpb.ProjectsCfg{}
-	if err := common.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, common.ProjRegistryFilePath, projectsCfg); err != nil {
+	projectsCfg, err := model.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, common.ProjRegistryFilePath)
+	if err != nil {
 		return ErrFatalTag.Apply(err)
 	}
 	var projLoc *cfgcommonpb.GitilesLocation

@@ -21,10 +21,14 @@ import (
 	"fmt"
 	"time"
 
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
+
 	"go.chromium.org/luci/common/gcloud/gs"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common/decompress"
@@ -153,6 +157,28 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 		return nil, errors.New("both content and gcs_uri are empty")
 	}
 	return f.rawContent, nil
+}
+
+// LoadSelfConfig reads one of LUCI Config's own config files and parses it as
+// the given message type.
+//
+// Return model.NoSuchConfigError if the provided config file can not be found.
+func LoadSelfConfig[T proto.Message](ctx context.Context, fileName string) (T, error) {
+	var zero T
+
+	file, err := GetLatestConfigFile(ctx, config.MustServiceSet(info.AppID(ctx)), fileName)
+	if err != nil {
+		return zero, err
+	}
+	rawContent, err := file.GetRawContent(ctx)
+	if err != nil {
+		return zero, fmt.Errorf("failed to get raw content of file %q: %w", fileName, err)
+	}
+	ret := zero.ProtoReflect().New().Interface().(T)
+	if err := prototext.Unmarshal(rawContent, ret); err != nil {
+		return zero, fmt.Errorf("failed to unmarshal file %q: %w", fileName, err)
+	}
+	return ret, nil
 }
 
 // ImportAttempt describes what happened last time we tried to import a config

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+package model_test
 
 import (
 	"bytes"
@@ -22,10 +22,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/klauspost/compress/gzip"
+	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
+	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -34,60 +36,62 @@ import (
 	"go.chromium.org/luci/gae/service/datastore"
 
 	"go.chromium.org/luci/config_service/internal/clients"
+	"go.chromium.org/luci/config_service/internal/model"
+	"go.chromium.org/luci/config_service/testutil"
 )
 
 func TestModel(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run("GetLatestConfigFile", t, func(t *ftt.Test) {
+	ftt.Run("model.GetLatestConfigFile", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
 		datastore.GetTestable(ctx).AutoIndex(true)
 		datastore.GetTestable(ctx).Consistent(true)
 
-		cs := &ConfigSet{
+		cs := &model.ConfigSet{
 			ID:             config.MustServiceSet("service"),
-			LatestRevision: RevisionInfo{ID: "latest"},
+			LatestRevision: model.RevisionInfo{ID: "latest"},
 		}
 		assert.Loosely(t, datastore.Put(ctx, cs), should.BeNil)
 
 		t.Run("ok", func(t *ftt.Test) {
 			var err error
-			latest := &File{
+			latest := &model.File{
 				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "latest"),
+				Revision: datastore.MakeKey(ctx, model.ConfigSetKind, "services/service", model.RevisionKind, "latest"),
 			}
 			latest.Content, err = gzipCompress([]byte("latest"))
 			assert.NoErr(t, err)
-			stale := &File{
+			stale := &model.File{
 				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "stale"),
+				Revision: datastore.MakeKey(ctx, model.ConfigSetKind, "services/service", model.RevisionKind, "stale"),
 			}
 			stale.Content, err = gzipCompress([]byte("stale"))
 			assert.NoErr(t, err)
 			assert.Loosely(t, datastore.Put(ctx, latest, stale), should.BeNil)
-			actual, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
+			actual, err := model.GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
 			assert.NoErr(t, err)
-			assert.Loosely(t, actual, should.Resemble(&File{
+			assert.Loosely(t, actual, should.Resemble(&model.File{
 				Path:     "file",
-				Revision: datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "latest"),
+				Revision: datastore.MakeKey(ctx, model.ConfigSetKind, "services/service", model.RevisionKind, "latest"),
 				Content:  latest.Content,
 			}))
 		})
 
 		t.Run("error", func(t *ftt.Test) {
 			t.Run("configset not exist", func(t *ftt.Test) {
-				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("nonexist"), "file")
+				_, err := model.GetLatestConfigFile(ctx, config.MustServiceSet("nonexist"), "file")
 				assert.ErrIsLike(t, err, `can not find config set entity "services/nonexist"`)
 			})
 
 			t.Run("file not exist", func(t *ftt.Test) {
-				_, err := GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
+				_, err := model.GetLatestConfigFile(ctx, config.MustServiceSet("service"), "file")
 				assert.ErrIsLike(t, err, `can not find file entity "file" from datastore for config set: services/service, revision: latest`)
 			})
 		})
 	})
 
-	ftt.Run("GetConfigFileByHash", t, func(t *ftt.Test) {
+	ftt.Run("model.GetConfigFileByHash", t, func(t *ftt.Test) {
 		ctx := memory.UseWithAppID(context.Background(), "dev~app-id")
 		datastore.GetTestable(ctx).Consistent(true)
 
@@ -95,34 +99,34 @@ func TestModel(t *testing.T) {
 			content, err := gzipCompress([]byte("content"))
 			assert.NoErr(t, err)
 			now := clock.Now(ctx).UTC()
-			assert.Loosely(t, datastore.Put(ctx, &File{
+			assert.Loosely(t, datastore.Put(ctx, &model.File{
 				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev1"),
+				Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "services/service", model.RevisionKind, "rev1"),
 				ContentSHA256: "hash",
 				Content:       content,
 				GcsURI:        gs.MakePath("bucket", "object"),
 				CreateTime:    datastore.RoundTime(now),
-			}, &File{
+			}, &model.File{
 				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev2"),
+				Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "services/service", model.RevisionKind, "rev2"),
 				ContentSHA256: "hash",
 				Content:       content,
 				GcsURI:        gs.MakePath("bucket", "object"),
 				CreateTime:    datastore.RoundTime(now.Add(1 * time.Minute)),
-			}, &File{
+			}, &model.File{
 				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/another", RevisionKind, "rev"),
+				Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "services/another", model.RevisionKind, "rev"),
 				ContentSHA256: "hash",
 				Content:       content,
 				GcsURI:        gs.MakePath("bucket", "object"),
 				CreateTime:    datastore.RoundTime(now.Add(2 * time.Minute)),
 			}), should.BeNil)
 
-			file, err := GetConfigFileByHash(ctx, config.MustServiceSet("service"), "hash")
+			file, err := model.GetConfigFileByHash(ctx, config.MustServiceSet("service"), "hash")
 			assert.NoErr(t, err)
-			assert.Loosely(t, file, should.Resemble(&File{
+			assert.Loosely(t, file, should.Resemble(&model.File{
 				Path:          "file",
-				Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev2"),
+				Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "services/service", model.RevisionKind, "rev2"),
 				ContentSHA256: "hash",
 				Content:       content,
 				GcsURI:        gs.MakePath("bucket", "object"),
@@ -131,7 +135,7 @@ func TestModel(t *testing.T) {
 		})
 
 		t.Run("not found", func(t *ftt.Test) {
-			_, err := GetConfigFileByHash(ctx, config.MustServiceSet("service"), "hash")
+			_, err := model.GetConfigFileByHash(ctx, config.MustServiceSet("service"), "hash")
 			assert.ErrIsLike(t, err, `can not find matching file entity from datastore with hash "hash"`)
 		})
 	})
@@ -145,9 +149,9 @@ func TestGetRawContent(t *testing.T) {
 		mockGsClient := clients.NewMockGsClient(ctl)
 		ctx = clients.WithGsClient(ctx, mockGsClient)
 		datastore.GetTestable(ctx).Consistent(true)
-		file := &File{
+		file := &model.File{
 			Path:          "file",
-			Revision:      datastore.MakeKey(ctx, ConfigSetKind, "services/service", RevisionKind, "rev"),
+			Revision:      datastore.MakeKey(ctx, model.ConfigSetKind, "services/service", model.RevisionKind, "rev"),
 			ContentSHA256: "hash",
 		}
 
@@ -159,7 +163,6 @@ func TestGetRawContent(t *testing.T) {
 			rawContent, err := file.GetRawContent(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
-			assert.Loosely(t, file.rawContent, should.Match([]byte("raw content")))
 		})
 
 		t.Run("should resolve GcsUri", func(t *ftt.Test) {
@@ -170,7 +173,6 @@ func TestGetRawContent(t *testing.T) {
 			rawContent, err := file.GetRawContent(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
-			assert.Loosely(t, file.rawContent, should.Match([]byte("raw content")))
 
 			t.Run("use cache when calling agin", func(t *ftt.Test) {
 				mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(nil, errors.New("should not be called")).AnyTimes()
@@ -202,7 +204,6 @@ func TestGetRawContent(t *testing.T) {
 			rawContent, err := file.GetRawContent(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, rawContent, should.Match([]byte("")))
-			assert.Loosely(t, file.rawContent, should.Match([]byte("")))
 		})
 	})
 }
@@ -217,4 +218,29 @@ func gzipCompress(b []byte) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func TestLoadSelfConfig(t *testing.T) {
+	t.Parallel()
+
+	ctx := testutil.SetupContext()
+	projectsCfg := &cfgcommonpb.ProjectsCfg{
+		Projects: []*cfgcommonpb.Project{
+			{Id: "foo"},
+		},
+	}
+	testutil.InjectSelfConfigs(ctx, t, map[string]proto.Message{
+		"projects.cfg": projectsCfg,
+	})
+
+	loaded := &cfgcommonpb.ProjectsCfg{}
+	loaded, err := model.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "projects.cfg")
+	assert.NoErr(t, err)
+	assert.Loosely(t, loaded, should.Match(projectsCfg))
+
+	loaded, err = model.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "service.cfg")
+	assert.ErrIsLike(t, err, "can not find file entity \"service.cfg\" from datastore for config set")
+
+	_, err = model.LoadSelfConfig[*cfgcommonpb.ServicesCfg](ctx, "projects.cfg")
+	assert.ErrIsLike(t, err, "failed to unmarshal")
 }

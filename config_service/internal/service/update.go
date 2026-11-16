@@ -47,8 +47,8 @@ import (
 //
 // Also deletes the entities for un-registered services.
 func Update(ctx context.Context) error {
-	servicesCfg := &cfgcommonpb.ServicesCfg{}
-	if err := common.LoadSelfConfig(ctx, common.ServiceRegistryFilePath, servicesCfg); err != nil {
+	servicesCfg, err := model.LoadSelfConfig[*cfgcommonpb.ServicesCfg](ctx, common.ServiceRegistryFilePath)
+	if err != nil {
 		return fmt.Errorf("failed to load %s. Reason: %w", common.ServiceRegistryFilePath, err)
 	}
 

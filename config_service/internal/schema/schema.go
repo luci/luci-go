@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/config_service/internal/common"
+	"go.chromium.org/luci/config_service/internal/model"
 )
 
 // InstallHandler installs handler for schema redirection.
@@ -46,10 +47,11 @@ func InstallHandler(r *router.Router) {
 }
 
 func lookupSchemaURL(ctx context.Context, name string) (string, error) {
-	schemaCfg := &cfgcommonpb.SchemasCfg{}
-	if err := common.LoadSelfConfig(ctx, common.SchemaConfigFilePath, schemaCfg); err != nil {
+	schemaCfg, err := model.LoadSelfConfig[*cfgcommonpb.SchemasCfg](ctx, common.SchemaConfigFilePath)
+	if err != nil {
 		return "", err
 	}
+
 	for _, schema := range schemaCfg.GetSchemas() {
 		if schema.GetName() == name {
 			return schema.Url, nil
