@@ -42,9 +42,12 @@ const (
 )
 
 var (
-	// ErrTooLarge is the core error returned by GsClient.Read when the underlying
-	// object is larger than we are willing to handle.
+	// ErrTooLarge is the core error returned when a decompressed GCS object
+	// exceeds common.ConfigMaxSize.
 	ErrTooLarge = errors.New("gcs object too large")
+
+	// ErrInvalidGzip is returned when a GCS object is not valid gzip data.
+	ErrInvalidGzip = errors.New("gcs object has invalid gzip stream")
 
 	gsClientCtxKey = "holds the Google Cloud Storage client"
 )
@@ -59,13 +62,10 @@ type GsClient interface {
 	// Returns true, if the upload occurred.
 	UploadIfMissing(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error)
 
-	// Read reads data from the give bucket-to-object path.
+	// Read reads and gunzips data from the given bucket-to-object path.
 	//
-	// If decompress is true, it will read with 'decompressive' transcoding:
-	// https://cloud.google.com/storage/docs/transcoding#decompressive_transcoding
-	//
-	// May return an error wrapping [ErrTooLarge].
-	Read(ctx context.Context, bucket, object string, decompress bool) ([]byte, error)
+	// May return an error wrapping [ErrTooLarge] or [ErrInvalidGzip].
+	Read(ctx context.Context, bucket, object string) ([]byte, error)
 
 	// Touch updates the 'custom time' of the object to the current timestamp.
 	//
@@ -131,11 +131,9 @@ func (p *prodClient) UploadIfMissing(ctx context.Context, bucket, object string,
 	return true, nil
 }
 
-// Read reads data from the given bucket-to-object path.
-// If decompress is true, it will read with decompress transcoding:
-// https://cloud.google.com/storage/docs/transcoding#decompressive_transcoding
-func (p *prodClient) Read(ctx context.Context, bucket, object string, decompress bool) (ret []byte, err error) {
-	r, err := newReader(ctx, p.client.Bucket(bucket).Object(object).ReadCompressed(!decompress))
+// Read reads and gunzips data from the given bucket-to-object path.
+func (p *prodClient) Read(ctx context.Context, bucket, object string) (ret []byte, err error) {
+	r, err := newReader(ctx, p.client.Bucket(bucket).Object(object))
 	if err != nil {
 		return nil, err
 	}

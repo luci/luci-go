@@ -16,12 +16,25 @@ package clients
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 
 	"cloud.google.com/go/storage"
+	"github.com/klauspost/compress/flate"
+	"github.com/klauspost/compress/gzip"
 
 	"go.chromium.org/luci/config_service/internal/common"
 )
+
+func isGzipErr(err error) bool {
+	// NOTE: gzip uses flate internally which can return flate.CorruptInputError.
+	_, isCorruptFlate := errors.AsType[flate.CorruptInputError](err)
+	return isCorruptFlate ||
+		errors.Is(err, gzip.ErrHeader) ||
+		errors.Is(err, gzip.ErrChecksum) ||
+		errors.Is(err, io.ErrUnexpectedEOF)
+}
 
 // limitedReader limits how much decompressed data we're willing to read from
 // a gzip compressed GCS object.
@@ -30,37 +43,56 @@ type limitedReader struct {
 		BucketName() string
 		ObjectName() string
 	}
-	r     *storage.Reader
-	n     int
-	limit int
+	r               io.ReadCloser
+	underlyingClose func() error
+	attrs           storage.ReaderObjectAttrs
+	n               int
+	limit           int
 }
 
 func (l *limitedReader) Read(buf []byte) (n int, err error) {
+	if l.n > l.limit {
+		return 0, fmt.Errorf("gs://%s/%s: %w: %d > %d",
+			l.object.BucketName(), l.object.ObjectName(), ErrTooLarge, l.n, l.limit)
+	}
 	if left := l.limit - l.n; left < len(buf) {
 		buf = buf[:left+1] // Allow going over by 1 byte.
 	}
 
 	n, err = l.r.Read(buf)
 	l.n += n
-	if l.n > l.limit {
+	switch {
+	case l.n > l.limit:
 		err = fmt.Errorf("gs://%s/%s: %w: %d > %d",
 			l.object.BucketName(), l.object.ObjectName(), ErrTooLarge, l.n, l.limit)
+	case isGzipErr(err):
+		err = fmt.Errorf("gs://%s/%s: %w: %w",
+			l.object.BucketName(), l.object.ObjectName(), ErrInvalidGzip, err)
 	}
 	return
 }
 
 func (l *limitedReader) Close() error {
-	return l.r.Close()
+	err1 := l.r.Close()
+	err2 := l.underlyingClose()
+	return errors.Join(err1, err2)
 }
 
 func (l *limitedReader) Attrs() storage.ReaderObjectAttrs {
-	return l.r.Attrs
+	return l.attrs
 }
 
 func newReader(ctx context.Context, object *storage.ObjectHandle) (*limitedReader, error) {
-	r, err := object.NewReader(ctx)
+	r, err := object.ReadCompressed(true).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &limitedReader{object, r, 0, common.ConfigMaxSize}, nil
+	gr, err := gzip.NewReader(r)
+	if err != nil {
+		_ = r.Close()
+		err = fmt.Errorf("gs://%s/%s: %w: %w",
+			object.BucketName(), object.ObjectName(), ErrInvalidGzip, err)
+		return nil, err
+	}
+	return &limitedReader{object, gr, r.Close, r.Attrs, 0, common.ConfigMaxSize}, nil
 }

@@ -39,7 +39,6 @@ import (
 	"go.chromium.org/luci/config_service/internal/acl"
 	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
-	"go.chromium.org/luci/config_service/internal/common/decompress"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/validation"
 	configpb "go.chromium.org/luci/config_service/proto"
@@ -185,11 +184,7 @@ func (vf validationFile) GetGSPath() gs.Path { return vf.gsPath }
 // from GS should be uncompressed fine.
 func (vf validationFile) GetRawContent(ctx context.Context) ([]byte, error) {
 	bucket, object := vf.gsPath.Split()
-	compressed, err := clients.GetGsClient(ctx).Read(ctx, bucket, object, false)
-	if err != nil {
-		return nil, err
-	}
-	return decompress.Gzip(compressed)
+	return clients.GetGsClient(ctx).Read(ctx, bucket, object)
 }
 
 // makeValidationFiles creates a `validationFile` for each file_hash in the

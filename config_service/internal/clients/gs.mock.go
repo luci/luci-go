@@ -63,18 +63,18 @@ func (mr *MockGsClientMockRecorder) Delete(ctx, bucket, object interface{}) *gom
 }
 
 // Read mocks base method.
-func (m *MockGsClient) Read(ctx context.Context, bucket, object string, decompressive bool) ([]byte, error) {
+func (m *MockGsClient) Read(ctx context.Context, bucket, object string) ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", ctx, bucket, object, decompressive)
+	ret := m.ctrl.Call(m, "Read", ctx, bucket, object)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Read indicates an expected call of Read.
-func (mr *MockGsClientMockRecorder) Read(ctx, bucket, object, decompressive interface{}) *gomock.Call {
+func (mr *MockGsClientMockRecorder) Read(ctx, bucket, object interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockGsClient)(nil).Read), ctx, bucket, object, decompressive)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockGsClient)(nil).Read), ctx, bucket, object)
 }
 
 // SignedURL mocks base method.

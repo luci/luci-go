@@ -16,11 +16,14 @@
 package model
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
+	"github.com/klauspost/compress/gzip"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
@@ -31,7 +34,7 @@ import (
 	"go.chromium.org/luci/gae/service/info"
 
 	"go.chromium.org/luci/config_service/internal/clients"
-	"go.chromium.org/luci/config_service/internal/common/decompress"
+	"go.chromium.org/luci/config_service/internal/common"
 )
 
 const (
@@ -138,19 +141,23 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 	case f.rawContent != nil:
 		break // rawContent is fetched and cached before.
 	case len(f.Content) > 0:
-		rawContent, err := decompress.Gzip(f.Content)
+		r, err := gzip.NewReader(bytes.NewBuffer(f.Content))
 		if err != nil {
 			return nil, err
+		}
+		defer r.Close()
+		rawContent, err := io.ReadAll(io.LimitReader(r, common.ConfigMaxSize+1))
+		if err != nil {
+			return nil, err
+		}
+		if len(rawContent) > common.ConfigMaxSize {
+			return nil, fmt.Errorf("%s: %w: %d > %d", f.Path, clients.ErrTooLarge, len(rawContent), common.ConfigMaxSize)
 		}
 		f.rawContent = rawContent
 	case f.GcsURI != "":
-		compressed, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename(), false)
+		rawContent, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename())
 		if err != nil {
 			return nil, fmt.Errorf("read from %s: %w", f.GcsURI, err)
-		}
-		rawContent, err := decompress.Gzip(compressed)
-		if err != nil {
-			return nil, err
 		}
 		f.rawContent = rawContent
 	default:

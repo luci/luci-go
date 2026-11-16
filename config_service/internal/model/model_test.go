@@ -166,16 +166,14 @@ func TestGetRawContent(t *testing.T) {
 		})
 
 		t.Run("should resolve GcsUri", func(t *ftt.Test) {
-			content, err := gzipCompress([]byte("raw content"))
-			assert.NoErr(t, err)
 			file.GcsURI = gs.MakePath("test-bucket", "test-object")
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(content, nil)
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return([]byte("raw content"), nil)
 			rawContent, err := file.GetRawContent(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
 
-			t.Run("use cache when calling agin", func(t *ftt.Test) {
-				mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(nil, errors.New("should not be called")).AnyTimes()
+			t.Run("use cache when calling again", func(t *ftt.Test) {
+				mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return(nil, errors.New("should not be called")).AnyTimes()
 				rawContent, err := file.GetRawContent(ctx)
 				assert.NoErr(t, err)
 				assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
@@ -184,7 +182,7 @@ func TestGetRawContent(t *testing.T) {
 
 		t.Run("GCS error", func(t *ftt.Test) {
 			file.GcsURI = gs.MakePath("test-bucket", "test-object")
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object"), false).Return(nil, errors.New("GCS internal error"))
+			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return(nil, errors.New("GCS internal error"))
 			rawContent, err := file.GetRawContent(ctx)
 			assert.ErrIsLike(t, err, "read from gs://test-bucket/test-object: GCS internal error")
 			assert.Loosely(t, rawContent, should.BeNil)
@@ -206,6 +204,18 @@ func TestGetRawContent(t *testing.T) {
 			assert.Loosely(t, rawContent, should.Match([]byte("")))
 		})
 	})
+}
+
+func TestFileInvalidGzip(t *testing.T) {
+	t.Parallel()
+
+	ctx := memory.UseWithAppID(t.Context(), "dev~app-id")
+	file := &model.File{
+		Path:    "file",
+		Content: []byte("not valid gzip"),
+	}
+	_, err := file.GetRawContent(ctx)
+	assert.ErrIsLike(t, err, "gzip: invalid header")
 }
 
 func gzipCompress(b []byte) ([]byte, error) {
@@ -233,7 +243,6 @@ func TestLoadSelfConfig(t *testing.T) {
 		"projects.cfg": projectsCfg,
 	})
 
-	loaded := &cfgcommonpb.ProjectsCfg{}
 	loaded, err := model.LoadSelfConfig[*cfgcommonpb.ProjectsCfg](ctx, "projects.cfg")
 	assert.NoErr(t, err)
 	assert.Loosely(t, loaded, should.Match(projectsCfg))
