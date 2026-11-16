@@ -45,45 +45,6 @@ func (m *mockGerritClient) GetChange(ctx context.Context, in *gerritpb.GetChange
 	return nil, status.Errorf(codes.Unimplemented, "not implemented")
 }
 
-func TestParseBuilderFilter(t *testing.T) {
-	ftt.Run(`parseBuilderFilter`, t, func(t *ftt.Test) {
-		t.Run(`Full project/bucket/builder path`, func(t *ftt.Test) {
-			bid, err := parseBuilderFilter("chromium/ci/Linux UBSan Tests")
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bid, should.Match(&pb.BuilderID{
-				Project: "chromium",
-				Bucket:  "ci",
-				Builder: "Linux UBSan Tests",
-			}))
-		})
-
-		t.Run(`Project and bucket only`, func(t *ftt.Test) {
-			bid, err := parseBuilderFilter("chromium/ci")
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bid, should.Match(&pb.BuilderID{
-				Project: "chromium",
-				Bucket:  "ci",
-			}))
-		})
-
-		t.Run(`Project only`, func(t *ftt.Test) {
-			bid, err := parseBuilderFilter("chromium")
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, bid, should.Match(&pb.BuilderID{
-				Project: "chromium",
-			}))
-		})
-
-		t.Run(`Invalid builder format`, func(t *ftt.Test) {
-			_, err := parseBuilderFilter("a/b/c/d")
-			assert.Loosely(t, err, should.NotBeNil)
-
-			_, err = parseBuilderFilter("chromium//linux-rel")
-			assert.Loosely(t, err, should.NotBeNil)
-		})
-	})
-}
-
 func TestParseTagAndStatusFilters(t *testing.T) {
 	ftt.Run(`parseTagFilters and parseBuildStatus`, t, func(t *ftt.Test) {
 		t.Run(`Valid tags`, func(t *ftt.Test) {
@@ -141,20 +102,20 @@ func TestBuildSearchPredicate(t *testing.T) {
 				Change:   8565529,
 				Patchset: 10,
 			}
-			p, err := buildSearchPredicate("", nil, "", gc)
+			p, err := buildSearchPredicate("", "", "", nil, "", gc)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, p.GerritChanges, should.Match([]*pb.GerritChange{gc}))
 			assert.Loosely(t, p.Builder, should.BeNil)
 			assert.Loosely(t, p.Status, should.Equal(pb.Status_STATUS_UNSPECIFIED))
 		})
 
-		t.Run(`Combined with builder, status, and tag`, func(t *ftt.Test) {
+		t.Run(`Combined with project, bucket, builder, status, and tag`, func(t *ftt.Test) {
 			gc := &pb.GerritChange{
 				Host:     "chromium-review.googlesource.com",
 				Change:   8565529,
 				Patchset: 3,
 			}
-			p, err := buildSearchPredicate("chromium/try/linux-rel", []string{"os:linux"}, "failure", gc)
+			p, err := buildSearchPredicate("chromium", "try", "linux-rel", []string{"os:linux"}, "failure", gc)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, p.GerritChanges, should.Match([]*pb.GerritChange{gc}))
 			assert.Loosely(t, p.Builder, should.Match(&pb.BuilderID{
@@ -168,8 +129,17 @@ func TestBuildSearchPredicate(t *testing.T) {
 			}))
 		})
 
+		t.Run(`Project and bucket only`, func(t *ftt.Test) {
+			p, err := buildSearchPredicate("chromium", "ci", "", nil, "", nil)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, p.Builder, should.Match(&pb.BuilderID{
+				Project: "chromium",
+				Bucket:  "ci",
+			}))
+		})
+
 		t.Run(`All empty returns error`, func(t *ftt.Test) {
-			_, err := buildSearchPredicate("", nil, "", nil)
+			_, err := buildSearchPredicate("", "", "", nil, "", nil)
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("at least one filter flag"))
 		})
@@ -873,6 +843,80 @@ func TestBuildListRun(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(1))
+		})
+
+		t.Run(`Returns builds for separate -project, -bucket, and -builder flags`, func(t *ftt.Test) {
+			mock := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					assert.Loosely(t, in.Predicate.Builder, should.Match(&pb.BuilderID{
+						Project: "chromium",
+						Bucket:  "ci",
+						Builder: "linux-rel",
+					}))
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{
+							{
+								Id:     8738491827364512350,
+								Status: pb.Status_SUCCESS,
+							},
+						},
+					}, nil
+				},
+			}
+
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mock
+			err := run.Flags.Parse([]string{"-project", "chromium", "-bucket", "ci", "-builder", "linux-rel"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, run.project, should.Equal("chromium"))
+			assert.Loosely(t, run.bucket, should.Equal("ci"))
+			assert.Loosely(t, run.builder, should.Equal("linux-rel"))
+		})
+
+		t.Run(`Returns builds for -project and -bucket without -builder`, func(t *ftt.Test) {
+			mock := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					assert.Loosely(t, in.Predicate.Builder, should.Match(&pb.BuilderID{
+						Project: "chromium",
+						Bucket:  "ci",
+					}))
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mock
+			err := run.Flags.Parse([]string{"-project", "chromium", "-bucket", "ci"})
+			assert.Loosely(t, err, should.BeNil)
+			ret := run.Run(nil, run.Flags.Args(), nil)
+			assert.Loosely(t, ret, should.Equal(0))
+			assert.Loosely(t, run.project, should.Equal("chromium"))
+			assert.Loosely(t, run.bucket, should.Equal("ci"))
+			assert.Loosely(t, run.builder, should.BeEmpty)
+		})
+
+		t.Run(`Conflicting or incomplete -project, -bucket, -builder flags return 1`, func(t *ftt.Test) {
+			for _, flagArgs := range [][]string{
+				{"-project", "chromeos", "-builder", "chrome/ci/linux-rel"},
+				{"-project", "chromium", "-builder", "chromium/ci/linux-rel"},
+				{"-project", "chromium", "-builder", "ci/linux-rel"},
+				{"-project", "chromium", "-bucket", "try", "-builder", "chromium/ci/linux-rel"},
+				{"-project", "chromium", "-bucket", "ci", "-builder", "ci/linux-rel"},
+				{"-bucket", "ci"},
+				{"-bucket", "ci", "-builder", "linux-rel"},
+				{"-project", "chromium", "-builder", "linux-rel"},
+			} {
+				cmd := ListCmd(af)
+				run := cmd.CommandRun().(*buildListRun)
+				err := run.Flags.Parse(flagArgs)
+				assert.Loosely(t, err, should.BeNil)
+				ret := run.Run(nil, run.Flags.Args(), nil)
+				assert.Loosely(t, ret, should.Equal(1))
+			}
 		})
 	})
 }

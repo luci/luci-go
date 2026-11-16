@@ -678,3 +678,63 @@ func ExtractModuleNameFromTestID(testID string) string {
 	}
 	return ""
 }
+
+// ParseBuilderFlags parses and validates raw -project, -bucket, and -builder
+// flag values into their 3 canonical components (project, bucket, builder).
+//
+// Callers may either:
+//   - Specify individual component flags: -project <project> [-bucket <bucket> [-builder <builder>]]
+//     (where none of -project, -bucket, or -builder may contain '/'), or
+//   - Specify a combined path in -builder alone: -builder <project>[/<bucket>[/<builder>]]
+//     (when neither -project nor -bucket is set).
+//
+// Returns ("", "", "", nil) when all three inputs are empty.
+func ParseBuilderFlags(projectRaw, bucketRaw, builderRaw string) (project, bucket, builder string, err error) {
+	project = strings.TrimSpace(projectRaw)
+	bucket = strings.TrimSpace(bucketRaw)
+	builder = strings.TrimSpace(builderRaw)
+	if project == "" && bucket == "" && builder == "" {
+		return "", "", "", nil
+	}
+
+	if project != "" || bucket != "" {
+		if strings.Contains(project, "/") {
+			return "", "", "", errors.Fmt("invalid -project %q: must not contain '/'", projectRaw)
+		}
+		if strings.Contains(bucket, "/") {
+			return "", "", "", errors.Fmt("invalid -bucket %q: must not contain '/'", bucketRaw)
+		}
+		if strings.Contains(builder, "/") {
+			return "", "", "", errors.Fmt("invalid -builder %q: must not contain '/' when -project or -bucket is specified", builderRaw)
+		}
+		if project == "" {
+			return "", "", "", errors.New("-project is required when -bucket is specified")
+		}
+		if builder != "" && bucket == "" {
+			return "", "", "", errors.New("-bucket is required when both -project and -builder are specified")
+		}
+		return project, bucket, builder, nil
+	}
+
+	// Only -builder was specified: parse <project>[/<bucket>[/<builder>]].
+	parts := strings.Split(builder, "/")
+	if len(parts) > 3 {
+		return "", "", "", errors.Fmt("invalid -builder %q: expected <project>, <project>/<bucket>, or <project>/<bucket>/<builder>", builderRaw)
+	}
+	for _, p := range parts {
+		if strings.TrimSpace(p) == "" {
+			return "", "", "", errors.Fmt("invalid -builder %q: expected <project>, <project>/<bucket>, or <project>/<bucket>/<builder>", builderRaw)
+		}
+	}
+
+	project = strings.TrimSpace(parts[0])
+	if len(parts) >= 2 {
+		bucket = strings.TrimSpace(parts[1])
+	}
+	if len(parts) == 3 {
+		builder = strings.TrimSpace(parts[2])
+	} else {
+		builder = ""
+	}
+	return project, bucket, builder, nil
+}

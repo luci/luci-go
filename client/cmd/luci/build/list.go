@@ -44,7 +44,7 @@ const (
 // ListCmd returns the subcommand for `luci build list`.
 func ListCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "list [-builder <project/bucket/builder>] [-tag <key:value>] [-status <status>] [-cl <gerrit_url_or_change_id>] [-patchset <n>] [-limit <n>]",
+		UsageLine: "list [-project <project>] [-bucket <bucket>] [-builder <builder>] [-tag <key:value>] [-status <status>] [-cl <gerrit_url_or_change_id>] [-patchset <n>] [-limit <n>]",
 		ShortDesc: "Search and list builds by builder, tag, status, or Gerrit CL",
 		LongDesc: "Search Buildbucket builds by builder, tag, status, or Gerrit CL.\n\n" +
 			"By default, prints up to 10 matching builds with their status, builder/number, -buildid and -invocationid flags, timing, and summary.\n" +
@@ -52,7 +52,8 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			"Use -limit / -n to change the maximum number of builds returned.\n\n" +
 			"Examples:\n" +
 			"  $ luci build list -builder \"chromium/ci/Linux UBSan Tests\" -n 5\n" +
-			"  $ luci build list -builder chromium/ci/linux-rel -status failure\n" +
+			"  $ luci build list -project chromium -bucket ci -builder linux-rel -status failure\n" +
+			"  $ luci build list -project chromium -bucket ci -n 5\n" +
 			"  $ luci build list -tag dut-name:chromeos8-row1-rack10-host45\n" +
 			"  $ luci build list -cl https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/8565529\n" +
 			"  $ luci build list -cl 8565529 -status failure",
@@ -62,7 +63,9 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 				r.af.Register(&r.Flags)
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.BuildbucketHost, "Buildbucket host")
-			r.Flags.StringVar(&r.builder, "builder", "", "Filter by builder (<project>[/<bucket>[/<builder>]])")
+			r.Flags.StringVar(&r.project, "project", "", "Filter by LUCI project (e.g. chromium)")
+			r.Flags.StringVar(&r.bucket, "bucket", "", "Filter by Buildbucket bucket (e.g. ci or try; requires -project)")
+			r.Flags.StringVar(&r.builder, "builder", "", "Filter by builder (<builder> when used with -project and -bucket, or <project>[/<bucket>[/<builder>]])")
 			r.Flags.Var(&r.tags, "tag", "Filter by key:value tag (repeatable, e.g. -tag dut-name:host1)")
 			r.Flags.Var(&r.tags, "t", "Alias for -tag")
 			r.Flags.StringVar(&r.status, "status", "", "Filter by status (scheduled, started, ended, success, failure, infra_failure, canceled)")
@@ -84,6 +87,8 @@ type buildListRun struct {
 	out          io.Writer
 
 	host     string
+	project  string
+	bucket   string
 	builder  string
 	tags     stringlistflag.Flag
 	status   string
@@ -100,7 +105,7 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 		}
 	}
 	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -builder, -tag, -status, or -cl\n")
+		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -project, -bucket, -builder, -tag, -status, or -cl\n")
 		return 1
 	}
 	if r.limit <= 0 {
@@ -122,6 +127,13 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 		return 1
 	}
 
+	var err error
+	r.project, r.bucket, r.builder, err = base.ParseBuilderFlags(r.project, r.bucket, r.builder)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		return 1
+	}
+
 	var gerritChange *pb.GerritChange
 	if r.cl != "" {
 		parsed, err := base.ParseGerritCL(r.cl)
@@ -135,7 +147,7 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 		gerritChange = parsed
 	}
 
-	predicate, err := buildSearchPredicate(r.builder, r.tags, r.status, gerritChange)
+	predicate, err := buildSearchPredicate(r.project, r.bucket, r.builder, r.tags, r.status, gerritChange)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
@@ -301,13 +313,17 @@ func patchsetHasAnyBuilds(ctx context.Context, client grpcpb.BuildsClient, gc *p
 	return len(resp.GetBuilds()) > 0, nil
 }
 
-// buildSearchPredicate parses the CLI filter flags (-builder, -tag, -status, -cl)
-// into a Buildbucket BuildPredicate, which specifies the filter criteria that
-// builds must match in a SearchBuilds RPC request.
-func buildSearchPredicate(builderRaw string, tagsRaw []string, statusRaw string, gerritChange *pb.GerritChange) (*pb.BuildPredicate, error) {
-	builderID, err := parseBuilderFilter(builderRaw)
-	if err != nil {
-		return nil, err
+// buildSearchPredicate constructs a Buildbucket BuildPredicate from the
+// normalized project, bucket, and builder components and the remaining CLI
+// filter flags (-tag, -status, -cl).
+func buildSearchPredicate(project, bucket, builder string, tagsRaw []string, statusRaw string, gerritChange *pb.GerritChange) (*pb.BuildPredicate, error) {
+	var builderID *pb.BuilderID
+	if project != "" || bucket != "" || builder != "" {
+		builderID = &pb.BuilderID{
+			Project: project,
+			Bucket:  bucket,
+			Builder: builder,
+		}
 	}
 
 	tags, err := parseTagFilters(tagsRaw)
@@ -321,7 +337,7 @@ func buildSearchPredicate(builderRaw string, tagsRaw []string, statusRaw string,
 	}
 
 	if builderID == nil && len(tags) == 0 && status == pb.Status_STATUS_UNSPECIFIED && gerritChange == nil {
-		return nil, errors.New("at least one filter flag (-builder, -tag, -status, or -cl) is required")
+		return nil, errors.New("at least one filter flag (-project, -bucket, -builder, -tag, -status, or -cl) is required")
 	}
 
 	var gerritChanges []*pb.GerritChange
@@ -335,34 +351,6 @@ func buildSearchPredicate(builderRaw string, tagsRaw []string, statusRaw string,
 		Status:        status,
 		GerritChanges: gerritChanges,
 	}, nil
-}
-
-func parseBuilderFilter(raw string) (*pb.BuilderID, error) {
-	if strings.TrimSpace(raw) == "" {
-		return nil, nil
-	}
-
-	clean := strings.Trim(strings.TrimSpace(raw), "/")
-	parts := strings.Split(clean, "/")
-	if len(parts) > 3 {
-		return nil, errors.Fmt("invalid -builder %q: expected <project>, <project>/<bucket>, or <project>/<bucket>/<builder>", raw)
-	}
-	for _, p := range parts {
-		if strings.TrimSpace(p) == "" {
-			return nil, errors.Fmt("invalid -builder %q: expected <project>, <project>/<bucket>, or <project>/<bucket>/<builder>", raw)
-		}
-	}
-
-	bid := &pb.BuilderID{
-		Project: strings.TrimSpace(parts[0]),
-	}
-	if len(parts) >= 2 {
-		bid.Bucket = strings.TrimSpace(parts[1])
-	}
-	if len(parts) == 3 {
-		bid.Builder = strings.TrimSpace(parts[2])
-	}
-	return bid, nil
 }
 
 func parseTagFilters(raw []string) ([]*pb.StringPair, error) {

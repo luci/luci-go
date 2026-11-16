@@ -331,3 +331,104 @@ func TestShellQuoteIfNeeded(t *testing.T) {
 		assert.Loosely(t, ShellQuoteIfNeeded("test'with'quotes"), should.Equal(`'test'\''with'\''quotes'`))
 	})
 }
+
+func TestParseBuilderFlags(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("ParseBuilderFlags", t, func(t *ftt.Test) {
+		t.Run("All empty", func(t *ftt.Test) {
+			proj, bucket, builder, err := ParseBuilderFlags("", "", "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.BeEmpty)
+			assert.Loosely(t, bucket, should.BeEmpty)
+			assert.Loosely(t, builder, should.BeEmpty)
+		})
+
+		t.Run("-builder only", func(t *ftt.Test) {
+			proj, bucket, builder, err := ParseBuilderFlags("", "", "chromium/ci/Linux UBSan Tests")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.Equal("chromium"))
+			assert.Loosely(t, bucket, should.Equal("ci"))
+			assert.Loosely(t, builder, should.Equal("Linux UBSan Tests"))
+
+			proj, bucket, builder, err = ParseBuilderFlags("", "", "chromium/ci")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.Equal("chromium"))
+			assert.Loosely(t, bucket, should.Equal("ci"))
+			assert.Loosely(t, builder, should.BeEmpty)
+
+			proj, bucket, builder, err = ParseBuilderFlags("", "", "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.Equal("chromium"))
+			assert.Loosely(t, bucket, should.BeEmpty)
+			assert.Loosely(t, builder, should.BeEmpty)
+		})
+
+		t.Run("Separate -project, -bucket, and -builder flags", func(t *ftt.Test) {
+			proj, bucket, builder, err := ParseBuilderFlags("chromium", "", "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.Equal("chromium"))
+			assert.Loosely(t, bucket, should.BeEmpty)
+			assert.Loosely(t, builder, should.BeEmpty)
+
+			proj, bucket, builder, err = ParseBuilderFlags("chromium", "ci", "")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.Equal("chromium"))
+			assert.Loosely(t, bucket, should.Equal("ci"))
+			assert.Loosely(t, builder, should.BeEmpty)
+
+			proj, bucket, builder, err = ParseBuilderFlags("chromium", "ci", "linux-rel")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, proj, should.Equal("chromium"))
+			assert.Loosely(t, bucket, should.Equal("ci"))
+			assert.Loosely(t, builder, should.Equal("linux-rel"))
+		})
+
+		t.Run("Validation and conflict errors", func(t *ftt.Test) {
+			_, _, _, err := ParseBuilderFlags("chromium/ci", "", "")
+			assert.Loosely(t, err, should.ErrLike("invalid -project"))
+
+			_, _, _, err = ParseBuilderFlags("chromium", "chromium/ci", "")
+			assert.Loosely(t, err, should.ErrLike("invalid -bucket"))
+
+			_, _, _, err = ParseBuilderFlags("", "chromium/ci", "")
+			assert.Loosely(t, err, should.ErrLike("invalid -bucket"))
+
+			_, _, _, err = ParseBuilderFlags("chromeos", "", "chrome/ci/linux-rel")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+
+			_, _, _, err = ParseBuilderFlags("chromium", "", "chromium/ci/linux-rel")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+
+			_, _, _, err = ParseBuilderFlags("chromium", "", "ci/linux-rel")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+
+			_, _, _, err = ParseBuilderFlags("chromium", "ci", "ci/linux-rel")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+
+			_, _, _, err = ParseBuilderFlags("chromium", "ci", "chromium/ci/linux-rel")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+
+			_, _, _, err = ParseBuilderFlags("", "ci", "chromium/ci/linux-rel")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+
+			_, _, _, err = ParseBuilderFlags("", "ci", "")
+			assert.Loosely(t, err, should.ErrLike("-project is required"))
+
+			_, _, _, err = ParseBuilderFlags("", "ci", "linux-rel")
+			assert.Loosely(t, err, should.ErrLike("-project is required"))
+
+			_, _, _, err = ParseBuilderFlags("chromium", "", "linux-rel")
+			assert.Loosely(t, err, should.ErrLike("-bucket is required"))
+
+			_, _, _, err = ParseBuilderFlags("", "", "a/b/c/d")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+
+			_, _, _, err = ParseBuilderFlags("", "", "chromium//linux-rel")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+
+			_, _, _, err = ParseBuilderFlags("", "", "/chromium/ci/linux-rel")
+			assert.Loosely(t, err, should.ErrLike("invalid -builder"))
+		})
+	})
+}
