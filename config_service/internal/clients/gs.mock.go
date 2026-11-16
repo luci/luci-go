@@ -77,6 +77,20 @@ func (mr *MockGsClientMockRecorder) Read(ctx, bucket, object interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockGsClient)(nil).Read), ctx, bucket, object)
 }
 
+// ServiceDataHandle mocks base method.
+func (m *MockGsClient) ServiceDataHandle(bucket, object string) ServiceDataHandle {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServiceDataHandle", bucket, object)
+	ret0, _ := ret[0].(ServiceDataHandle)
+	return ret0
+}
+
+// ServiceDataHandle indicates an expected call of ServiceDataHandle.
+func (mr *MockGsClientMockRecorder) ServiceDataHandle(bucket, object interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServiceDataHandle", reflect.TypeOf((*MockGsClient)(nil).ServiceDataHandle), bucket, object)
+}
+
 // SignedURL mocks base method.
 func (m *MockGsClient) SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error) {
 	m.ctrl.T.Helper()

@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -77,6 +79,10 @@ type GsClient interface {
 
 	// Delete deletes the give object.
 	Delete(ctx context.Context, bucket, object string) error
+
+	// ServiceDataHandle handles the data ingested from committed-to-git
+	// configuration via UploadIfMissing.
+	ServiceDataHandle(bucket, object string) ServiceDataHandle
 }
 
 // prodClient implements GsClient and used in Prod env only.
@@ -196,11 +202,16 @@ func (p *prodClient) Delete(ctx context.Context, bucket, object string) error {
 	return p.client.Bucket(bucket).Object(object).Delete(ctx)
 }
 
-// CreateSignedURLs create signed urls for the given GS paths.
+func (p *prodClient) ServiceDataHandle(bucket, object string) ServiceDataHandle {
+	return &prodServiceHandle{p.client.Bucket(bucket), object, -1}
+}
+
+// getSignedURLOptions returns a [storage.SignedURLOptions] suitable for use
+// with [GsClient.SignedURL].
 //
-// Uses the service account the service currently runs as to authorize
-// and sign the urls.
-func CreateSignedURLs(ctx context.Context, gsClient GsClient, paths []gs.Path, method string, headers map[string]string) ([]string, error) {
+// This uses [auth.GetSigner] to bind the returned options to the current
+// service account.
+func getSignedURLOptions(ctx context.Context, method string, generation int64, headers map[string]string) (*storage.SignedURLOptions, error) {
 	signer := auth.GetSigner(ctx)
 	info, err := signer.ServiceInfo(ctx)
 	if err != nil {
@@ -215,21 +226,38 @@ func CreateSignedURLs(ctx context.Context, gsClient GsClient, paths []gs.Path, m
 		}
 		sort.Strings(hdrs)
 	}
+	var qParms url.Values
+	if generation >= 0 {
+		qParms = url.Values{}
+		qParms.Set("generation", strconv.FormatInt(generation, 10))
+	}
+	return &storage.SignedURLOptions{
+		GoogleAccessID: info.ServiceAccountName,
+		SignBytes: func(b []byte) ([]byte, error) {
+			_, signedBytes, err := signer.SignBytes(ctx, b)
+			return signedBytes, err
+		},
+		Scheme:          storage.SigningSchemeV4,
+		Method:          method,
+		Expires:         expireAt,
+		Headers:         hdrs,
+		QueryParameters: qParms,
+	}, nil
+}
+
+// CreateSignedURLs create signed urls for the given GS paths.
+//
+// Uses the service account the service currently runs as to authorize
+// and sign the urls.
+func CreateSignedURLs(ctx context.Context, gsClient GsClient, paths []gs.Path, method string, headers map[string]string) ([]string, error) {
+	opts, err := getSignedURLOptions(ctx, method, -1, headers)
+	if err != nil {
+		return nil, err
+	}
 	ret := make([]string, len(paths))
 	for i, path := range paths {
 		bucket, object := path.Split()
-		var err error
-		ret[i], err = gsClient.SignedURL(bucket, object, &storage.SignedURLOptions{
-			GoogleAccessID: info.ServiceAccountName,
-			SignBytes: func(b []byte) ([]byte, error) {
-				_, signedBytes, err := signer.SignBytes(ctx, b)
-				return signedBytes, err
-			},
-			Scheme:  storage.SigningSchemeV4,
-			Method:  method,
-			Expires: expireAt,
-			Headers: hdrs,
-		})
+		ret[i], err = gsClient.SignedURL(bucket, object, opts)
 		if err != nil {
 			return nil, err
 		}
