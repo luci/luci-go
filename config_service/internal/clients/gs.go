@@ -41,23 +41,40 @@ const (
 	SignedURLExpireDur = 10 * time.Minute
 )
 
-var gsClientCtxKey = "holds the Google Cloud Storage client"
+var (
+	// ErrTooLarge is the core error returned by GsClient.Read when the underlying
+	// object is larger than we are willing to handle.
+	ErrTooLarge = errors.New("gcs object too large")
+
+	gsClientCtxKey = "holds the Google Cloud Storage client"
+)
 
 // GsClient is an interface for interacting with Cloud Storage.
 type GsClient interface {
-	// UploadIfMissing upload data with attrs to the bucket-to-object path if it
-	// does not exist. Return true, if the upload operation is made this time.
+	// UploadIfMissing uploads data to the bucket-to-object path if it does not
+	// exist.
+	//
+	// `attrsModifyFn` is allowed to mutate the ObjectAttrs prior to the upload.
+	//
+	// Returns true, if the upload occurred.
 	UploadIfMissing(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error)
+
 	// Read reads data from the give bucket-to-object path.
-	// If decompressive is true, it will read with decompressive transcoding:
+	//
+	// If decompress is true, it will read with 'decompressive' transcoding:
 	// https://cloud.google.com/storage/docs/transcoding#decompressive_transcoding
-	Read(ctx context.Context, bucket, object string, decompressive bool) ([]byte, error)
-	// Touch updates the custom time of the object to the current timestamp.
+	//
+	// May return an error wrapping [ErrTooLarge].
+	Read(ctx context.Context, bucket, object string, decompress bool) ([]byte, error)
+
+	// Touch updates the 'custom time' of the object to the current timestamp.
 	//
 	// Returns storage.ErrObjectNotExist if object is not found.
 	Touch(ctx context.Context, bucket, object string) error
+
 	// SignedURL is used to generate a signed url for a given GCS object.
 	SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error)
+
 	// Delete deletes the give object.
 	Delete(ctx context.Context, bucket, object string) error
 }
@@ -114,17 +131,15 @@ func (p *prodClient) UploadIfMissing(ctx context.Context, bucket, object string,
 	return true, nil
 }
 
-// Read reads data from the give bucket-to-object path.
-// If decompressive is true, it will read with decompressive transcoding:
+// Read reads data from the given bucket-to-object path.
+// If decompress is true, it will read with decompress transcoding:
 // https://cloud.google.com/storage/docs/transcoding#decompressive_transcoding
-func (p *prodClient) Read(ctx context.Context, bucket, object string, decompressive bool) ([]byte, error) {
-	r, err := p.client.Bucket(bucket).Object(object).ReadCompressed(!decompressive).NewReader(ctx)
+func (p *prodClient) Read(ctx context.Context, bucket, object string, decompress bool) (ret []byte, err error) {
+	r, err := newReader(ctx, p.client.Bucket(bucket).Object(object).ReadCompressed(!decompress))
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		_ = r.Close()
-	}()
+	defer r.Close()
 	return io.ReadAll(r)
 }
 
@@ -153,8 +168,7 @@ func (p *prodClient) Touch(ctx context.Context, bucket, object string) error {
 				Update(ctx, storage.ObjectAttrsToUpdate{
 					CustomTime: clock.Now(ctx).UTC(),
 				})
-			var apiErr *googleapi.Error
-			if errors.As(err, &apiErr) {
+			if apiErr, ok := errors.AsType[*googleapi.Error](err); ok {
 				switch apiErr.Code {
 				case http.StatusConflict, http.StatusPreconditionFailed:
 					// Tag precondition fail and conflict as transient to trigger a retry.
