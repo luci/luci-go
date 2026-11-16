@@ -83,7 +83,7 @@ describe('<AndroidMyRepairTasksActions />', () => {
     jest.restoreAllMocks();
   });
 
-  it('requests the tasks claimed by the current user in the workspace', () => {
+  it('requests the first page of the workspace queue', () => {
     const spy = mockQueue([]);
     renderActions();
 
@@ -91,8 +91,6 @@ describe('<AndroidMyRepairTasksActions />', () => {
       ListAndroidRepairQueueRequest.fromPartial({
         pageSize: 100,
         pageToken: '',
-        orderBy: '',
-        filter: `claimed_by = "${ME}"`,
         workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
       }),
       { enabled: true },
@@ -100,7 +98,10 @@ describe('<AndroidMyRepairTasksActions />', () => {
   });
 
   it('renders nothing when the user has no claimed task', () => {
-    mockQueue([]);
+    mockQueue([
+      item('unclaimed-1', DEVICE, '', '10'),
+      item('other-1', DEVICE, 'other@example.com', '11'),
+    ]);
     const { container } = renderActions();
 
     expect(container).toBeEmptyDOMElement();
@@ -115,7 +116,10 @@ describe('<AndroidMyRepairTasksActions />', () => {
   });
 
   it('links a single claimed device to the filtered device list', () => {
-    mockQueue([item('d1', DEVICE, ME, '1')]);
+    mockQueue([
+      item('d1', DEVICE, ME, '1'),
+      item('unclaimed-1', DEVICE, '', '2'),
+    ]);
     renderActions();
 
     expect(screen.getByText('My tasks (1):')).toBeInTheDocument();
@@ -125,14 +129,17 @@ describe('<AndroidMyRepairTasksActions />', () => {
       FILTERS_PARAM_KEY,
     );
     expect(filter).toContain('"d1"');
+    expect(filter).not.toContain('unclaimed-1');
     expect(fleetConsoleButton()).toHaveAttribute('target', '_blank');
   });
 
-  it('links every claimed task when there are several', () => {
+  it('links every task claimed by the current user and ignores others', () => {
     mockQueue([
       item('d1', DEVICE, ME, '1'),
       item('shared', HOST, ME, '2'),
       item('shared', DEVICE, ME, '3'),
+      item('other-dev', DEVICE, 'other@example.com', '4'),
+      item('unclaimed-dev', DEVICE, '', '5'),
     ]);
     renderActions();
 
@@ -143,5 +150,7 @@ describe('<AndroidMyRepairTasksActions />', () => {
     ).searchParams.get(FILTERS_PARAM_KEY);
     expect(filter).toContain('"d1"');
     expect(filter).toContain('"shared"');
+    expect(filter).not.toContain('other-dev');
+    expect(filter).not.toContain('unclaimed-dev');
   });
 });

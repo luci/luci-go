@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Typography } from '@mui/material';
+import { PushPin } from '@mui/icons-material';
+import { Box, Tooltip, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
@@ -20,11 +21,15 @@ import { labelValuesToString } from '@/fleet/components/device_table/dimensions'
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
-import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
+import {
+  UNKNOWN_USER_EMAIL,
+  useCurrentUserEmail,
+} from '@/fleet/components/repair_queue/use_current_user_email';
 import { parsePriorityRules } from '@/fleet/components/repair_queue/utils';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { AndroidDeviceIdCell } from '@/fleet/pages/device_list_page/android/android_device_id_cell';
 import { getAndroidStatusColor } from '@/fleet/pages/device_list_page/android/android_state';
+import { fleetColors, fontSizes } from '@/fleet/theme/tokens';
 import { FC_CellProps } from '@/fleet/types/table';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { getMobileHarnessHostListLink } from '@/fleet/utils/mobile_harness';
@@ -52,7 +57,7 @@ export const getAndroidRepairQueueRowId = (row: AndroidRepairQueueRow) =>
     : `${row.deviceId}/${androidMachineTypeLabel(row.fcMachineType)}`;
 
 export interface UseAndroidRepairQueueColumnsOptions {
-  /** Zero-based index of the current page, used to compute the Rank. */
+  /** Zero-based index of the current page, used as a fallback when `row.rank` is unset. */
   pageIndex?: number;
   pageSize?: number;
   onError?: (message: string) => void;
@@ -98,12 +103,46 @@ export const useAndroidRepairQueueColumns = (
       {
         id: 'rank',
         header: 'Rank',
-        size: 25,
-        minSize: 25,
-        maxSize: 60,
+        size: 56,
+        minSize: 52,
+        maxSize: 76,
         enableSorting: false,
         Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => {
-          return String(pageIndex * pageSize + row.index + 1);
+          const rank =
+            row.original.rank || pageIndex * pageSize + row.index + 1;
+          const isPinned =
+            currentUser !== UNKNOWN_USER_EMAIL &&
+            row.original.claimedBy === currentUser;
+          if (!isPinned) {
+            return String(rank);
+          }
+          return (
+            <Tooltip title="Pinned to top (assigned to you)" arrow>
+              <Box
+                component="span"
+                tabIndex={0}
+                aria-label={`Rank ${rank}, pinned to top`}
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  color: fleetColors.primary,
+                  fontWeight: 600,
+                  cursor: 'default',
+                }}
+              >
+                <PushPin
+                  aria-hidden="true"
+                  sx={{
+                    fontSize: fontSizes.body,
+                    transform: 'rotate(45deg)',
+                    flexShrink: 0,
+                  }}
+                />
+                <span>{rank}</span>
+              </Box>
+            </Tooltip>
+          );
         },
       },
       {

@@ -17,16 +17,7 @@ import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { AndroidRepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import { CLAIMED_BY_FILTER_KEY } from './use_android_priority_rule_filter_builders';
-
 const ID_FILTER_KEY = '"id"';
-
-/**
- * Returns the AIP-160 repair queue filter matching the tasks claimed by
- * `email`.
- */
-export const getClaimedByFilter = (email: string): string =>
-  `${CLAIMED_BY_FILTER_KEY} = ${JSON.stringify(email)}`;
 
 /**
  * Returns the Fleet Console device list of `workspace` filtered down to the

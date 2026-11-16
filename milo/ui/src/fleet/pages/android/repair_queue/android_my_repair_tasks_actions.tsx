@@ -25,14 +25,12 @@ import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { ListAndroidRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { toAndroidWorkspaceEnum } from './android_workspace';
-import {
-  getClaimedByFilter,
-  getDeviceListLinkForRepairTasks,
-} from './my_repair_tasks';
+import { getDeviceListLinkForRepairTasks } from './my_repair_tasks';
 import { useAndroidRepairQueue } from './use_android_repair_queue';
 
 // Upper bound on the number of claimed tasks fetched for the current user.
-// A technician only works on a handful of tasks at a time.
+// A technician only works on a handful of tasks at a time, and the backend
+// pins the authenticated caller's claimed tasks to the top of page 1.
 const MY_TASKS_PAGE_SIZE = 100;
 
 export interface AndroidMyRepairTasksActionsProps {
@@ -54,15 +52,21 @@ export const AndroidMyRepairTasksActions = ({
       ListAndroidRepairQueueRequest.fromPartial({
         pageSize: MY_TASKS_PAGE_SIZE,
         pageToken: '',
-        orderBy: '',
-        filter: getClaimedByFilter(currentUser),
         workspace: toAndroidWorkspaceEnum(workspace),
       }),
-    [currentUser, workspace],
+    [workspace],
   );
   const queueQuery = useAndroidRepairQueue(request, { enabled: isKnownUser });
 
-  const myTasks = queueQuery.data?.repairQueueItems ?? [];
+  const myTasks = useMemo(
+    () =>
+      isKnownUser
+        ? (queueQuery.data?.repairQueueItems ?? []).filter(
+            (item) => item.claimedBy === currentUser,
+          )
+        : [],
+    [currentUser, isKnownUser, queueQuery.data?.repairQueueItems],
+  );
 
   // Empty when the user has no claimed task.
   const deviceListLink = getDeviceListLinkForRepairTasks(workspace, myTasks);

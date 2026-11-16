@@ -51,6 +51,7 @@ describe('useAndroidRepairQueue', () => {
           claimedBy: '',
           priorityScore: '0',
           matchedRuleIds: [],
+          rank: 1,
         },
       ],
       nextPageToken: 'next',

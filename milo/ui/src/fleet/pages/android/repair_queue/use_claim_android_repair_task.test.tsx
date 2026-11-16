@@ -46,6 +46,7 @@ const MOCK_ITEMS: readonly AndroidRepairQueueItem[] = [
     labName: 'MTV-1',
     matchedRuleIds: [],
     etag: 'etag-101',
+    rank: 1,
   },
   {
     deviceId: 'android-device-2',
@@ -62,6 +63,7 @@ const MOCK_ITEMS: readonly AndroidRepairQueueItem[] = [
     labName: 'MTV-2',
     matchedRuleIds: [],
     etag: 'etag-102',
+    rank: 2,
   },
 ];
 
@@ -108,7 +110,8 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
   };
 
   describe('useClaimAndroidRepairTask', () => {
-    it('optimistically updates matching item on claim mutation', async () => {
+    it('optimistically updates matching item on claim mutation and invalidates queue queries on settle', async () => {
+      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
       const initialData: ListAndroidRepairQueueResponse = {
         repairQueueItems: [...MOCK_ITEMS],
         nextPageToken: '',
@@ -155,6 +158,9 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ANDROID_REPAIR_QUEUE_QUERY_KEY,
+      });
     });
 
     it('rolls back optimistic update on error', async () => {
@@ -190,7 +196,8 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
   });
 
   describe('useUnclaimAndroidRepairTask', () => {
-    it('optimistically clears claimedBy on unclaim mutation', async () => {
+    it('optimistically clears claimedBy on unclaim mutation and invalidates queue queries on settle', async () => {
+      const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
       const initialData: ListAndroidRepairQueueResponse = {
         repairQueueItems: [...MOCK_ITEMS],
         nextPageToken: '',
@@ -235,6 +242,9 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ANDROID_REPAIR_QUEUE_QUERY_KEY,
+      });
     });
   });
 });

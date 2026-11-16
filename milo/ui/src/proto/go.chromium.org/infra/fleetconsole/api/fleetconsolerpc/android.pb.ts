@@ -266,17 +266,17 @@ export interface AndroidRepairQueueItem {
    * the mutable state of the repair task.
    */
   readonly etag: string;
+  /**
+   * 1-based objective rank of the task in the filtered workspace queue, ordered
+   * by `priority_score desc, created_at asc, id asc` (independent of
+   * caller-claimed pinning). Set by ListAndroidRepairQueue.
+   */
+  readonly rank: number;
 }
 
 export interface ListAndroidRepairQueueRequest {
   readonly pageSize: number;
   readonly pageToken: string;
-  /**
-   * Not supported: the queue is always ordered by `priority_score desc,
-   * created_at asc, task_id asc`. A non-empty value is rejected with
-   * INVALID_ARGUMENT.
-   */
-  readonly orderBy: string;
   /**
    * AIP-160 filter over the queue columns (device_id, fc_machine_type,
    * host_group, run_target, state, lab_name, claimed_by, ...). It is AND-ed
@@ -2590,6 +2590,7 @@ function createBaseAndroidRepairQueueItem(): AndroidRepairQueueItem {
     matchedRuleIds: [],
     fcMachineType: 0,
     etag: "",
+    rank: 0,
   };
 }
 
@@ -2638,6 +2639,9 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
     }
     if (message.etag !== "") {
       writer.uint32(114).string(message.etag);
+    }
+    if (message.rank !== 0) {
+      writer.uint32(120).int32(message.rank);
     }
     return writer;
   },
@@ -2777,6 +2781,14 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
             message.etag = reader.string();
             continue;
           }
+          case 15: {
+            if (tag !== 120) {
+              break;
+            }
+
+            message.rank = reader.int32();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -2853,6 +2865,7 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
         ? androidMachineTypeFromJSON(object.fc_machine_type)
         : 0,
       etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
+      rank: isSet(object.rank) ? globalThis.Number(object.rank) : 0,
     };
   },
 
@@ -2900,6 +2913,9 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
     if (message.etag !== "") {
       obj.etag = message.etag;
     }
+    if (message.rank !== 0) {
+      obj.rank = Math.round(message.rank);
+    }
     return obj;
   },
 
@@ -2922,12 +2938,13 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
     message.matchedRuleIds = object.matchedRuleIds?.map((e) => e) || [];
     message.fcMachineType = object.fcMachineType ?? 0;
     message.etag = object.etag ?? "";
+    message.rank = object.rank ?? 0;
     return message;
   },
 };
 
 function createBaseListAndroidRepairQueueRequest(): ListAndroidRepairQueueRequest {
-  return { pageSize: 0, pageToken: "", orderBy: "", filter: "", workspace: 0 };
+  return { pageSize: 0, pageToken: "", filter: "", workspace: 0 };
 }
 
 export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueRequest> = {
@@ -2937,9 +2954,6 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
     }
     if (message.pageToken !== "") {
       writer.uint32(18).string(message.pageToken);
-    }
-    if (message.orderBy !== "") {
-      writer.uint32(26).string(message.orderBy);
     }
     if (message.filter !== "") {
       writer.uint32(34).string(message.filter);
@@ -2977,14 +2991,6 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
             }
 
             message.pageToken = reader.string();
-            continue;
-          }
-          case 3: {
-            if (tag !== 26) {
-              break;
-            }
-
-            message.orderBy = reader.string();
             continue;
           }
           case 4: {
@@ -3027,11 +3033,6 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
         : isSet(object.page_token)
         ? globalThis.String(object.page_token)
         : "",
-      orderBy: isSet(object.orderBy)
-        ? globalThis.String(object.orderBy)
-        : isSet(object.order_by)
-        ? globalThis.String(object.order_by)
-        : "",
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
       workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
     };
@@ -3044,9 +3045,6 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
     }
     if (message.pageToken !== "") {
       obj.pageToken = message.pageToken;
-    }
-    if (message.orderBy !== "") {
-      obj.orderBy = message.orderBy;
     }
     if (message.filter !== "") {
       obj.filter = message.filter;
@@ -3064,7 +3062,6 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
     const message = createBaseListAndroidRepairQueueRequest() as any;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
-    message.orderBy = object.orderBy ?? "";
     message.filter = object.filter ?? "";
     message.workspace = object.workspace ?? 0;
     return message;

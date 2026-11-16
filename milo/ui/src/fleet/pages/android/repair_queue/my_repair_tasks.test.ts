@@ -18,10 +18,7 @@ import {
   AndroidRepairQueueItem,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-import {
-  getClaimedByFilter,
-  getDeviceListLinkForRepairTasks,
-} from './my_repair_tasks';
+import { getDeviceListLinkForRepairTasks } from './my_repair_tasks';
 
 const item = (
   deviceId: string,
@@ -36,13 +33,6 @@ const filterOf = (link: string) =>
   new URL(link, 'https://example.com').searchParams.get(FILTERS_PARAM_KEY);
 
 describe('my_repair_tasks', () => {
-  it('builds a quoted claimed_by filter', () => {
-    expect(getClaimedByFilter('tech@example.com')).toBe(
-      'claimed_by = "tech@example.com"',
-    );
-    expect(getClaimedByFilter('a"b')).toBe('claimed_by = "a\\"b"');
-  });
-
   it('returns an empty device list link without tasks', () => {
     expect(getDeviceListLinkForRepairTasks('Android', [])).toBe('');
   });

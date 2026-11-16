@@ -62,6 +62,7 @@ const MOCK_QUEUE_ITEMS: readonly AndroidRepairQueueItem[] = [
     labName: 'MTV-1',
     matchedRuleIds: ['1'],
     etag: 'etag-101',
+    rank: 1,
   },
   {
     deviceId: 'android-device-102',
@@ -78,6 +79,7 @@ const MOCK_QUEUE_ITEMS: readonly AndroidRepairQueueItem[] = [
     labName: 'MTV-2',
     matchedRuleIds: [],
     etag: 'etag-102',
+    rank: 2,
   },
 ];
 
@@ -322,28 +324,9 @@ describe('<AndroidRepairDashboard />', () => {
 
     const { unmount } = renderDashboard('Pixel');
 
-    expect(mockUseQueue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
-        filter: '',
-      }),
-    );
-    // The "My tasks" actions fetch the current user's claimed tasks in the
-    // same workspace.
     const allRequests = mockUseQueue.mock.calls.map(([request]) => request);
-    const myTasksRequests = allRequests.filter((request) =>
-      request.filter.startsWith('claimed_by = '),
-    );
-    expect(myTasksRequests.length).toBeGreaterThan(0);
-    for (const request of myTasksRequests) {
-      expect(request.workspace).toBe(AndroidWorkspace.ANDROID_WORKSPACE_PIXEL);
-    }
-    // The queue table issues its own (paged) request for the same workspace.
-    const tableRequests = allRequests.filter(
-      (request) => !myTasksRequests.includes(request),
-    );
-    expect(tableRequests.length).toBeGreaterThan(0);
-    for (const request of tableRequests) {
+    expect(allRequests.length).toBeGreaterThan(0);
+    for (const request of allRequests) {
       expect(request.workspace).toBe(AndroidWorkspace.ANDROID_WORKSPACE_PIXEL);
       expect(request.filter).toBe('');
     }
@@ -364,6 +347,53 @@ describe('<AndroidRepairDashboard />', () => {
         filter: '',
       }),
     );
+  });
+
+  it('renders backend-pinned claimed tasks at the top while displaying their objective Rank', () => {
+    // Backend returns caller-claimed task first (even with lower priority score
+    // and objective rank 42), followed by the highest-priority unclaimed task
+    // with objective rank 1.
+    const pinnedItems: readonly AndroidRepairQueueItem[] = [
+      {
+        ...MOCK_QUEUE_ITEMS[1],
+        rank: 42,
+      },
+      {
+        ...MOCK_QUEUE_ITEMS[0],
+        rank: 1,
+      },
+    ];
+
+    jest
+      .spyOn(UseAndroidRepairQueueModule, 'useAndroidRepairQueue')
+      .mockReturnValue({
+        data: {
+          repairQueueItems: pinnedItems,
+          totalSize: 50,
+          nextPageToken: 'next',
+        },
+        inProgressCount: 1,
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<
+        typeof UseAndroidRepairQueueModule.useAndroidRepairQueue
+      >);
+
+    renderDashboard('Android');
+
+    // Header "My tasks" action counts only the caller's claimed task on page 1.
+    expect(screen.getByText('My tasks (1):')).toBeInTheDocument();
+    // Both rows display their objective queue rank rather than row index + 1,
+    // and only the caller's pinned row carries the pinned indicator.
+    expect(screen.getByLabelText('Rank 42, pinned to top')).toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Rank 1, pinned to top'),
+    ).not.toBeInTheDocument();
   });
 
   describe('RepairsPage feature flag routing', () => {

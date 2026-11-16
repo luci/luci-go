@@ -22,8 +22,13 @@ import {
   FC_TableOptions,
   useFCDataTable,
 } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import {
+  UNKNOWN_USER_EMAIL,
+  useCurrentUserEmail,
+} from '@/fleet/components/repair_queue/use_current_user_email';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { usePager } from '@/fleet/hooks/use_pager';
+import { fleetColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { ListAndroidRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -58,6 +63,8 @@ export const AndroidRepairQueueTable = ({
   const { pageSize, pageToken, pageIndex } = usePager(pagerCtx);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const currentUser = useCurrentUserEmail();
+  const isKnownUser = currentUser !== UNKNOWN_USER_EMAIL;
 
   const { columns: defaultColumns } = useAndroidRepairQueueColumns(workspace, {
     pageIndex,
@@ -71,7 +78,6 @@ export const AndroidRepairQueueTable = ({
       ListAndroidRepairQueueRequest.fromPartial({
         pageSize,
         pageToken,
-        orderBy: '',
         filter,
         workspace: toAndroidWorkspaceEnum(workspace),
       }),
@@ -125,6 +131,28 @@ export const AndroidRepairQueueTable = ({
       manualFiltering: true,
       manualPagination: true,
       onColumnSizingChange,
+      muiTableBodyRowProps: ({ row }) => {
+        if (!isKnownUser || row.original.claimedBy !== currentUser) {
+          return {};
+        }
+        const nextItem = repairQueueItems[row.index + 1];
+        const isLastPinned =
+          nextItem !== undefined && nextItem.claimedBy !== currentUser;
+        return {
+          'data-pinned': 'true',
+          sx: {
+            '& > .MuiTableCell-root': {
+              backgroundColor: fleetColors.surfaceTonal,
+              ...(isLastPinned && {
+                borderBottom: `2px solid ${fleetColors.borderPrimary}`,
+              }),
+            },
+            '&:not(.Mui-selected):hover > .MuiTableCell-root': {
+              backgroundColor: fleetColors.primaryContainer,
+            },
+          },
+        };
+      },
     }),
     [
       columns,
@@ -137,6 +165,8 @@ export const AndroidRepairQueueTable = ({
       queueQuery.isPlaceholderData,
       queueQuery.isFetching,
       onColumnSizingChange,
+      currentUser,
+      isKnownUser,
     ],
   );
 
