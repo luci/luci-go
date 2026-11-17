@@ -324,20 +324,30 @@ export const useGetDashboardStateRevision = (
 
 /**
  * Hook for RollbackDashboardState.
- * @param request - The rollback request payload.
- * @param options - Optional query options.
- * @returns The DashboardState after rollback.
+ * Rolls a DashboardState back to a previous revision, creating a new revision
+ * in its history.
+ * @param options - Optional mutation options.
+ * @returns A mutation hook to roll back a dashboard state. Resolves to the
+ *   DashboardState after rollback.
  */
 export const useRollbackDashboardState = (
-  request: RollbackDashboardStateRequest,
-  options?: WrapperQueryOptions<DashboardState>,
-): UseQueryResult<DashboardState> => {
-  return useGapiQuery<DashboardState>(
-    {
+  options?: UseMutationOptions<
+    DashboardState,
+    Error,
+    RollbackDashboardStateRequest
+  >,
+): UseMutationResult<DashboardState, Error, RollbackDashboardStateRequest> => {
+  return useGapiMutation<RollbackDashboardStateRequest, DashboardState>(
+    (request) => ({
       path: `${BASE_PATH}/${request.name}:rollback`,
       method: 'POST',
-      body: request,
-    },
+      body: {
+        etag: request.etag,
+        revisionId: request.revisionId,
+        validateOnly: request.validateOnly,
+      },
+      params: {},
+    }),
     options,
   );
 };

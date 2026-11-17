@@ -462,24 +462,51 @@ describe('use_dashboard_state_api', () => {
     const request = RollbackDashboardStateRequest.fromPartial({
       name: 'dashboardStates/test-id',
       revisionId: 'rev1',
+      etag: 'test-etag',
+      validateOnly: true,
     });
 
-    it('should call useGapiQuery with correct arguments', () => {
-      mockedUseGapiQuery.mockReturnValue(
-        createMockQueryResult(sampleDashboardState),
+    it('should call useGapiMutation with correct arguments', () => {
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleDashboardState),
+        }),
       );
-      renderHook(() => useRollbackDashboardState(request), {
+      renderHook(() => useRollbackDashboardState(), {
         wrapper: FakeContextProvider,
       });
 
-      expect(mockedUseGapiQuery).toHaveBeenCalledTimes(1);
-      expect(mockedUseGapiQuery).toHaveBeenCalledWith(
-        {
-          path: `${BASE_PATH}/${request.name}:rollback`,
-          method: 'POST',
-          body: request,
+      expect(mockedUseGapiQuery).not.toHaveBeenCalled();
+      expect(mockedUseGapiMutation).toHaveBeenCalledTimes(1);
+
+      const requestBuilder = mockedUseGapiMutation.mock.calls[0][0];
+      const builtRequest = requestBuilder(request);
+
+      expect(builtRequest).toEqual({
+        path: `${BASE_PATH}/${request.name}:rollback`,
+        method: 'POST',
+        body: {
+          etag: request.etag,
+          revisionId: request.revisionId,
+          validateOnly: request.validateOnly,
         },
-        undefined,
+        params: {},
+      });
+    });
+
+    it('should pass through options', () => {
+      mockedUseGapiMutation.mockReturnValue(
+        createMockMutationResult({
+          mutateAsync: jest.fn().mockResolvedValue(sampleDashboardState),
+        }),
+      );
+      const options = { mutationKey: ['test-rollback'] };
+      renderHook(() => useRollbackDashboardState(options), {
+        wrapper: FakeContextProvider,
+      });
+      expect(mockedUseGapiMutation).toHaveBeenCalledWith(
+        expect.any(Function),
+        options,
       );
     });
   });
