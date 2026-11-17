@@ -231,6 +231,10 @@ func (p *PackageExecutor) execute(ctx context.Context, pkg actions.Package) erro
 		return nil
 	}
 
+	if err := p.fetch(ctx, pkg); err != nil {
+		return fmt.Errorf("failed to fetch package: %s: %w", pkg.ActionID, err)
+	}
+
 	if err := pkg.Handler.Build(func() error {
 		if err := dumpProto(pkg.Action, pkg.Handler.LoggingDirectory(), "action.pb"); err != nil {
 			return err

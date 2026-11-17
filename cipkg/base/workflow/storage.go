@@ -19,24 +19,27 @@ import (
 	"errors"
 	"path"
 	"slices"
+	"sync"
 
 	"go.chromium.org/luci/cipkg/base/actions"
 	"go.chromium.org/luci/cipkg/core"
 )
 
-// RemoteStorage represents a remote storage layer for fetching and uploading
-// packages.
-// Fetch should return core.ErrPackageNotExist if the package is not found in
-// remote storage. Both Fetch and Upload may return an optional content hash.
+// RemoteStorage represents a remote storage layer for resolving, fetching, and
+// uploading packages.
+// Resolve and Fetch should return core.ErrPackageNotExist if the package is not
+// found in remote storage. Resolve, Fetch, and Upload may return an optional
+// content hash.
 type RemoteStorage interface {
+	Resolve(ctx context.Context, pkg actions.Package, id string) (hash string, err error)
 	Fetch(ctx context.Context, pkg actions.Package, id string) (hash string, err error)
 	Upload(ctx context.Context, pkg actions.Package, ids []string) (hash string, err error)
 }
 
 var _ RemoteStorage = (*ReadOnlyStorage)(nil)
 
-// ReadOnlyStorage is a RemoteStorage middleware that forwards Fetch to the
-// underlying RemoteStorage while making Upload a no-op.
+// ReadOnlyStorage is a RemoteStorage middleware that forwards Resolve and Fetch
+// to the underlying RemoteStorage while making Upload a no-op.
 type ReadOnlyStorage struct {
 	inner RemoteStorage
 }
@@ -44,6 +47,11 @@ type ReadOnlyStorage struct {
 // NewReadOnlyStorage creates a ReadOnlyStorage wrapping inner.
 func NewReadOnlyStorage(inner RemoteStorage) *ReadOnlyStorage {
 	return &ReadOnlyStorage{inner: inner}
+}
+
+// Resolve resolves pkg in the underlying RemoteStorage.
+func (r *ReadOnlyStorage) Resolve(ctx context.Context, pkg actions.Package, id string) (string, error) {
+	return r.inner.Resolve(ctx, pkg, id)
 }
 
 // Fetch fetches pkg from the underlying RemoteStorage.
@@ -56,56 +64,195 @@ func (r *ReadOnlyStorage) Upload(context.Context, actions.Package, []string) (st
 	return "", nil
 }
 
-var _ RemoteStorage = (*RelocatableStorage)(nil)
+var _ RemoteStorage = (*StableStorage)(nil)
 
-// RelocatableStorage is a RemoteStorage middleware that resolves a derivation ID
-// generated with a fixed storage path, which can be used as a stable ID for a
-// relocatable package.
-type RelocatableStorage struct {
+// StableStorage is a RemoteStorage middleware that resolves stable derivation
+// IDs for relocatable packages using a fixed storage path and, when available,
+// content hashes of their build dependencies.
+type StableStorage struct {
 	processor *actions.ActionProcessor
 	inner     RemoteStorage
+	hashes    sync.Map
 }
 
-// NewRelocatableStorage creates a RelocatableStorage using the provided
-// ActionProcessor and underlying RemoteStorage.
-func NewRelocatableStorage(ap *actions.ActionProcessor, inner RemoteStorage) *RelocatableStorage {
-	return &RelocatableStorage{
+// NewStableStorage creates a StableStorage using the provided ActionProcessor
+// and underlying RemoteStorage.
+func NewStableStorage(ap *actions.ActionProcessor, inner RemoteStorage) *StableStorage {
+	return &StableStorage{
 		processor: ap,
 		inner:     inner,
 	}
 }
 
-func (r *RelocatableStorage) resolveID(pkg actions.Package) (string, error) {
-	p, err := r.processor.Process(pkg.Derivation.GetPlatform(), relocatableStubPM, pkg.Action)
-	if err != nil {
-		return "", err
+func (s *StableStorage) resolvePkg(ctx context.Context, buildPlat string, p actions.Package) (string, actions.Package, error) {
+	if v, ok := s.hashes.Load(p.DerivationID); ok {
+		return v.(string), p, nil
 	}
-	return p.DerivationID, nil
+
+	hash, err := s.inner.Resolve(ctx, p, p.DerivationID)
+	switch {
+	case err == nil:
+		if hash != "" {
+			s.hashes.Store(p.DerivationID, hash)
+		}
+		return hash, p, nil
+	case !errors.Is(err, core.ErrPackageNotExist):
+		return "", actions.Package{}, err
+	}
+
+	transformed, err := s.transformDeps(ctx, buildPlat, p)
+	if err != nil || transformed.DerivationID == p.DerivationID {
+		return "", p, err
+	}
+
+	hash, err = s.inner.Resolve(ctx, p, transformed.DerivationID)
+	switch {
+	case err == nil:
+		if hash != "" {
+			s.hashes.Store(p.DerivationID, hash)
+		}
+		return hash, transformed, nil
+	case errors.Is(err, core.ErrPackageNotExist):
+		return "", transformed, nil
+	default:
+		return "", actions.Package{}, err
+	}
 }
 
-// Fetch resolves the relocatable ID for pkg and fetches it from the underlying
-// RemoteStorage.
-func (r *RelocatableStorage) Fetch(ctx context.Context, pkg actions.Package, id string) (string, error) {
-	if id == "" {
-		var err error
-		if id, err = r.resolveID(pkg); err != nil {
-			return "", err
+func (s *StableStorage) transformDeps(ctx context.Context, buildPlat string, p actions.Package) (actions.Package, error) {
+	if len(p.BuildDependencies) == 0 {
+		return p, nil
+	}
+
+	deps := make([]actions.Package, len(p.BuildDependencies))
+	for i, d := range p.BuildDependencies {
+		hash, resolved, err := s.resolvePkg(ctx, buildPlat, d)
+		if err != nil {
+			return actions.Package{}, err
+		}
+		if hash != "" {
+			cid, err := core.GetDerivationID(&core.Derivation{
+				Name:        d.Action.GetName(),
+				FixedOutput: hash,
+			})
+			if err != nil {
+				return actions.Package{}, err
+			}
+			d.DerivationID = cid
+			d.Handler = stableStubPM.Get(cid)
+			deps[i] = d
+		} else {
+			deps[i] = resolved
 		}
 	}
-	return r.inner.Fetch(ctx, pkg, id)
+
+	drv, err := s.processor.Transform(buildPlat, p.Action, deps)
+	if err != nil {
+		return actions.Package{}, err
+	}
+	cid, err := core.GetDerivationID(drv)
+	if err != nil {
+		return actions.Package{}, err
+	}
+	p.Derivation = drv
+	p.DerivationID = cid
+	p.Handler = stableStubPM.Get(cid)
+	return p, nil
 }
 
-// Upload resolves the relocatable ID for pkg and uploads it to the underlying
-// RemoteStorage.
-func (r *RelocatableStorage) Upload(ctx context.Context, pkg actions.Package, ids []string) (string, error) {
-	id, err := r.resolveID(pkg)
+// Resolve resolves stable IDs for pkg and checks it in the underlying
+// RemoteStorage without downloading package contents.
+func (s *StableStorage) Resolve(ctx context.Context, pkg actions.Package, id string) (string, error) {
+	if id != "" {
+		return s.inner.Resolve(ctx, pkg, id)
+	}
+	buildPlat := pkg.Derivation.GetPlatform()
+	relocPkg, err := s.processor.Process(buildPlat, stableStubPM, pkg.Action)
 	if err != nil {
 		return "", err
 	}
-	return r.inner.Upload(ctx, pkg, append(slices.Clone(ids), id))
+	hash, _, err := s.resolvePkg(ctx, buildPlat, relocPkg)
+	if err != nil {
+		return "", err
+	}
+	if hash == "" {
+		return "", core.ErrPackageNotExist
+	}
+	return hash, nil
 }
 
-var relocatableStubPM = newStubPackageManager("/cipkg/v1")
+// Fetch resolves stable IDs for pkg and fetches it from the underlying
+// RemoteStorage.
+func (s *StableStorage) Fetch(ctx context.Context, pkg actions.Package, id string) (string, error) {
+	if id != "" {
+		return s.inner.Fetch(ctx, pkg, id)
+	}
+
+	buildPlat := pkg.Derivation.GetPlatform()
+	relocPkg, err := s.processor.Process(buildPlat, stableStubPM, pkg.Action)
+	if err != nil {
+		return "", err
+	}
+	relocID := relocPkg.DerivationID
+
+	hash, err := s.inner.Fetch(ctx, pkg, relocID)
+	switch {
+	case err == nil:
+		if hash != "" {
+			s.hashes.Store(relocID, hash)
+		}
+		return hash, nil
+	case !errors.Is(err, core.ErrPackageNotExist):
+		return "", err
+	}
+
+	transformed, err := s.transformDeps(ctx, buildPlat, relocPkg)
+	if err != nil {
+		return "", err
+	}
+	if transformed.DerivationID == relocID {
+		return "", core.ErrPackageNotExist
+	}
+
+	hash, err = s.inner.Fetch(ctx, pkg, transformed.DerivationID)
+	if err == nil && hash != "" {
+		s.hashes.Store(relocID, hash)
+	}
+	return hash, err
+}
+
+// Upload resolves stable IDs for pkg and uploads it to the underlying
+// RemoteStorage.
+func (s *StableStorage) Upload(ctx context.Context, pkg actions.Package, ids []string) (string, error) {
+	buildPlat := pkg.Derivation.GetPlatform()
+	relocPkg, err := s.processor.Process(buildPlat, stableStubPM, pkg.Action)
+	if err != nil {
+		return "", err
+	}
+	relocID := relocPkg.DerivationID
+
+	transformed, err := s.transformDeps(ctx, buildPlat, relocPkg)
+	if err != nil {
+		return "", err
+	}
+
+	out := slices.Clone(ids)
+	if transformed.DerivationID != relocID {
+		out = append(out, transformed.DerivationID)
+	}
+	out = append(out, relocID)
+
+	hash, err := s.inner.Upload(ctx, pkg, out)
+	if err != nil {
+		return "", err
+	}
+	if hash != "" {
+		s.hashes.Store(relocID, hash)
+	}
+	return hash, nil
+}
+
+var stableStubPM = newStubPackageManager("/cipkg/v1")
 
 type stubPackageManager struct {
 	storagePath string

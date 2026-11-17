@@ -62,5 +62,43 @@ func TestSetTransformer(t *testing.T) {
 			})
 			assert.Loosely(t, errors.Is(err, ErrActionProcessorSealed), should.BeTrue)
 		})
+
+		t.Run("sealed by transform", func(t *ftt.Test) {
+			_, err := ap.Transform("", &core.Action{
+				Name: "cmd",
+				Spec: &core.Action_Command{Command: &core.ActionCommand{}},
+			}, nil)
+			assert.Loosely(t, err, should.BeNil)
+			err = SetTransformer(ap, func(msg *anypb.Any, deps []Package) (*core.Derivation, error) {
+				return &core.Derivation{}, nil
+			})
+			assert.Loosely(t, errors.Is(err, ErrActionProcessorSealed), should.BeTrue)
+		})
+	})
+}
+
+func TestTransform(t *testing.T) {
+	ftt.Run("Test transform", t, func(t *ftt.Test) {
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("/storage")
+
+		dep := Package{
+			Action:       &core.Action{Name: "dep"},
+			DerivationID: "dep-customid",
+			Handler:      pm.Get("dep-customid"),
+		}
+		drv, err := ap.Transform("linux-amd64", &core.Action{
+			Name: "pkg",
+			Spec: &core.Action_Command{
+				Command: &core.ActionCommand{
+					Args: []string{"bin", DepRef("dep")},
+				},
+			},
+		}, []Package{dep})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, drv.Name, should.Equal("pkg"))
+		assert.Loosely(t, drv.Platform, should.Equal("linux-amd64"))
+		assert.Loosely(t, drv.Inputs, should.Match([]string{"dep-customid"}))
+		assert.Loosely(t, drv.Args, should.Match([]string{"bin", dep.Handler.OutputDirectory()}))
 	})
 }

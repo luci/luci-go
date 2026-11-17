@@ -182,7 +182,115 @@ func TestBuilder(t *testing.T) {
 
 				_, err := b.Build(ctx, pe, &Generator{Name: "uncached"})
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, res, should.Equal("FetchPreExecPostUpload"))
+				assert.Loosely(t, res, should.Equal("FetchPreFetchExecPostUpload"))
+			})
+
+			t.Run("stable storage skips dependent build when dependency content hash matches", func(t *ftt.Test) {
+				remote := make(map[string]string)
+
+				makeGraph := func(depVersion string) generators.Generator {
+					dep := &Generator{
+						Name: "dep",
+						Args: []string{"build-dep", depVersion},
+					}
+					mid := &Generator{
+						Name: "mid",
+						Args: []string{"wrap", actions.DepRef("dep")},
+						Dependencies: []generators.Dependency{
+							{Generator: dep, Type: generators.DepsBuildHost},
+						},
+					}
+					return &Generator{
+						Name: "root",
+						Args: []string{"build-root", actions.DepRef("mid")},
+						Dependencies: []generators.Dependency{
+							{Generator: mid, Type: generators.DepsBuildHost},
+						},
+					}
+				}
+
+				newBackend := func() RemoteStorage {
+					return &testStorage{
+						fetch: func(_ context.Context, _ actions.Package, id string) (string, error) {
+							if h, ok := remote[id]; ok {
+								return h, nil
+							}
+							return "", core.ErrPackageNotExist
+						},
+						upload: func(_ context.Context, pkg actions.Package, ids []string) (string, error) {
+							switch pkg.Action.Name {
+							case "dep":
+								// Do not store dep in remote map so dep must rebuild when its
+								// action changes, returning the same content hash.
+								return "dep-content-hash", nil
+							case "mid":
+								// Unstored intermediate package.
+								return "", nil
+							default:
+								for _, id := range ids {
+									remote[id] = "root-content-hash"
+								}
+								return "root-content-hash", nil
+							}
+						},
+					}
+				}
+
+				// Run 1: builds dep, mid, and root, and uploads root with both
+				// content-addressed and relocatable IDs.
+				ap1 := actions.NewActionProcessor()
+				pm1, err := NewLocalPackageManager(t.TempDir())
+				assert.Loosely(t, err, should.BeNil)
+				b1 := NewBuilder(generators.Platforms{}, pm1, ap1)
+				var built1 []string
+				pe1 := NewPackageExecutor(t.TempDir(), PackageExecutorConfig{
+					Storage: NewStableStorage(ap1, newBackend()),
+					ExecFn: func(_ context.Context, _ *ExecutionConfig, drv *core.Derivation) error {
+						built1 = append(built1, drv.Name)
+						return nil
+					},
+				})
+				_, err = b1.Build(ctx, pe1, makeGraph("v1"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, built1, should.Match([]string{"dep", "mid", "root"}))
+
+				// Run 2: dep action changes ("v2") but produces the same content hash;
+				// dep and mid build, while root hits remote storage before execution
+				// and attaches the new relocatable ID during Upload.
+				ap2 := actions.NewActionProcessor()
+				pm2, err := NewLocalPackageManager(t.TempDir())
+				assert.Loosely(t, err, should.BeNil)
+				b2 := NewBuilder(generators.Platforms{}, pm2, ap2)
+				var built2 []string
+				pe2 := NewPackageExecutor(t.TempDir(), PackageExecutorConfig{
+					Storage: NewStableStorage(ap2, newBackend()),
+					ExecFn: func(_ context.Context, _ *ExecutionConfig, drv *core.Derivation) error {
+						built2 = append(built2, drv.Name)
+						return nil
+					},
+				})
+				_, err = b2.Build(ctx, pe2, makeGraph("v2"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, built2, should.Match([]string{"dep", "mid"}))
+
+				// Run 3: repeating "v2" in a fresh storage dir hits root's newly
+				// attached relocatable ID directly during Expand without building any
+				// dependencies.
+				ap3 := actions.NewActionProcessor()
+				pm3, err := NewLocalPackageManager(t.TempDir())
+				assert.Loosely(t, err, should.BeNil)
+				b3 := NewBuilder(generators.Platforms{}, pm3, ap3)
+				var built3 []string
+				pe3 := NewPackageExecutor(t.TempDir(), PackageExecutorConfig{
+					Storage: NewStableStorage(ap3, newBackend()),
+					ExecFn: func(_ context.Context, _ *ExecutionConfig, drv *core.Derivation) error {
+						built3 = append(built3, drv.Name)
+						return nil
+					},
+				})
+				_, err = b3.Build(ctx, pe3, makeGraph("v2"))
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, built3, should.BeEmpty)
 			})
 		})
 
@@ -302,8 +410,16 @@ func TestBuilder(t *testing.T) {
 }
 
 type testStorage struct {
-	fetch  func(ctx context.Context, pkg actions.Package, id string) (string, error)
-	upload func(ctx context.Context, pkg actions.Package, ids []string) (string, error)
+	resolve func(ctx context.Context, pkg actions.Package, id string) (string, error)
+	fetch   func(ctx context.Context, pkg actions.Package, id string) (string, error)
+	upload  func(ctx context.Context, pkg actions.Package, ids []string) (string, error)
+}
+
+func (s *testStorage) Resolve(ctx context.Context, pkg actions.Package, id string) (string, error) {
+	if s.resolve != nil {
+		return s.resolve(ctx, pkg, id)
+	}
+	return "", core.ErrPackageNotExist
 }
 
 func (s *testStorage) Fetch(ctx context.Context, pkg actions.Package, id string) (string, error) {

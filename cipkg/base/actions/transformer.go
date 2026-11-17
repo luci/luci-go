@@ -113,21 +113,11 @@ func MustSetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M])
 // Process transforms a given *core.Action into a self-contained Package, which
 // includes all its dependencies also converted from *core.Action into Package.
 func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *core.Action) (Package, error) {
-	ap.mu.Lock()
-	if !ap.sealed {
-		ap.sealed = true
-	}
-	ap.mu.Unlock()
-
-	if !packageNameRe.MatchString(a.Name) {
-		return Package{}, fmt.Errorf("action name must conform %s: %s", packageNameRe, a)
-	}
-
 	pkg := Package{
 		Action: a,
 	}
 
-	// Recursivedly process all dependencies
+	// Recursively process all dependencies
 	for _, d := range a.Deps {
 		dpkg, err := ap.Process(buildPlat, pm, d)
 		if err != nil {
@@ -149,41 +139,9 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 		}
 	}
 
-	// Parse spec message
-	var (
-		spec proto.Message
-		err  error
-	)
-
-	if s, ok := a.Spec.(*core.Action_Extension); ok {
-		if spec, err = s.Extension.UnmarshalNew(); err != nil {
-			return Package{}, fmt.Errorf("%s: %w", a.Spec, err)
-		}
-	} else {
-		rm := a.ProtoReflect()
-		fds := rm.Descriptor().Oneofs().ByName("spec")
-		fd := rm.WhichOneof(fds)
-		if fd == nil {
-			return Package{}, fmt.Errorf("%s: no action spec available: %w", a.Spec, ErrUnsupportedAction)
-		}
-		spec = rm.Get(fd).Message().Interface()
-	}
-
-	// Transform spec message
-	tr := ap.transformers[proto.MessageName(spec)]
-	if tr == nil {
-		return Package{}, ErrUnsupportedAction
-	}
-	drv, err := tr(spec, pkg.BuildDependencies)
+	drv, err := ap.Transform(buildPlat, a, pkg.BuildDependencies)
 	if err != nil {
-		return Package{}, fmt.Errorf("%s: %w", a.Spec, err)
-	}
-
-	// Update common derivation fields
-	drv.Name = a.Name
-	drv.Platform = buildPlat
-	for _, d := range pkg.BuildDependencies {
-		drv.Inputs = append(drv.Inputs, d.DerivationID)
+		return Package{}, err
 	}
 	pkg.Derivation = drv
 
@@ -202,4 +160,56 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 	pkg.ActionID = aid
 
 	return pkg, nil
+}
+
+// Transform transforms a single *core.Action with already-processed build
+// dependencies into a *core.Derivation.
+func (ap *ActionProcessor) Transform(buildPlat string, a *core.Action, deps []Package) (*core.Derivation, error) {
+	ap.mu.Lock()
+	if !ap.sealed {
+		ap.sealed = true
+	}
+	ap.mu.Unlock()
+
+	if !packageNameRe.MatchString(a.Name) {
+		return nil, fmt.Errorf("action name must conform %s: %s", packageNameRe, a)
+	}
+
+	// Parse spec message
+	var (
+		spec proto.Message
+		err  error
+	)
+
+	if s, ok := a.Spec.(*core.Action_Extension); ok {
+		if spec, err = s.Extension.UnmarshalNew(); err != nil {
+			return nil, fmt.Errorf("%s: %w", a.Spec, err)
+		}
+	} else {
+		rm := a.ProtoReflect()
+		fds := rm.Descriptor().Oneofs().ByName("spec")
+		fd := rm.WhichOneof(fds)
+		if fd == nil {
+			return nil, fmt.Errorf("%s: no action spec available: %w", a.Spec, ErrUnsupportedAction)
+		}
+		spec = rm.Get(fd).Message().Interface()
+	}
+
+	// Transform spec message
+	tr := ap.transformers[proto.MessageName(spec)]
+	if tr == nil {
+		return nil, ErrUnsupportedAction
+	}
+	drv, err := tr(spec, deps)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", a.Spec, err)
+	}
+
+	// Update common derivation fields
+	drv.Name = a.Name
+	drv.Platform = buildPlat
+	for _, d := range deps {
+		drv.Inputs = append(drv.Inputs, d.DerivationID)
+	}
+	return drv, nil
 }
