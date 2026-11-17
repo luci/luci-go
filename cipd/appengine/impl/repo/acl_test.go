@@ -28,7 +28,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
-	configpb "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 )
 
@@ -101,16 +100,12 @@ func TestRoles(t *testing.T) {
 				})
 
 				cfg := &prefixcfg.Entry{
-					PrefixConfig: &configpb.Prefix{
-						Path: "/",
-						AllowWritersFromRegexp: []string{
-							".*@google\\.com",
-							".*@.*\\.gserviceaccount\\.com",
+					Service: &prefixcfg.ServiceEntry{
+						AllowWritersFromRegexp: []*regexp.Regexp{
+							regexp.MustCompile(`.*@google\.com`),
+							regexp.MustCompile(`.*@.*\.gserviceaccount\.com`),
 						},
 					},
-				}
-				for _, raw := range cfg.PrefixConfig.AllowWritersFromRegexp {
-					cfg.AllowWritersFromRegexp = append(cfg.AllowWritersFromRegexp, regexp.MustCompile(raw))
 				}
 
 				// Get the roles by checking explicitly each one via hasRole.

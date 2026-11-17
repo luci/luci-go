@@ -672,14 +672,13 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 	}
 
 	instance := (&model.Instance{}).FromProto(ctx, r)
-	cfg, err := impl.lookupPrefixCfg(ctx, r.Package)
+	prefix, err := impl.lookupPrefixCfg(ctx, r.Package)
 	if err != nil {
 		return nil, err
 	}
-	prefix := cfg.PrefixConfig
 
 	var vsaResp *api.VerifySoftwareArtifactResponse
-	if prefix.ExemptFromVerifySoftwareArtifacts {
+	if prefix.Service.ExemptFromVerifySoftwareArtifacts {
 		logging.Infof(ctx, "RegisterInstance exempted from VerifySoftwareArtifact: %s", r.Package)
 		vsaResp = &api.VerifySoftwareArtifactResponse{Allowed: true}
 	} else {
@@ -2363,22 +2362,21 @@ func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 //
 // Returns grpc-tagged errors returned to the caller as is.
 func (impl *repoImpl) StorageUserProject(ctx context.Context, pkg string) (string, error) {
-	cfg, err := impl.lookupPrefixCfg(ctx, pkg)
+	prefix, err := impl.lookupPrefixCfg(ctx, pkg)
 	if err != nil {
 		return "", err
 	}
-	prefix := cfg.PrefixConfig
-	if prefix.OwningLuciProject == "" || prefix.Billing.GetDisableUserProjectBilling() {
+	if prefix.Service.OwningLuciProject == "" || prefix.Service.Billing.GetDisableUserProjectBilling() {
 		return "", nil
 	}
 
-	percent := prefix.Billing.GetPercentOfCallsToBill()
+	percent := prefix.Service.Billing.GetPercentOfCallsToBill()
 	useBilling := percent == 0 || percent >= 100 || mathrand.Int31n(ctx, 100) < percent
 	if !useBilling {
 		return "", nil
 	}
 
-	gcsProject, err := impl.lookupBillingProject(ctx, prefix.OwningLuciProject, pkg)
+	gcsProject, err := impl.lookupBillingProject(ctx, prefix.Service.OwningLuciProject, pkg)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed to lookup the billing project: %s", err)
 	}

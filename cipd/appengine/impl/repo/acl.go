@@ -70,11 +70,11 @@ func isRoleAllowed(ident identity.Identity, cfg *prefixcfg.Entry, role repopb.Ro
 		return true
 	}
 
-	if len(cfg.AllowWritersFromRegexp) == 0 {
+	if len(cfg.Service.AllowWritersFromRegexp) == 0 {
 		return true
 	}
 
-	for _, re := range cfg.AllowWritersFromRegexp {
+	for _, re := range cfg.Service.AllowWritersFromRegexp {
 		if re.MatchString(ident.Email()) {
 			return true
 		}

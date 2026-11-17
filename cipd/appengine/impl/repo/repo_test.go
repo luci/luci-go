@@ -50,7 +50,6 @@ import (
 
 	caspb "go.chromium.org/luci/cipd/api/cipd/v1/caspb"
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
-	api "go.chromium.org/luci/cipd/api/config/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
@@ -77,7 +76,7 @@ func newMockImpl(meta *testutil.MetadataStore, cas *testutil.MockCAS) *repoImpl 
 		cas:  cas,
 		vsa:  vsa.NewClient(),
 		lookupPrefixCfg: func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
-			return &prefixcfg.Entry{PrefixConfig: &api.Prefix{}}, nil
+			return &prefixcfg.Entry{Service: &prefixcfg.ServiceEntry{}}, nil
 		},
 	}
 }
@@ -957,8 +956,9 @@ func TestRegisterInstance(t *testing.T) {
 		impl.registerTasks()
 		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
 			return &prefixcfg.Entry{
-				PrefixConfig:           &api.Prefix{},
-				AllowWritersFromRegexp: []*regexp.Regexp{regexp.MustCompile(`^.*@google.com$`)},
+				Service: &prefixcfg.ServiceEntry{
+					AllowWritersFromRegexp: []*regexp.Regexp{regexp.MustCompile(`^.*@google.com$`)},
+				},
 			}, nil
 		}
 
@@ -2720,12 +2720,12 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			},
 		})
 
-		prefixCfgPb := prefixcfg.Entry{PrefixConfig: &api.Prefix{}}
+		prefixCfgPb := prefixcfg.ServiceEntry{}
 
 		cas := testutil.MockCAS{}
 		impl := newMockImpl(&meta, &cas)
 		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
-			return &prefixCfgPb, nil
+			return &prefixcfg.Entry{Service: &prefixCfgPb}, nil
 		}
 		impl.lookupBillingProject = func(ctx context.Context, luciProject, prefix string) (string, error) {
 			return "gcs-" + luciProject, nil
@@ -2770,7 +2770,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			})
 
 			t.Run("Happy path with user project", func(t *ftt.Test) {
-				prefixCfgPb.PrefixConfig.OwningLuciProject = "luci-proj"
+				prefixCfgPb.OwningLuciProject = "luci-proj"
 				resp, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
 					Instance: inst.Proto().Instance,
@@ -4022,7 +4022,7 @@ func TestVSA(t *testing.T) {
 		t.Run("Exemption", func(t *ftt.Test) {
 			impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
 				return &prefixcfg.Entry{
-					PrefixConfig: &api.Prefix{
+					Service: &prefixcfg.ServiceEntry{
 						ExemptFromVerifySoftwareArtifacts: true,
 					},
 				}, nil

@@ -18,11 +18,6 @@ import (
 	"cmp"
 	"context"
 	"regexp"
-	"slices"
-	"strings"
-
-	"github.com/armon/go-radix"
-	"google.golang.org/protobuf/proto"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -32,6 +27,7 @@ import (
 	"go.chromium.org/luci/server/cfgcache/dsstore"
 
 	configpb "go.chromium.org/luci/cipd/api/config/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/prefix"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -39,7 +35,9 @@ var prefixesCfgFile = &cfgcache.SingleFile[*configpb.PrefixesConfigFile]{
 	Path: "prefixes.cfg",
 }
 
-var serviceConfig = (&cfgcache.ServicePipeline[*configpb.PrefixesConfigFile, *queryable]{
+var defaultServiceTree, _ = transform(nil)
+
+var serviceConfig = &cfgcache.ServicePipeline[*configpb.PrefixesConfigFile, *prefix.Tree[*ServiceEntry]]{
 	ID:                 "cipd-prefixes",
 	Store:              &dsstore.Store[*configpb.PrefixesConfigFile]{},
 	Files:              []cfgcache.File{prefixesCfgFile},
@@ -50,10 +48,13 @@ var serviceConfig = (&cfgcache.ServicePipeline[*configpb.PrefixesConfigFile, *qu
 		validate(c, msg)
 		return msg, nil
 	},
-	ToMemory: func(ctx context.Context, cs config.Set, msg *configpb.PrefixesConfigFile) (*queryable, error) {
+	ToMemory: func(ctx context.Context, cs config.Set, msg *configpb.PrefixesConfigFile) (*prefix.Tree[*ServiceEntry], error) {
 		return transform(msg)
 	},
-})
+	MemoryDefault: func() *prefix.Tree[*ServiceEntry] {
+		return defaultServiceTree
+	},
+}
 
 func RegisterConfig(reg *cfgcache.Registry) *Config {
 	return &Config{
@@ -64,37 +65,71 @@ func RegisterConfig(reg *cfgcache.Registry) *Config {
 // Config holds parsed and transformed configs in memory, refreshed in the
 // background.
 type Config struct {
-	svcHandle *cfgcache.RegisteredService[*queryable]
+	svcHandle *cfgcache.RegisteredService[*prefix.Tree[*ServiceEntry]]
 }
 
+// ServiceEntry holds the resolved service-wide settings from configpb.Prefix:
+//   - Path is omitted (stored in the prefix.Tree structure).
+//   - AllowWritersFromRegexp entries are compiled into *regexp.Regexp.
+//   - EnableLegacyAclFallback is resolved to a bool (defaulting to true at root).
+//
+// Returned *ServiceEntry values (and nested Billing protos) are shared across
+// lookups and must not be mutated by callers.
+type ServiceEntry struct {
+	OwningLuciProject                 string
+	Billing                           *configpb.Prefix_Billing
+	AllowWritersFromRegexp            []*regexp.Regexp
+	ExemptFromVerifySoftwareArtifacts bool
+	EnableLegacyAclFallback           bool
+
+	// hasEnableLegacyAclFallback tracks whether a prefixes.cfg entry set
+	// EnableLegacyAclFallback explicitly (e.g. to false), without making
+	// EnableLegacyAclFallback a `*bool`. Only used by the merge function in
+	// `transform`.
+	hasEnableLegacyAclFallback bool
+}
+
+func protoToServiceEntry(prefix *configpb.Prefix, out *ServiceEntry) error {
+	var allowedWriters []*regexp.Regexp
+	if len(prefix.AllowWritersFromRegexp) > 0 {
+		allowedWriters = make([]*regexp.Regexp, len(prefix.AllowWritersFromRegexp))
+		for i, re := range prefix.AllowWritersFromRegexp {
+			var err error
+			allowedWriters[i], err = regexp.Compile(re)
+			if err != nil {
+				return errors.Fmt("failed to compile validated regexp: %w", err)
+			}
+		}
+	}
+
+	*out = ServiceEntry{
+		OwningLuciProject:                 prefix.OwningLuciProject,
+		Billing:                           prefix.Billing,
+		ExemptFromVerifySoftwareArtifacts: prefix.ExemptFromVerifySoftwareArtifacts,
+		AllowWritersFromRegexp:            allowedWriters,
+		EnableLegacyAclFallback:           prefix.GetEnableLegacyAclFallback(),
+		hasEnableLegacyAclFallback:        prefix.EnableLegacyAclFallback != nil,
+	}
+	return nil
+}
+
+// Entry holds the effective configuration pertaining to a given CIPD package
+// path.
+type Entry struct {
+	// ServiceEntry is all the global settings which pertain to the CIPD package
+	// path.
+	Service *ServiceEntry
+
+	// TODO: Add project-specific Realm field.
+}
+
+// Lookup returns the effective service-wide configuration for `path`.
 func (c *Config) Lookup(ctx context.Context, path string) (*Entry, error) {
-	q, err := c.svcHandle.GetData(ctx)
+	svcCfg, err := c.svcHandle.GetData(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if q == nil {
-		return &Entry{PrefixConfig: &configpb.Prefix{
-			EnableLegacyAclFallback: proto.Bool(true),
-		}}, nil
-	}
-	return q.lookup(path), nil
-}
-
-// queryable is a queryable representation of the prefixes.cfg config.
-type queryable struct {
-	tree *radix.Tree // "<prefix>/" -> resolved *configpb.Prefix
-}
-
-type Entry struct {
-	PrefixConfig           *configpb.Prefix
-	AllowWritersFromRegexp []*regexp.Regexp
-}
-
-func (qr *queryable) lookup(path string) *Entry {
-	// Per construction in `transform` we always have a root (as ""). The lookup
-	// will always return something.
-	_, cfg, _ := qr.tree.LongestPrefix(normPath(path))
-	return cfg.(*Entry)
+	return &Entry{Service: svcCfg.Get(path)}, nil
 }
 
 // validate validates correctness of the config.
@@ -124,84 +159,33 @@ func validate(c *validation.Context, cfg *configpb.PrefixesConfigFile) {
 	}
 }
 
-// transform takes a validated config and transforms it into a queryable form.
-func transform(cfg *configpb.PrefixesConfigFile) (*queryable, error) {
-	// We are going to mutate entries.
-	entries := proto.CloneOf(cfg).GetPrefix()
-
-	// Normalize paths to be compatible with longest prefix match algo for paths.
-	// I.e. as a path "a/b/c" is a prefix of "a/b/c/d", but not a prefix of
-	// "a/b/cd".
-	seenRoot := false
-	for _, entry := range entries {
-		entry.Path = normPath(entry.Path)
-		if entry.Path == "" {
-			seenRoot = true
-			if entry.EnableLegacyAclFallback == nil {
-				entry.EnableLegacyAclFallback = proto.Bool(true)
-			}
+func transform(cfg *configpb.PrefixesConfigFile) (*prefix.Tree[*ServiceEntry], error) {
+	prefixes := cfg.GetPrefix()
+	// Allocate all entries in a single allocation, for funsies.
+	allEntries := make([]ServiceEntry, len(prefixes))
+	for i, pfx := range prefixes {
+		if err := protoToServiceEntry(pfx, &allEntries[i]); err != nil {
+			return nil, err
 		}
 	}
 
-	// Insert an explicit root entry if one is not already defined. This entry
-	// also will become the default config in case prefixes.cfg is completely
-	// absent (in that case `entries` above is an empty slice).
-	if !seenRoot {
-		entries = append(entries, &configpb.Prefix{
-			EnableLegacyAclFallback: proto.Bool(true),
-		})
-	}
-
-	// Start putting nodes into the tree, root to leafs, resolving inheritance.
-	slices.SortFunc(entries, func(a, b *configpb.Prefix) int {
-		return cmp.Compare(len(a.Path), len(b.Path))
+	defaultRoot := &ServiceEntry{EnableLegacyAclFallback: true}
+	tree := prefix.New(defaultRoot, len(prefixes), func(yield func(string, *ServiceEntry) bool) {
+		for i, pfx := range prefixes {
+			if !yield(pfx.GetPath(), &allEntries[i]) {
+				return
+			}
+		}
+	}, func(parent, child *ServiceEntry) *ServiceEntry {
+		child.OwningLuciProject = cmp.Or(child.OwningLuciProject, parent.OwningLuciProject)
+		child.Billing = cmp.Or(child.Billing, parent.Billing)
+		child.AllowWritersFromRegexp = append(child.AllowWritersFromRegexp, parent.AllowWritersFromRegexp...)
+		child.ExemptFromVerifySoftwareArtifacts = cmp.Or(child.ExemptFromVerifySoftwareArtifacts, parent.ExemptFromVerifySoftwareArtifacts)
+		if !child.hasEnableLegacyAclFallback {
+			child.EnableLegacyAclFallback = parent.EnableLegacyAclFallback
+		}
+		return child
 	})
-	tree := radix.New()
-	for _, prefix := range entries {
-		entry := &Entry{
-			PrefixConfig: prefix,
-		}
-		for _, re := range prefix.AllowWritersFromRegexp {
-			compiled, err := regexp.Compile(re)
-			if err != nil {
-				return nil, errors.Fmt("failed to compile validated regexp: %w", err)
-			}
-			entry.AllowWritersFromRegexp = append(entry.AllowWritersFromRegexp, compiled)
-		}
 
-		if _, ancestor, ok := tree.LongestPrefix(prefix.Path); ok {
-			inheritFromAncestor(entry, ancestor.(*Entry))
-		}
-
-		tree.Insert(prefix.Path, entry)
-	}
-	return &queryable{tree: tree}, nil
-}
-
-// normPath normalizes the prefix path for radix tree lookups.
-func normPath(p string) string {
-	p = strings.Trim(p, "/")
-	if p == "" {
-		return ""
-	}
-	return p + "/"
-}
-
-// inheritFromAncestor mutates `entry` by picking values from its parent config.
-func inheritFromAncestor(entry, ancestor *Entry) {
-	prefix := entry.PrefixConfig
-	if prefix.OwningLuciProject == "" {
-		prefix.OwningLuciProject = ancestor.PrefixConfig.OwningLuciProject
-	}
-	if prefix.Billing == nil {
-		prefix.Billing = ancestor.PrefixConfig.Billing
-	}
-	// Allow explicitly overriding the fallback in a deeper prefix, but it's
-	// otherwise sticky.
-	if entry.PrefixConfig.EnableLegacyAclFallback == nil && ancestor.PrefixConfig.EnableLegacyAclFallback != nil {
-		entry.PrefixConfig.EnableLegacyAclFallback = proto.Bool(ancestor.PrefixConfig.GetEnableLegacyAclFallback())
-	}
-	prefix.ExemptFromVerifySoftwareArtifacts = prefix.ExemptFromVerifySoftwareArtifacts || ancestor.PrefixConfig.ExemptFromVerifySoftwareArtifacts
-	prefix.AllowWritersFromRegexp = append(prefix.AllowWritersFromRegexp, ancestor.PrefixConfig.AllowWritersFromRegexp...)
-	entry.AllowWritersFromRegexp = append(entry.AllowWritersFromRegexp, ancestor.AllowWritersFromRegexp...)
+	return tree, nil
 }
