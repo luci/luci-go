@@ -287,7 +287,7 @@ func TestWalkMultiTracksAndDynamicControl(t *testing.T) {
 		}
 		for _, perm := range perms {
 			trA, trB, trC := NewTrack(ta), NewTrack(tb), NewTrack(tc)
-			args := [3]TrackIface{trA, trB, trC}
+			args := [3]GenericTrack{trA, trB, trC}
 			var got []string
 			for p := range Walk("", args[perm[0]], args[perm[1]], args[perm[2]]) {
 				got = append(got, fmt.Sprintf("%s:%s,%s,%s", p, trA.Value(), trB.Value(), trC.Value()))

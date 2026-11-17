@@ -27,7 +27,7 @@ import (
 // Inside the loop body, callers inspect track state via [Track.Value] and may
 // dynamically redirect or short-circuit subtree traversal via [Track.SetTree]
 // and [Track.Prune].
-func Walk(prefix string, tracks ...TrackIface) iter.Seq[string] {
+func Walk(prefix string, tracks ...GenericTrack) iter.Seq[string] {
 	return func(yield func(string) bool) {
 		if len(tracks) == 0 {
 			return
@@ -58,8 +58,8 @@ func Walk(prefix string, tracks ...TrackIface) iter.Seq[string] {
 	}
 }
 
-// trackSlice is just an aggregated version of [TrackIface].
-type trackSlice []TrackIface
+// trackSlice is just an aggregated version of [GenericTrack].
+type trackSlice []GenericTrack
 
 // nextPrefix computes the next normalized prefix below `curPrefix` to step to,
 // selecting the lexicographically smallest outgoing child branch across all

@@ -108,8 +108,8 @@ func (tr *Track[V]) Prune() {
 	tr.top().children = nil
 }
 
-// TrackIface is a type-erased handle to a [Track] passed to [Walk].
-type TrackIface interface {
+// GenericTrack is a type-erased handle to a [Track] passed to [Walk].
+type GenericTrack interface {
 	// push advances the track to `nextPrefix`.
 	//
 	// When `init` is true, initializes the track at `nextPrefix` (panicking if
@@ -198,7 +198,7 @@ func (tr *Track[V]) top() *trackFrame[V] {
 	return &tr.stack[len(tr.stack)-1]
 }
 
-// peek implements [TrackIface].
+// peek implements [GenericTrack].
 func (tr *Track[V]) peek() (string, bool) {
 	top := tr.top()
 	if len(top.children) == 0 {
@@ -207,7 +207,7 @@ func (tr *Track[V]) peek() (string, bool) {
 	return top.children[0].prefix, true
 }
 
-// push implements [TrackIface].
+// push implements [GenericTrack].
 func (tr *Track[V]) push(nextPrefix string, init bool) bool {
 	if init {
 		if tr.used {
@@ -225,7 +225,7 @@ func (tr *Track[V]) push(nextPrefix string, init bool) bool {
 	return hasValue
 }
 
-// pop implements [TrackIface].
+// pop implements [GenericTrack].
 func (tr *Track[V]) pop() {
 	last := len(tr.stack) - 1
 	tr.stack[last] = trackFrame[V]{}
