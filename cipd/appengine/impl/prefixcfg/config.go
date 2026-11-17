@@ -73,7 +73,9 @@ func (c *Config) Lookup(ctx context.Context, path string) (*Entry, error) {
 		return nil, err
 	}
 	if q == nil {
-		return &Entry{PrefixConfig: &configpb.Prefix{}}, nil
+		return &Entry{PrefixConfig: &configpb.Prefix{
+			EnableLegacyAclFallback: proto.Bool(true),
+		}}, nil
 	}
 	return q.lookup(path), nil
 }
@@ -102,9 +104,10 @@ func validate(c *validation.Context, cfg *configpb.PrefixesConfigFile) {
 	seen := stringset.New(len(cfg.Prefix))
 	for idx, entry := range cfg.Prefix {
 		c.Enter("prefix #%d %q", idx, entry.Path)
-		if _, err := common.ValidatePackagePrefix(entry.Path); err != nil {
+		pfx, err := common.ValidatePackagePrefix(entry.Path)
+		if err != nil {
 			c.Errorf("%s", err)
-		} else if !seen.Add(normPath(entry.Path)) {
+		} else if !seen.Add(pfx) {
 			c.Errorf("this prefix was already configured")
 		}
 		if billing := entry.Billing; billing != nil {
@@ -132,14 +135,21 @@ func transform(cfg *configpb.PrefixesConfigFile) (*queryable, error) {
 	seenRoot := false
 	for _, entry := range entries {
 		entry.Path = normPath(entry.Path)
-		seenRoot = seenRoot || entry.Path == ""
+		if entry.Path == "" {
+			seenRoot = true
+			if entry.EnableLegacyAclFallback == nil {
+				entry.EnableLegacyAclFallback = proto.Bool(true)
+			}
+		}
 	}
 
 	// Insert an explicit root entry if one is not already defined. This entry
 	// also will become the default config in case prefixes.cfg is completely
 	// absent (in that case `entries` above is an empty slice).
 	if !seenRoot {
-		entries = append(entries, &configpb.Prefix{})
+		entries = append(entries, &configpb.Prefix{
+			EnableLegacyAclFallback: proto.Bool(true),
+		})
 	}
 
 	// Start putting nodes into the tree, root to leafs, resolving inheritance.
@@ -191,7 +201,7 @@ func inheritFromAncestor(entry, ancestor *Entry) {
 	if entry.PrefixConfig.EnableLegacyAclFallback == nil && ancestor.PrefixConfig.EnableLegacyAclFallback != nil {
 		entry.PrefixConfig.EnableLegacyAclFallback = proto.Bool(ancestor.PrefixConfig.GetEnableLegacyAclFallback())
 	}
-	prefix.ExemptFromVerifySoftwareArtifacts = ancestor.PrefixConfig.ExemptFromVerifySoftwareArtifacts
+	prefix.ExemptFromVerifySoftwareArtifacts = prefix.ExemptFromVerifySoftwareArtifacts || ancestor.PrefixConfig.ExemptFromVerifySoftwareArtifacts
 	prefix.AllowWritersFromRegexp = append(prefix.AllowWritersFromRegexp, ancestor.PrefixConfig.AllowWritersFromRegexp...)
 	entry.AllowWritersFromRegexp = append(entry.AllowWritersFromRegexp, ancestor.AllowWritersFromRegexp...)
 }

@@ -45,7 +45,7 @@ func TestTransform(t *testing.T) {
 		want *Entry
 	}
 
-	pfx := func(path, proj string, billPercent int, allowedWriters []string, enableFallback *bool) *configpb.Prefix {
+	pfx := func(path, proj string, billPercent int, allowedWriters []string, exemptVSA bool, enableFallback *bool) *configpb.Prefix {
 		var billing *configpb.Prefix_Billing
 		if billPercent != 0 {
 			billing = &configpb.Prefix_Billing{
@@ -54,16 +54,17 @@ func TestTransform(t *testing.T) {
 		}
 
 		return &configpb.Prefix{
-			Path:                    path,
-			OwningLuciProject:       proj,
-			Billing:                 billing,
-			AllowWritersFromRegexp:  allowedWriters,
-			EnableLegacyAclFallback: enableFallback,
+			Path:                              path,
+			OwningLuciProject:                 proj,
+			Billing:                           billing,
+			AllowWritersFromRegexp:            allowedWriters,
+			ExemptFromVerifySoftwareArtifacts: exemptVSA,
+			EnableLegacyAclFallback:           enableFallback,
 		}
 	}
 
-	ent := func(path, proj string, billPercent int, allowedWriters []string, enableFallback *bool) *Entry {
-		p := pfx(path, proj, billPercent, allowedWriters, enableFallback)
+	ent := func(path, proj string, billPercent int, allowedWriters []string, exemptVSA bool, enableFallback *bool) *Entry {
+		p := pfx(path, proj, billPercent, allowedWriters, exemptVSA, enableFallback)
 		ret := &Entry{
 			PrefixConfig: p,
 		}
@@ -86,47 +87,51 @@ func TestTransform(t *testing.T) {
 		{
 			name: "empty",
 			queries: []query{
-				{"", &Entry{PrefixConfig: &configpb.Prefix{}}},
-				{"a", &Entry{PrefixConfig: &configpb.Prefix{}}},
-				{"a/b", &Entry{PrefixConfig: &configpb.Prefix{}}},
-				{"a/b/", &Entry{PrefixConfig: &configpb.Prefix{}}},
+				{"", ent("", "", 0, nil, false, on)},
+				{"a", ent("", "", 0, nil, false, on)},
+				{"a/b", ent("", "", 0, nil, false, on)},
+				{"a/b/", ent("", "", 0, nil, false, on)},
 			},
 		},
 
 		{
 			name: "explicit_root",
 			cfg: []*configpb.Prefix{
-				pfx("a/b", "ab", 0, nil, on),
-				pfx("", "root", 0, nil, unset),
+				pfx("a/b", "ab", 0, nil, false, off),
+				pfx("", "root", 0, nil, false, unset),
 			},
 			queries: []query{
-				{"", ent("", "root", 0, nil, unset)},
-				{"a", ent("", "root", 0, nil, unset)},
-				{"a/b", ent("a/b/", "ab", 0, nil, on)},
-				{"a/b/c", ent("a/b/", "ab", 0, nil, on)},
-				{"a/d", ent("", "root", 0, nil, unset)},
-				{"a/bc", ent("", "root", 0, nil, unset)},
+				{"", ent("", "root", 0, nil, false, on)},
+				{"/", ent("", "root", 0, nil, false, on)},
+				{"a", ent("", "root", 0, nil, false, on)},
+				{"a/", ent("", "root", 0, nil, false, on)},
+				{"a/b", ent("a/b/", "ab", 0, nil, false, off)},
+				{"a/b/", ent("a/b/", "ab", 0, nil, false, off)},
+				{"a/b/c", ent("a/b/", "ab", 0, nil, false, off)},
+				{"a/b/c/", ent("a/b/", "ab", 0, nil, false, off)},
+				{"a/d", ent("", "root", 0, nil, false, on)},
+				{"a/bc", ent("", "root", 0, nil, false, on)},
 			},
 		},
 
 		{
 			name: "inheritance",
 			cfg: []*configpb.Prefix{
-				pfx("a/b/replace/deep/deeper", "y", 0, []string{"re4"}, on),
-				pfx("a/b/replace", "x", 2, []string{"re3"}, off),
-				pfx("a/b/inherit", "", 0, nil, unset),
-				pfx("a", "a", 1, []string{"re1", "re2"}, on),
+				pfx("a/b/replace/deep/deeper", "y", 0, []string{"re4"}, false, off),
+				pfx("a/b/replace", "x", 2, []string{"re3"}, true, on),
+				pfx("a/b/inherit", "", 0, nil, false, unset),
+				pfx("a", "a", 1, []string{"re1", "re2"}, false, off),
 			},
 			queries: []query{
-				{"", ent("", "", 0, nil, unset)},
-				{"a", ent("a/", "a", 1, []string{"re1", "re2"}, on)},
-				{"a/b", ent("a/", "a", 1, []string{"re1", "re2"}, on)},
-				{"a/b/c", ent("a/", "a", 1, []string{"re1", "re2"}, on)},
-				{"a/b/inherit", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"}, on)},
-				{"a/b/inherit/deeper", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"}, on)},
-				{"a/b/replace", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"}, off)},
-				{"a/b/replace/deep", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"}, off)},
-				{"a/b/replace/deep/deeper", ent("a/b/replace/deep/deeper/", "y", 2, []string{"re4", "re3", "re1", "re2"}, on)},
+				{"", ent("", "", 0, nil, false, on)},
+				{"a", ent("a/", "a", 1, []string{"re1", "re2"}, false, off)},
+				{"a/b", ent("a/", "a", 1, []string{"re1", "re2"}, false, off)},
+				{"a/b/c", ent("a/", "a", 1, []string{"re1", "re2"}, false, off)},
+				{"a/b/inherit", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"}, false, off)},
+				{"a/b/inherit/deeper", ent("a/b/inherit/", "a", 1, []string{"re1", "re2"}, false, off)},
+				{"a/b/replace", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"}, true, on)},
+				{"a/b/replace/deep", ent("a/b/replace/", "x", 2, []string{"re3", "re1", "re2"}, true, on)},
+				{"a/b/replace/deep/deeper", ent("a/b/replace/deep/deeper/", "y", 2, []string{"re4", "re3", "re1", "re2"}, true, off)},
 			},
 		},
 	}
@@ -237,7 +242,11 @@ func TestConfig(t *testing.T) {
 	// The config is missing initially, but it is OK.
 	ent, err := cfg.Lookup(ctx, "a/b/c")
 	assert.NoErr(t, err)
-	assert.That(t, ent, should.Match(&Entry{PrefixConfig: &configpb.Prefix{}}))
+	assert.That(t, ent, should.Match(&Entry{
+		PrefixConfig: &configpb.Prefix{
+			EnableLegacyAclFallback: proto.Bool(true),
+		},
+	}))
 
 	// Load the initial config into the datastore.
 	cfgstate.SetConfig("services/my-app", "prefixes.cfg", &configpb.PrefixesConfigFile{
@@ -253,8 +262,9 @@ func TestConfig(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.That(t, ent, should.Match(&Entry{
 		PrefixConfig: &configpb.Prefix{
-			Path:              "a/b/c/",
-			OwningLuciProject: "proj-abc",
+			Path:                    "a/b/c/",
+			OwningLuciProject:       "proj-abc",
+			EnableLegacyAclFallback: proto.Bool(true),
 		},
 	}))
 
@@ -273,8 +283,9 @@ func TestConfig(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.That(t, ent, should.Match(&Entry{
 		PrefixConfig: &configpb.Prefix{
-			Path:              "a/b/c/d/",
-			OwningLuciProject: "proj-abcd",
+			Path:                    "a/b/c/d/",
+			OwningLuciProject:       "proj-abcd",
+			EnableLegacyAclFallback: proto.Bool(true),
 		},
 	}))
 }
