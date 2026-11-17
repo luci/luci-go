@@ -36,13 +36,15 @@ func isGzipErr(err error) bool {
 		errors.Is(err, io.ErrUnexpectedEOF)
 }
 
+type gsObjectIdent interface {
+	BucketName() string
+	ObjectName() string
+}
+
 // limitedReader limits how much decompressed data we're willing to read from
 // a gzip compressed GCS object.
 type limitedReader struct {
-	object interface {
-		BucketName() string
-		ObjectName() string
-	}
+	object          gsObjectIdent
 	r               io.ReadCloser
 	underlyingClose func() error
 	attrs           storage.ReaderObjectAttrs
@@ -82,17 +84,27 @@ func (l *limitedReader) Attrs() storage.ReaderObjectAttrs {
 	return l.attrs
 }
 
+func newLimitedReader(object gsObjectIdent, r io.ReadCloser, attrs storage.ReaderObjectAttrs, limit int) (*limitedReader, error) {
+	gr, err := gzip.NewReader(r)
+	if err != nil {
+		_ = r.Close()
+		// gzip.NewReader returns io.EOF when the underlying object is 0 bytes (or
+		// ends mid-header string), which is invalid gzip rather than a transport
+		// error. Non-gzip errors (e.g. context cancellation or network failures)
+		// are returned unwrapped so callers do not treat the object as corrupt.
+		if isGzipErr(err) || errors.Is(err, io.EOF) {
+			err = fmt.Errorf("gs://%s/%s: %w: %w",
+				object.BucketName(), object.ObjectName(), ErrInvalidGzip, err)
+		}
+		return nil, err
+	}
+	return &limitedReader{object, gr, r.Close, attrs, 0, limit}, nil
+}
+
 func newReader(ctx context.Context, object *storage.ObjectHandle) (*limitedReader, error) {
 	r, err := object.ReadCompressed(true).NewReader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	gr, err := gzip.NewReader(r)
-	if err != nil {
-		_ = r.Close()
-		err = fmt.Errorf("gs://%s/%s: %w: %w",
-			object.BucketName(), object.ObjectName(), ErrInvalidGzip, err)
-		return nil, err
-	}
-	return &limitedReader{object, gr, r.Close, r.Attrs, 0, common.ConfigMaxSize}, nil
+	return newLimitedReader(object, r, r.Attrs, common.ConfigMaxSize)
 }

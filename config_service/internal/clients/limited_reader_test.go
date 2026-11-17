@@ -16,10 +16,12 @@ package clients
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"testing"
 
+	"cloud.google.com/go/storage"
 	"github.com/klauspost/compress/gzip"
 
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -197,5 +199,40 @@ func TestLimitedReader(t *testing.T) {
 		assert.That(t, rc.closed, should.BeTrue)
 		assert.That(t, errors.Is(closeErr, rc.closeErr), should.BeTrue)
 		assert.That(t, errors.Is(closeErr, close2), should.BeTrue)
+	})
+
+	t.Run("newLimitedReader wraps header gzip errors and empty input as ErrInvalidGzip", func(t *testing.T) {
+		t.Parallel()
+		cases := []struct {
+			name string
+			raw  []byte
+		}{
+			{name: "empty 0-byte object", raw: nil},
+			{name: "truncated header", raw: []byte{0x1f, 0x8b}},
+			{name: "invalid magic", raw: []byte("not gzip header bytes")},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+				rc := &errReadCloser{r: bytes.NewReader(tc.raw)}
+				_, err := newLimitedReader(ident, rc, storage.ReaderObjectAttrs{}, 1024)
+				assert.That(t, errors.Is(err, ErrInvalidGzip), should.BeTrue)
+				assert.That(t, rc.closed, should.BeTrue)
+			})
+		}
+	})
+
+	t.Run("newLimitedReader does not wrap header transport or context errors as ErrInvalidGzip", func(t *testing.T) {
+		t.Parallel()
+		for _, wantErr := range []error{context.Canceled, errors.New("connection reset during header")} {
+			rc := &errReadCloser{
+				r:       bytes.NewReader([]byte{0x1f, 0x8b}), // fails mid-header read
+				readErr: wantErr,
+			}
+			_, err := newLimitedReader(ident, rc, storage.ReaderObjectAttrs{}, 1024)
+			assert.That(t, errors.Is(err, wantErr), should.BeTrue)
+			assert.That(t, errors.Is(err, ErrInvalidGzip), should.BeFalse)
+			assert.That(t, rc.closed, should.BeTrue)
+		}
 	})
 }

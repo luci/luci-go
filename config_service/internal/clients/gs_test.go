@@ -436,6 +436,19 @@ func TestUserDataHandle(t *testing.T) {
 		assert.That(t, fakeGCS.deletes, should.Equal(1))
 		assert.That(t, fakeGCS.getObject(bucket, object) == nil, should.BeTrue)
 	})
+
+	t.Run("deletes object and returns missing handle on empty 0-byte object", func(t *testing.T) {
+		t.Parallel()
+		ctx, _ := testSigningContext(t)
+		fakeGCS, client := newFakeGCS(t, ctx)
+		fakeGCS.putObject(bucket, object, 89, nil, time.Time{}, nil)
+
+		hnd, err := client.UserDataHandle(ctx, bucket, object)
+		assert.NoErr(t, err)
+		assert.That(t, hnd.Exists(), should.BeFalse)
+		assert.That(t, fakeGCS.deletes, should.Equal(1))
+		assert.That(t, fakeGCS.getObject(bucket, object) == nil, should.BeTrue)
+	})
 }
 
 func TestServiceDataHandle(t *testing.T) {
