@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package prefixcfg allows to configure prefix metadata via service configs.
+// Package prefixcfg allows to configure prefix metadata via service and project
+// configs.
 package prefixcfg

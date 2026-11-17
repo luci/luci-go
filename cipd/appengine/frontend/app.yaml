@@ -18,6 +18,7 @@ luci_gae_vars:
     SOFTWARE_VERIFIER_HOST: "https://bcidsoftwareverifier-pa.googleapis.com"
     SLSA_RESOURCE_PREFIX: "cipd_package://dev/"
     CFGCACHE_STATUS_ADMIN_GROUP: ""
+    CIPD_CFG_FILE_NAME: cipd-dev
 
 instance_class: ${FRONTEND_INSTANCE_CLASS}
 
@@ -61,3 +62,4 @@ entrypoint: >
   -software-verifier-host "${SOFTWARE_VERIFIER_HOST}"
   -slsa-resource-prefix "${SLSA_RESOURCE_PREFIX}"
   -cfgcache-status-admin-group "${CFGCACHE_STATUS_ADMIN_GROUP}"
+  -config-var cipdCfgFileName=${CIPD_CFG_FILE_NAME}

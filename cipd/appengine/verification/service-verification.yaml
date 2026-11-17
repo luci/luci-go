@@ -11,6 +11,7 @@ luci_gae_vars:
     VPC_CONNECTOR: projects/chrome-infra-packages-dev/locations/us-central1/connectors/connector
     REDIS_ADDR: 10.248.220.35:6379
     DS_CACHE: redis
+    CIPD_CFG_FILE_NAME: cipd-dev
 
 instance_class: ${VERIFICATION_INSTANCE_CLASS}
 
@@ -63,3 +64,4 @@ entrypoint: >
   -random-secrets-in-datastore
   -cloud-error-reporting
   -bqlog-dataset cipd
+  -config-var cipdCfgFileName=${CIPD_CFG_FILE_NAME}

@@ -13,6 +13,7 @@ luci_gae_vars:
     DS_CACHE: redis
     SOFTWARE_VERIFIER_HOST: "https://bcidsoftwareverifier-pa.googleapis.com"
     SLSA_RESOURCE_PREFIX: "cipd_package://dev/"
+    CIPD_CFG_FILE_NAME: cipd-dev
 
 instance_class: ${BACKEND_INSTANCE_CLASS}
 basic_scaling:
@@ -42,3 +43,4 @@ entrypoint: >
   -bqlog-dataset cipd
   -software-verifier-host "${SOFTWARE_VERIFIER_HOST}"
   -slsa-resource-prefix "${SLSA_RESOURCE_PREFIX}"
+  -config-var cipdCfgFileName=${CIPD_CFG_FILE_NAME}

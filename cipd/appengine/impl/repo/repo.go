@@ -119,7 +119,8 @@ type repoImpl struct {
 	cas  cas.StorageServer // non-ACLed storage for instance package files
 	vsa  vsa.Client
 
-	// Looks up the service-side config that applies to this package.
+	// Looks up the service-side plus project-specific realm config that applies
+	// to this package.
 	lookupPrefixCfg func(ctx context.Context, pkg string) (*prefixcfg.Entry, error)
 	// Mapping `(LUCI project, prefix) => custom billing project for GCS`.
 	lookupBillingProject func(ctx context.Context, luciProject, pkg string) (string, error)
