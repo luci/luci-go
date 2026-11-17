@@ -86,7 +86,7 @@ func DeleteStaleConfigs(ctx context.Context) error {
 				continue
 			}
 			workCh <- func() error {
-				err := clients.GetGsClient(ctx).Delete(ctx, f.Bucket(), f.Filename())
+				err := clients.GetGsClient(ctx).ServiceDataHandle(f.Bucket(), f.Filename()).Delete(ctx)
 				return errors.WrapIf(err, "cannot delete GCS file %q", f)
 			}
 		}

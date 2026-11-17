@@ -147,11 +147,12 @@ func TestGetProjectConfigs(t *testing.T) {
 		})
 
 		t.Run("found", func(t *ftt.Test) {
-			mockGsClient.EXPECT().SignedURL(
+			sdh := clients.NewMockServiceDataHandle(ctl)
+			sdh.EXPECT().GetURL(gomock.Any()).Return("signed_url", nil)
+			mockGsClient.EXPECT().ServiceDataHandle(
 				gomock.Eq("bucket"),
 				gomock.Eq("configsha256"),
-				gomock.Any(),
-			).Return("signed_url", nil)
+			).Return(sdh)
 
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "config.cfg",
@@ -193,11 +194,12 @@ func TestGetProjectConfigs(t *testing.T) {
 			testutil.InjectConfigSet(ctx, t, config.MustProjectSet("foo"), map[string]proto.Message{
 				"foo.cfg": fooPb,
 			})
-			mockGsClient.EXPECT().SignedURL(
+			sdh := clients.NewMockServiceDataHandle(ctl)
+			sdh.EXPECT().GetURL(gomock.Any()).Return("signed_url", nil)
+			mockGsClient.EXPECT().ServiceDataHandle(
 				gomock.Eq(testutil.TestGsBucket),
 				gomock.Eq("foo.cfg"),
-				gomock.Any(),
-			).Return("signed_url", nil)
+			).Return(sdh)
 
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "foo.cfg",
@@ -226,16 +228,18 @@ func TestGetProjectConfigs(t *testing.T) {
 			maxProjConfigsResSize = 1
 			defer func() { maxProjConfigsResSize = originalLimit }()
 
-			mockGsClient.EXPECT().SignedURL(
+			sdh1 := clients.NewMockServiceDataHandle(ctl)
+			sdh1.EXPECT().GetURL(gomock.Any()).Return("signed_url1", nil)
+			mockGsClient.EXPECT().ServiceDataHandle(
 				gomock.Eq(testutil.TestGsBucket),
 				gomock.Eq("config.cfg"),
-				gomock.Any(),
-			).Return("signed_url1", nil)
-			mockGsClient.EXPECT().SignedURL(
+			).Return(sdh1)
+			sdh2 := clients.NewMockServiceDataHandle(ctl)
+			sdh2.EXPECT().GetURL(gomock.Any()).Return("signed_url2", nil)
+			mockGsClient.EXPECT().ServiceDataHandle(
 				gomock.Eq("bucket"),
 				gomock.Eq("configsha256"),
-				gomock.Any(),
-			).Return("signed_url2", nil)
+			).Return(sdh2)
 
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "config.cfg",
@@ -287,11 +291,12 @@ func TestGetProjectConfigs(t *testing.T) {
 		})
 
 		t.Run("GCS error on signed url", func(t *ftt.Test) {
-			mockGsClient.EXPECT().SignedURL(
+			sdh := clients.NewMockServiceDataHandle(ctl)
+			sdh.EXPECT().GetURL(gomock.Any()).Return("", errors.New("GCS internal error"))
+			mockGsClient.EXPECT().ServiceDataHandle(
 				gomock.Eq("bucket"),
 				gomock.Eq("configsha256"),
-				gomock.Any(),
-			).Return("", errors.New("GCS internal error"))
+			).Return(sdh)
 
 			res, err := srv.GetProjectConfigs(ctx, &pb.GetProjectConfigsRequest{
 				Path: "config.cfg",

@@ -155,7 +155,7 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 		}
 		f.rawContent = rawContent
 	case f.GcsURI != "":
-		rawContent, err := clients.GetGsClient(ctx).Read(ctx, f.GcsURI.Bucket(), f.GcsURI.Filename())
+		rawContent, err := clients.GetGsClient(ctx).ServiceDataHandle(f.GcsURI.Bucket(), f.GcsURI.Filename()).Read(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("read from %s: %w", f.GcsURI, err)
 		}

@@ -78,9 +78,11 @@ func TestRetention(t *testing.T) {
 			GcsURI:     gs.MakePath("bucket", "oldCfg2_sha256"),
 		}
 
-		mockGsClient.EXPECT().Delete(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("oldCfg1_sha256")).Return(nil)
+		sdh := clients.NewMockServiceDataHandle(ctl)
+		sdh.EXPECT().Delete(gomock.Any())
+		mockGsClient.EXPECT().ServiceDataHandle(gomock.Eq("bucket"), gomock.Eq("oldCfg1_sha256")).Return(sdh)
 		// Don't expect oldCfg2's Gcs file to be deleted as it's referred by another in use File entity.
-		mockGsClient.EXPECT().Delete(gomock.Any(), gomock.Eq("bucket"), gomock.Eq("oldCfg2_sha256")).Times(0)
+		mockGsClient.EXPECT().ServiceDataHandle(gomock.Eq("bucket"), gomock.Eq("oldCfg2_sha256")).Times(0)
 		assert.Loosely(t, datastore.Put(ctx, cfgset, latestCfg, oldCfg1, oldCfg2, anotherCfgset, barCfg), should.BeNil)
 
 		assert.Loosely(t, DeleteStaleConfigs(ctx), should.BeNil)

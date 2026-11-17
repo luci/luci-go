@@ -48,20 +48,6 @@ func (m *MockGsClient) EXPECT() *MockGsClientMockRecorder {
 	return m.recorder
 }
 
-// Delete mocks base method.
-func (m *MockGsClient) Delete(ctx context.Context, bucket, object string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", ctx, bucket, object)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete.
-func (mr *MockGsClientMockRecorder) Delete(ctx, bucket, object interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockGsClient)(nil).Delete), ctx, bucket, object)
-}
-
 // Read mocks base method.
 func (m *MockGsClient) Read(ctx context.Context, bucket, object string) ([]byte, error) {
 	m.ctrl.T.Helper()

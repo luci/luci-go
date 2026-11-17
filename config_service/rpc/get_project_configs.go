@@ -16,14 +16,12 @@ package rpc
 
 import (
 	"context"
-	"net/http"
 	"slices"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/mask"
 	"go.chromium.org/luci/config"
@@ -127,12 +125,12 @@ func (c Configs) GetProjectConfigs(ctx context.Context, req *pb.GetProjectConfig
 			}
 			cfgPb.Content = &pb.Config_RawContent{RawContent: rawContent}
 		case f.GcsURI != "" && m.MustIncludes("signed_url") != mask.Exclude:
-			urls, err := clients.CreateSignedURLs(ctx, clients.GetGsClient(ctx), []gs.Path{f.GcsURI}, http.MethodGet, nil)
+			url, err := clients.GetGsClient(ctx).ServiceDataHandle(f.GcsURI.Bucket(), f.GcsURI.Filename()).GetURL(ctx)
 			if err != nil {
 				logging.Errorf(ctx, "cannot generate a signed url for GCS object %s: %s", f.GcsURI, err)
 				return nil, status.Errorf(codes.Internal, "error while generating the config signed url")
 			}
-			cfgPb.Content = &pb.Config_SignedUrl{SignedUrl: urls[0]}
+			cfgPb.Content = &pb.Config_SignedUrl{SignedUrl: url}
 		}
 
 		// Trim config proto by the Fields mask.

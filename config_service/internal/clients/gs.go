@@ -61,6 +61,9 @@ type GsClient interface {
 	//
 	// `attrsModifyFn` is allowed to mutate the ObjectAttrs prior to the upload.
 	//
+	// TODO: Remove attrsModifyFn and pass only base path, calculating sha256 and
+	// compression ourselves.
+	//
 	// Returns true, if the upload occurred.
 	UploadIfMissing(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error)
 
@@ -76,9 +79,6 @@ type GsClient interface {
 
 	// SignedURL is used to generate a signed url for a given GCS object.
 	SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error)
-
-	// Delete deletes the give object.
-	Delete(ctx context.Context, bucket, object string) error
 
 	// ServiceDataHandle handles the data ingested from committed-to-git
 	// configuration via UploadIfMissing.
@@ -195,11 +195,6 @@ func (p *prodClient) SignedURL(bucket, object string, opts *storage.SignedURLOpt
 		return "", err
 	}
 	return url, nil
-}
-
-// Delete deletes the give object.
-func (p *prodClient) Delete(ctx context.Context, bucket, object string) error {
-	return p.client.Bucket(bucket).Object(object).Delete(ctx)
 }
 
 func (p *prodClient) ServiceDataHandle(bucket, object string) ServiceDataHandle {

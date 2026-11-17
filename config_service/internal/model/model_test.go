@@ -167,13 +167,15 @@ func TestGetRawContent(t *testing.T) {
 
 		t.Run("should resolve GcsUri", func(t *ftt.Test) {
 			file.GcsURI = gs.MakePath("test-bucket", "test-object")
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return([]byte("raw content"), nil)
+			sdh := clients.NewMockServiceDataHandle(ctl)
+			sdh.EXPECT().Read(gomock.Any()).Return([]byte("raw content"), nil)
+			mockGsClient.EXPECT().ServiceDataHandle(gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return(sdh)
 			rawContent, err := file.GetRawContent(ctx)
 			assert.NoErr(t, err)
 			assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
 
 			t.Run("use cache when calling again", func(t *ftt.Test) {
-				mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return(nil, errors.New("should not be called")).AnyTimes()
+				sdh.EXPECT().Read(gomock.Any()).Return(nil, errors.New("should not be called")).AnyTimes()
 				rawContent, err := file.GetRawContent(ctx)
 				assert.NoErr(t, err)
 				assert.Loosely(t, rawContent, should.Match([]byte("raw content")))
@@ -182,7 +184,9 @@ func TestGetRawContent(t *testing.T) {
 
 		t.Run("GCS error", func(t *ftt.Test) {
 			file.GcsURI = gs.MakePath("test-bucket", "test-object")
-			mockGsClient.EXPECT().Read(gomock.Any(), gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return(nil, errors.New("GCS internal error"))
+			sdh := clients.NewMockServiceDataHandle(ctl)
+			sdh.EXPECT().Read(gomock.Any()).Return(nil, errors.New("GCS internal error"))
+			mockGsClient.EXPECT().ServiceDataHandle(gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return(sdh)
 			rawContent, err := file.GetRawContent(ctx)
 			assert.ErrIsLike(t, err, "read from gs://test-bucket/test-object: GCS internal error")
 			assert.Loosely(t, rawContent, should.BeNil)

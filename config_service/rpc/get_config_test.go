@@ -323,11 +323,12 @@ func TestGetConfig(t *testing.T) {
 				ctx = clients.WithGsClient(ctx, mockGsClient)
 
 				t.Run("successfully generate signed url", func(t *ftt.Test) {
-					mockGsClient.EXPECT().SignedURL(
+					sdh := clients.NewMockServiceDataHandle(ctl)
+					sdh.EXPECT().GetURL(gomock.Any()).Return("signed_url", nil)
+					mockGsClient.EXPECT().ServiceDataHandle(
 						gomock.Eq("bucket"),
 						gomock.Eq("large"),
-						gomock.Any(),
-					).Return("signed_url", nil)
+					).Return(sdh)
 
 					res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 						ConfigSet: "services/myservice",
@@ -347,11 +348,12 @@ func TestGetConfig(t *testing.T) {
 				})
 
 				t.Run("failed to generate the signed url", func(t *ftt.Test) {
-					mockGsClient.EXPECT().SignedURL(
+					sdh := clients.NewMockServiceDataHandle(ctl)
+					sdh.EXPECT().GetURL(gomock.Any()).Return("", errors.New("GCS internal error"))
+					mockGsClient.EXPECT().ServiceDataHandle(
 						gomock.Eq("bucket"),
 						gomock.Eq("large"),
-						gomock.Any(),
-					).Return("", errors.New("GCS internal error"))
+					).Return(sdh)
 
 					res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 						ConfigSet: "services/myservice",
@@ -369,11 +371,12 @@ func TestGetConfig(t *testing.T) {
 						"foo.cfg": fooPb,
 					})
 
-					mockGsClient.EXPECT().SignedURL(
+					sdh := clients.NewMockServiceDataHandle(ctl)
+					sdh.EXPECT().GetURL(gomock.Any()).Return("signed_url", nil)
+					mockGsClient.EXPECT().ServiceDataHandle(
 						gomock.Eq(testutil.TestGsBucket),
 						gomock.Eq("foo.cfg"),
-						gomock.Any(),
-					).Return("signed_url", nil)
+					).Return(sdh)
 
 					res, err := srv.GetConfig(ctx, &pb.GetConfigRequest{
 						ConfigSet: "projects/foo",
