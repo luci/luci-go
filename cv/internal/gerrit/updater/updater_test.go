@@ -16,7 +16,9 @@ package updater
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -361,6 +363,41 @@ func TestUpdaterBackendFetch(t *testing.T) {
 			}
 			sort.Slice(expected, func(i, j int) bool { return expected[i].GetClid() < expected[j].GetClid() })
 			assert.That(t, res.Snapshot.GetDeps(), should.Match(expected))
+		})
+
+		t.Run("fetches CL with too many deps", func(t *ftt.Test) {
+			var sb strings.Builder
+			sb.WriteString("Title\n\nCq-Depend: ")
+			for i := 1; i <= maxDeps+1; i++ {
+				if i > 1 {
+					sb.WriteByte(',')
+				}
+				fmt.Fprintf(&sb, "%d", 1000+i)
+			}
+			ci := gf.CI(
+				gChange, gf.Project(gRepo), gf.Ref("refs/heads/main"), gf.PS(2),
+				gf.Desc(sb.String()),
+				gf.Files("a.cpp"),
+			)
+			ct.GFake.AddFrom(gf.WithCIs(gHost, gf.ACLPublic(), ci))
+
+			res, err := gu.Fetch(ctx, changelist.NewFetchInput(&newCL, task))
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.Snapshot.GetDeps(), should.BeNil)
+			assert.That(t, res.Snapshot.GetErrors(), should.Match([]*changelist.CLError{
+				{
+					Kind: &changelist.CLError_InvalidDeps_{
+						InvalidDeps: &changelist.CLError_InvalidDeps{
+							TooMany: &changelist.CLError_InvalidDeps_TooMany{
+								Actual:        maxDeps + 1,
+								MaxAllowed:    maxDeps,
+								IncludeClosed: true,
+							},
+						},
+					},
+				},
+			}))
+			assertUpdateCLScheduledFor()
 		})
 
 		t.Run("happy path: fetches CL in ignorable state", func(t *ftt.Test) {

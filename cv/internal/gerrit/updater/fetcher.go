@@ -51,6 +51,13 @@ const (
 	//
 	// Set it at approximately ~2 tries before noAccessGraceDuration expires.
 	noAccessGraceRetryDelay = noAccessGraceDuration / 3
+
+	// maxDeps limits the total number of dependencies (both open and closed,
+	// across Git and soft deps via Cq-Depend) that CV will resolve and track
+	// for a single CL. Unlike prjmanager/triager's maxAllowedDeps (240 open
+	// deps), this limit applies before resolving dependency statuses so it
+	// leaves headroom for already-closed dependencies.
+	maxDeps = 500
 )
 
 var errStaleOrNoAccess = errors.Fmt("either no access or deleted or stale: %w", gerrit.ErrStaleData)
@@ -584,8 +591,20 @@ func (f *fetcher) resolveDeps(ctx context.Context) error {
 		return err
 	}
 
-	if depsCnt := len(depsMap); depsCnt > 500 {
-		logging.Warningf(ctx, "CL has high number of dependency CLs. Deps count: %d", depsCnt)
+	if depsCnt := len(depsMap); depsCnt > maxDeps {
+		logging.Warningf(ctx, "CL has high number of dependency CLs (open and closed). Deps count: %d (max allowed: %d)", depsCnt, maxDeps)
+		f.toUpdate.Snapshot.Errors = append(f.toUpdate.Snapshot.Errors, &changelist.CLError{
+			Kind: &changelist.CLError_InvalidDeps_{
+				InvalidDeps: &changelist.CLError_InvalidDeps{
+					TooMany: &changelist.CLError_InvalidDeps_TooMany{
+						Actual:        int32(depsCnt),
+						MaxAllowed:    maxDeps,
+						IncludeClosed: true,
+					},
+				},
+			},
+		})
+		return nil
 	}
 	resolved, err := f.resolveAndScheduleDepsUpdate(ctx, f.project, depsMap, f.requester)
 	if err != nil {

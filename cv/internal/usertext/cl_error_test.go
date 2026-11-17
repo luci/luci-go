@@ -206,7 +206,12 @@ func TestFormatCLError(t *testing.T) {
 				t.Run("Too many", func(t *ftt.Test) {
 					invalidDeps.TooMany = &changelist.CLError_InvalidDeps_TooMany{Actual: 5, MaxAllowed: 4}
 					s := mustFormat()
-					assert.Loosely(t, s, should.ContainSubstring("has too many deps: 5 (max supported: 4)"))
+					assert.Loosely(t, s, should.ContainSubstring("has too many open deps: 5 (max supported: 4)"))
+				})
+				t.Run("Too many including closed", func(t *ftt.Test) {
+					invalidDeps.TooMany = &changelist.CLError_InvalidDeps_TooMany{Actual: 5, MaxAllowed: 4, IncludeClosed: true}
+					s := mustFormat()
+					assert.Loosely(t, s, should.ContainSubstring("has too many total deps (open and closed): 5 (max supported: 4)"))
 				})
 			})
 			t.Run("Reuse of triggers", func(t *ftt.Test) {

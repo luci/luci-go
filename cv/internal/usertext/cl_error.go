@@ -124,7 +124,11 @@ func FormatCLError(ctx context.Context, reason *changelist.CLError, cl *changeli
 		case d.GetTooMany() != nil:
 			args["max"] = d.GetTooMany().GetMaxAllowed()
 			args["actual"] = d.GetTooMany().GetActual()
-			t = tmplTooManyDeps
+			if d.GetTooMany().GetIncludeClosed() {
+				t = tmplTooManyTotalDeps
+			} else {
+				t = tmplTooManyDeps
+			}
 			bad = nil // there is no point listing all of them.
 		default:
 			return errors.Fmt("unsupported InvalidDeps reason %s", d)
@@ -296,7 +300,11 @@ var tmplCombinableMismatchedMode = tmplMust(`
 `)
 
 var tmplTooManyDeps = tmplMust(`
-{{CQ_OR_CV}} can't process the CL because it has too many deps: {{.actual}} (max supported: {{.max}})
+{{CQ_OR_CV}} can't process the CL because it has too many open deps: {{.actual}} (max supported: {{.max}})
+`)
+
+var tmplTooManyTotalDeps = tmplMust(`
+{{CQ_OR_CV}} can't process the CL because it has too many total deps (open and closed): {{.actual}} (max supported: {{.max}})
 `)
 
 // TODO(crbug/1223350): once we have a way to reference prior Runs, add a link

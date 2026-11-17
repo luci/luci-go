@@ -431,7 +431,8 @@ func (x *Gerrit) GetSoftDeps() []*GerritSoftDep {
 	return nil
 }
 
-// GerritGitDep is a dependency discovered via Git child->parent chain for one Gerrit CL.
+// GerritGitDep is a dependency discovered via Git child->parent chain for one
+// Gerrit CL.
 type GerritGitDep struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Gerrit Change number.
@@ -1410,7 +1411,7 @@ type CLError_InvalidDeps struct {
 	CombinableUntriggered []*Dep `protobuf:"bytes,4,rep,name=combinable_untriggered,json=combinableUntriggered,proto3" json:"combinable_untriggered,omitempty"`
 	// CQ-ed deps of a different mode.
 	CombinableMismatchedMode []*Dep `protobuf:"bytes,5,rep,name=combinable_mismatched_mode,json=combinableMismatchedMode,proto3" json:"combinable_mismatched_mode,omitempty"`
-	// There are more non-submitted deps than is supported by CV.
+	// There are more deps than is supported by CV.
 	TooMany *CLError_InvalidDeps_TooMany `protobuf:"bytes,6,opt,name=too_many,json=tooMany,proto3" json:"too_many,omitempty"`
 	// Deps that are not submittable (e.g. missing approvals) and therefore
 	// cannot have a full run triggered on them via chained CQ votes.
@@ -1508,8 +1509,9 @@ func (x *CLError_InvalidDeps) GetUnsubmittableDeps() []*Dep {
 //     The old Run is finalized, but the new Run has the exact same trigger,
 //     which in CQDaemon-compatible mode means the new Run's ID is exactly the
 //     same as the old one, so CV can't create a new Run.
-//     TODO(crbug/1223349): after CQDaemon is deleted, the Run ID generation scheme
-//     can take into account the ref of a CL, and this use case can be allowed.
+//     TODO(crbug/1223349): after CQDaemon is deleted, the Run ID generation
+//     scheme can take into account the ref of a CL, and this use case can be
+//     allowed.
 //  2. The same as above but instead of moving CL between refs, abandon and
 //     restore the CL.
 type CLError_ReusedTrigger struct {
@@ -1624,9 +1626,12 @@ func (x *CLError_TriggerDeps) GetInternalGerritError() []int64 {
 }
 
 type CLError_InvalidDeps_TooMany struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Actual        int32                  `protobuf:"varint,1,opt,name=actual,proto3" json:"actual,omitempty"`
-	MaxAllowed    int32                  `protobuf:"varint,2,opt,name=max_allowed,json=maxAllowed,proto3" json:"max_allowed,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Actual     int32                  `protobuf:"varint,1,opt,name=actual,proto3" json:"actual,omitempty"`
+	MaxAllowed int32                  `protobuf:"varint,2,opt,name=max_allowed,json=maxAllowed,proto3" json:"max_allowed,omitempty"`
+	// If true, actual and max_allowed count all dependencies (both open and
+	// closed/submitted) rather than only non-submitted dependencies.
+	IncludeClosed bool `protobuf:"varint,3,opt,name=include_closed,json=includeClosed,proto3" json:"include_closed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1673,6 +1678,13 @@ func (x *CLError_InvalidDeps_TooMany) GetMaxAllowed() int32 {
 		return x.MaxAllowed
 	}
 	return 0
+}
+
+func (x *CLError_InvalidDeps_TooMany) GetIncludeClosed() bool {
+	if x != nil {
+		return x.IncludeClosed
+	}
+	return false
 }
 
 type CLError_TriggerDeps_PermissionDenied struct {
@@ -1776,7 +1788,7 @@ const file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDesc = "
 	"\x0eno_access_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\fnoAccessTime\x1ad\n" +
 	"\x0eByProjectEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12<\n" +
-	"\x05value\x18\x02 \x01(\v2&.cv.internal.changelist.Access.ProjectR\x05value:\x028\x01\"\xd2\x0e\n" +
+	"\x05value\x18\x02 \x01(\v2&.cv.internal.changelist.Access.ProjectR\x05value:\x028\x01\"\xf9\x0e\n" +
 	"\aCLError\x12,\n" +
 	"\x11owner_lacks_email\x18\x01 \x01(\bH\x00R\x0fownerLacksEmail\x12}\n" +
 	"\x1dwatched_by_many_config_groups\x18\x02 \x01(\v29.cv.internal.changelist.CLError.WatchedByManyConfigGroupsH\x00R\x19watchedByManyConfigGroups\x12p\n" +
@@ -1794,7 +1806,7 @@ const file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDesc = "
 	"\x19WatchedByManyConfigGroups\x12#\n" +
 	"\rconfig_groups\x18\x01 \x03(\tR\fconfigGroups\x1a3\n" +
 	"\x15WatchedByManyProjects\x12\x1a\n" +
-	"\bprojects\x18\x01 \x03(\tR\bprojects\x1a\xe9\x04\n" +
+	"\bprojects\x18\x01 \x03(\tR\bprojects\x1a\x90\x05\n" +
 	"\vInvalidDeps\x129\n" +
 	"\tunwatched\x18\x01 \x03(\v2\x1b.cv.internal.changelist.DepR\tunwatched\x12I\n" +
 	"\x12wrong_config_group\x18\x02 \x03(\v2\x1b.cv.internal.changelist.DepR\x10wrongConfigGroup\x12E\n" +
@@ -1802,11 +1814,12 @@ const file_go_chromium_org_luci_cv_internal_changelist_storage_proto_rawDesc = "
 	"\x16combinable_untriggered\x18\x04 \x03(\v2\x1b.cv.internal.changelist.DepR\x15combinableUntriggered\x12Y\n" +
 	"\x1acombinable_mismatched_mode\x18\x05 \x03(\v2\x1b.cv.internal.changelist.DepR\x18combinableMismatchedMode\x12N\n" +
 	"\btoo_many\x18\x06 \x01(\v23.cv.internal.changelist.CLError.InvalidDeps.TooManyR\atooMany\x12J\n" +
-	"\x12unsubmittable_deps\x18\a \x03(\v2\x1b.cv.internal.changelist.DepR\x11unsubmittableDeps\x1aB\n" +
+	"\x12unsubmittable_deps\x18\a \x03(\v2\x1b.cv.internal.changelist.DepR\x11unsubmittableDeps\x1ai\n" +
 	"\aTooMany\x12\x16\n" +
 	"\x06actual\x18\x01 \x01(\x05R\x06actual\x12\x1f\n" +
 	"\vmax_allowed\x18\x02 \x01(\x05R\n" +
-	"maxAllowed\x1a!\n" +
+	"maxAllowed\x12%\n" +
+	"\x0einclude_closed\x18\x03 \x01(\bR\rincludeClosed\x1a!\n" +
 	"\rReusedTrigger\x12\x10\n" +
 	"\x03run\x18\x01 \x01(\tR\x03run\x1a\x87\x02\n" +
 	"\vTriggerDeps\x12i\n" +

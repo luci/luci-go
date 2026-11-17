@@ -366,8 +366,11 @@ message CLError {
     message TooMany {
       int32 actual = 1;
       int32 max_allowed = 2;
+      // If true, actual and max_allowed count all dependencies (both open and
+      // closed/submitted) rather than only non-submitted dependencies.
+      bool include_closed = 3;
     }
-    // There are more non-submitted deps than is supported by CV.
+    // There are more deps than is supported by CV.
     TooMany too_many = 6;
 
     // Deps that are not submittable (e.g. missing approvals) and therefore
