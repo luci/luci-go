@@ -62,20 +62,18 @@ func roleSet(roles ...repopb.Role) map[repopb.Role]struct{} {
 	return m
 }
 
-// isRoleAllowed checks whether the current caller is allowed to have the
-// given role. This policy is independent from ACLs and will override any
-// other policies.
-func isRoleAllowed(ident identity.Identity, cfg *prefixcfg.Entry, role repopb.Role) bool {
-	if role == repopb.Role_READER {
+// isWriteAllowed checks whether `ident` is allowed to perform *any* write
+// action, regardless of the ACL in the realm or legacy DB ACLs.
+//
+// This policy is independent from ACLs and will override any other policies.
+func isWriteAllowed(ident identity.Identity, cfg *prefixcfg.Entry) bool {
+	if cfg == nil || len(cfg.Service.AllowWritersFromRegexp) == 0 {
 		return true
 	}
 
-	if len(cfg.Service.AllowWritersFromRegexp) == 0 {
-		return true
-	}
-
+	email := ident.Email()
 	for _, re := range cfg.Service.AllowWritersFromRegexp {
-		if re.MatchString(ident.Email()) {
+		if re.MatchString(email) {
 			return true
 		}
 	}
@@ -95,7 +93,7 @@ const (
 //
 // It understands the role inheritance defined by impliedRoles map.
 //
-// 'cfg' is the is the prefix config of the leaf prefix being checked.
+// 'cfg' is the prefix config of the leaf prefix being checked.
 //
 // 'metas' is metadata for some prefix and all parent prefixes. It is expected
 // to be ordered by the prefix length (shortest first). Ordering is not really
@@ -104,7 +102,7 @@ const (
 // Returns the result and the policy source. Result only contains transient errors.
 func hasRole(ctx context.Context, cfg *prefixcfg.Entry, metas []*repopb.PrefixMetadata, role repopb.Role) (bool, rolePolicy, error) {
 	ident := auth.CurrentIdentity(ctx)
-	if !isRoleAllowed(ident, cfg, role) {
+	if role != repopb.Role_READER && !isWriteAllowed(ident, cfg) {
 		return false, rolePolicyConfig, nil
 	}
 
@@ -153,6 +151,7 @@ func hasRole(ctx context.Context, cfg *prefixcfg.Entry, metas []*repopb.PrefixMe
 //
 // Returns only transient errors.
 func rolesInPrefix(ctx context.Context, ident identity.Identity, cfg *prefixcfg.Entry, metas []*repopb.PrefixMetadata) ([]repopb.Role, error) {
+	writeAllowed := isWriteAllowed(ident, cfg)
 	roles := roleSet()
 	for _, meta := range metas {
 		for _, acl := range meta.Acls {
@@ -165,7 +164,7 @@ func rolesInPrefix(ctx context.Context, ident identity.Identity, cfg *prefixcfg.
 			case yes:
 				// Add acl.Role and all roles implied by it to 'roles' set.
 				for _, r := range impliedRoles[acl.Role] {
-					if isRoleAllowed(ident, cfg, r) {
+					if r == repopb.Role_READER || writeAllowed {
 						roles[r] = struct{}{}
 					}
 				}
