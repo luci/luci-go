@@ -120,3 +120,18 @@ func (mr *MockGsClientMockRecorder) UploadIfMissing(ctx, bucket, object, data, a
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadIfMissing", reflect.TypeOf((*MockGsClient)(nil).UploadIfMissing), ctx, bucket, object, data, attrsModifyFn)
 }
+
+// UserDataHandle mocks base method.
+func (m *MockGsClient) UserDataHandle(ctx context.Context, bucket, object string) (UserDataHandle, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserDataHandle", ctx, bucket, object)
+	ret0, _ := ret[0].(UserDataHandle)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserDataHandle indicates an expected call of UserDataHandle.
+func (mr *MockGsClientMockRecorder) UserDataHandle(ctx, bucket, object interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserDataHandle", reflect.TypeOf((*MockGsClient)(nil).UserDataHandle), ctx, bucket, object)
+}

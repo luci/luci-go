@@ -459,6 +459,7 @@ func (i *Importer) importRevision(ctx context.Context, cfgSet config.Set, loc *c
 		gsFileName := fmt.Sprintf("%s/sha256/%s", common.GSProdCfgFolder, file.ContentSHA256)
 		_, err = clients.GetGsClient(ctx).UploadIfMissing(ctx, i.GSBucket, gsFileName, file.Content, func(attrs *storage.ObjectAttrs) {
 			attrs.ContentEncoding = "gzip"
+			attrs.Metadata = map[string]string{clients.VerifiedSha256Key: file.ContentSHA256}
 		})
 		if err != nil {
 			return errors.Fmt("failed to upload file %s as %s: %w", filePath, gsFileName, err)

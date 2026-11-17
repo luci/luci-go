@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -27,6 +28,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
@@ -46,7 +48,7 @@ func testSigningContext(t testing.TB) (context.Context, testclock.TestClock) {
 	appID := "dev~some-app-id"
 	svcAcct := "something@service-name.iam.gserviceaccount.com"
 	ctx := memory.UseWithAppID(t.Context(), appID)
-	ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC)
+	ctx, tc := testclock.UseTime(ctx, testclock.TestRecentTimeUTC.Truncate(time.Second))
 	ctx = auth.ModifyConfig(ctx, func(cfg auth.Config) auth.Config {
 		cfg.Signer = signingtest.NewSigner(&signing.ServiceInfo{
 			AppID:              appID,
@@ -81,12 +83,18 @@ func TestCreateSignedURLs(t *testing.T) {
 type fakeGCSObject struct {
 	generation     int64
 	metageneration int64
+	customTime     time.Time
+	metadata       map[string]string
 	rawBytes       []byte
 }
 
 type fakeGCSServer struct {
 	mu      sync.Mutex
 	objects map[string]*fakeGCSObject // key: bucket + "/" + object
+
+	downloads int
+	patches   int
+	deletes   int
 }
 
 func newFakeGCS(t testing.TB, ctx context.Context) (*fakeGCSServer, GsClient) {
@@ -112,14 +120,29 @@ func newFakeGCS(t testing.TB, ctx context.Context) (*fakeGCSServer, GsClient) {
 	return f, &prodClient{client: sc}
 }
 
-func (f *fakeGCSServer) putObject(bucket, object string, gen int64, rawBytes []byte) {
+func (f *fakeGCSServer) putObject(bucket, object string, gen int64, rawBytes []byte, customTime time.Time, md map[string]string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	var mdCopy map[string]string
+	if md != nil {
+		mdCopy = make(map[string]string, len(md))
+		for k, v := range md {
+			mdCopy[k] = v
+		}
+	}
 	f.objects[bucket+"/"+object] = &fakeGCSObject{
 		generation:     gen,
 		metageneration: 1,
+		customTime:     customTime,
+		metadata:       mdCopy,
 		rawBytes:       rawBytes,
 	}
+}
+
+func (f *fakeGCSServer) getObject(bucket, object string) *fakeGCSObject {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.objects[bucket+"/"+object]
 }
 
 func (f *fakeGCSServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
@@ -128,6 +151,7 @@ func (f *fakeGCSServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 	escaped := r.URL.EscapedPath()
 
+	// JSON API metadata endpoints: /storage/v1/b/{bucket}/o/{escapedObject}
 	if after, ok := strings.CutPrefix(escaped, "/storage/v1/b/"); ok {
 		bucket, rest, found := strings.Cut(after, "/o/")
 		if !found {
@@ -154,6 +178,7 @@ func (f *fakeGCSServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
 				http.NotFound(w, r)
 				return
 			}
+			f.downloads++
 			f.writeMedia(w, obj)
 			return
 		}
@@ -165,7 +190,45 @@ func (f *fakeGCSServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			f.writeAttrsJSON(w, bucket, object, obj)
+		case http.MethodPatch:
+			if obj == nil {
+				http.NotFound(w, r)
+				return
+			}
+			if ifMeta := r.URL.Query().Get("ifMetagenerationMatch"); ifMeta != "" {
+				wantMeta, _ := strconv.ParseInt(ifMeta, 10, 64)
+				if obj.metageneration != wantMeta {
+					http.Error(w, `{"error":{"code":412}}`, http.StatusPreconditionFailed)
+					return
+				}
+			}
+			var patch struct {
+				CustomTime string            `json:"customTime"`
+				Metadata   map[string]string `json:"metadata"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			if patch.CustomTime != "" {
+				t, err := time.Parse(time.RFC3339Nano, patch.CustomTime)
+				if err == nil {
+					obj.customTime = t
+				}
+			}
+			if patch.Metadata != nil {
+				if obj.metadata == nil {
+					obj.metadata = map[string]string{}
+				}
+				for k, v := range patch.Metadata {
+					obj.metadata[k] = v
+				}
+			}
+			obj.metageneration++
+			f.patches++
+			f.writeAttrsJSON(w, bucket, object, obj)
 		case http.MethodDelete:
+			f.deletes++
 			if obj == nil {
 				http.NotFound(w, r)
 				return
@@ -178,6 +241,7 @@ func (f *fakeGCSServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Download endpoint: /download/storage/v1/b/{bucket}/o/{escapedObject}
 	if after, ok := strings.CutPrefix(escaped, "/download/storage/v1/b/"); ok {
 		bucket, rest, found := strings.Cut(after, "/o/")
 		if !found {
@@ -200,10 +264,12 @@ func (f *fakeGCSServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
+		f.downloads++
 		f.writeMedia(w, obj)
 		return
 	}
 
+	// XML download path: /{bucket}/{object...}
 	trimmed := strings.TrimPrefix(r.URL.Path, "/")
 	bucket, object, found := strings.Cut(trimmed, "/")
 	if !found {
@@ -219,9 +285,10 @@ func (f *fakeGCSServer) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if obj == nil {
 		http.NotFound(w, r)
-	} else {
-		f.writeMedia(w, obj)
+		return
 	}
+	f.downloads++
+	f.writeMedia(w, obj)
 }
 
 func (f *fakeGCSServer) writeMedia(w http.ResponseWriter, obj *fakeGCSObject) {
@@ -242,8 +309,133 @@ func (f *fakeGCSServer) writeAttrsJSON(w http.ResponseWriter, bucket, object str
 		"contentEncoding": "gzip",
 		"size":            strconv.Itoa(len(obj.rawBytes)),
 	}
+	if !obj.customTime.IsZero() {
+		resp["customTime"] = obj.customTime.UTC().Format(time.RFC3339Nano)
+	}
+	if len(obj.metadata) > 0 {
+		resp["metadata"] = obj.metadata
+	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func TestUserDataHandle(t *testing.T) {
+	t.Parallel()
+
+	const bucket = "test-bucket"
+	content := []byte("valid config content")
+	sum := sha256.Sum256(content)
+	digest := hex.EncodeToString(sum[:])
+	object := "validation/users/u1/configs/sha256/" + digest
+
+	t.Run("rejects malformed object path", func(t *testing.T) {
+		t.Parallel()
+		ctx, _ := testSigningContext(t)
+		_, client := newFakeGCS(t, ctx)
+
+		_, err := client.UserDataHandle(ctx, bucket, "validation/users/u1/configs/not-sha256/"+digest)
+		assert.ErrIsLike(t, err, "object must end with .../sha256/<hexDigest>")
+
+		_, err = client.UserDataHandle(ctx, bucket, "validation/users/u1/configs/sha256/xyz")
+		assert.ErrIsLike(t, err, "object must end with .../sha256/<hexDigest>")
+	})
+
+	t.Run("missing object mints PutURL and rejects GetURL/Read", func(t *testing.T) {
+		t.Parallel()
+		ctx, _ := testSigningContext(t)
+		_, client := newFakeGCS(t, ctx)
+
+		hnd, err := client.UserDataHandle(ctx, bucket, object)
+		assert.NoErr(t, err)
+		assert.That(t, hnd.Exists(), should.BeFalse)
+
+		putURL, err := hnd.PutURL(ctx)
+		assert.NoErr(t, err)
+		assert.That(t, putURL, should.ContainSubstring("X-Goog-SignedHeaders=content-encoding%3Bhost%3Bx-goog-content-length-range"))
+
+		_, err = hnd.GetURL(ctx)
+		assert.That(t, errors.Is(err, storage.ErrObjectNotExist), should.BeTrue)
+
+		_, err = hnd.Read(ctx)
+		assert.That(t, errors.Is(err, storage.ErrObjectNotExist), should.BeTrue)
+	})
+
+	t.Run("verifies unverified object, sets metadata, and pins generation", func(t *testing.T) {
+		t.Parallel()
+		ctx, tc := testSigningContext(t)
+		fakeGCS, client := newFakeGCS(t, ctx)
+		fakeGCS.putObject(bucket, object, 42, gzipBytes(t, content), time.Time{}, nil)
+
+		hnd, err := client.UserDataHandle(ctx, bucket, object)
+		assert.NoErr(t, err)
+		assert.That(t, hnd.Exists(), should.BeTrue)
+		assert.That(t, fakeGCS.downloads, should.Equal(1))
+		assert.That(t, fakeGCS.patches, should.Equal(1))
+
+		stored := fakeGCS.getObject(bucket, object)
+		assert.That(t, stored.metadata[VerifiedSha256Key], should.Equal(digest))
+		assert.That(t, stored.customTime.Equal(clock.Now(ctx).UTC()), should.BeTrue)
+
+		// PutURL fails when Exists() is true.
+		_, err = hnd.PutURL(ctx)
+		assert.ErrIsLike(t, err, "object exists")
+
+		// GetURL pins generation=42.
+		getURL, err := hnd.GetURL(ctx)
+		assert.NoErr(t, err)
+		u, err := url.Parse(getURL)
+		assert.NoErr(t, err)
+		assert.That(t, u.Query().Get("generation"), should.Equal("42"))
+
+		// Read decompresses pinned generation.
+		got, err := hnd.Read(ctx)
+		assert.NoErr(t, err)
+		assert.That(t, got, should.Match(content))
+
+		// Second UserDataHandle within 10 minutes skips both download and PATCH.
+		tc.Add(5 * time.Minute)
+		downloadsBefore := fakeGCS.downloads
+		patchesBefore := fakeGCS.patches
+		hnd2, err := client.UserDataHandle(ctx, bucket, object)
+		assert.NoErr(t, err)
+		assert.That(t, hnd2.Exists(), should.BeTrue)
+		assert.That(t, fakeGCS.downloads, should.Equal(downloadsBefore))
+		assert.That(t, fakeGCS.patches, should.Equal(patchesBefore))
+
+		// After 10 minutes, UserDataHandle skips download but touches CustomTime.
+		tc.Add(6 * time.Minute)
+		hnd3, err := client.UserDataHandle(ctx, bucket, object)
+		assert.NoErr(t, err)
+		assert.That(t, hnd3.Exists(), should.BeTrue)
+		assert.That(t, fakeGCS.downloads, should.Equal(downloadsBefore))
+		assert.That(t, fakeGCS.patches, should.Equal(patchesBefore+1))
+	})
+
+	t.Run("deletes object and returns missing handle on sha256 mismatch", func(t *testing.T) {
+		t.Parallel()
+		ctx, _ := testSigningContext(t)
+		fakeGCS, client := newFakeGCS(t, ctx)
+		fakeGCS.putObject(bucket, object, 77, gzipBytes(t, []byte("wrong content")), time.Time{}, nil)
+
+		hnd, err := client.UserDataHandle(ctx, bucket, object)
+		assert.NoErr(t, err)
+		assert.That(t, hnd.Exists(), should.BeFalse)
+		assert.That(t, fakeGCS.deletes, should.Equal(1))
+		assert.That(t, fakeGCS.getObject(bucket, object) == nil, should.BeTrue)
+	})
+
+	t.Run("deletes object and returns missing handle on invalid gzip", func(t *testing.T) {
+		t.Parallel()
+		ctx, _ := testSigningContext(t)
+		fakeGCS, client := newFakeGCS(t, ctx)
+		fakeGCS.putObject(bucket, object, 88, []byte("not gzip data"), time.Time{}, nil)
+
+		hnd, err := client.UserDataHandle(ctx, bucket, object)
+		assert.NoErr(t, err)
+		assert.That(t, hnd.Exists(), should.BeFalse)
+		assert.That(t, fakeGCS.deletes, should.Equal(1))
+		assert.That(t, fakeGCS.getObject(bucket, object) == nil, should.BeTrue)
+	})
 }
 
 func TestServiceDataHandle(t *testing.T) {
@@ -257,7 +449,7 @@ func TestServiceDataHandle(t *testing.T) {
 	sum := sha256.Sum256(content)
 	digest := hex.EncodeToString(sum[:])
 	prodObj := fmt.Sprintf("configs/sha256/%s", digest)
-	fakeGCS.putObject(bucket, prodObj, 55, gzipBytes(t, content))
+	fakeGCS.putObject(bucket, prodObj, 55, gzipBytes(t, content), time.Time{}, nil)
 
 	sdh := client.ServiceDataHandle(bucket, prodObj)
 

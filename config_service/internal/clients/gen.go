@@ -15,4 +15,5 @@
 package clients
 
 //go:generate mockgen -source gs.go -destination gs.mock.go -package clients -write_package_comment=false -copyright_file COPYRIGHT
+//go:generate mockgen -source user_handle.go -destination user_handle.mock.go -package clients -write_package_comment=false -copyright_file COPYRIGHT
 //go:generate mockgen -source service_handle.go -destination service_handle.mock.go -package clients -write_package_comment=false -copyright_file COPYRIGHT

@@ -249,6 +249,10 @@ func TestImportConfigSet(t *testing.T) {
 					gomock.Any(), gomock.Eq(testGSBucket),
 					gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
 					func(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error) {
+						var attrs storage.ObjectAttrs
+						attrsModifyFn(&attrs)
+						assert.Loosely(t, attrs.ContentEncoding, should.Equal("gzip"))
+						assert.Loosely(t, strings.HasSuffix(object, "/sha256/"+attrs.Metadata[clients.VerifiedSha256Key]), should.BeTrue)
 						recordedGSPaths = append(recordedGSPaths, gs.MakePath(bucket, object))
 						return true, nil
 					},

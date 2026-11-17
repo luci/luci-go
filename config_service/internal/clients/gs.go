@@ -16,13 +16,17 @@ package clients
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -80,6 +84,14 @@ type GsClient interface {
 	// SignedURL is used to generate a signed url for a given GCS object.
 	SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error)
 
+	// UserDataHandle handles the lifecycle of data pushed from a client during
+	// the verification flow.
+	//
+	// The `object` path must end with `/sha256/<hexSha256(data)>`.
+	//
+	// Only returns an error on some fatal non-retryable error.
+	UserDataHandle(ctx context.Context, bucket, object string) (UserDataHandle, error)
+
 	// ServiceDataHandle handles the data ingested from committed-to-git
 	// configuration via UploadIfMissing.
 	ServiceDataHandle(bucket, object string) ServiceDataHandle
@@ -135,6 +147,157 @@ func (p *prodClient) UploadIfMissing(ctx context.Context, bucket, object string,
 		return false, err
 	}
 	return true, nil
+}
+
+// VerifiedSha256Key is a GCS metadata key used by LUCI Config after the
+// service has verified the sha256 of a given GCS object.
+const VerifiedSha256Key = `luci-config-verified-sha256`
+
+// calculateSha256 reads data from the given bucket-to-object path.
+func calculateSha256(ctx context.Context, object *storage.ObjectHandle) (ret string, err error) {
+	r, err := newReader(ctx, object)
+	if err != nil {
+		// TODO: Remove this when PUT is pinned to generation 0.
+		if errors.Is(err, storage.ErrObjectNotExist) {
+			err = transient.Tag.Apply(err)
+		}
+		return "", err
+	}
+	defer r.Close()
+
+	h := sha256.New()
+	buf := make([]byte, 1024*1024)
+	if _, err := io.CopyBuffer(h, r, buf); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+func updateAttrs(ctx context.Context, object *storage.ObjectHandle, attr *storage.ObjectAttrs, newAttr storage.ObjectAttrsToUpdate) error {
+	// Conditionally update the storage metadata and retry on pre-condition
+	// failure. This is to mitigate the concurrent modification error occurs
+	// when the same requester sends multiple validation requests that contain
+	// the exact same config file. As a request, all the request processors
+	// will contend to update the metadata of the same object.
+	_, err := object.
+		If(storage.Conditions{MetagenerationMatch: attr.Metageneration}).
+		Update(ctx, newAttr)
+	if errors.Is(err, storage.ErrObjectNotExist) {
+		err = transient.Tag.Apply(err)
+	} else if apiErr, ok := errors.AsType[*googleapi.Error](err); ok {
+		switch apiErr.Code {
+		case http.StatusConflict, http.StatusPreconditionFailed:
+			err = transient.Tag.Apply(err)
+		}
+	}
+	return err
+}
+
+// UserDataHandle returns a handle to the given object.
+//
+// This method performs the following dance:
+//
+//   - Open the object in GCS
+//   - Check to see if its [VerifiedSha256Key] metadata is set and equal to
+//     `needSha256`.
+//   - If the key is missing, generate it.
+//   - If the hash doesn't match `needSha256`, delete the object.
+//   - If the object is missing, return a [UserDataHandle] stating that it's
+//     missing, where [UserDataHandle.PutURL]() method will return a signed
+//     URL to put this object.
+//   - If the object is not missing, update its CustomTime attribute and set
+//     its [VerifiedSha256Key] metadata.
+//   - Then, return a [UserDataHandle] stating that the object exists, and
+//     whose [UserDataHandle.GetURL] method will return a signed URL for a
+//     client to read the data in this object.
+func (p *prodClient) UserDataHandle(ctx context.Context, bucket, object string) (ret UserDataHandle, err error) {
+	bh := p.client.Bucket(bucket)
+	unpinned := bh.Object(object)
+
+	baseWithSha256, needSha256 := path.Split(object)
+	sha256Literal := path.Base(baseWithSha256)
+
+	needSha256Dec, err := hex.DecodeString(needSha256)
+	if sha256Literal != "sha256" || err != nil || len(needSha256Dec) != sha256.Size {
+		return nil, fmt.Errorf("GsClient.UserDataHandle: object must end with .../sha256/<hexDigest>: got .../%s/%s", sha256Literal, needSha256)
+	}
+
+	needSha256 = strings.ToLower(needSha256)
+
+	err = retry.Retry(ctx, transient.Only(retry.Default),
+		func() error {
+			attr, err := unpinned.Attrs(ctx)
+			// Object doesn't exist? We're done.
+			if errors.Is(err, storage.ErrObjectNotExist) {
+				ret = &prodUserHandle{bh, object, -1}
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+
+			pinned := unpinned.Generation(attr.Generation)
+
+			// See if this object was verified already *and* recently touched. If so,
+			// return a UserDataHandle for this specific generation.
+			recentlyTouched := (!attr.CustomTime.IsZero() &&
+				clock.Now(ctx).Sub(attr.CustomTime) < 10*time.Minute)
+			verified := attr.Metadata[VerifiedSha256Key] == needSha256
+
+			if recentlyTouched && verified {
+				ret = &prodUserHandle{bh, object, attr.Generation}
+				return nil
+			}
+
+			if verified {
+				// We just need to touch it.
+				err = updateAttrs(ctx, pinned, attr, storage.ObjectAttrsToUpdate{
+					CustomTime: clock.Now(ctx).UTC(),
+				})
+				if err == nil {
+					// Successful touch.
+					ret = &prodUserHandle{bh, object, attr.Generation}
+				}
+				return err
+			}
+
+			deleteInvalid := func(reason string) error {
+				logging.Warningf(ctx, "deleting invalid validation object gs://%s/%s#%d: %s", bucket, object, attr.Generation, reason)
+				if delErr := pinned.Delete(ctx); delErr != nil && !errors.Is(delErr, storage.ErrObjectNotExist) {
+					return transient.Tag.Apply(delErr)
+				}
+				ret = &prodUserHandle{bh, object, -1}
+				return nil
+			}
+
+			// Ok, this object was *not* verified yet, verify (and touch) it, or
+			// delete it and act like it's missing.
+			calculatedSha256, err := calculateSha256(ctx, pinned)
+			if err != nil {
+				if errors.Is(err, ErrTooLarge) || errors.Is(err, ErrInvalidGzip) {
+					return deleteInvalid(err.Error())
+				}
+				return err
+			}
+			if calculatedSha256 != needSha256 {
+				return deleteInvalid(fmt.Sprintf("sha256 mismatch: got %s, want %s", calculatedSha256, needSha256))
+			}
+
+			// Update the metadata.
+			err = updateAttrs(ctx, pinned, attr, storage.ObjectAttrsToUpdate{
+				CustomTime: clock.Now(ctx).UTC(),
+				Metadata:   map[string]string{VerifiedSha256Key: calculatedSha256},
+			})
+			if err == nil {
+				// Successful update.
+				ret = &prodUserHandle{bh, object, attr.Generation}
+			}
+			return err
+		}, func(err error, d time.Duration) {
+			logging.Warningf(ctx, "got err: %s when opening the object. Retrying in %s", err, d)
+		})
+
+	return
 }
 
 // Read reads and gunzips data from the given bucket-to-object path.
