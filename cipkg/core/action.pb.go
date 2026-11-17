@@ -300,9 +300,7 @@ type Action_Metadata struct {
 	// untrusted signals the package may contain files from external sources
 	// that haven't been verified yet. Generators may treat them with extra
 	// cautious.
-	Untrusted bool `protobuf:"varint,97,opt,name=untrusted,proto3" json:"untrusted,omitempty"`
-	// cache_id is the unique id for caching.
-	CacheId string `protobuf:"bytes,98,opt,name=cache_id,json=cacheId,proto3" json:"cache_id,omitempty"`
+	Untrusted bool `protobuf:"varint,98,opt,name=untrusted,proto3" json:"untrusted,omitempty"`
 	// context_info can be used to indicate what this action related to - this
 	// can help e.g. differentiate action with same content but comes from
 	// different generator.
@@ -374,13 +372,6 @@ func (x *Action_Metadata) GetUntrusted() bool {
 		return x.Untrusted
 	}
 	return false
-}
-
-func (x *Action_Metadata) GetCacheId() string {
-	if x != nil {
-		return x.CacheId
-	}
-	return ""
 }
 
 func (x *Action_Metadata) GetContextInfo() string {
@@ -599,7 +590,7 @@ var File_go_chromium_org_luci_cipkg_core_action_proto protoreflect.FileDescripto
 
 const file_go_chromium_org_luci_cipkg_core_action_proto_rawDesc = "" +
 	"\n" +
-	",go.chromium.org/luci/cipkg/core/action.proto\x1a\x19google/protobuf/any.proto\x1a+go.chromium.org/luci/cipkg/core/specs.proto\"\xfc\a\n" +
+	",go.chromium.org/luci/cipkg/core/action.proto\x1a\x19google/protobuf/any.proto\x1a+go.chromium.org/luci/cipkg/core/specs.proto\"\xe1\a\n" +
 	"\x06Action\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12,\n" +
 	"\bmetadata\x18\x02 \x01(\v2\x10.Action.MetadataR\bmetadata\x12\x1b\n" +
@@ -609,14 +600,13 @@ const file_go_chromium_org_luci_cipkg_core_action_proto_rawDesc = "" +
 	"\x03git\x18\b \x01(\v2\x0f.ActionGitFetchH\x00R\x03git\x12&\n" +
 	"\x04copy\x18\x06 \x01(\v2\x10.ActionFilesCopyH\x00R\x04copy\x12'\n" +
 	"\x04cipd\x18\a \x01(\v2\x11.ActionCIPDExportH\x00R\x04cipd\x124\n" +
-	"\textension\x18c \x01(\v2\x14.google.protobuf.AnyH\x00R\textension\x1a\x8d\x05\n" +
+	"\textension\x18c \x01(\v2\x14.google.protobuf.AnyH\x00R\textension\x1a\xf2\x04\n" +
 	"\bMetadata\x12*\n" +
 	"\fruntime_deps\x18\x01 \x03(\v2\a.ActionR\vruntimeDeps\x122\n" +
 	"\aluciexe\x18\x02 \x01(\v2\x18.Action.Metadata.LUCIExeR\aluciexe\x12)\n" +
 	"\x04cipd\x18\x03 \x01(\v2\x15.Action.Metadata.CIPDR\x04cipd\x12&\n" +
 	"\x03oci\x18\x04 \x01(\v2\x14.Action.Metadata.OCIR\x03oci\x12\x1c\n" +
-	"\tuntrusted\x18a \x01(\bR\tuntrusted\x12\x19\n" +
-	"\bcache_id\x18b \x01(\tR\acacheId\x12!\n" +
+	"\tuntrusted\x18b \x01(\bR\tuntrusted\x12!\n" +
 	"\fcontext_info\x18c \x01(\tR\vcontextInfo\x1a&\n" +
 	"\aLUCIExe\x12\x1b\n" +
 	"\tstep_name\x18\x01 \x01(\tR\bstepName\x1a\x92\x02\n" +

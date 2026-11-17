@@ -72,10 +72,13 @@ func Execute(ctx context.Context, cfg *ExecutionConfig, drv *core.Derivation) er
 
 // PackageExecutorConfig is the config for wPackageExecutor.
 // All hooks and execFn are optional.
+// - Storage can be provided to fetch and upload packages with remote storage.
 // - PreExpandFn can be provided to e.g. fetch package from remote cache.
 // - PreExecFn can be provided to e.g. setup execution environment.
 // - PostExecFn can be provided to e.g. cleanup execution environment.
 type PackageExecutorConfig struct {
+	Storage RemoteStorage
+
 	PreExpandFn PreExpandHook
 	PreExecFn   PreExecuteHook
 	PostExecFn  PostExecuteHook
@@ -152,6 +155,9 @@ func (p *PackageExecutor) expand(ctx context.Context, pkg actions.Package, expan
 			return nil, fmt.Errorf("failed to run preExpand hook for the package: %s: %w", pkg.ActionID, err)
 		}
 	}
+	if err := p.fetch(ctx, pkg); err != nil {
+		return nil, fmt.Errorf("failed to fetch package: %s: %w", pkg.ActionID, err)
+	}
 
 	var newPkgs []actions.Package
 
@@ -199,7 +205,24 @@ func (p *PackageExecutor) Execute(ctx context.Context, pkg actions.Package) erro
 	if p.PostExecFn != nil {
 		errs = errors.Join(errs, p.PostExecFn(ctx, pkg, errs))
 	}
+	if errs == nil && p.Storage != nil {
+		_, err := p.Storage.Upload(ctx, pkg, nil)
+		errs = errors.Join(errs, err)
+	}
 	return errs
+}
+
+func (p *PackageExecutor) fetch(ctx context.Context, pkg actions.Package) error {
+	if p.Storage == nil {
+		return nil
+	}
+	if err := pkg.Handler.Build(func() error {
+		_, err := p.Storage.Fetch(ctx, pkg, "")
+		return err
+	}); !errors.Is(err, core.ErrPackageNotExist) {
+		return err
+	}
+	return nil
 }
 
 func (p *PackageExecutor) execute(ctx context.Context, pkg actions.Package) error {

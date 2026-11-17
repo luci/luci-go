@@ -138,6 +138,54 @@ func TestBuilder(t *testing.T) {
 			assert.Loosely(t, res, should.Equal("PrePost"))
 		})
 
+		t.Run("storage", func(t *ftt.Test) {
+			t.Run("fetch hit skips build", func(t *ftt.Test) {
+				var res string
+				pe = NewPackageExecutor("", PackageExecutorConfig{
+					Storage: &testStorage{
+						fetch: func(ctx context.Context, pkg actions.Package, id string) (string, error) {
+							res += "Fetch"
+							return "hash-1", nil
+						},
+						upload: func(ctx context.Context, pkg actions.Package, ids []string) (string, error) {
+							res += "Upload"
+							return "hash-1", nil
+						},
+					},
+					PreExecFn:  func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+					PostExecFn: func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return nil },
+					ExecFn:     func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+				})
+
+				_, err := b.Build(ctx, pe, &Generator{Name: "cached"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Equal("FetchPrePostUpload"))
+			})
+
+			t.Run("fetch miss builds and uploads", func(t *ftt.Test) {
+				var res string
+				pe = NewPackageExecutor("", PackageExecutorConfig{
+					Storage: &testStorage{
+						fetch: func(ctx context.Context, pkg actions.Package, id string) (string, error) {
+							res += "Fetch"
+							return "", core.ErrPackageNotExist
+						},
+						upload: func(ctx context.Context, pkg actions.Package, ids []string) (string, error) {
+							res += "Upload"
+							return "hash-2", nil
+						},
+					},
+					PreExecFn:  func(ctx context.Context, pkg actions.Package) (context.Context, error) { res += "Pre"; return ctx, nil },
+					PostExecFn: func(ctx context.Context, pkg actions.Package, execErr error) error { res += "Post"; return nil },
+					ExecFn:     func(context.Context, *ExecutionConfig, *core.Derivation) error { res += "Exec"; return nil },
+				})
+
+				_, err := b.Build(ctx, pe, &Generator{Name: "uncached"})
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, res, should.Equal("FetchPreExecPostUpload"))
+			})
+		})
+
 		t.Run("preExpand deduplicated across shared dependencies", func(t *ftt.Test) {
 			var expanded []string
 			pe = NewPackageExecutor("", PackageExecutorConfig{
@@ -251,4 +299,17 @@ func TestBuilder(t *testing.T) {
 			assert.Loosely(t, err.Error(), should.ContainSubstring("dependency not available: second-"))
 		})
 	})
+}
+
+type testStorage struct {
+	fetch  func(ctx context.Context, pkg actions.Package, id string) (string, error)
+	upload func(ctx context.Context, pkg actions.Package, ids []string) (string, error)
+}
+
+func (s *testStorage) Fetch(ctx context.Context, pkg actions.Package, id string) (string, error) {
+	return s.fetch(ctx, pkg, id)
+}
+
+func (s *testStorage) Upload(ctx context.Context, pkg actions.Package, ids []string) (string, error) {
+	return s.upload(ctx, pkg, ids)
 }

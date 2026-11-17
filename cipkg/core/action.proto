@@ -106,10 +106,7 @@ message Action {
     // untrusted signals the package may contain files from external sources
     // that haven't been verified yet. Generators may treat them with extra
     // cautious.
-    bool untrusted = 97;
-
-    // cache_id is the unique id for caching.
-    string cache_id = 98;
+    bool untrusted = 98;
 
     // context_info can be used to indicate what this action related to - this
     // can help e.g. differentiate action with same content but comes from

@@ -17,7 +17,6 @@ package actions
 import (
 	"errors"
 	"fmt"
-	"maps"
 	"regexp"
 	"sync"
 
@@ -57,13 +56,9 @@ var (
 // derivation.
 type Transformer[M proto.Message] func(M, []Package) (*core.Derivation, error)
 
-// PostProcessFunc is the function executed after an action is processed.
-type PostProcessFunc func(a *core.Action) error
-
 // ActionProcessor processes and transforms actions into packages.
 type ActionProcessor struct {
 	transformers map[protoreflect.FullName]Transformer[proto.Message]
-	postProc     PostProcessFunc
 
 	mu     sync.Mutex
 	sealed bool
@@ -79,16 +74,6 @@ func NewActionProcessor() *ActionProcessor {
 	MustSetTransformer(ap, ActionFilesCopyTransformer)
 	MustSetTransformer(ap, ActionCIPDExportTransformer)
 	return ap
-}
-
-// Clone returns an unsealed copy of the ActionProcessor.
-func (ap *ActionProcessor) Clone() *ActionProcessor {
-	ap.mu.Lock()
-	defer ap.mu.Unlock()
-	return &ActionProcessor{
-		transformers: maps.Clone(ap.transformers),
-		postProc:     ap.postProc,
-	}
 }
 
 var (
@@ -121,25 +106,6 @@ func SetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M]) err
 // panic if any error happened.
 func MustSetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M]) {
 	if err := SetTransformer(ap, tf); err != nil {
-		panic(err)
-	}
-}
-
-// SetPostProcessor sets the post processor for the ActionProcessor.
-func (ap *ActionProcessor) SetPostProcessor(fn PostProcessFunc) error {
-	ap.mu.Lock()
-	defer ap.mu.Unlock()
-	if ap.sealed {
-		return ErrActionProcessorSealed
-	}
-	ap.postProc = fn
-	return nil
-}
-
-// MustSetPostProcessor sets the post processor for the ActionProcessor and
-// panics if any error happened.
-func (ap *ActionProcessor) MustSetPostProcessor(fn PostProcessFunc) {
-	if err := ap.SetPostProcessor(fn); err != nil {
 		panic(err)
 	}
 }
@@ -228,12 +194,6 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 	}
 	pkg.DerivationID = drvID
 	pkg.Handler = pm.Get(drvID)
-
-	if ap.postProc != nil {
-		if err := ap.postProc(a); err != nil {
-			return Package{}, err
-		}
-	}
 
 	aid, err := core.GetActionID(a)
 	if err != nil {
