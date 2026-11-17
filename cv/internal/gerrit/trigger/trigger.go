@@ -137,19 +137,7 @@ func findCQTrigger(input *FindInput) *run.Trigger {
 		return nil
 	}
 	curRevision := input.ChangeInfo.GetCurrentRevision()
-
-	// Check if there was a previous attempt that got canceled by means of a
-	// comment. Normally, CQDaemon would remove appropriate label, but in case
-	// of ACLs misconfiguration preventing CQDaemon from removing votes on
-	// behalf of users, CQDaemon will abort attempt by posting a special comment.
-	var prevAttemptTS time.Time
-	for _, msg := range input.ChangeInfo.GetMessages() {
-		if bd, ok := botdata.Parse(msg); ok {
-			if bd.Action == botdata.Cancel && bd.Revision == curRevision && bd.TriggeredAt.After(prevAttemptTS) {
-				prevAttemptTS = bd.TriggeredAt
-			}
-		}
-	}
+	prevAttemptTS := lastCancelledAttemptTime(input.ChangeInfo)
 
 	largest := int32(0)
 	var earliest time.Time
@@ -248,4 +236,64 @@ func CQVoteByMode(m run.Mode) int32 {
 		panic(fmt.Errorf("CQVoteByMode: invalid mode %q", m))
 	}
 	return val
+}
+
+// lastCancelledAttemptTime returns the trigger time of the latest attempt on
+// the current revision that was cancelled by means of a comment.
+//
+// Normally, CV would remove appropriate label, but in case of ACLs
+// misconfiguration preventing CV from removing votes on behalf of users, CV
+// will abort the attempt by posting a special comment. Votes cast at or before
+// the returned time must not be considered active.
+func lastCancelledAttemptTime(ci *gerritpb.ChangeInfo) time.Time {
+	curRevision := ci.GetCurrentRevision()
+	var ts time.Time
+	for _, msg := range ci.GetMessages() {
+		if bd, ok := botdata.Parse(msg); ok {
+			if bd.Action == botdata.Cancel && bd.Revision == curRevision && bd.TriggeredAt.After(ts) {
+				ts = bd.TriggeredAt
+			}
+		}
+	}
+	return ts
+}
+
+// FullRunVoters returns all the active Commit-Queue votes with the FULL_RUN
+// value on the given change, i.e. every vote that findCQTrigger would consider
+// as a FULL_RUN trigger candidate.
+//
+// Like findCQTrigger, it
+//   - returns nothing if the change is not NEW,
+//   - treats vote values above the FULL_RUN value as FULL_RUN, and
+//   - ignores votes cast at or before the latest cancelled attempt on the
+//     current revision.
+//
+// Votes are returned in the order they appear in the label info.
+func FullRunVoters(ci *gerritpb.ChangeInfo) []*gerritpb.ApprovalInfo {
+	if ci.GetStatus() != gerritpb.ChangeStatus_NEW {
+		return nil
+	}
+	prevAttemptTS := lastCancelledAttemptTime(ci)
+	fullRunVote := modeToVote[run.FullRun]
+	var ret []*gerritpb.ApprovalInfo
+	for _, ai := range ci.GetLabels()[CQLabelName].GetAll() {
+		if ai.GetValue() >= fullRunVote && prevAttemptTS.Before(ai.GetDate().AsTime()) {
+			ret = append(ret, ai)
+		}
+	}
+	return ret
+}
+
+// HasFullRunVoteBy returns whether the given email has an active Commit-Queue
+// vote with the FULL_RUN value on the given change. See FullRunVoters.
+func HasFullRunVoteBy(ci *gerritpb.ChangeInfo, email string) bool {
+	if email == "" {
+		return false
+	}
+	for _, ai := range FullRunVoters(ci) {
+		if ai.GetUser().GetEmail() == email {
+			return true
+		}
+	}
+	return false
 }

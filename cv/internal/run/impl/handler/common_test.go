@@ -48,6 +48,7 @@ import (
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/prjmanager"
 	"go.chromium.org/luci/cv/internal/prjmanager/pmtest"
+	cvquota "go.chromium.org/luci/cv/internal/quota"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -767,7 +768,7 @@ type quotaManagerMock struct {
 	debitRunQuotaCalls int
 }
 
-func (qm *quotaManagerMock) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+func (qm *quotaManagerMock) DebitRunQuota(ctx context.Context, opts cvquota.DebitRunOptions) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
 	qm.debitRunQuotaCalls++
 	return qm.runQuotaOp, qm.userLimit, qm.runQuotaErr
 }

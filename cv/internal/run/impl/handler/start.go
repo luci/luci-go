@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/metrics"
+	cvquota "go.chromium.org/luci/cv/internal/quota"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
 	"go.chromium.org/luci/cv/internal/run/impl/state"
@@ -136,7 +137,7 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 		// Run quota should be debited from the creator before the run is started.
 		// When run quota isn't available, the run is left in the pending state.
 		pendingMsg := fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.", rs.Run.BilledTo.Email())
-		switch quotaOp, userLimit, err := impl.QM.DebitRunQuota(ctx, &rs.Run); {
+		switch quotaOp, userLimit, err := impl.QM.DebitRunQuota(ctx, cvquota.DebitRunOptions{Run: &rs.Run}); {
 		case err == nil && quotaOp != nil:
 			rs.QuotaDebited = true
 			rs.LogInfof(ctx, logEntryLabelRunQuotaBalanceMessage, "Run quota debited from %s; balance: %d", rs.Run.BilledTo.Email(), quotaOp.GetNewBalance())

@@ -73,14 +73,29 @@ type SrvQuota interface {
 	AccountID(realm, namespace, name, resourceType string) *quotapb.AccountID
 }
 
-// DebitRunQuota debits the run quota from a given user's account.
-func (qm *Manager) DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
-	return qm.runQuotaOp(ctx, r, "debit", -1)
+// DebitRunOptions are the options for DebitRunQuota.
+type DebitRunOptions struct {
+	// Run is the Run to debit the run quota for. The quota is debited from
+	// Run.BilledTo.
+	Run *run.Run
+	// OperationIDSuffix, if set, is appended to the ID of the quota operation,
+	// separated by "/".
+	//
+	// The operation ID makes the debit idempotent across retries. Set this to
+	// keep the debit distinct from other debits for the same Run, e.g. when
+	// Run.BilledTo has been changed to an alternative payer after the original
+	// payer's debit underflowed.
+	OperationIDSuffix string
 }
 
-// CreditRunQuota credits the run quota into a given user's account.
+// DebitRunQuota debits the run quota from opts.Run.BilledTo.
+func (qm *Manager) DebitRunQuota(ctx context.Context, opts DebitRunOptions) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+	return qm.runQuotaOp(ctx, opts.Run, "debit", opts.OperationIDSuffix, -1)
+}
+
+// CreditRunQuota credits the run quota back into r.BilledTo's account.
 func (qm *Manager) CreditRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
-	return qm.runQuotaOp(ctx, r, "credit", 1)
+	return qm.runQuotaOp(ctx, r, "credit", "", 1)
 }
 
 // DebitTryjobQuota debits the tryjob quota from a given user's account.
@@ -101,7 +116,10 @@ func (qm *Manager) RunQuotaAccountID(r *run.Run) *quotapb.AccountID {
 }
 
 // runQuotaOp updates the run quota for the given run state by the given delta.
-func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delta int64) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+//
+// opIDSuffix, if set, is appended to opID in the quota request ID only. opID
+// alone is reported in metrics to keep their cardinality bounded.
+func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID, opIDSuffix string, delta int64) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
 	userLimit, err := qm.findRunLimit(ctx, r)
 
 	// userLimit == nil when no run user limit is configured for this user.
@@ -130,10 +148,15 @@ func (qm *Manager) runQuotaOp(ctx context.Context, r *run.Run, opID string, delt
 		},
 	}
 
+	reqOpID := opID
+	if opIDSuffix != "" {
+		reqOpID += "/" + opIDSuffix
+	}
+
 	// When server/quota does not have the policyId already, rewrite the policy and retry the op.
 	var opResponse *quotapb.ApplyOpsResponse
 	err = retry.Retry(clock.Tag(ctx, common.LaunchRetryClockTag), makeRetryFactory(), func() (err error) {
-		opResponse, err = srvquota.ApplyOps(ctx, requestID(r.ID, opID), durationpb.New(accountLifeTime), quotaOp)
+		opResponse, err = srvquota.ApplyOps(ctx, requestID(r.ID, reqOpID), durationpb.New(accountLifeTime), quotaOp)
 		if errors.Is(err, srvquota.ErrQuotaApply) && opResponse.Results[0].Status == quotapb.OpResult_ERR_UNKNOWN_POLICY {
 			if _, err := qm.WritePolicy(ctx, r.ID.LUCIProject()); err != nil {
 				return err

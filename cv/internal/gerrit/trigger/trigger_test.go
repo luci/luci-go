@@ -331,6 +331,72 @@ func TestFindCQTrigger(t *testing.T) {
 	})
 }
 
+func TestFullRunVoters(t *testing.T) {
+	t.Parallel()
+
+	user1 := gf.U("u-1")
+	user2 := gf.U("u-2")
+	user3 := gf.U("u-3")
+	ftt.Run("FullRunVoters", t, func(t *ftt.Test) {
+		now := testclock.TestRecentTimeUTC
+		ci := &gerritpb.ChangeInfo{
+			Status:          gerritpb.ChangeStatus_NEW,
+			CurrentRevision: "deadbeef~1",
+			Labels: map[string]*gerritpb.LabelInfo{
+				CQLabelName: {
+					All: []*gerritpb.ApprovalInfo{
+						{User: user1, Value: 2, Date: timestamppb.New(now.Add(-15 * time.Minute))},
+						{User: user2, Value: 1, Date: timestamppb.New(now.Add(-10 * time.Minute))},
+						{User: user3, Value: 3, Date: timestamppb.New(now.Add(-5 * time.Minute))},
+					},
+				},
+			},
+		}
+		emails := func(ais []*gerritpb.ApprovalInfo) []string {
+			var ret []string
+			for _, ai := range ais {
+				ret = append(ret, ai.GetUser().GetEmail())
+			}
+			return ret
+		}
+
+		t.Run("returns all CQ+2 voters, clamping larger values", func(t *ftt.Test) {
+			assert.That(t, emails(FullRunVoters(ci)), should.Match([]string{user1.GetEmail(), user3.GetEmail()}))
+			assert.That(t, HasFullRunVoteBy(ci, user1.GetEmail()), should.BeTrue)
+			assert.That(t, HasFullRunVoteBy(ci, user2.GetEmail()), should.BeFalse)
+			assert.That(t, HasFullRunVoteBy(ci, ""), should.BeFalse)
+		})
+
+		t.Run("ignores votes deactivated via botdata cancel message", func(t *ftt.Test) {
+			cancelMsg, err := botdata.Append("", botdata.BotData{
+				Action:      botdata.Cancel,
+				TriggeredAt: now.Add(-15 * time.Minute),
+				Revision:    ci.GetCurrentRevision(),
+			})
+			assert.NoErr(t, err)
+			ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
+			assert.That(t, emails(FullRunVoters(ci)), should.Match([]string{user3.GetEmail()}))
+			assert.That(t, HasFullRunVoteBy(ci, user1.GetEmail()), should.BeFalse)
+
+			t.Run("unless the cancellation was for another revision", func(t *ftt.Test) {
+				ci.CurrentRevision = "deadbeef~2"
+				assert.That(t, emails(FullRunVoters(ci)), should.Match([]string{user1.GetEmail(), user3.GetEmail()}))
+			})
+		})
+
+		t.Run("returns nothing for a CL that is not NEW", func(t *ftt.Test) {
+			ci.Status = gerritpb.ChangeStatus_MERGED
+			assert.Loosely(t, FullRunVoters(ci), should.BeEmpty)
+		})
+
+		t.Run("returns nothing without Commit-Queue label", func(t *ftt.Test) {
+			ci.Labels = nil
+			assert.Loosely(t, FullRunVoters(ci), should.BeEmpty)
+			assert.Loosely(t, FullRunVoters(nil), should.BeEmpty)
+		})
+	})
+}
+
 func TestFindNewPatchsetRunTrigger(t *testing.T) {
 	t.Parallel()
 	owner := gf.U("owner")

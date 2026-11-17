@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/cv/internal/common/eventbox"
 	"go.chromium.org/luci/cv/internal/common/tree"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	cvquota "go.chromium.org/luci/cv/internal/quota"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/bq"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -118,7 +119,7 @@ type RM interface {
 
 // QM manages run and tryjob quotas.
 type QM interface {
-	DebitRunQuota(ctx context.Context, r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error)
+	DebitRunQuota(ctx context.Context, opts cvquota.DebitRunOptions) (*quotapb.OpResult, *cfgpb.UserLimit, error)
 }
 
 // CLUpdater encapsulates interaction with CL Updater by the Run events handler.

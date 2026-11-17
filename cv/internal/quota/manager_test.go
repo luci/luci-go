@@ -284,7 +284,7 @@ func TestManager(t *testing.T) {
 				CLs:           clIDs,
 			}
 
-			res, userLimit, err := qm.DebitRunQuota(ctx, r)
+			res, userLimit, err := qm.DebitRunQuota(ctx, DebitRunOptions{Run: r})
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -338,6 +338,66 @@ func TestManager(t *testing.T) {
 			), should.Equal(1))
 		})
 
+		t.Run("DebitRunQuota() with OperationIDSuffix", func(t *ftt.Test) {
+			const botEmail = "bot@example.com"
+			const botOpIDSuffix = "bot"
+			userLimit := genUserLimit("user-limit", 1, []string{"user:" + tEmail})
+			botLimit := genUserLimit("bot-limit", 3, []string{"user:" + botEmail})
+			cg.UserLimits = append(cg.UserLimits, userLimit, botLimit)
+			prjcfgtest.Update(ctx, lProject, cfg)
+			newRun := func(id common.RunID, payer string) *run.Run {
+				return &run.Run{
+					ID:            id,
+					ConfigGroupID: prjcfg.MakeConfigGroupID(prjcfg.MustComputeHash(cfg), "infra"),
+					BilledTo:      makeIdentity(payer),
+					CLs:           clIDs,
+				}
+			}
+
+			// Exhaust the user's quota with another Run.
+			otherRid := common.MakeRunID(lProject, ct.Clock.Now(), 1, []byte("cafecafe"))
+			assert.NoErr(t, datastore.Put(ctx, &run.RunCL{
+				ID:     1,
+				Run:    datastore.MakeKey(ctx, common.RunKind, string(otherRid)),
+				Detail: rcls[0].Detail,
+			}))
+			_, _, err := qm.DebitRunQuota(ctx, DebitRunOptions{Run: newRun(otherRid, tEmail)})
+			assert.NoErr(t, err)
+
+			// The original payer's debit underflows.
+			res, _, err := qm.DebitRunQuota(ctx, DebitRunOptions{Run: newRun(rid, tEmail)})
+			assert.ErrIsLike(t, err, quota.ErrQuotaApply)
+			assert.Loosely(t, res.GetStatus(), should.Equal(quotapb.OpResult_ERR_UNDERFLOW))
+
+			// The alternative payer's debit, with a distinct operation ID, succeeds.
+			res, ul, err := qm.DebitRunQuota(ctx, DebitRunOptions{Run: newRun(rid, botEmail), OperationIDSuffix: botOpIDSuffix})
+			assert.NoErr(t, err)
+			assert.That(t, ul, should.Match(botLimit))
+			assert.Loosely(t, res.GetNewBalance(), should.Equal(2))
+			// The suffix is not reported in metrics.
+			assert.Loosely(t, ct.TSMonSentValue(
+				ctx,
+				metrics.Internal.QuotaOp,
+				lProject,
+				"infra",
+				"bot-limit",
+				"runs",
+				"debit",
+				"SUCCESS",
+			), should.Equal(1))
+
+			t.Run("retry is idempotent and doesn't collide with the original payer", func(t *ftt.Test) {
+				// Simulates a retried Run start whose previous transaction failed.
+				res, _, err := qm.DebitRunQuota(ctx, DebitRunOptions{Run: newRun(rid, tEmail)})
+				assert.ErrIsLike(t, err, quota.ErrQuotaApply)
+				assert.Loosely(t, res.GetStatus(), should.Equal(quotapb.OpResult_ERR_UNDERFLOW))
+
+				res, _, err = qm.DebitRunQuota(ctx, DebitRunOptions{Run: newRun(rid, botEmail), OperationIDSuffix: botOpIDSuffix})
+				assert.NoErr(t, err)
+				assert.Loosely(t, res.GetNewBalance(), should.Equal(2)) // not debited twice
+			})
+		})
+
 		t.Run("runQuotaOp() updates the same account on multiple ops", func(t *ftt.Test) {
 			googlerLimit := genUserLimit("googlers-limit", 5, []string{"group:googlers"})
 			cg.UserLimits = append(cg.UserLimits,
@@ -354,7 +414,7 @@ func TestManager(t *testing.T) {
 				CLs:           clIDs,
 			}
 
-			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo1", -1)
+			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo1", "", -1)
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -372,7 +432,7 @@ func TestManager(t *testing.T) {
 				"SUCCESS",
 			), should.Equal(1))
 
-			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
+			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", "", -2)
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -405,7 +465,7 @@ func TestManager(t *testing.T) {
 				CLs:           clIDs,
 			}
 
-			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
+			res, userLimit, err := qm.runQuotaOp(ctx, r, "", "", -1)
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -427,7 +487,7 @@ func TestManager(t *testing.T) {
 			}
 
 			t.Run("quota underflow", func(t *ftt.Test) {
-				res, userLimit, err := qm.runQuotaOp(ctx, r, "debit", -2)
+				res, userLimit, err := qm.runQuotaOp(ctx, r, "debit", "", -2)
 				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
 				assert.That(t, userLimit, should.Match(googlerLimit))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -448,7 +508,7 @@ func TestManager(t *testing.T) {
 
 			t.Run("quota overflow", func(t *ftt.Test) {
 				// overflow doesn't err but gets capped.
-				res, userLimit, err := qm.runQuotaOp(ctx, r, "credit", 10)
+				res, userLimit, err := qm.runQuotaOp(ctx, r, "credit", "", 10)
 				assert.NoErr(t, err)
 				assert.That(t, userLimit, should.Match(googlerLimit))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -482,7 +542,7 @@ func TestManager(t *testing.T) {
 				CLs:           clIDs,
 			}
 
-			res, userLimit, err := qm.runQuotaOp(ctx, r, "", -1)
+			res, userLimit, err := qm.runQuotaOp(ctx, r, "", "", -1)
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -499,7 +559,7 @@ func TestManager(t *testing.T) {
 
 				// This is not a real scenario within CV but just checks
 				// extreme examples.
-				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -2)
+				res, userLimit, err = qm.runQuotaOp(ctx, r, "", "", -2)
 				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
 				assert.That(t, userLimit, should.Match(partnerLimit))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -516,7 +576,7 @@ func TestManager(t *testing.T) {
 					IdentityGroups: []string{"partners"},
 				})
 
-				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
+				res, userLimit, err = qm.runQuotaOp(ctx, r, "", "", -1)
 				assert.NoErr(t, err)
 				assert.That(t, userLimit, should.Match(partnerLimit))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -534,7 +594,7 @@ func TestManager(t *testing.T) {
 					IdentityGroups: []string{"chromies"},
 				})
 
-				res, userLimit, err = qm.runQuotaOp(ctx, r, "", -1)
+				res, userLimit, err = qm.runQuotaOp(ctx, r, "", "", -1)
 				assert.NoErr(t, err)
 				assert.That(t, userLimit, should.Match(chromiesLimit))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -554,7 +614,7 @@ func TestManager(t *testing.T) {
 
 				// This is not a real scenario within CV but just checks
 				// extreme examples.
-				res, userLimit, err = qm.runQuotaOp(ctx, r, "", 2)
+				res, userLimit, err = qm.runQuotaOp(ctx, r, "", "", 2)
 				assert.NoErr(t, err)
 				assert.That(t, userLimit, should.Match(chromiesLimit))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -582,7 +642,7 @@ func TestManager(t *testing.T) {
 				CLs:           clIDs,
 			}
 
-			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo", -1)
+			res, userLimit, err := qm.runQuotaOp(ctx, r, "foo", "", -1)
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -590,7 +650,7 @@ func TestManager(t *testing.T) {
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
 
-			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo", -1)
+			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo", "", -1)
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -598,7 +658,7 @@ func TestManager(t *testing.T) {
 				AccountStatus: quotapb.OpResult_CREATED,
 			}))
 
-			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
+			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", "", -2)
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -608,7 +668,7 @@ func TestManager(t *testing.T) {
 				AccountStatus:           quotapb.OpResult_ALREADY_EXISTS,
 			}))
 
-			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", -2)
+			res, userLimit, err = qm.runQuotaOp(ctx, r, "foo2", "", -2)
 			assert.NoErr(t, err)
 			assert.That(t, userLimit, should.Match(googlerLimit))
 			assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -714,7 +774,7 @@ func TestManager(t *testing.T) {
 				ct.Clock.Set(wedPeak.UTC())
 				s.SetTime(clock.Now(ctx))
 
-				res, ul, err := qm.runQuotaOp(ctx, r, "peak-debit-6", -6)
+				res, ul, err := qm.runQuotaOp(ctx, r, "peak-debit-6", "", -6)
 				assert.NoErr(t, err)
 				assert.That(t, ul.GetName(), should.Equal("default:schedule_override:0"))
 				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(6)))
@@ -726,7 +786,7 @@ func TestManager(t *testing.T) {
 				}))
 
 				// 7th run during peak underflows.
-				res, ul, err = qm.runQuotaOp(ctx, r, "peak-debit-7", -1)
+				res, ul, err = qm.runQuotaOp(ctx, r, "peak-debit-7", "", -1)
 				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
 				assert.That(t, res.GetStatus(), should.Equal(quotapb.OpResult_ERR_UNDERFLOW))
 
@@ -736,7 +796,7 @@ func TestManager(t *testing.T) {
 				s.SetTime(clock.Now(ctx))
 
 				// 7th run now succeeds! Balance adjusts by +(12-6) = +6 before debiting -1 -> NewBalance = 5.
-				res, ul, err = qm.runQuotaOp(ctx, r, "offpeak-debit-7", -1)
+				res, ul, err = qm.runQuotaOp(ctx, r, "offpeak-debit-7", "", -1)
 				assert.NoErr(t, err)
 				assert.That(t, ul.GetName(), should.Equal("default"))
 				assert.That(t, ul.GetRun().GetMaxActive().GetValue(), should.Equal(int64(12)))
@@ -753,7 +813,7 @@ func TestManager(t *testing.T) {
 				s.SetTime(clock.Now(ctx))
 
 				// Starting an 8th run during peak underflows (adjusted balance is 5 + (6-12) = -1).
-				res, ul, err = qm.runQuotaOp(ctx, r, "thu-peak-debit-8", -1)
+				res, ul, err = qm.runQuotaOp(ctx, r, "thu-peak-debit-8", "", -1)
 				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
 				assert.That(t, ul.GetName(), should.Equal("default:schedule_override:0"))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -763,7 +823,7 @@ func TestManager(t *testing.T) {
 				}))
 
 				// Crediting 2 finished runs during peak brings balance from -1 -> +1.
-				res, ul, err = qm.runQuotaOp(ctx, r, "thu-peak-credit-2", 2)
+				res, ul, err = qm.runQuotaOp(ctx, r, "thu-peak-credit-2", "", 2)
 				assert.NoErr(t, err)
 				assert.That(t, res, should.Match(&quotapb.OpResult{
 					NewBalance:              1,
@@ -946,7 +1006,7 @@ func TestManager(t *testing.T) {
 				// Saturday 23:59:59 PT -> Full-day Override 2 is active (unlimited).
 				ct.Clock.Set(time.Date(2026, time.October, 24, 23, 59, 59, 0, laLoc).UTC())
 				s.SetTime(clock.Now(ctx))
-				res, ul, err := qm.runQuotaOp(ctx, r, "sat-unlimited-debit", -100)
+				res, ul, err := qm.runQuotaOp(ctx, r, "sat-unlimited-debit", "", -100)
 				assert.NoErr(t, err)
 				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:2"))
 				assert.That(t, ul.GetRun().GetMaxActive().GetUnlimited(), should.BeTrue)
@@ -990,7 +1050,7 @@ func TestManager(t *testing.T) {
 				summerPDT := time.Date(2026, time.July, 15, 16, 0, 0, 0, time.UTC)
 				ct.Clock.Set(summerPDT)
 				s.SetTime(clock.Now(ctx))
-				res, ul, err := qm.runQuotaOp(ctx, r, "pdt-debit-3", -3)
+				res, ul, err := qm.runQuotaOp(ctx, r, "pdt-debit-3", "", -3)
 				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
 				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:0"))
 				assert.That(t, res.GetStatus(), should.Equal(quotapb.OpResult_ERR_UNDERFLOW))
@@ -999,7 +1059,7 @@ func TestManager(t *testing.T) {
 				winterPST8AM := time.Date(2026, time.November, 18, 16, 0, 0, 0, time.UTC)
 				ct.Clock.Set(winterPST8AM)
 				s.SetTime(clock.Now(ctx))
-				res, ul, err = qm.runQuotaOp(ctx, r, "pst-8am-debit-3", -3)
+				res, ul, err = qm.runQuotaOp(ctx, r, "pst-8am-debit-3", "", -3)
 				assert.NoErr(t, err)
 				assert.That(t, ul.GetName(), should.Equal("googlers-limit"))
 				assert.That(t, ul.GetRun().GetMaxActive().GetUnlimited(), should.BeTrue)
@@ -1044,7 +1104,7 @@ func TestManager(t *testing.T) {
 
 				// 08:00 (base, unlimited): start 3 runs.
 				setTime(8)
-				res, ul, err := qm.runQuotaOp(ctx, r, "base-debit-3", -3)
+				res, ul, err := qm.runQuotaOp(ctx, r, "base-debit-3", "", -3)
 				assert.NoErr(t, err)
 				assert.That(t, ul.GetName(), should.Equal("googlers-limit"))
 				assert.That(t, res.GetNewBalance(), should.Equal(int64(-3)))
@@ -1052,7 +1112,7 @@ func TestManager(t *testing.T) {
 				// 09:00 (override, limit 2): 3 runs are active, so the adjusted
 				// balance is -3 + (2 - 0) = -1 and starting another run fails.
 				setTime(9)
-				res, ul, err = qm.runQuotaOp(ctx, r, "override-debit-1", -1)
+				res, ul, err = qm.runQuotaOp(ctx, r, "override-debit-1", "", -1)
 				assert.Loosely(t, err, should.Equal(quota.ErrQuotaApply))
 				assert.That(t, ul.GetName(), should.Equal("googlers-limit:schedule_override:0"))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
@@ -1062,7 +1122,7 @@ func TestManager(t *testing.T) {
 				}))
 
 				// A run that was debited under the base limit ends under the override.
-				res, _, err = qm.runQuotaOp(ctx, r, "override-credit-1", 1)
+				res, _, err = qm.runQuotaOp(ctx, r, "override-credit-1", "", 1)
 				assert.NoErr(t, err)
 				assert.That(t, res, should.Match(&quotapb.OpResult{
 					NewBalance:              0,
@@ -1075,7 +1135,7 @@ func TestManager(t *testing.T) {
 				// override ends under the base limit. The adjusted balance is
 				// 0 + (0 - 2) = -2, i.e. 2 active runs, and becomes -1 after the credit.
 				setTime(17)
-				res, ul, err = qm.runQuotaOp(ctx, r, "base-credit-1", 1)
+				res, ul, err = qm.runQuotaOp(ctx, r, "base-credit-1", "", 1)
 				assert.NoErr(t, err)
 				assert.That(t, ul.GetName(), should.Equal("googlers-limit"))
 				assert.That(t, res, should.Match(&quotapb.OpResult{
