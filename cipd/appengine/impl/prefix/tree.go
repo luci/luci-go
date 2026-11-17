@@ -287,3 +287,51 @@ func (t *Tree[V]) Get(path string) V {
 		}
 	}
 }
+
+// Track is a convenience function to create a tracker for this Tree.
+func (t *Tree[V]) Track() *Track[V] {
+	return NewTrack(t)
+}
+
+// locate walks the tree to find normalized `path` ("" or trailing '/').
+//
+// Returns the best value and the remaining immediate children to visit (either
+// cur.children when landing on a node, or the 1-element slice [child] when
+// landing partway along an incoming edge).
+func (t *Tree[V]) locate(path string) (bestVal V, children []node[V]) {
+	if t == nil || len(t.nodes) == 0 {
+		return
+	}
+
+	cur := &t.nodes[0]
+	bestVal = cur.val
+
+	for len(cur.prefix) < len(path) {
+		parentLen := len(cur.prefix)
+		seg, _ := cutSlashSegment(path[parentLen:])
+		idx, found := slices.BinarySearchFunc(cur.children, seg, func(n node[V], target string) int {
+			firstSeg, _ := cutSlashSegment(n.prefix[parentLen:])
+			return cmp.Compare(firstSeg, target)
+		})
+		if !found {
+			return bestVal, nil
+		}
+
+		child := &cur.children[idx]
+		if strings.HasPrefix(path, child.prefix) {
+			cur = child
+			if cur.hasVal {
+				bestVal = cur.val
+			}
+			continue
+		}
+		if strings.HasPrefix(child.prefix, path) {
+			// `path` ended partway along `child`'s incoming edge.
+			return bestVal, cur.children[idx : idx+1 : idx+1]
+		}
+		// `path` diverged along `child`'s incoming edge.
+		return bestVal, nil
+	}
+
+	return bestVal, cur.children
+}
