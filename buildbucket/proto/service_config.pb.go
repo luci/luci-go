@@ -168,8 +168,10 @@ type SettingsCfg struct {
 	// projects may report data to.
 	// Therefore, the metric names must be unique globally.
 	CustomMetrics []*CustomMetric `protobuf:"bytes,9,rep,name=custom_metrics,json=customMetrics,proto3" json:"custom_metrics,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Hostnames allowed in Build.view_url.
+	AllowedBuildViewUrlHosts []string `protobuf:"bytes,10,rep,name=allowed_build_view_url_hosts,json=allowedBuildViewUrlHosts,proto3" json:"allowed_build_view_url_hosts,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *SettingsCfg) Reset() {
@@ -261,6 +263,13 @@ func (x *SettingsCfg) GetSwarmingBackends() map[string]string {
 func (x *SettingsCfg) GetCustomMetrics() []*CustomMetric {
 	if x != nil {
 		return x.CustomMetrics
+	}
+	return nil
+}
+
+func (x *SettingsCfg) GetAllowedBuildViewUrlHosts() []string {
+	if x != nil {
+		return x.AllowedBuildViewUrlHosts
 	}
 	return nil
 }
@@ -1429,7 +1438,7 @@ var File_go_chromium_org_luci_buildbucket_proto_service_config_proto protoreflec
 
 const file_go_chromium_org_luci_buildbucket_proto_service_config_proto_rawDesc = "" +
 	"\n" +
-	";go.chromium.org/luci/buildbucket/proto/service_config.proto\x12\vbuildbucket\x1a\x1egoogle/protobuf/duration.proto\x1a;go.chromium.org/luci/buildbucket/proto/project_config.proto\"\x80\x05\n" +
+	";go.chromium.org/luci/buildbucket/proto/service_config.proto\x12\vbuildbucket\x1a\x1egoogle/protobuf/duration.proto\x1a;go.chromium.org/luci/buildbucket/proto/project_config.proto\"\xc0\x05\n" +
 	"\vSettingsCfg\x129\n" +
 	"\bswarming\x18\x01 \x01(\v2\x1d.buildbucket.SwarmingSettingsR\bswarming\x123\n" +
 	"\x06logdog\x18\x02 \x01(\v2\x1b.buildbucket.LogDogSettingsR\x06logdog\x129\n" +
@@ -1441,7 +1450,9 @@ const file_go_chromium_org_luci_buildbucket_proto_service_config_proto_rawDesc =
 	"\x19known_public_gerrit_hosts\x18\x03 \x03(\tR\x16knownPublicGerritHosts\x127\n" +
 	"\bbackends\x18\a \x03(\v2\x1b.buildbucket.BackendSettingR\bbackends\x12[\n" +
 	"\x11swarming_backends\x18\b \x03(\v2..buildbucket.SettingsCfg.SwarmingBackendsEntryR\x10swarmingBackends\x12@\n" +
-	"\x0ecustom_metrics\x18\t \x03(\v2\x19.buildbucket.CustomMetricR\rcustomMetrics\x1aC\n" +
+	"\x0ecustom_metrics\x18\t \x03(\v2\x19.buildbucket.CustomMetricR\rcustomMetrics\x12>\n" +
+	"\x1callowed_build_view_url_hosts\x18\n" +
+	" \x03(\tR\x18allowedBuildViewUrlHosts\x1aC\n" +
 	"\x15SwarmingBackendsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x96\x06\n" +

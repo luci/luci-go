@@ -57,6 +57,9 @@ message SettingsCfg {
   // projects may report data to.
   // Therefore, the metric names must be unique globally.
   repeated CustomMetric custom_metrics = 9;
+
+  // Hostnames allowed in Build.view_url.
+  repeated string allowed_build_view_url_hosts = 10;
 }
 
 // Backend setting.

@@ -520,9 +520,32 @@ func TestConfig(t *testing.T) {
 					name: "/chrome/infra/custom/builds/count",
 					metric_base: CUSTOM_METRIC_BASE_COUNT,
 				}
+				allowed_build_view_url_hosts: "luci-milo.appspot.com"
+				allowed_build_view_url_hosts: "milo.luci.app"
 			`
 			assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, []byte(okCfg)), should.BeNil)
 			assert.Loosely(t, vctx.Finalize(), should.BeNil)
+		})
+
+		t.Run("invalid allowed_build_view_url_hosts", func(t *ftt.Test) {
+			base := `
+				logdog {
+					hostname: "logs.chromium.org"
+				}
+				resultdb {
+					hostname: "results.api.cr.dev"
+				}
+			`
+			t.Run("empty", func(t *ftt.Test) {
+				content := []byte(base + `allowed_build_view_url_hosts: ""`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("allowed_build_view_url_hosts #0 unspecified"))
+			})
+			t.Run("scheme", func(t *ftt.Test) {
+				content := []byte(base + `allowed_build_view_url_hosts: "https://ci.chromium.org"`)
+				assert.Loosely(t, validateSettingsCfg(vctx, configSet, path, content), should.BeNil)
+				assert.Loosely(t, vctx.Finalize().Error(), should.ContainSubstring("allowed_build_view_url_hosts #0 must not contain '://'"))
+			})
 		})
 	})
 }

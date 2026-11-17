@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -109,6 +110,9 @@ func validateSettingsCfg(ctx *validation.Context, configSet, path string, conten
 
 	validateHostname(ctx, "logdog.hostname", cfg.Logdog.GetHostname())
 	validateHostname(ctx, "resultdb.hostname", cfg.Resultdb.GetHostname())
+	for i, host := range cfg.GetAllowedBuildViewUrlHosts() {
+		validateHostname(ctx, fmt.Sprintf("allowed_build_view_url_hosts #%d", i), host)
+	}
 	return nil
 }
 
