@@ -359,7 +359,7 @@ export function PlatformSummaryCard({
                       </Typography>
                     </Box>
                   </Button>
-                  {!isLoading && secondTotal === 0 && (
+                  {!isLoading && total === 0 && secondTotal === 0 && (
                     <PermissionWarningTooltip />
                   )}
                 </Box>
