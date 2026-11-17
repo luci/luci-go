@@ -39,10 +39,11 @@ export function LocalLoginInstructionPage() {
   const navigate = useNavigate();
   const authState = useAuthState();
   const [searchParam] = useSyncedSearchParams();
-  const redirectTo = searchParam.get('redirect') || '/';
+  const rawRedirect = searchParam.get('redirect') || '/';
+  const redirectTo = /^\/(?!\/|\\)/.test(rawRedirect) ? rawRedirect : '/';
   const scopes = searchParam.get('scopes');
-  if (!scopes) {
-    throw new Error('scopes must be defined');
+  if (!scopes || !/^[a-zA-Z0-9:/._ -]+$/.test(scopes)) {
+    throw new Error('scopes must be defined and valid');
   }
 
   const isLoggedIn = authState.identity !== ANONYMOUS_IDENTITY;
