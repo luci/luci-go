@@ -24,6 +24,7 @@ import (
 	"math"
 	"mime"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -144,9 +145,28 @@ type logData struct {
 	options userOptions
 }
 
+var allowedViewerHosts = map[string]struct{}{
+	"ci.chromium.org":                {},
+	"cr-buildbucket.appspot.com":     {},
+	"cr-buildbucket-dev.appspot.com": {},
+	"luci-milo.appspot.com":          {},
+	"luci-milo-dev.appspot.com":      {},
+}
+
 func (ld *logData) viewerURL() string {
 	// logDesc can be nil if the log doesn't exist
-	return ld.logDesc.GetTags()[viewer.LogDogViewerURLTag]
+	raw := ld.logDesc.GetTags()[viewer.LogDogViewerURLTag]
+	if raw == "" {
+		return ""
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.Opaque != "" || u.User != nil {
+		return ""
+	}
+	if _, ok := allowedViewerHosts[strings.ToLower(u.Host)]; !ok {
+		return ""
+	}
+	return u.String()
 }
 
 // nopFlusher is an http.Flusher that does nothing.  It's used as a standin

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -26,12 +27,14 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
+	"go.chromium.org/luci/common/testing/truth"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/logdog/api/logpb"
 	ct "go.chromium.org/luci/logdog/appengine/coordinator/coordinatorTest"
+	"go.chromium.org/luci/logdog/common/viewer"
 )
 
 func TestHTTP(t *testing.T) {
@@ -256,5 +259,142 @@ func TestHelperFunctions(t *testing.T) {
 		assert.Loosely(t, resp.Header().Get("Content-Type"), should.Equal("text/plain; charset=utf-8"))
 		assert.Loosely(t, resp.Header().Get("X-Content-Type-Options"), should.Equal("nosniff"))
 		assert.Loosely(t, resp.Header().Get("Content-Disposition"), should.Equal(`inline; filename="log.txt"`))
+	})
+}
+
+func TestViewerURL(t *testing.T) {
+	t.Parallel()
+
+	allowedCases := []struct {
+		name string
+		raw  string
+		want string
+	}{
+		{
+			name: "cr-buildbucket prod",
+			raw:  "https://cr-buildbucket.appspot.com/build/87654321",
+			want: "https://cr-buildbucket.appspot.com/build/87654321",
+		},
+		{
+			name: "cr-buildbucket dev",
+			raw:  "https://cr-buildbucket-dev.appspot.com/build/87654321",
+			want: "https://cr-buildbucket-dev.appspot.com/build/87654321",
+		},
+		{
+			name: "ci.chromium.org",
+			raw:  "https://ci.chromium.org/b/87654321",
+			want: "https://ci.chromium.org/b/87654321",
+		},
+		{
+			name: "luci-milo prod",
+			raw:  "https://luci-milo.appspot.com/b/87654321",
+			want: "https://luci-milo.appspot.com/b/87654321",
+		},
+		{
+			name: "luci-milo dev",
+			raw:  "https://luci-milo-dev.appspot.com/b/87654321",
+			want: "https://luci-milo-dev.appspot.com/b/87654321",
+		},
+		{
+			name: "uppercase allowed host",
+			raw:  "https://CR-BUILDBUCKET.APPSPOT.COM/build/123",
+			want: "https://CR-BUILDBUCKET.APPSPOT.COM/build/123",
+		},
+	}
+
+	rejectedCases := []struct {
+		name    string
+		logDesc *logpb.LogStreamDescriptor
+	}{
+		{
+			name:    "nil logDesc",
+			logDesc: nil,
+		},
+		{
+			name:    "empty viewer_url",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: ""}},
+		},
+		{
+			name:    "disallowed host",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "https://phish.example/fake-milo"}},
+		},
+		{
+			name:    "non-HTTPS scheme",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "http://cr-buildbucket.appspot.com/build/123"}},
+		},
+		{
+			name:    "protocol-relative URL",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "//phish.example/fake"}},
+		},
+		{
+			name:    "javascript URI",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "javascript:alert(1)"}},
+		},
+		{
+			name:    "opaque https URL",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "https:ci.chromium.org/b/123"}},
+		},
+		{
+			name:    "userinfo host spoofing",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "https://ci.chromium.org@phish.example/"}},
+		},
+		{
+			name:    "userinfo on allowed host",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "https://user@ci.chromium.org/b/123"}},
+		},
+		{
+			name:    "non-standard port",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "https://ci.chromium.org:8443/b/123"}},
+		},
+		{
+			name:    "subdomain of allowed host",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "https://evil.ci.chromium.org/b/123"}},
+		},
+		{
+			name:    "suffix attack on allowed host",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "https://ci.chromium.org.evil.com/b/123"}},
+		},
+		{
+			name:    "broken standalone LED URL with empty host",
+			logDesc: &logpb.LogStreamDescriptor{Tags: map[string]string{viewer.LogDogViewerURLTag: "https:///build/0"}},
+		},
+	}
+
+	ftt.Run("viewerURL validation", t, func(t *ftt.Test) {
+		c, _ := ct.Install(t.Context())
+
+		renderHeader := func(data logData) string {
+			resp := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, "/logs/proj-foo/testing/+/foo/bar", nil).WithContext(c)
+			writeHTMLHeader(&router.Context{
+				Writer:  resp,
+				Request: req,
+			}, data)
+			return resp.Body.String()
+		}
+
+		for _, tc := range allowedCases {
+			t.Run("allows "+tc.name, func(t *ftt.Test) {
+				data := logData{
+					logDesc: &logpb.LogStreamDescriptor{
+						Tags: map[string]string{viewer.LogDogViewerURLTag: tc.raw},
+					},
+				}
+				assert.Loosely(t, data.viewerURL(), should.Equal(tc.want), truth.Explain("case %s", tc.name))
+
+				body := renderHeader(data)
+				assert.Loosely(t, body, should.ContainSubstring(fmt.Sprintf(`<a href="%s">Back to build</a>`, template.HTMLEscapeString(tc.want))))
+			})
+		}
+
+		for _, tc := range rejectedCases {
+			t.Run("rejects "+tc.name, func(t *ftt.Test) {
+				data := logData{logDesc: tc.logDesc}
+				assert.Loosely(t, data.viewerURL(), should.BeEmpty, truth.Explain("case %s", tc.name))
+
+				body := renderHeader(data)
+				assert.Loosely(t, strings.Contains(body, "Back to build"), should.BeFalse, truth.Explain("case %s should omit Back to build link", tc.name))
+			})
+		}
 	})
 }
