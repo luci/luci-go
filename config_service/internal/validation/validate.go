@@ -29,7 +29,6 @@ import (
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 
-	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
 )
 
@@ -41,8 +40,6 @@ type finder interface {
 
 // Validator validates config files backed Google Cloud Storage.
 type Validator struct {
-	// GsClient is used to talk Google Cloud Storage
-	GsClient clients.GsClient
 	// Finder is used to find the services that can validate a given config files.
 	Finder finder
 	// SelfRuleSet is the RuleSet that validates the configs against LUCI Config
@@ -64,6 +61,18 @@ type File interface {
 	// This is currently used to validate the configs LUCI Config itself is
 	// interested in and validate configs against legacy services.
 	GetRawContent(context.Context) ([]byte, error)
+
+	// GetURL returns a signed GCS URL to fetch the data.
+	GetURL(context.Context) (string, error)
+
+	// PutURL will be called once and should return a URL to PUT this object,
+	// if the object doesn't already exist in storage.
+	//
+	// This will also grab the generation number of the object as a side effect
+	// and save it for later [File.GetRawContent] calls.
+	//
+	// May return an error if not implemented.
+	PutURL(context.Context) (string, error)
 }
 
 // ensuring *model.File implements File interface
@@ -113,7 +122,6 @@ func (v *Validator) makeServiceValidators(ctx context.Context, cs config.Set, fi
 			if _, ok := svs[service.Name]; !ok {
 				svs[service.Name] = &serviceValidator{
 					service:     service,
-					gsClient:    v.GsClient,
 					selfRuleSet: v.SelfRuleSet,
 					cs:          cs,
 				}

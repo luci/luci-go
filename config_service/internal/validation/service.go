@@ -29,7 +29,6 @@ import (
 	"github.com/klauspost/compress/gzip"
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	cfgcommonpb "go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/config"
@@ -38,7 +37,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 
-	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
 )
@@ -47,7 +45,6 @@ import (
 // validate locally for config the service itself it is interested in.
 type serviceValidator struct {
 	service     *model.Service
-	gsClient    clients.GsClient
 	selfRuleSet *validation.RuleSet
 	cs          config.Set
 	files       []File
@@ -136,13 +133,13 @@ func (sv *serviceValidator) prepareRequest(ctx context.Context) (*cfgcommonpb.Va
 	// generates signed url for each file that will be included in the validation
 	// request. If a file will be validated against N services, N signed urls will
 	// be generated instead of one.
-	gsPaths := make([]gs.Path, len(sv.files))
-	for i, f := range sv.files {
-		gsPaths[i] = f.GetGSPath()
-	}
-	urls, err := clients.CreateSignedURLs(ctx, sv.gsClient, gsPaths, http.MethodGet, nil)
-	if err != nil {
-		return nil, err
+	urls := make([]string, len(sv.files))
+	for i := range urls {
+		var err error
+		urls[i], err = sv.files[i].GetURL(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 	req := &cfgcommonpb.ValidateConfigsRequest{
 		ConfigSet: string(sv.cs),

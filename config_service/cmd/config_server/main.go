@@ -82,7 +82,6 @@ func main() {
 		}
 		srv.RunInBackground("refresh-service-finder", serviceFinder.RefreshPeriodically)
 		validator := &validation.Validator{
-			GsClient:    gsClient,
 			Finder:      serviceFinder,
 			SelfRuleSet: &cfgValidation.Rules,
 		}

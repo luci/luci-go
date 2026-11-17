@@ -210,16 +210,32 @@ func TestGetRawContent(t *testing.T) {
 	})
 }
 
-func TestFileInvalidGzip(t *testing.T) {
+func TestFileURLAndInvalidGzip(t *testing.T) {
 	t.Parallel()
 
 	ctx := memory.UseWithAppID(t.Context(), "dev~app-id")
+	ctl := gomock.NewController(t)
+	mockGsClient := clients.NewMockGsClient(ctl)
+	ctx = clients.WithGsClient(ctx, mockGsClient)
+
 	file := &model.File{
 		Path:    "file",
 		Content: []byte("not valid gzip"),
+		GcsURI:  gs.MakePath("test-bucket", "test-object"),
 	}
 	_, err := file.GetRawContent(ctx)
 	assert.ErrIsLike(t, err, "gzip: invalid header")
+
+	sdh := clients.NewMockServiceDataHandle(ctl)
+	sdh.EXPECT().GetURL(gomock.Any()).Return("https://example.com/signed", nil)
+	mockGsClient.EXPECT().ServiceDataHandle(gomock.Eq("test-bucket"), gomock.Eq("test-object")).Return(sdh)
+
+	u, err := file.GetURL(ctx)
+	assert.NoErr(t, err)
+	assert.That(t, u, should.Equal("https://example.com/signed"))
+
+	_, err = file.PutURL(ctx)
+	assert.ErrIsLike(t, err, "model.File: PutURL not supported")
 }
 
 func gzipCompress(b []byte) ([]byte, error) {

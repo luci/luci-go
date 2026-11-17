@@ -23,6 +23,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -167,14 +168,33 @@ func checkFileHash(fileHash *configpb.ValidateConfigsRequest_FileHash) error {
 // validationFile implements `validation.File` interface
 type validationFile struct {
 	path   string
-	gsPath gs.Path
+	bucket string
+	object string
+
+	mu     sync.Mutex
+	handle clients.UserDataHandle
 }
 
+var _ validation.File = (*validationFile)(nil)
+
 // GetPath returns the relative config file path from the configuration root.
-func (vf validationFile) GetPath() string { return vf.path }
+func (vf *validationFile) GetPath() string { return vf.path }
 
 // GetGSPath returns the Google Storage path to the content of the config.
-func (vf validationFile) GetGSPath() gs.Path { return vf.gsPath }
+func (vf *validationFile) GetGSPath() gs.Path { return gs.MakePath(vf.bucket, vf.object) }
+
+func (vf *validationFile) ensureHandle(ctx context.Context) (clients.UserDataHandle, error) {
+	vf.mu.Lock()
+	defer vf.mu.Unlock()
+	if vf.handle == nil {
+		handle, err := clients.GetGsClient(ctx).UserDataHandle(ctx, vf.bucket, vf.object)
+		if err != nil {
+			return nil, err
+		}
+		vf.handle = handle
+	}
+	return vf.handle, nil
+}
 
 // GetRawContent downloads the content from gcs and returns uncompressed
 // content.
@@ -182,9 +202,33 @@ func (vf validationFile) GetGSPath() gs.Path { return vf.gsPath }
 // The existing validation protocol explicitly asked the client to upload
 // compressed config to Google Storage so we should expect the data returned
 // from GS should be uncompressed fine.
-func (vf validationFile) GetRawContent(ctx context.Context) ([]byte, error) {
-	bucket, object := vf.gsPath.Split()
-	return clients.GetGsClient(ctx).Read(ctx, bucket, object)
+func (vf *validationFile) GetRawContent(ctx context.Context) ([]byte, error) {
+	hnd, err := vf.ensureHandle(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return hnd.Read(ctx)
+}
+
+func (vf *validationFile) PutURL(ctx context.Context) (string, error) {
+	hnd, err := vf.ensureHandle(ctx)
+	if err != nil {
+		return "", err
+	}
+	// NOTE: validation.File.PutURL specifically should return "" instead of an
+	// error when the file already exists.
+	if hnd.Exists() {
+		return "", nil
+	}
+	return hnd.PutURL(ctx)
+}
+
+func (vf *validationFile) GetURL(ctx context.Context) (string, error) {
+	hnd, err := vf.ensureHandle(ctx)
+	if err != nil {
+		return "", err
+	}
+	return hnd.GetURL(ctx)
 }
 
 // makeValidationFiles creates a `validationFile` for each file_hash in the
@@ -205,18 +249,21 @@ func (c Configs) makeValidationFiles(requesterID identity.Identity, fhs []*confi
 	// bucket.
 	h := sha256.New()
 	h.Write([]byte(requesterID))
-	objectParts := []string{
+	objectParts := path.Join(
 		common.GSValidationCfgFolder,
 		"users",
 		hex.EncodeToString(h.Sum(nil)),
 		"configs",
 		"sha256",
-	}
+	)
+	vFiles := make([]validationFile, len(fhs))
 	for i, fh := range fhs {
-		ret[i] = validationFile{
+		vFiles[i] = validationFile{
 			path:   fh.GetPath(),
-			gsPath: gs.MakePath(c.GSValidationBucket, append(objectParts, fh.GetSha256())...),
+			bucket: c.GSValidationBucket,
+			object: path.Join(objectParts, strings.ToLower(fh.GetSha256())),
 		}
+		ret[i] = &vFiles[i]
 	}
 	return ret
 }

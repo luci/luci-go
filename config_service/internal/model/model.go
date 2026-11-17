@@ -166,6 +166,14 @@ func (f *File) GetRawContent(ctx context.Context) ([]byte, error) {
 	return f.rawContent, nil
 }
 
+func (f *File) GetURL(ctx context.Context) (string, error) {
+	return clients.GetGsClient(ctx).ServiceDataHandle(f.GcsURI.Bucket(), f.GcsURI.Filename()).GetURL(ctx)
+}
+
+func (f *File) PutURL(ctx context.Context) (string, error) {
+	return "", fmt.Errorf("model.File: PutURL not supported")
+}
+
 // LoadSelfConfig reads one of LUCI Config's own config files and parses it as
 // the given message type.
 //

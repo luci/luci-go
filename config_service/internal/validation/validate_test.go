@@ -27,8 +27,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"cloud.google.com/go/storage"
-	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/klauspost/compress/gzip"
 	"google.golang.org/grpc/codes"
@@ -46,7 +44,6 @@ import (
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth/authtest"
 
-	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/testutil"
 )
@@ -95,9 +92,13 @@ func (m *mockFinder) FindInterestedServices(_ context.Context, _ config.Set, fil
 }
 
 type testFile struct {
-	path    string
-	gsPath  gs.Path
-	content []byte
+	path      string
+	gsPath    gs.Path
+	content   []byte
+	signedURL string
+	getErr    error
+	putURL    string
+	putErr    error
 }
 
 func (tf testFile) GetPath() string {
@@ -112,6 +113,14 @@ func (tf testFile) GetRawContent(context.Context) ([]byte, error) {
 	return tf.content, nil
 }
 
+func (tf testFile) GetURL(context.Context) (string, error) {
+	return tf.signedURL, tf.getErr
+}
+
+func (tf testFile) PutURL(context.Context) (string, error) {
+	return tf.putURL, tf.putErr
+}
+
 var _ File = testFile{} // ensure testFile implements File interface.
 
 func TestValidate(t *testing.T) {
@@ -120,12 +129,9 @@ func TestValidate(t *testing.T) {
 	ftt.Run("Validate", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctx = authtest.MockAuthConfig(ctx)
-		ctl := gomock.NewController(t)
-		mockGsClient := clients.NewMockGsClient(ctl)
 		finder := &mockFinder{}
 		v := &Validator{
-			GsClient: mockGsClient,
-			Finder:   finder,
+			Finder: finder,
 		}
 
 		t.Run("Single File", func(t *ftt.Test) {
@@ -144,20 +150,7 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{}))
 			})
 			t.Run("Validate", func(t *ftt.Test) {
-				const singedURL = "https://example.com/signed"
-				var recordedOpts *storage.SignedURLOptions
-				expect := func() {
-					mockGsClient.EXPECT().SignedURL(
-						gomock.Eq("test-bucket"),
-						gomock.Eq("test-obj"),
-						gomock.AssignableToTypeOf(recordedOpts),
-					).DoAndReturn(
-						func(_, _ string, opts *storage.SignedURLOptions) (string, error) {
-							recordedOpts = opts
-							return singedURL, nil
-						},
-					)
-				}
+				const signedURL = "https://example.com/signed"
 				finder.mapping = map[string][]*model.Service{
 					filePath: {
 						{
@@ -170,9 +163,8 @@ func TestValidate(t *testing.T) {
 					},
 				}
 				t.Run("Success", func(t *ftt.Test) {
-					expect()
 					srv.fileToExpectedURL = map[string]string{
-						filePath: singedURL,
+						filePath: signedURL,
 					}
 					srv.fileToValidationMsgs = map[string][]*cfgcommonpb.ValidationResult_Message{
 						filePath: {
@@ -185,7 +177,7 @@ func TestValidate(t *testing.T) {
 					}
 
 					res, err := v.Validate(ctx, cs, []File{
-						testFile{path: filePath, gsPath: gs.MakePath("test-bucket", "test-obj")},
+						testFile{path: filePath, gsPath: gs.MakePath("test-bucket", "test-obj"), signedURL: signedURL},
 					})
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, res, should.Match(&cfgcommonpb.ValidationResult{
@@ -197,15 +189,12 @@ func TestValidate(t *testing.T) {
 							},
 						},
 					}))
-					assert.Loosely(t, recordedOpts.Method, should.Equal(http.MethodGet))
-					assert.Loosely(t, recordedOpts.Headers, should.BeEmpty)
 				})
 				t.Run("Error", func(t *ftt.Test) {
-					expect()
 					srv.err = status.Errorf(codes.Internal, "internal server error")
 
 					res, err := v.Validate(ctx, cs, []File{
-						testFile{path: filePath, gsPath: gs.MakePath("test-bucket", "test-obj")},
+						testFile{path: filePath, gsPath: gs.MakePath("test-bucket", "test-obj"), signedURL: signedURL},
 					})
 					assert.Loosely(t, err, should.ErrLike("failed to validate configs against service \"my-service\""))
 					assert.Loosely(t, res, should.BeNil)
@@ -276,20 +265,24 @@ func TestValidate(t *testing.T) {
 			//  file c: validated by bar, bar returns 1 warning and 1 error.
 			//  file d: no service can validate file d
 			fileA := testFile{
-				path:   "a.cfg",
-				gsPath: gs.MakePath("test-bucket", "test-object-a"),
+				path:      "a.cfg",
+				gsPath:    gs.MakePath("test-bucket", "test-object-a"),
+				signedURL: "https://example.com/signed/test-bucket/test-object-a",
 			}
 			fileB := testFile{
-				path:   "b.cfg",
-				gsPath: gs.MakePath("test-bucket", "test-object-b"),
+				path:      "b.cfg",
+				gsPath:    gs.MakePath("test-bucket", "test-object-b"),
+				signedURL: "https://example.com/signed/test-bucket/test-object-b",
 			}
 			fileC := testFile{
-				path:   "c.cfg",
-				gsPath: gs.MakePath("test-bucket", "test-object-c"),
+				path:      "c.cfg",
+				gsPath:    gs.MakePath("test-bucket", "test-object-c"),
+				signedURL: "https://example.com/signed/test-bucket/test-object-c",
 			}
 			fileD := testFile{
-				path:   "d.cfg",
-				gsPath: gs.MakePath("test-bucket", "test-object-d"),
+				path:      "d.cfg",
+				gsPath:    gs.MakePath("test-bucket", "test-object-d"),
+				signedURL: "https://example.com/signed/test-bucket/test-object-d",
 			}
 
 			testServerFoo := &prpctest.Server{}
@@ -318,17 +311,6 @@ func TestValidate(t *testing.T) {
 					Hostname: testServerBar.Host,
 				},
 			}
-
-			const signedURLPrefix = "https://example.com/signed"
-			mockGsClient.EXPECT().SignedURL(
-				gomock.Eq("test-bucket"),
-				gomock.Any(),
-				gomock.Any(),
-			).DoAndReturn(
-				func(bucket, object string, _ *storage.SignedURLOptions) (string, error) {
-					return fmt.Sprintf("%s/%s/%s", signedURLPrefix, bucket, object), nil
-				},
-			).AnyTimes()
 
 			finder.mapping = map[string][]*model.Service{
 				fileA.path: {serviceFoo, serviceBar},
@@ -413,12 +395,9 @@ func TestValidateLegacy(t *testing.T) {
 	ftt.Run("Validate using legacy protocol", t, func(t *ftt.Test) {
 		ctx := testutil.SetupContext()
 		ctx = authtest.MockAuthConfig(ctx)
-		ctl := gomock.NewController(t)
-		mockGsClient := clients.NewMockGsClient(ctl)
 		finder := &mockFinder{}
 		v := &Validator{
-			GsClient: mockGsClient,
-			Finder:   finder,
+			Finder: finder,
 		}
 
 		var srvResponse []byte
@@ -621,4 +600,44 @@ func TestValidateLegacy(t *testing.T) {
 			assert.Loosely(t, res, should.BeNil)
 		})
 	})
+}
+
+func TestValidateGetURLError(t *testing.T) {
+	t.Parallel()
+
+	ctx := testutil.SetupContext()
+	ctx = authtest.MockAuthConfig(ctx)
+	cs := config.MustProjectSet("my-project")
+	const filePath = "sub/foo.cfg"
+
+	ts := &prpctest.Server{}
+	cfgcommonpb.RegisterConsumerServer(ts, &testConsumerServer{})
+	ts.Start(ctx)
+	defer ts.Close()
+
+	v := &Validator{
+		Finder: &mockFinder{
+			mapping: map[string][]*model.Service{
+				filePath: {
+					{
+						Name: "my-service",
+						Info: &cfgcommonpb.Service{
+							Id:       "my-service",
+							Hostname: ts.Host,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	res, err := v.Validate(ctx, cs, []File{
+		testFile{
+			path:   filePath,
+			gsPath: gs.MakePath("test-bucket", "test-obj"),
+			getErr: errors.New("get url error"),
+		},
+	})
+	assert.ErrIsLike(t, err, "get url error")
+	assert.That(t, res == nil, should.BeTrue)
 }

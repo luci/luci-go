@@ -19,9 +19,14 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"path"
+	"strings"
+	"sync"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -40,6 +45,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	"go.chromium.org/luci/config_service/internal/clients"
 	"go.chromium.org/luci/config_service/internal/common"
 	"go.chromium.org/luci/config_service/internal/model"
 	"go.chromium.org/luci/config_service/internal/validation"
@@ -49,6 +55,7 @@ import (
 
 func init() {
 	registry.RegisterCmpOption(cmp.AllowUnexported(validationFile{}))
+	registry.RegisterCmpOption(cmpopts.IgnoreUnexported(sync.Mutex{}))
 }
 
 type mockValidator struct {
@@ -231,13 +238,16 @@ func TestValidate(t *testing.T) {
 			mv.examineResult = &validation.ExamineResult{} //passed
 			assert.Loosely(t, mv.examineResult.Passed(), should.BeTrue)
 			mv.validateResult = vr
-			res, err := c.ValidateConfigs(ctx, validateRequest)
+			req := proto.Clone(validateRequest).(*configpb.ValidateConfigsRequest)
+			req.FileHashes[0].Sha256 = strings.ToUpper(fileSHA256)
+			res, err := c.ValidateConfigs(ctx, req)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, res, should.Match(vr))
 			expectedValidationFiles := []validation.File{
-				validationFile{
+				&validationFile{
 					path:   filePath,
-					gsPath: gs.MakePath("test-bucket", "validation", "users", userHash, "configs", "sha256", fileSHA256),
+					bucket: "test-bucket",
+					object: path.Join("validation", "users", userHash, "configs", "sha256", fileSHA256),
 				},
 			}
 			assert.Loosely(t, mv.recordedExamineFiles, should.Match(expectedValidationFiles))
@@ -254,9 +264,10 @@ func TestValidate(t *testing.T) {
 
 		t.Run("Doesn't pass examination", func(t *ftt.Test) {
 			t.Run("Require uploading file", func(t *ftt.Test) {
-				vf := validationFile{
+				vf := &validationFile{
 					path:   filePath,
-					gsPath: gs.MakePath("test-bucket", "validation", "users", userHash, "configs", "sha256", fileSHA256),
+					bucket: "test-bucket",
+					object: path.Join("validation", "users", userHash, "configs", "sha256", fileSHA256),
 				}
 				mv.examineResult = &validation.ExamineResult{
 					MissingFiles: []struct {
@@ -290,9 +301,10 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, mv.recordedExamineFiles, should.Match([]validation.File{vf}))
 			})
 			t.Run("Unvalidatable file", func(t *ftt.Test) {
-				vf := validationFile{
+				vf := &validationFile{
 					path:   filePath,
-					gsPath: gs.MakePath("test-bucket", "validation", "users", userHash, "configs", "sha256", fileSHA256),
+					bucket: "test-bucket",
+					object: path.Join("validation", "users", userHash, "configs", "sha256", fileSHA256),
 				}
 				mv.examineResult = &validation.ExamineResult{
 					UnvalidatableFiles: []validation.File{vf},
@@ -312,5 +324,85 @@ func TestValidate(t *testing.T) {
 				assert.Loosely(t, mv.recordedExamineFiles, should.Match([]validation.File{vf}))
 			})
 		})
+	})
+}
+
+func TestValidationFile(t *testing.T) {
+	t.Parallel()
+
+	t.Run("existing object", func(t *testing.T) {
+		t.Parallel()
+		ctx := testutil.SetupContext()
+		ctl := gomock.NewController(t)
+		mockGsClient := clients.NewMockGsClient(ctl)
+		ctx = clients.WithGsClient(ctx, mockGsClient)
+
+		vf := &validationFile{
+			path:   "sub/foo.cfg",
+			bucket: "test-bucket",
+			object: "validation/users/abc/configs/sha256/deadbeef",
+		}
+		assert.That(t, vf.GetPath(), should.Equal("sub/foo.cfg"))
+		assert.That(t, vf.GetGSPath(), should.Equal(gs.MakePath("test-bucket", "validation/users/abc/configs/sha256/deadbeef")))
+
+		udh := clients.NewMockUserDataHandle(ctl)
+		mockGsClient.EXPECT().UserDataHandle(gomock.Any(), "test-bucket", "validation/users/abc/configs/sha256/deadbeef").Return(udh, nil).Times(1)
+		udh.EXPECT().Exists().Return(true)
+		udh.EXPECT().GetURL(gomock.Any()).Return("https://example.com/get", nil)
+		udh.EXPECT().Read(gomock.Any()).Return([]byte("raw content"), nil)
+
+		putURL, err := vf.PutURL(ctx)
+		assert.NoErr(t, err)
+		assert.That(t, putURL, should.Equal(""))
+
+		getURL, err := vf.GetURL(ctx)
+		assert.NoErr(t, err)
+		assert.That(t, getURL, should.Equal("https://example.com/get"))
+
+		raw, err := vf.GetRawContent(ctx)
+		assert.NoErr(t, err)
+		assert.That(t, raw, should.Match([]byte("raw content")))
+	})
+
+	t.Run("missing object", func(t *testing.T) {
+		t.Parallel()
+		ctx := testutil.SetupContext()
+		ctl := gomock.NewController(t)
+		mockGsClient := clients.NewMockGsClient(ctl)
+		ctx = clients.WithGsClient(ctx, mockGsClient)
+
+		vf := &validationFile{
+			path:   "sub/foo.cfg",
+			bucket: "test-bucket",
+			object: "validation/users/abc/configs/sha256/deadbeef",
+		}
+
+		udh := clients.NewMockUserDataHandle(ctl)
+		mockGsClient.EXPECT().UserDataHandle(gomock.Any(), "test-bucket", "validation/users/abc/configs/sha256/deadbeef").Return(udh, nil).Times(1)
+		udh.EXPECT().Exists().Return(false)
+		udh.EXPECT().PutURL(gomock.Any()).Return("https://example.com/put", nil)
+
+		putURL, err := vf.PutURL(ctx)
+		assert.NoErr(t, err)
+		assert.That(t, putURL, should.Equal("https://example.com/put"))
+	})
+
+	t.Run("UserDataHandle error", func(t *testing.T) {
+		t.Parallel()
+		ctx := testutil.SetupContext()
+		ctl := gomock.NewController(t)
+		mockGsClient := clients.NewMockGsClient(ctl)
+		ctx = clients.WithGsClient(ctx, mockGsClient)
+
+		vf := &validationFile{
+			path:   "sub/foo.cfg",
+			bucket: "test-bucket",
+			object: "validation/users/abc/configs/sha256/deadbeef",
+		}
+
+		mockGsClient.EXPECT().UserDataHandle(gomock.Any(), "test-bucket", "validation/users/abc/configs/sha256/deadbeef").Return(nil, errors.New("handle error"))
+
+		_, err := vf.PutURL(ctx)
+		assert.ErrIsLike(t, err, "handle error")
 	})
 }

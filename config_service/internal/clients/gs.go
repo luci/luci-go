@@ -35,7 +35,6 @@ import (
 
 	"go.chromium.org/luci/auth/scopes"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -70,19 +69,6 @@ type GsClient interface {
 	//
 	// Returns true, if the upload occurred.
 	UploadIfMissing(ctx context.Context, bucket, object string, data []byte, attrsModifyFn func(*storage.ObjectAttrs)) (bool, error)
-
-	// Read reads and gunzips data from the given bucket-to-object path.
-	//
-	// May return an error wrapping [ErrTooLarge] or [ErrInvalidGzip].
-	Read(ctx context.Context, bucket, object string) ([]byte, error)
-
-	// Touch updates the 'custom time' of the object to the current timestamp.
-	//
-	// Returns storage.ErrObjectNotExist if object is not found.
-	Touch(ctx context.Context, bucket, object string) error
-
-	// SignedURL is used to generate a signed url for a given GCS object.
-	SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error)
 
 	// UserDataHandle handles the lifecycle of data pushed from a client during
 	// the verification flow.
@@ -300,66 +286,6 @@ func (p *prodClient) UserDataHandle(ctx context.Context, bucket, object string) 
 	return
 }
 
-// Read reads and gunzips data from the given bucket-to-object path.
-func (p *prodClient) Read(ctx context.Context, bucket, object string) (ret []byte, err error) {
-	r, err := newReader(ctx, p.client.Bucket(bucket).Object(object))
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-	return io.ReadAll(r)
-}
-
-// Touch updates the custom time of the object to the current timestamp.
-//
-// Returns storage.ErrObjectNotExist if object is not found.
-func (p *prodClient) Touch(ctx context.Context, bucket, object string) error {
-	obj := p.client.Bucket(bucket).Object(object)
-	err := retry.Retry(ctx, transient.Only(retry.Default),
-		func() error {
-			attr, err := obj.Attrs(ctx)
-			switch {
-			case err != nil:
-				return err
-			case !attr.CustomTime.IsZero() && clock.Now(ctx).Sub(attr.CustomTime) < 10*time.Minute:
-				// If custom time is updated within last 10 minute, then skip updating.
-				return nil
-			}
-			// Conditionally update the storage metadata and retry on pre-condition
-			// failure. This is to mitigate the concurrent modification error occurs
-			// when the same requester sends multiple validation requests that contain
-			// the exact same config file. As a request, all the request processors
-			// will contend to update the metadata of the same object.
-			_, err = obj.
-				If(storage.Conditions{MetagenerationMatch: attr.Metageneration}).
-				Update(ctx, storage.ObjectAttrsToUpdate{
-					CustomTime: clock.Now(ctx).UTC(),
-				})
-			if apiErr, ok := errors.AsType[*googleapi.Error](err); ok {
-				switch apiErr.Code {
-				case http.StatusConflict, http.StatusPreconditionFailed:
-					// Tag precondition fail and conflict as transient to trigger a retry.
-					return transient.Tag.Apply(err)
-				}
-			}
-			return err
-		}, func(err error, d time.Duration) {
-			logging.Warningf(ctx, "got err: %s when touching the object. Retrying in %s", err, d)
-		})
-	return err
-}
-
-// SignedURL is used to generate a signed url for a given GCS object.
-func (p *prodClient) SignedURL(bucket, object string, opts *storage.SignedURLOptions) (string, error) {
-	// Use https://pkg.go.dev/cloud.google.com/go/storage#BucketHandle.SignedURL
-	// to generate the signed URL.
-	url, err := p.client.Bucket(bucket).SignedURL(object, opts)
-	if err != nil {
-		return "", err
-	}
-	return url, nil
-}
-
 func (p *prodClient) ServiceDataHandle(bucket, object string) ServiceDataHandle {
 	return &prodServiceHandle{p.client.Bucket(bucket), object, -1}
 }
@@ -401,24 +327,4 @@ func getSignedURLOptions(ctx context.Context, method string, generation int64, h
 		Headers:         hdrs,
 		QueryParameters: qParms,
 	}, nil
-}
-
-// CreateSignedURLs create signed urls for the given GS paths.
-//
-// Uses the service account the service currently runs as to authorize
-// and sign the urls.
-func CreateSignedURLs(ctx context.Context, gsClient GsClient, paths []gs.Path, method string, headers map[string]string) ([]string, error) {
-	opts, err := getSignedURLOptions(ctx, method, -1, headers)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]string, len(paths))
-	for i, path := range paths {
-		bucket, object := path.Split()
-		ret[i], err = gsClient.SignedURL(bucket, object, opts)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ret, nil
 }

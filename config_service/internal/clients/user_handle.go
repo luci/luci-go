@@ -78,7 +78,7 @@ func (p *prodUserHandle) PutURL(ctx context.Context) (string, error) {
 	if p.Exists() {
 		return "", fmt.Errorf("GsClient.UserDataHandle.PutURL: cannot mint PUT url for object gs://%s/%s: object exists", p.bucket.BucketName(), p.object)
 	}
-	opts, err := getSignedURLOptions(ctx, "PUT", -1, map[string]string{
+	opts, err := getSignedURLOptions(ctx, http.MethodPut, -1, map[string]string{
 		"Content-Encoding":            "gzip",
 		"x-goog-content-length-range": fmt.Sprintf("0,%d", common.ConfigMaxSize),
 	})

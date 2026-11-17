@@ -16,22 +16,13 @@ package validation
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 	"sync"
 
-	"cloud.google.com/go/storage"
 	"golang.org/x/sync/errgroup"
 
-	"go.chromium.org/luci/common/gcloud/gs"
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
-
-	"go.chromium.org/luci/config_service/internal/clients"
-	"go.chromium.org/luci/config_service/internal/common"
 )
 
 // ExamineResult is the result of `Examine` method.
@@ -44,6 +35,7 @@ type ExamineResult struct {
 		File      File
 		SignedURL string
 	}
+
 	// UnvalidatableFiles are files that no service can validate.
 	//
 	// Those files SHOULD not be included in the validation request.
@@ -54,11 +46,6 @@ type ExamineResult struct {
 // proceed to `Validate`.
 func (er *ExamineResult) Passed() bool {
 	return er == nil || (len(er.MissingFiles) == 0 && len(er.UnvalidatableFiles) == 0)
-}
-
-var signedPutHeaders = map[string]string{
-	"Content-Encoding":            "gzip",
-	"x-goog-content-length-range": fmt.Sprintf("0,%d", common.ConfigMaxSize),
 }
 
 // Examine examines the configs files to ensure successful validation.
@@ -77,34 +64,20 @@ func (v *Validator) Examine(ctx context.Context, cs config.Set, files []File) (*
 				return nil
 			}
 
-			bucket, object := file.GetGSPath().Split()
-			switch err := v.GsClient.Touch(ectx, bucket, object); {
-			case errors.Is(err, context.Canceled):
-				logging.Warningf(ctx, "touching config file %q is cancelled", file.GetPath())
+			putURL, err := file.PutURL(ectx)
+			if err != nil {
 				return err
-			case errors.Is(err, storage.ErrObjectNotExist):
-				urls, err := clients.CreateSignedURLs(ectx, v.GsClient, []gs.Path{file.GetGSPath()}, http.MethodPut, signedPutHeaders)
-				switch {
-				case errors.Is(err, context.Canceled):
-					logging.Warningf(ctx, "creating signed url for GS path %q is cancelled", file.GetGSPath())
-					return err
-				case err != nil:
-					logging.Errorf(ctx, "failed to create signed url for GS path %q: %s", file.GetGSPath(), err)
-					return err
-				}
+			}
+			if putURL != "" {
 				mu.Lock()
 				ret.MissingFiles = append(ret.MissingFiles, struct {
 					File      File
 					SignedURL string
-				}{File: file, SignedURL: urls[0]})
+				}{File: file, SignedURL: putURL})
 				mu.Unlock()
-				return nil
-			case err != nil:
-				logging.Errorf(ctx, "failed to touch config file %q: %s", file.GetPath(), err)
-				return err
-			default:
-				return nil // file ready for validation.
 			}
+
+			return nil // file ready for validation.
 		})
 	}
 	if err := eg.Wait(); err != nil {
