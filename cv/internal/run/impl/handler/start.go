@@ -142,9 +142,18 @@ func (impl *Impl) Start(ctx context.Context, rs *state.RunState) (*Result, error
 			rs.QuotaDebited = true
 			rs.LogInfof(ctx, logEntryLabelRunQuotaBalanceMessage, "Run quota debited from %s; balance: %d", rs.Run.BilledTo.Email(), quotaOp.GetNewBalance())
 		case errors.Is(err, quota.ErrQuotaApply) && quotaOp.GetStatus() == quotapb.OpResult_ERR_UNDERFLOW:
-			// run quota isn't currently available for the user; leave the run in pending.
-			logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.BilledTo.Email(), rs.Run.ID)
-			return postPendingCommentOnCLs(ctx, rs, pendingMsg, userLimit, runCLs)
+			// Run quota isn't currently available for BilledTo.
+			// Try to rescue the run using an alternative authorized CQ+2 voter
+			// who has available quota.
+			rescued, err := impl.tryRescueWithAlternativePayer(ctx, rs, cls, cg)
+			if err != nil {
+				return nil, err
+			}
+			if !rescued {
+				// run quota isn't currently available for the user; leave the run in pending.
+				logging.Debugf(ctx, "Run quota underflow for %s; leaving the run %s pending", rs.Run.BilledTo.Email(), rs.Run.ID)
+				return postPendingCommentOnCLs(ctx, rs, pendingMsg, userLimit, runCLs)
+			}
 		case errors.Is(err, quota.ErrQuotaApply):
 			return nil, transient.Tag.Apply(errors.Fmt("QM.DebitRunQuota: unexpected quotaOp Status %s: %w", quotaOp.GetStatus(), err))
 		case err != nil:

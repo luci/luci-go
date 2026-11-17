@@ -151,8 +151,20 @@ func (impl *Impl) OnCLsUpdated(ctx context.Context, rs *state.RunState, clids co
 		allRunCLs = append(allRunCLs, remainingRunCLs...)
 		allCLs = append(allCLs, remainingCLs...)
 	}
-	if _, err := checkRunCreate(ctx, impl.GFactory, rs, cg, allRunCLs, allCLs); err != nil {
+	ok, err := checkRunCreate(ctx, impl.GFactory, rs, cg, allRunCLs, allCLs)
+	if err != nil {
 		return nil, err
+	}
+	// A PENDING FULL_RUN may be blocked on the run quota of its payer. A new
+	// CQ+2 vote from another principal may allow the Run to start by billing
+	// that principal instead (see tryRescueWithAlternativePayer). Retry Start.
+	if ok && rs.Status == run.Status_PENDING && rs.Mode == run.FullRun && hasNewCQVote(runCLs, cls) {
+		return &Result{
+			State: rs,
+			SideEffectFn: func(ctx context.Context) error {
+				return impl.RM.Start(ctx, rs.ID)
+			},
+		}, nil
 	}
 	return &Result{State: rs}, nil
 }
@@ -199,4 +211,30 @@ func shouldCancel(ctx context.Context, cl *changelist.CL, rcl *run.RunCL, cg *pr
 		}
 	}
 	return time.Time{}, ""
+}
+
+// hasNewCQVote returns whether any of the given CLs has an active FULL_RUN
+// Commit-Queue voter (see trigger.FullRunVoters) that was not an active FULL_RUN
+// voter when the Run was created.
+func hasNewCQVote(runCLs []*run.RunCL, cls []*changelist.CL) bool {
+	clMap := make(map[common.CLID]*changelist.CL, len(cls))
+	for _, cl := range cls {
+		clMap[cl.ID] = cl
+	}
+	for _, rcl := range runCLs {
+		cl := clMap[rcl.ID]
+		if cl == nil || cl.Snapshot == nil {
+			continue
+		}
+		oldVoters := make(map[int64]struct{})
+		for _, a := range trigger.FullRunVoters(rcl.Detail.GetGerrit().GetInfo()) {
+			oldVoters[a.GetUser().GetAccountId()] = struct{}{}
+		}
+		for _, a := range trigger.FullRunVoters(cl.Snapshot.GetGerrit().GetInfo()) {
+			if _, existed := oldVoters[a.GetUser().GetAccountId()]; !existed {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -208,6 +208,36 @@ func TestOnCLsUpdated(t *testing.T) {
 				assert.Loosely(t, res.PreserveEvents, should.BeTrue)
 			})
 
+			t.Run("Wakes up PENDING run when a new CQ+2 vote is added", func(t *ftt.Test) {
+				rs.Status = run.Status_PENDING
+				rs.Mode = run.FullRun
+				ciWithBot := proto.Clone(ci1).(*gerritpb.ChangeInfo)
+				ciWithBot.Labels[trigger.CQLabelName].All = append(ciWithBot.Labels[trigger.CQLabelName].All, &gerritpb.ApprovalInfo{
+					User:  gf.U("user-2"),
+					Value: 2,
+					Date:  timestamppb.New(triggerTime.Add(1 * time.Minute)),
+				})
+				updateCL(1, ciWithBot, aplConfigOK, accessOK)
+
+				res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
+				assert.NoErr(t, err)
+				assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+
+				t.Run("unless the Run is not a FULL_RUN", func(t *ftt.Test) {
+					rs.Mode = run.DryRun
+					res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
+					assert.NoErr(t, err)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				})
+
+				t.Run("unless no new CQ+2 vote is added", func(t *ftt.Test) {
+					updateCL(1, ci1, aplConfigOK, accessOK)
+					res, err := h.OnCLsUpdated(ctx, rs, common.CLIDs{1})
+					assert.NoErr(t, err)
+					assert.Loosely(t, res.SideEffectFn, should.BeNil)
+				})
+			})
+
 			t.Run("Preserve events for if trigger reset is ongoing", func(t *ftt.Test) {
 				rs.OngoingLongOps = &run.OngoingLongOps{
 					Ops: map[string]*run.OngoingLongOps_Op{

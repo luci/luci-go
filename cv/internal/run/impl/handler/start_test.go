@@ -15,6 +15,8 @@
 package handler
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -27,6 +29,7 @@ import (
 	bbutil "go.chromium.org/luci/buildbucket/protoutil"
 	"go.chromium.org/luci/common/clock"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -41,7 +44,9 @@ import (
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/cvtesting"
 	"go.chromium.org/luci/cv/internal/gerrit"
+	"go.chromium.org/luci/cv/internal/gerrit/botdata"
 	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/metrics"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/eventpb"
@@ -248,6 +253,242 @@ func TestStart(t *testing.T) {
 					Message: fmt.Sprintf("User %s has exhausted their run quota. This run will start once the quota balance has recovered.\n\nfoo bar.", rs.Run.BilledTo.Email()),
 				}))
 			})
+		})
+
+		t.Run("Quota exhausted FULL_RUN with alternative CQ+2 voters", func(t *ftt.Test) {
+			rs.Mode = run.FullRun
+			// Turn every CL into a FULL_RUN triggered by the owner.
+			setFullRunVotes := func(id common.CLID, extra ...*gerritpb.ApprovalInfo) {
+				cl := &changelist.CL{ID: id}
+				rcl := &run.RunCL{ID: id, Run: datastore.MakeKey(ctx, common.RunKind, string(rs.ID))}
+				assert.NoErr(t, datastore.Get(ctx, cl, rcl))
+				ci := cl.Snapshot.GetGerrit().GetInfo()
+				gf.CQ(+2, rs.CreateTime, gf.U(triggerer))(ci)
+				gf.Approve()(ci) // FULL_RUN requires a submittable CL.
+				ci.Labels[trigger.CQLabelName].All = append(ci.Labels[trigger.CQLabelName].All, extra...)
+				rcl.Trigger.Mode = string(run.FullRun)
+				assert.NoErr(t, datastore.Put(ctx, cl, rcl))
+			}
+			setFullRunVotes(1)
+			// The Run is billed to its triggerer, as CV does for FULL_RUNs.
+			payerEmail := gf.U(triggerer).Email
+			rs.BilledTo = makeIdentity(payerEmail)
+
+			const (
+				bot   = "user-50" // user-50@example.com, account 50
+				human = "user-60" // user-60@example.com, account 60
+			)
+			botEmail := gf.U(bot).Email
+			for _, u := range []string{bot, human} {
+				ct.AddMember(u, committers)
+				ct.GFake.AddLinkedAccountMapping([]*gerritpb.EmailInfo{{Email: gf.U(u).Email}})
+			}
+			vote := func(user string) *gerritpb.ApprovalInfo {
+				return &gerritpb.ApprovalInfo{
+					User:  gf.U(user),
+					Value: 2,
+					Date:  timestamppb.New(rs.CreateTime.Add(time.Minute)),
+				}
+			}
+
+			// The original payer has exhausted their run quota.
+			deps.qm.debitRunQuotaFn = func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+				return &quotapb.OpResult{Status: quotapb.OpResult_ERR_UNDERFLOW},
+					&cfgpb.UserLimit{Run: &cfgpb.UserLimit_Run{}}, quota.ErrQuotaApply
+			}
+			// Everyone else has quota.
+			deps.qm.debitAltFn = func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+				return &quotapb.OpResult{Status: quotapb.OpResult_SUCCESS, NewBalance: 7}, &cfgpb.UserLimit{}, nil
+			}
+
+			assertPending := func(t testing.TB, res *Result) {
+				t.Helper()
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+				assert.Loosely(t, res.State.BilledTo.Email(), should.Equal(payerEmail))
+			}
+
+			t.Run("Starts and bills another CQ+2 voter with quota", func(t *ftt.Test) {
+				setFullRunVotes(1, vote(bot))
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+				assert.Loosely(t, res.State.BilledTo.Email(), should.Equal(botEmail))
+				assert.That(t, deps.qm.debitAltCalls, should.Match([]string{botEmail}))
+				botEmailHash := md5.Sum([]byte(botEmail))
+				assert.That(t, deps.qm.debitAltSuffixes, should.Match([]string{hex.EncodeToString(botEmailHash[:])}))
+				assert.Loosely(t, res.State.LogEntries[0].GetInfo().GetMessage(), should.Equal(
+					fmt.Sprintf("Run quota exhausted for %s; debited from alternative voter %s instead; balance: 7", payerEmail, botEmail)))
+				assert.Loosely(t, res.SideEffectFn, should.NotBeNil)
+				assert.Loosely(t, res.PreserveEvents, should.BeFalse)
+			})
+
+			t.Run("Keeps the bot as payer if the Run fails after takeover", func(t *ftt.Test) {
+				setFullRunVotes(1, vote(bot))
+				// Included a builder that doesn't exist; tryjob requirement
+				// computation fails after the quota has been debited.
+				rs.Options = &run.Options{IncludedTryjobs: []string{"fooproj/ci:bar_builder"}}
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assert.That(t, deps.qm.debitAltCalls, should.Match([]string{botEmail}))
+				// BilledTo is persisted with the failing state, so that the
+				// run quota is credited back to the bot when the Run ends.
+				assert.Loosely(t, res.State.BilledTo.Email(), should.Equal(botEmail))
+				op := res.State.OngoingLongOps.GetOps()[res.State.NewLongOpIDs[0]]
+				assert.Loosely(t, op.GetResetTriggers().GetRunStatusIfSucceeded(), should.Equal(run.Status_FAILED))
+			})
+
+			t.Run("Bills a voter without a user_limits entry of their own", func(t *ftt.Test) {
+				setFullRunVotes(1, vote(human))
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+				assert.Loosely(t, res.State.BilledTo.Email(), should.Equal(gf.U(human).Email))
+			})
+
+			t.Run("Bills a voter to whom no run limit applies", func(t *ftt.Test) {
+				setFullRunVotes(1, vote(bot))
+				deps.qm.debitAltFn = func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+					return nil, nil, nil
+				}
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+				assert.Loosely(t, res.State.BilledTo.Email(), should.Equal(botEmail))
+				assert.Loosely(t, res.State.LogEntries[0].GetInfo().GetMessage(), should.Equal(
+					fmt.Sprintf("Run quota exhausted for %s; billed to alternative voter %s instead, who has no run limit", payerEmail, botEmail)))
+			})
+
+			t.Run("Skips voters without quota and bills the next one", func(t *ftt.Test) {
+				humanVote := vote(human)
+				humanVote.Date = timestamppb.New(rs.CreateTime.Add(time.Second)) // earlier vote
+				setFullRunVotes(1, humanVote, vote(bot))
+				deps.qm.debitAltFn = func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+					if r.BilledTo.Email() == gf.U(human).Email {
+						return &quotapb.OpResult{Status: quotapb.OpResult_ERR_UNDERFLOW}, &cfgpb.UserLimit{}, quota.ErrQuotaApply
+					}
+					return &quotapb.OpResult{Status: quotapb.OpResult_SUCCESS, NewBalance: 7}, &cfgpb.UserLimit{}, nil
+				}
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+				assert.Loosely(t, res.State.BilledTo.Email(), should.Equal(botEmail))
+				assert.That(t, deps.qm.debitAltCalls, should.Match([]string{gf.U(human).Email, botEmail}))
+			})
+
+			t.Run("Stays PENDING if the other voter has also exhausted quota", func(t *ftt.Test) {
+				setFullRunVotes(1, vote(bot))
+				deps.qm.debitAltFn = func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+					return &quotapb.OpResult{Status: quotapb.OpResult_ERR_UNDERFLOW}, &cfgpb.UserLimit{}, quota.ErrQuotaApply
+				}
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assertPending(t, res)
+				assert.That(t, deps.qm.debitAltCalls, should.Match([]string{botEmail}))
+			})
+
+			t.Run("Returns transient error on unexpected quota error for the other voter", func(t *ftt.Test) {
+				setFullRunVotes(1, vote(bot))
+				deps.qm.debitAltFn = func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+					return nil, nil, fmt.Errorf("redis down")
+				}
+
+				_, err := h.Start(ctx, rs)
+				assert.ErrIsLike(t, err, "redis down")
+				assert.Loosely(t, transient.Tag.In(err), should.BeTrue)
+			})
+
+			t.Run("Ignores the other voter's vote deactivated by a cancel message", func(t *ftt.Test) {
+				setFullRunVotes(1, vote(bot))
+				c := &changelist.CL{ID: 1}
+				assert.NoErr(t, datastore.Get(ctx, c))
+				ci := c.Snapshot.GetGerrit().GetInfo()
+				cancelMsg, err := botdata.Append("", botdata.BotData{
+					Action:      botdata.Cancel,
+					TriggeredAt: rs.CreateTime.Add(time.Minute), // same as the bot's vote
+					Revision:    ci.GetCurrentRevision(),
+				})
+				assert.NoErr(t, err)
+				ci.Messages = append(ci.Messages, &gerritpb.ChangeMessageInfo{Message: cancelMsg})
+				assert.NoErr(t, datastore.Put(ctx, c))
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assertPending(t, res)
+				assert.Loosely(t, deps.qm.debitAltCalls, should.BeEmpty)
+			})
+
+			t.Run("Does not bill the other voter if they fail ACLs", func(t *ftt.Test) {
+				const outsider = "user-70"
+				setFullRunVotes(1, vote(outsider))
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assertPending(t, res)
+				assert.Loosely(t, deps.qm.debitAltCalls, should.BeEmpty)
+			})
+
+			t.Run("Ignores CQ+1 votes from the other voter", func(t *ftt.Test) {
+				dryVote := vote(bot)
+				dryVote.Value = 1
+				setFullRunVotes(1, dryVote)
+
+				res, err := h.Start(ctx, rs)
+				assert.NoErr(t, err)
+				assertPending(t, res)
+				assert.Loosely(t, deps.qm.debitAltCalls, should.BeEmpty)
+			})
+
+			t.Run("Multi-CL Run without root CL", func(t *ftt.Test) {
+				addCL(triggerer, owner)
+				setFullRunVotes(2)
+
+				t.Run("Does not rescue if the other voter voted on only some CLs", func(t *ftt.Test) {
+					setFullRunVotes(1, vote(bot))
+
+					res, err := h.Start(ctx, rs)
+					assert.NoErr(t, err)
+					assertPending(t, res)
+					assert.Loosely(t, deps.qm.debitAltCalls, should.BeEmpty)
+				})
+
+				t.Run("Rescues if the other voter voted on all CLs", func(t *ftt.Test) {
+					setFullRunVotes(1, vote(bot))
+					setFullRunVotes(2, vote(bot))
+
+					res, err := h.Start(ctx, rs)
+					assert.NoErr(t, err)
+					assert.Loosely(t, res.State.Status, should.Equal(run.Status_RUNNING))
+					assert.Loosely(t, res.State.BilledTo.Email(), should.Equal(botEmail))
+				})
+			})
+		})
+
+		t.Run("Does not rescue a quota exhausted DRY_RUN", func(t *ftt.Test) {
+			const bot = "user-50"
+			ct.AddMember(bot, committers)
+			ct.AddMember(bot, dryRunners)
+			deps.qm.debitRunQuotaFn = func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+				return &quotapb.OpResult{Status: quotapb.OpResult_ERR_UNDERFLOW},
+					&cfgpb.UserLimit{Run: &cfgpb.UserLimit_Run{}}, quota.ErrQuotaApply
+			}
+			c := &changelist.CL{ID: 1}
+			assert.NoErr(t, datastore.Get(ctx, c))
+			ci := c.Snapshot.GetGerrit().GetInfo()
+			ci.Labels[trigger.CQLabelName].All = append(ci.Labels[trigger.CQLabelName].All, &gerritpb.ApprovalInfo{
+				User: gf.U(bot), Value: 2, Date: timestamppb.New(rs.CreateTime.Add(time.Minute)),
+			})
+			assert.NoErr(t, datastore.Put(ctx, c))
+
+			res, err := h.Start(ctx, rs)
+			assert.NoErr(t, err)
+			assert.Loosely(t, res.State.Status, should.Equal(run.Status_PENDING))
+			assert.Loosely(t, deps.qm.debitAltCalls, should.BeEmpty)
 		})
 
 		t.Run("Throws error when quota manager fails with an unexpected error", func(t *ftt.Test) {

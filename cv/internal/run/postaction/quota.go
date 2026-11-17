@@ -21,13 +21,16 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/quota"
 
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
+	"go.chromium.org/luci/cv/internal/gerrit/trigger"
 	"go.chromium.org/luci/cv/internal/run"
 	"go.chromium.org/luci/cv/internal/run/runquery"
 )
@@ -66,11 +69,20 @@ func (exe *Executor) creditQuota(ctx context.Context) (string, error) {
 
 // pickNextRunToStart search against all eligible pending runs and try to
 // find the earliest one.
+//
+// Eligible pending runs are:
+//   - runs billed to the same quota account as the current run, and
+//   - FULL_RUNs in the same config group on which the current run's payer has
+//     voted Commit-Queue+2 on every triggering CL. Such a run may be blocked
+//     on its own payer's quota and can be started by billing the current
+//     run's payer instead (see handler.tryRescueWithAlternativePayer).
 func (exe *Executor) pickNextRunToStart(ctx context.Context) (*run.Run, error) {
 	curRun := exe.Run
 	account := exe.QM.RunQuotaAccountID(curRun)
+	payer := curRun.BilledTo
 	var tok *runquery.PageToken
 	var candidates []*run.Run
+	var maybeTakeover []*run.Run
 	var knownPendingRuns common.RunIDs
 	for {
 		// process 25 runs at a time.
@@ -86,15 +98,26 @@ func (exe *Executor) pickNextRunToStart(ctx context.Context) (*run.Run, error) {
 		}
 		for _, r := range runs {
 			knownPendingRuns = append(knownPendingRuns, r.ID)
-			if proto.Equal(exe.QM.RunQuotaAccountID(r), account) {
+			switch {
+			case proto.Equal(exe.QM.RunQuotaAccountID(r), account):
 				// only consider the runs that belong to the same quota account
 				candidates = append(candidates, r)
+			case r.Mode == run.FullRun && r.ConfigGroupID.Name() == curRun.ConfigGroupID.Name():
+				maybeTakeover = append(maybeTakeover, r)
 			}
 		}
 		if token == nil {
 			break
 		}
 		tok = token
+	}
+
+	if len(maybeTakeover) > 0 {
+		takeover, err := filterRunsVotedByPayer(ctx, maybeTakeover, payer)
+		if err != nil {
+			return nil, err
+		}
+		candidates = append(candidates, takeover...)
 	}
 
 	if len(candidates) == 0 {
@@ -115,6 +138,48 @@ func (exe *Executor) pickNextRunToStart(ctx context.Context) (*run.Run, error) {
 		}
 	}
 	return nil, nil
+}
+
+// filterRunsVotedByPayer returns the runs where the payer currently has a
+// Commit-Queue+2 vote on every triggering CL (the root CL if the run has one,
+// otherwise all CLs).
+func filterRunsVotedByPayer(ctx context.Context, runs []*run.Run, payer identity.Identity) ([]*run.Run, error) {
+	var clids common.CLIDs
+	for _, r := range runs {
+		if r.HasRootCL() {
+			clids = append(clids, r.RootCL)
+		} else {
+			clids = append(clids, r.CLs...)
+		}
+	}
+	clids.Dedupe()
+	cls, err := changelist.LoadCLsByIDs(ctx, clids)
+	if err != nil {
+		return nil, errors.Fmt("failed to load CLs of pending runs: %w", err)
+	}
+	voted := make(map[common.CLID]bool, len(cls))
+	for _, cl := range cls {
+		voted[cl.ID] = trigger.HasFullRunVoteBy(cl.Snapshot.GetGerrit().GetInfo(), payer.Email())
+	}
+
+	var ret []*run.Run
+	for _, r := range runs {
+		triggering := r.CLs
+		if r.HasRootCL() {
+			triggering = common.CLIDs{r.RootCL}
+		}
+		all := len(triggering) > 0
+		for _, clid := range triggering {
+			if !voted[clid] {
+				all = false
+				break
+			}
+		}
+		if all {
+			ret = append(ret, r)
+		}
+	}
+	return ret, nil
 }
 
 // hasNoPendingDepRun returns true the provided run has *no* dep Run that is in

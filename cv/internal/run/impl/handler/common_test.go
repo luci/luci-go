@@ -766,9 +766,29 @@ type quotaManagerMock struct {
 	runQuotaErr error
 
 	debitRunQuotaCalls int
+	debitRunQuotaFn    func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error)
+
+	// debitAltFn, if set, handles DebitRunQuota calls with an
+	// OperationIDSuffix, i.e. debits from an alternative payer.
+	debitAltFn    func(r *run.Run) (*quotapb.OpResult, *cfgpb.UserLimit, error)
+	debitAltCalls []string
+	// debitAltSuffixes records the OperationIDSuffix of each such call.
+	debitAltSuffixes []string
 }
 
 func (qm *quotaManagerMock) DebitRunQuota(ctx context.Context, opts cvquota.DebitRunOptions) (*quotapb.OpResult, *cfgpb.UserLimit, error) {
+	r := opts.Run
+	if opts.OperationIDSuffix != "" {
+		qm.debitAltCalls = append(qm.debitAltCalls, r.BilledTo.Email())
+		qm.debitAltSuffixes = append(qm.debitAltSuffixes, opts.OperationIDSuffix)
+		if qm.debitAltFn != nil {
+			return qm.debitAltFn(r)
+		}
+		return nil, nil, nil
+	}
 	qm.debitRunQuotaCalls++
+	if qm.debitRunQuotaFn != nil {
+		return qm.debitRunQuotaFn(r)
+	}
 	return qm.runQuotaOp, qm.userLimit, qm.runQuotaErr
 }

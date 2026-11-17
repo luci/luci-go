@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -30,11 +31,13 @@ import (
 	"go.chromium.org/luci/server/quota/quotapb"
 
 	cfgpb "go.chromium.org/luci/cv/api/config/v2"
+	"go.chromium.org/luci/cv/internal/changelist"
 	"go.chromium.org/luci/cv/internal/common"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg"
 	"go.chromium.org/luci/cv/internal/configs/prjcfg/prjcfgtest"
 	"go.chromium.org/luci/cv/internal/configs/validation"
 	"go.chromium.org/luci/cv/internal/cvtesting"
+	gf "go.chromium.org/luci/cv/internal/gerrit/gerritfake"
 	"go.chromium.org/luci/cv/internal/run"
 )
 
@@ -226,6 +229,128 @@ func TestCreditQuotaOp(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", earliestRun.ID)))
 			assert.That(t, rm.notifyStarted, should.Match(common.RunIDs{earliestRun.ID}))
+		})
+
+		t.Run("credit from a payer who also voted CQ+2 on other Runs", func(t *ftt.Test) {
+			const botEmail = "auto-submit@example.com"
+			botIdentity := identity.Identity(fmt.Sprintf("%s:%s", identity.User, botEmail))
+			// The ended Run was paid by the bot (e.g. it was rescued, and then
+			// failed or succeeded).
+			executor.Run.BilledTo = botIdentity
+
+			var clid common.CLID
+			putCL := func(voters ...string) common.CLID {
+				clid++
+				var mods []gf.CIModifier
+				for i, v := range voters {
+					mods = append(mods, gf.CQ(+2, clock.Now(ctx).UTC(), &gerritpb.AccountInfo{Email: v, AccountId: int64(i + 1)}))
+				}
+				ci := gf.CI(int(clid), mods...)
+				assert.NoErr(t, datastore.Put(ctx, &changelist.CL{
+					ID: clid,
+					Snapshot: &changelist.Snapshot{Kind: &changelist.Snapshot_Gerrit{Gerrit: &changelist.Gerrit{
+						Host: "example-review.googlesource.com",
+						Info: ci,
+					}}},
+				}))
+				return clid
+			}
+			userRun := func(created time.Time, mode run.Mode, cls ...common.CLID) *run.Run {
+				return &run.Run{
+					ID:            common.MakeRunID(lProject, created, 1, []byte(fmt.Sprintf("%d", len(cls)))),
+					Status:        run.Status_PENDING,
+					BilledTo:      userIdentity,
+					Mode:          mode,
+					CreateTime:    created,
+					ConfigGroupID: configGroupID,
+					CLs:           cls,
+				}
+			}
+
+			t.Run("credits the bot, not the original user", func(t *ftt.Test) {
+				_, err := executor.Do(ctx)
+				assert.NoErr(t, err)
+				assert.That(t, qm.creditQuotaCalledWith, should.Match(common.RunIDs{executor.Run.ID}))
+				assert.Loosely(t, qm.RunQuotaAccountID(executor.Run).GetName(), should.Equal(botEmail))
+			})
+
+			t.Run("wakes up a quota-blocked user Run the bot voted CQ+2 on", func(t *ftt.Test) {
+				r := userRun(runCreateTime, run.FullRun, putCL(userEmail, botEmail))
+				assert.NoErr(t, datastore.Put(ctx, r))
+				summary, err := executor.Do(ctx)
+				assert.NoErr(t, err)
+				assert.Loosely(t, summary, should.Equal(fmt.Sprintf("notified next Run %q to start", r.ID)))
+				assert.That(t, rm.notifyStarted, should.Match(common.RunIDs{r.ID}))
+			})
+
+			t.Run("wakes up the Run only if the bot voted on all CLs", func(t *ftt.Test) {
+				r := userRun(runCreateTime, run.FullRun, putCL(userEmail, botEmail), putCL(userEmail))
+				assert.NoErr(t, datastore.Put(ctx, r))
+				summary, err := executor.Do(ctx)
+				assert.NoErr(t, err)
+				assert.Loosely(t, summary, should.BeEmpty)
+				assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
+			})
+
+			t.Run("uses only the root CL for Runs with a root CL", func(t *ftt.Test) {
+				root := putCL(userEmail, botEmail)
+				r := userRun(runCreateTime, run.FullRun, root, putCL())
+				r.RootCL = root
+				assert.NoErr(t, datastore.Put(ctx, r))
+				_, err := executor.Do(ctx)
+				assert.NoErr(t, err)
+				assert.That(t, rm.notifyStarted, should.Match(common.RunIDs{r.ID}))
+			})
+
+			t.Run("does not wake up a Run without the bot's vote", func(t *ftt.Test) {
+				r := userRun(runCreateTime, run.FullRun, putCL(userEmail))
+				assert.NoErr(t, datastore.Put(ctx, r))
+				_, err := executor.Do(ctx)
+				assert.NoErr(t, err)
+				assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
+			})
+
+			t.Run("does not wake up a DRY_RUN", func(t *ftt.Test) {
+				r := userRun(runCreateTime, run.DryRun, putCL(userEmail, botEmail))
+				assert.NoErr(t, datastore.Put(ctx, r))
+				_, err := executor.Do(ctx)
+				assert.NoErr(t, err)
+				assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
+			})
+
+			t.Run("does not wake up a Run in a different config group", func(t *ftt.Test) {
+				r := userRun(runCreateTime, run.FullRun, putCL(userEmail, botEmail))
+				r.ConfigGroupID = prjcfg.MakeConfigGroupID("another-config-group", "hash")
+				assert.NoErr(t, datastore.Put(ctx, r))
+				_, err := executor.Do(ctx)
+				assert.NoErr(t, err)
+				assert.Loosely(t, rm.notifyStarted, should.BeEmpty)
+			})
+
+			t.Run("picks the earliest among own and takeover Runs", func(t *ftt.Test) {
+				ownRun := &run.Run{
+					ID:            common.MakeRunID(lProject, runCreateTime, 1, []byte("own")),
+					Status:        run.Status_PENDING,
+					BilledTo:      botIdentity,
+					Mode:          run.FullRun,
+					CreateTime:    runCreateTime,
+					ConfigGroupID: configGroupID,
+				}
+				earlier := userRun(runCreateTime.Add(-time.Minute), run.FullRun, putCL(userEmail, botEmail))
+				assert.NoErr(t, datastore.Put(ctx, ownRun, earlier))
+				_, err := executor.Do(ctx)
+				assert.NoErr(t, err)
+				assert.That(t, rm.notifyStarted, should.Match(common.RunIDs{earlier.ID}))
+
+				t.Run("and the bot's own Run when it is earlier", func(t *ftt.Test) {
+					rm.notifyStarted = nil
+					earlier.CreateTime = runCreateTime.Add(time.Minute)
+					assert.NoErr(t, datastore.Put(ctx, earlier))
+					_, err := executor.Do(ctx)
+					assert.NoErr(t, err)
+					assert.That(t, rm.notifyStarted, should.Match(common.RunIDs{ownRun.ID}))
+				})
+			})
 		})
 	})
 }
