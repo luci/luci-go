@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Box, Button, Typography } from '@mui/material';
 import { useMemo } from 'react';
 
+import { MyRepairTasksActions } from '@/fleet/components/repair_queue/my_repair_tasks_actions';
 import {
   UNKNOWN_USER_EMAIL,
   useCurrentUserEmail,
 } from '@/fleet/components/repair_queue/use_current_user_email';
-import { radii } from '@/fleet/theme/tokens';
-import { AndroidPageWorkspace } from '@/fleet/workspaces';
+import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
 import { ListAndroidRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { toAndroidWorkspaceEnum } from './android_workspace';
-import { getDeviceListLinkForRepairTasks } from './my_repair_tasks';
 import { useAndroidRepairQueue } from './use_android_repair_queue';
 
 // Upper bound on the number of claimed tasks fetched for the current user.
@@ -58,39 +55,11 @@ export const AndroidMyRepairTasksActions = ({
   );
   const queueQuery = useAndroidRepairQueue(request, { enabled: isKnownUser });
 
-  const myTasks = useMemo(
-    () =>
-      isKnownUser
-        ? (queueQuery.data?.repairQueueItems ?? []).filter(
-            (item) => item.claimedBy === currentUser,
-          )
-        : [],
-    [currentUser, isKnownUser, queueQuery.data?.repairQueueItems],
-  );
-
-  // Empty when the user has no claimed task.
-  const deviceListLink = getDeviceListLinkForRepairTasks(workspace, myTasks);
-
-  if (!deviceListLink) {
-    return null;
-  }
-
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <Typography variant="body2" color="text.secondary">
-        My tasks ({myTasks.length}):
-      </Typography>
-      <Button
-        variant="outlined"
-        size="small"
-        href={deviceListLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        endIcon={<OpenInNewIcon />}
-        sx={{ textTransform: 'none', borderRadius: radii.sm }}
-      >
-        Show devices
-      </Button>
-    </Box>
+    <MyRepairTasksActions
+      items={queueQuery.data?.repairQueueItems}
+      platformBaseUrl={workspaces[workspace].baseUrl}
+      idFilterKey='"id"'
+    />
   );
 };

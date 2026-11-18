@@ -345,4 +345,131 @@ describe('<ChromeOSRepairDashboard /> (Repair Queue & Claiming)', () => {
       activeIrmBugId: '458449804',
     });
   });
+
+  it('pins caller-claimed tasks to top with objective Rank and My tasks link', async () => {
+    given.authenticatedAs(
+      'user:operator1@example.com',
+      'operator1@example.com',
+    );
+    given.repairQueue([
+      aRepairQueueItem(1)
+        .withDutId('demo-cros-r2-rk1-h2')
+        .withPool('mock-pool-canary')
+        .withModel('demo-model-one')
+        .withScore(900)
+        .unclaimed(),
+      aRepairQueueItem(2)
+        .withDutId('chromeos6-row1-rack2-host3')
+        .withPool('mock-pool-canary')
+        .withModel('demo-model-one')
+        .withScore(600)
+        .claimedBy('other@example.com'),
+      aRepairQueueItem(3)
+        .withDutId('host-1')
+        .withPool('mock-pool-canary')
+        .withModel('sim-model-nine')
+        .withScore(100)
+        .claimedBy('operator1@example.com'),
+    ]);
+
+    when.dashboardIsRendered();
+
+    // Caller's task (objective rank 3) is pinned above higher-priority unclaimed/other tasks.
+    await then.rowOrderIs([
+      'host-1',
+      'demo-cros-r2-rk1-h2',
+      'chromeos6-row1-rack2-host3',
+    ]);
+    await then.repairTaskIsPinnedWithRank('host-1', 3);
+    await then.repairTaskIsNotPinned('demo-cros-r2-rk1-h2', 1);
+    await then.repairTaskIsNotPinned('chromeos6-row1-rack2-host3', 2);
+    await then.myTasksActionLinksToDevices(
+      1,
+      ['host-1'],
+      ['demo-cros-r2-rk1-h2', 'chromeos6-row1-rack2-host3'],
+    );
+
+    // Claiming an unclaimed task pins it to the top and adds it to "My tasks (2)".
+    await when.userClaimsTask('demo-cros-r2-rk1-h2');
+    await then.rowOrderIs([
+      'demo-cros-r2-rk1-h2',
+      'host-1',
+      'chromeos6-row1-rack2-host3',
+    ]);
+    await then.repairTaskIsPinnedWithRank('demo-cros-r2-rk1-h2', 1);
+    await then.repairTaskIsPinnedWithRank('host-1', 3);
+    await then.myTasksActionLinksToDevices(
+      2,
+      ['demo-cros-r2-rk1-h2', 'host-1'],
+      ['chromeos6-row1-rack2-host3'],
+    );
+
+    // Unclaiming both tasks unpins them and hides the "My tasks" action.
+    await when.userUnclaimsTask('demo-cros-r2-rk1-h2');
+    await when.userUnclaimsTask('host-1');
+    await then.repairTaskIsNotPinned('demo-cros-r2-rk1-h2', 1);
+    await then.repairTaskIsNotPinned('host-1', 3);
+    then.myTasksActionIsHidden();
+  });
+
+  it('keeps remaining pinned rows styled during in-flight unclaim and ignores blank deviceIds in My tasks count', async () => {
+    given.authenticatedAs(
+      'user:operator1@example.com',
+      'operator1@example.com',
+    );
+    const unclaimRpc = given.deferredRpc('UnclaimRepairTask');
+    given.repairQueue([
+      aRepairQueueItem(1)
+        .withDutId('demo-cros-r2-rk1-h2')
+        .withPool('mock-pool-canary')
+        .withModel('demo-model-one')
+        .withScore(900)
+        .claimedBy('operator1@example.com'),
+      aRepairQueueItem(2)
+        .withDutId('host-1')
+        .withPool('mock-pool-canary')
+        .withModel('sim-model-nine')
+        .withScore(500)
+        .claimedBy('operator1@example.com'),
+      aRepairQueueItem(3)
+        .withDeviceId('   ')
+        .withPool('missing-id-pool')
+        .withModel('demo-model-one')
+        .withScore(300)
+        .claimedBy('operator1@example.com'),
+      aRepairQueueItem(4)
+        .withDutId('host-2')
+        .withPool('mock-pool-canary')
+        .withModel('demo-model-one')
+        .withScore(800)
+        .unclaimed(),
+    ]);
+
+    when.dashboardIsRendered();
+
+    await then.repairTaskIsPinnedWithRank('demo-cros-r2-rk1-h2', 1);
+    await then.repairTaskIsPinnedWithRank('host-1', 2);
+    // Blank-deviceId task is omitted from both the count and the device-list URL.
+    await then.myTasksActionLinksToDevices(
+      2,
+      ['demo-cros-r2-rk1-h2', 'host-1'],
+      ['host-2'],
+    );
+
+    // Unclaim the first pinned row while UnclaimRepairTask is held in flight:
+    // row 0 unpins immediately, while row 1 (host-1) keeps its pinned styling.
+    await when.userUnclaimsTask('demo-cros-r2-rk1-h2');
+    await then.repairTaskIsNotPinned('demo-cros-r2-rk1-h2', 1);
+    await then.repairTaskIsPinnedWithRank('host-1', 2);
+    await then.myTasksActionLinksToDevices(
+      1,
+      ['host-1'],
+      ['demo-cros-r2-rk1-h2', 'host-2'],
+    );
+
+    // Rejecting the RPC rolls row 0 back to pinned cleanly.
+    await unclaimRpc.rejectWithError(14, 'Backend unavailable');
+    await then.repairTaskIsPinnedWithRank('demo-cros-r2-rk1-h2', 1);
+    await then.repairTaskIsPinnedWithRank('host-1', 2);
+  });
 });

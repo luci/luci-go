@@ -18,12 +18,14 @@ import { Box, Chip, Divider, Tooltip, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
-import { useAuthState } from '@/common/components/auth_state_provider';
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { INFO_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
+import { getRepairQueueRank } from '@/fleet/components/repair_queue/pinned_rows';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
+import { RepairQueueRankCell } from '@/fleet/components/repair_queue/repair_queue_rank_cell';
+import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
 import {
   getBugUrl,
   parsePriorityRules,
@@ -64,6 +66,7 @@ export const REPAIR_QUEUE_COLUMN_IDS = [
 export interface UseRepairQueueColumnsOptions {
   pageIndex?: number;
   pageSize?: number;
+  pinnedRowIndices?: ReadonlySet<number>;
   onError?: (message: string) => void;
 }
 
@@ -187,6 +190,7 @@ const renderHealthMetric = (
 export const useRepairQueueColumns = ({
   pageIndex = 0,
   pageSize = 100,
+  pinnedRowIndices,
   onError,
 }: UseRepairQueueColumnsOptions = {}) => {
   const { mutate: claimTask, isPending: isClaimPending } = useClaimRepairTask({
@@ -202,8 +206,7 @@ export const useRepairQueueColumns = ({
     });
   const isPending = isClaimPending || isUnclaimPending;
 
-  const authState = useAuthState();
-  const currentUser = (authState.email || authState.identity || '').trim();
+  const currentUser = useCurrentUserEmail();
 
   const { filterBuilders } = useRepairQueueFilterBuilders();
 
@@ -230,13 +233,21 @@ export const useRepairQueueColumns = ({
       {
         id: 'rank',
         header: 'Rank',
-        size: 25,
-        minSize: 25,
-        maxSize: 60,
+        size: 56,
+        minSize: 52,
+        maxSize: 76,
         enableSorting: false,
-        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => {
-          return String(pageIndex * pageSize + row.index + 1);
-        },
+        Cell: ({ row }: FC_CellProps<RepairQueueRow>) => (
+          <RepairQueueRankCell
+            rank={getRepairQueueRank(
+              row.original.rank,
+              pageIndex,
+              pageSize,
+              row.index,
+            )}
+            isPinned={Boolean(pinnedRowIndices?.has(row.index))}
+          />
+        ),
       },
       {
         id: 'id',
@@ -518,6 +529,7 @@ export const useRepairQueueColumns = ({
     isPending,
     pageIndex,
     pageSize,
+    pinnedRowIndices,
     rulesById,
     irmTitleByBugId,
   ]);

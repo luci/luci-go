@@ -14,6 +14,7 @@
 
 import { screen, waitFor, within } from '@testing-library/react';
 
+import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import {
   REPAIR_LAB_LOCAL_STORAGE_KEY,
   RepairLab,
@@ -153,6 +154,77 @@ export const then = {
   async repairTaskHasRank(dutId: string, rank: string | number) {
     const row = await fleetTable.findRowByText(dutId);
     fleetTable.expectCellText(row, 'Rank', String(rank));
+  },
+
+  async repairTaskIsPinnedWithRank(dutId: string, rank: number) {
+    const row = await fleetTable.findRowByText(dutId);
+    expect(row).toHaveAttribute('data-pinned', 'true');
+    expect(
+      within(row).getByLabelText(`Rank ${rank}, pinned to top`),
+    ).toBeInTheDocument();
+  },
+
+  async repairTaskIsNotPinned(dutId: string, rank: number) {
+    const row = await fleetTable.findRowByText(dutId);
+    expect(row).not.toHaveAttribute('data-pinned', 'true');
+    expect(
+      within(row).queryByLabelText(`Rank ${rank}, pinned to top`),
+    ).not.toBeInTheDocument();
+    fleetTable.expectCellText(row, 'Rank', String(rank));
+  },
+
+  async rowOrderIs(expectedDutIds: readonly string[]) {
+    for (const dutId of expectedDutIds) {
+      await fleetTable.findRowByText(dutId);
+    }
+    const rows = expectedDutIds.map((dutId) =>
+      screen.getByText(dutId).closest('tr'),
+    );
+    for (let i = 0; i < rows.length - 1; i++) {
+      const current = rows[i];
+      const next = rows[i + 1];
+      expect(current).not.toBeNull();
+      expect(next).not.toBeNull();
+      expect(
+        Boolean(
+          current &&
+            next &&
+            current.compareDocumentPosition(next) &
+              Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      ).toBe(true);
+    }
+  },
+
+  myTasksActionIsHidden() {
+    expect(screen.queryByText(/^My tasks \(/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /Show devices/i }),
+    ).not.toBeInTheDocument();
+  },
+
+  async myTasksActionLinksToDevices(
+    expectedCount: number,
+    includedIds: readonly string[],
+    excludedIds: readonly string[] = [],
+  ) {
+    expect(
+      await screen.findByText(`My tasks (${expectedCount}):`),
+    ).toBeInTheDocument();
+    const button = screen.getByRole('link', { name: /Show devices/i });
+    expect(button).toHaveAttribute('target', '_blank');
+    const href = button.getAttribute('href') ?? '';
+    expect(href.startsWith('/ui/fleet/p/chromeos/devices?')).toBe(true);
+    const filter =
+      new URL(href, 'https://example.com').searchParams.get(
+        FILTERS_PARAM_KEY,
+      ) ?? '';
+    for (const id of includedIds) {
+      expect(filter).toContain(`"${id}"`);
+    }
+    for (const id of excludedIds) {
+      expect(filter).not.toContain(id);
+    }
   },
 
   async repairTaskHasPeripherals(

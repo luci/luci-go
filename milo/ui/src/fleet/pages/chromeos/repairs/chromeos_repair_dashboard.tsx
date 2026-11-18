@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
+import { MyRepairTasksActions } from '@/fleet/components/repair_queue/my_repair_tasks_actions';
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
 import {
   CHROMEOS_PLATFORM,
@@ -149,11 +150,27 @@ export const ChromeOSRepairDashboard = () => {
 
       <Divider sx={{ mt: 4, mb: 4 }} />
 
-      <Typography variant="h6">Prioritized Manual Repair Queue</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        Devices ranked by total priority score. Hover over a score to view
-        matching rules.
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <div>
+          <Typography variant="h6">Prioritized Manual Repair Queue</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Devices ranked by total priority score. Hover over a score to view
+            matching rules.
+          </Typography>
+        </div>
+        <MyRepairTasksActions
+          items={queueQuery.data?.repairQueueItems}
+          platformBaseUrl={CHROMEOS_PLATFORM}
+        />
+      </Box>
 
       <div css={{ marginTop: 16 }}>
         <ChromeOSRepairTable lab={lab} />

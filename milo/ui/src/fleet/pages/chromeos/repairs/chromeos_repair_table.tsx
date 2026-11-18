@@ -22,6 +22,11 @@ import {
   FC_TableOptions,
   useFCDataTable,
 } from '@/fleet/components/fc_data_table/use_fc_data_table';
+import {
+  getPinnedRepairRowProps,
+  usePinnedRepairRows,
+} from '@/fleet/components/repair_queue/pinned_rows';
+import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { useMrtSortingState } from '@/fleet/hooks/use_mrt_sorting_state';
 import { usePager } from '@/fleet/hooks/use_pager';
@@ -37,6 +42,8 @@ import {
 } from './use_repair_queue_columns';
 
 const CHROMEOS_REPAIRS_LOCAL_STORAGE_KEY = 'fleet_chromeos_repairs_table';
+const EMPTY_CHROMEOS_QUEUE_ITEMS: readonly RepairQueueRow[] = [];
+const getChromeOsRepairQueueRowId = (row: RepairQueueRow) => row.taskId;
 
 interface ChromeOSRepairTableProps {
   columns?: RepairQueueColumnDef[];
@@ -58,15 +65,7 @@ export const ChromeOSRepairTable = ({
   const { pageSize, pageToken, pageIndex } = usePager(pagerCtx);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const { columns: defaultColumns } = useRepairQueueColumns({
-    pageIndex,
-    pageSize,
-    onError: setErrorMessage,
-  });
-  const columns = propColumns || defaultColumns;
-
-  const [sorting, onSortingChange] = useMrtSortingState(columns, pagerCtx);
+  const currentUser = useCurrentUserEmail();
 
   const request = useMemo(
     () =>
@@ -81,10 +80,26 @@ export const ChromeOSRepairTable = ({
   const queueQuery = useRepairQueue(request);
 
   const {
-    repairQueueItems = [],
+    repairQueueItems = EMPTY_CHROMEOS_QUEUE_ITEMS,
     nextPageToken = '',
     totalSize = 0,
   } = queueQuery.data || {};
+
+  const pinnedRowIndices = usePinnedRepairRows(
+    repairQueueItems,
+    currentUser,
+    getChromeOsRepairQueueRowId,
+  );
+
+  const { columns: defaultColumns } = useRepairQueueColumns({
+    pageIndex,
+    pageSize,
+    pinnedRowIndices,
+    onError: setErrorMessage,
+  });
+  const columns = propColumns || defaultColumns;
+
+  const [sorting, onSortingChange] = useMrtSortingState(columns, pagerCtx);
 
   const { columnSizing, onColumnSizingChange } = useMrtColumnSizing(
     CHROMEOS_REPAIRS_LOCAL_STORAGE_KEY,
@@ -111,7 +126,7 @@ export const ChromeOSRepairTable = ({
           pagerCtx={pagerCtx}
         />
       ),
-      getRowId: (row: RepairQueueRow) => row.taskId,
+      getRowId: getChromeOsRepairQueueRowId,
       onSortingChange,
       enableSorting: false,
       enablePagination: false,
@@ -127,6 +142,12 @@ export const ChromeOSRepairTable = ({
       manualFiltering: true,
       manualPagination: true,
       onColumnSizingChange,
+      muiTableBodyRowProps: ({ row }) =>
+        getPinnedRepairRowProps(
+          row.index,
+          pinnedRowIndices,
+          repairQueueItems.length,
+        ),
     }),
     [
       columns,
@@ -141,6 +162,7 @@ export const ChromeOSRepairTable = ({
       queueQuery.isPlaceholderData,
       queueQuery.isFetching,
       onColumnSizingChange,
+      pinnedRowIndices,
     ],
   );
 

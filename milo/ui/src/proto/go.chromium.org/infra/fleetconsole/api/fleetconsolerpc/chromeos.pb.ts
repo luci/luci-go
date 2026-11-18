@@ -757,7 +757,6 @@ export interface UpdateChromeOSDeviceResponse {
 export interface ListRepairQueueRequest {
   readonly pageSize: number;
   readonly pageToken: string;
-  readonly orderBy: string;
   readonly filter: string;
   readonly lab?: string;
 }
@@ -792,6 +791,12 @@ export interface RepairQueueItem {
   readonly etag: string;
   /** Master Bug IDs of active IRM incidents matching this repair task. */
   readonly activeIrmIds: readonly string[];
+  /**
+   * 1-based objective rank of the task in the repair queue for the requested
+   * lab, ordered by `priority_score desc, created_at asc, id asc` (independent
+   * of caller-claimed pinning). Set by ListRepairQueue.
+   */
+  readonly rank?: number | undefined;
 }
 
 export interface ListRepairQueueResponse {
@@ -6877,7 +6882,7 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
 };
 
 function createBaseListRepairQueueRequest(): ListRepairQueueRequest {
-  return { pageSize: 0, pageToken: "", orderBy: "", filter: "", lab: "" };
+  return { pageSize: 0, pageToken: "", filter: "", lab: "" };
 }
 
 export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
@@ -6887,9 +6892,6 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     }
     if (message.pageToken !== "") {
       writer.uint32(18).string(message.pageToken);
-    }
-    if (message.orderBy !== "") {
-      writer.uint32(26).string(message.orderBy);
     }
     if (message.filter !== "") {
       writer.uint32(34).string(message.filter);
@@ -6927,14 +6929,6 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
             }
 
             message.pageToken = reader.string();
-            continue;
-          }
-          case 3: {
-            if (tag !== 26) {
-              break;
-            }
-
-            message.orderBy = reader.string();
             continue;
           }
           case 4: {
@@ -6977,11 +6971,6 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
         : isSet(object.page_token)
         ? globalThis.String(object.page_token)
         : "",
-      orderBy: isSet(object.orderBy)
-        ? globalThis.String(object.orderBy)
-        : isSet(object.order_by)
-        ? globalThis.String(object.order_by)
-        : "",
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
       lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
     };
@@ -6994,9 +6983,6 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     }
     if (message.pageToken !== "") {
       obj.pageToken = message.pageToken;
-    }
-    if (message.orderBy !== "") {
-      obj.orderBy = message.orderBy;
     }
     if (message.filter !== "") {
       obj.filter = message.filter;
@@ -7014,7 +7000,6 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     const message = createBaseListRepairQueueRequest() as any;
     message.pageSize = object.pageSize ?? 0;
     message.pageToken = object.pageToken ?? "";
-    message.orderBy = object.orderBy ?? "";
     message.filter = object.filter ?? "";
     message.lab = object.lab ?? "";
     return message;
@@ -7044,6 +7029,7 @@ function createBaseRepairQueueItem(): RepairQueueItem {
     audioboxJackpluggerState: undefined,
     etag: "",
     activeIrmIds: [],
+    rank: 0,
   };
 }
 
@@ -7113,6 +7099,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     }
     if (message.modelInRepairPct !== undefined) {
       writer.uint32(169).double(message.modelInRepairPct);
+    }
+    if (message.rank !== undefined && message.rank !== 0) {
+      writer.uint32(176).int32(message.rank);
     }
     return writer;
   },
@@ -7308,6 +7297,14 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
             message.modelInRepairPct = reader.double();
             continue;
           }
+          case 22: {
+            if (tag !== 176) {
+              break;
+            }
+
+            message.rank = reader.int32();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -7409,6 +7406,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
       activeIrmIds: globalThis.Array.isArray(object?.activeIrmIds)
         ? object.activeIrmIds.map((e: any) => globalThis.String(e))
         : [],
+      rank: isSet(object.rank) ? globalThis.Number(object.rank) : 0,
     };
   },
 
@@ -7477,6 +7475,9 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     if (message.activeIrmIds?.length) {
       obj.activeIrmIds = message.activeIrmIds;
     }
+    if (message.rank !== undefined && message.rank !== 0) {
+      obj.rank = Math.round(message.rank);
+    }
     return obj;
   },
 
@@ -7506,6 +7507,7 @@ export const RepairQueueItem: MessageFns<RepairQueueItem> = {
     message.audioboxJackpluggerState = object.audioboxJackpluggerState ?? undefined;
     message.etag = object.etag ?? "";
     message.activeIrmIds = object.activeIrmIds?.map((e) => e) || [];
+    message.rank = object.rank ?? 0;
     return message;
   },
 };

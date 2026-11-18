@@ -106,7 +106,8 @@ export function createFakeFleetConsoleBackend(
   const repairQueue = createRepairQueueFake({
     priorityRules,
     matchesFilter,
-    getCurrentUserEmail: () => authState.email || 'user@example.com',
+    getCurrentUserEmail: () =>
+      authState.email || authState.identity.replace(/^user:/, ''),
   });
   const irm = createIrmFake();
   const physicalSites = createPhysicalSitesFake();

@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PushPin } from '@mui/icons-material';
-import { Box, Tooltip, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
+import { getRepairQueueRank } from '@/fleet/components/repair_queue/pinned_rows';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
-import {
-  UNKNOWN_USER_EMAIL,
-  useCurrentUserEmail,
-} from '@/fleet/components/repair_queue/use_current_user_email';
+import { RepairQueueRankCell } from '@/fleet/components/repair_queue/repair_queue_rank_cell';
+import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
 import { parsePriorityRules } from '@/fleet/components/repair_queue/utils';
 import { renderChipCell } from '@/fleet/components/table/cell_with_chip';
 import { AndroidDeviceIdCell } from '@/fleet/pages/device_list_page/android/android_device_id_cell';
 import { getAndroidStatusColor } from '@/fleet/pages/device_list_page/android/android_state';
-import { fleetColors, fontSizes } from '@/fleet/theme/tokens';
 import { FC_CellProps } from '@/fleet/types/table';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { getMobileHarnessHostListLink } from '@/fleet/utils/mobile_harness';
@@ -61,6 +58,7 @@ export interface UseAndroidRepairQueueColumnsOptions {
   pageIndex?: number;
   pageSize?: number;
   siteId?: string;
+  pinnedRowIndices?: ReadonlySet<number>;
   onError?: (message: string) => void;
 }
 
@@ -73,6 +71,7 @@ export const useAndroidRepairQueueColumns = (
     pageIndex = 0,
     pageSize = 100,
     siteId = '',
+    pinnedRowIndices,
     onError,
   }: UseAndroidRepairQueueColumnsOptions = {},
 ) => {
@@ -109,43 +108,17 @@ export const useAndroidRepairQueueColumns = (
         minSize: 52,
         maxSize: 76,
         enableSorting: false,
-        Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => {
-          const rank =
-            row.original.rank || pageIndex * pageSize + row.index + 1;
-          const isPinned =
-            currentUser !== UNKNOWN_USER_EMAIL &&
-            row.original.claimedBy === currentUser;
-          if (!isPinned) {
-            return String(rank);
-          }
-          return (
-            <Tooltip title="Pinned to top (assigned to you)" arrow>
-              <Box
-                component="span"
-                tabIndex={0}
-                aria-label={`Rank ${rank}, pinned to top`}
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  color: fleetColors.primary,
-                  fontWeight: 600,
-                  cursor: 'default',
-                }}
-              >
-                <PushPin
-                  aria-hidden="true"
-                  sx={{
-                    fontSize: fontSizes.body,
-                    transform: 'rotate(45deg)',
-                    flexShrink: 0,
-                  }}
-                />
-                <span>{rank}</span>
-              </Box>
-            </Tooltip>
-          );
-        },
+        Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => (
+          <RepairQueueRankCell
+            rank={getRepairQueueRank(
+              row.original.rank,
+              pageIndex,
+              pageSize,
+              row.index,
+            )}
+            isPinned={Boolean(pinnedRowIndices?.has(row.index))}
+          />
+        ),
       },
       {
         id: 'device_id',
@@ -321,6 +294,7 @@ export const useAndroidRepairQueueColumns = (
     workspace,
     pageIndex,
     pageSize,
+    pinnedRowIndices,
     rulesById,
   ]);
 

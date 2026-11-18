@@ -23,12 +23,12 @@ import {
   useFCDataTable,
 } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import {
-  UNKNOWN_USER_EMAIL,
-  useCurrentUserEmail,
-} from '@/fleet/components/repair_queue/use_current_user_email';
+  getPinnedRepairRowProps,
+  usePinnedRepairRows,
+} from '@/fleet/components/repair_queue/pinned_rows';
+import { useCurrentUserEmail } from '@/fleet/components/repair_queue/use_current_user_email';
 import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { usePager } from '@/fleet/hooks/use_pager';
-import { fleetColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { combineAipFiltersWithParentheses } from '@/fleet/utils/search_param';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
@@ -44,6 +44,7 @@ import {
 } from './use_android_repair_queue_columns';
 
 const ANDROID_REPAIRS_LOCAL_STORAGE_KEY = 'fleet_android_repairs_table';
+const EMPTY_ANDROID_QUEUE_ITEMS: readonly AndroidRepairQueueRow[] = [];
 
 interface AndroidRepairQueueTableProps {
   workspace: AndroidPageWorkspace;
@@ -69,15 +70,6 @@ export const AndroidRepairQueueTable = ({
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const currentUser = useCurrentUserEmail();
-  const isKnownUser = currentUser !== UNKNOWN_USER_EMAIL;
-
-  const { columns: defaultColumns } = useAndroidRepairQueueColumns(workspace, {
-    pageIndex,
-    pageSize,
-    siteId,
-    onError: setErrorMessage,
-  });
-  const columns = propColumns || defaultColumns;
 
   const effectiveFilter = useMemo(
     () => combineAipFiltersWithParentheses(siteFilter ?? '', filter),
@@ -102,10 +94,25 @@ export const AndroidRepairQueueTable = ({
   );
 
   const {
-    repairQueueItems = [],
+    repairQueueItems = EMPTY_ANDROID_QUEUE_ITEMS,
     nextPageToken = '',
     totalSize = 0,
   } = queueQuery.data || {};
+
+  const pinnedRowIndices = usePinnedRepairRows(
+    repairQueueItems,
+    currentUser,
+    getAndroidRepairQueueRowId,
+  );
+
+  const { columns: defaultColumns } = useAndroidRepairQueueColumns(workspace, {
+    pageIndex,
+    pageSize,
+    pinnedRowIndices,
+    siteId,
+    onError: setErrorMessage,
+  });
+  const columns = propColumns || defaultColumns;
 
   const { columnSizing, onColumnSizingChange } = useMrtColumnSizing(
     ANDROID_REPAIRS_LOCAL_STORAGE_KEY,
@@ -146,28 +153,12 @@ export const AndroidRepairQueueTable = ({
       manualFiltering: true,
       manualPagination: true,
       onColumnSizingChange,
-      muiTableBodyRowProps: ({ row }) => {
-        if (!isKnownUser || row.original.claimedBy !== currentUser) {
-          return {};
-        }
-        const nextItem = repairQueueItems[row.index + 1];
-        const isLastPinned =
-          nextItem !== undefined && nextItem.claimedBy !== currentUser;
-        return {
-          'data-pinned': 'true',
-          sx: {
-            '& > .MuiTableCell-root': {
-              backgroundColor: fleetColors.surfaceTonal,
-              ...(isLastPinned && {
-                borderBottom: `2px solid ${fleetColors.borderPrimary}`,
-              }),
-            },
-            '&:not(.Mui-selected):hover > .MuiTableCell-root': {
-              backgroundColor: fleetColors.primaryContainer,
-            },
-          },
-        };
-      },
+      muiTableBodyRowProps: ({ row }) =>
+        getPinnedRepairRowProps(
+          row.index,
+          pinnedRowIndices,
+          repairQueueItems.length,
+        ),
     }),
     [
       columns,
@@ -180,8 +171,7 @@ export const AndroidRepairQueueTable = ({
       queueQuery.isPlaceholderData,
       queueQuery.isFetching,
       onColumnSizingChange,
-      currentUser,
-      isKnownUser,
+      pinnedRowIndices,
     ],
   );
 

@@ -690,7 +690,6 @@ describe('FleetConsoleMockAPI', () => {
       filter: '',
       pageSize: 50,
       pageToken: '',
-      orderBy: '',
       lab: '',
     });
     const devItem = queueRes.repairQueueItems.find(

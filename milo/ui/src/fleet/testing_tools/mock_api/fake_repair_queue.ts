@@ -50,18 +50,35 @@ export function createRepairQueueFake(deps: {
     },
   });
 
-  const scoreItem = (item: RepairQueueItem): RepairQueueItem => {
+  const scoreItem = (item: RepairQueueItem, idx: number): RepairQueueItem => {
+    const rank = item.rank || idx + 1;
     if (deps.priorityRules.rules.size === 0) {
-      return RepairQueueItem.create(item);
+      return RepairQueueItem.create({ ...item, rank });
     }
     const { totalScore, matchedRuleIds } = deps.priorityRules.evaluateItemScore(
       toFilterableItem(item),
     );
     return RepairQueueItem.create({
       ...item,
+      rank,
       priorityScore: String(totalScore),
       matchedRuleIds,
     });
+  };
+
+  const pinCallerClaimedFirst = (
+    rows: readonly RepairQueueItem[],
+  ): RepairQueueItem[] => {
+    const callerEmail = deps.getCurrentUserEmail();
+    if (!callerEmail) {
+      return [...rows];
+    }
+    const pinned: RepairQueueItem[] = [];
+    const rest: RepairQueueItem[] = [];
+    for (const row of rows) {
+      (row.claimedBy === callerEmail ? pinned : rest).push(row);
+    }
+    return [...pinned, ...rest];
   };
 
   const service: Pick<
@@ -75,18 +92,21 @@ export function createRepairQueueFake(deps: {
           deps.matchesFilter(toFilterableItem(item), req.filter),
         );
       }
-      const inProgressCount = scored.filter((i) => Boolean(i.claimedBy)).length;
+      const ordered = pinCallerClaimedFirst(scored);
+      const inProgressCount = ordered.filter((i) =>
+        Boolean(i.claimedBy),
+      ).length;
       const totalSize =
         !req.filter && explicitTotalSize !== undefined
           ? explicitTotalSize
-          : scored.length;
+          : ordered.length;
       const startIndex = req.pageToken?.startsWith('token-')
         ? parseInt(req.pageToken.replace('token-', ''), 10) || 0
         : 0;
-      const pageSize = req.pageSize > 0 ? req.pageSize : scored.length;
-      const paged = scored.slice(startIndex, startIndex + pageSize);
+      const pageSize = req.pageSize > 0 ? req.pageSize : ordered.length;
+      const paged = ordered.slice(startIndex, startIndex + pageSize);
       const computedNext =
-        startIndex + pageSize < scored.length
+        startIndex + pageSize < ordered.length
           ? `token-${startIndex + pageSize}`
           : '';
       const nextPageToken =
