@@ -55,6 +55,7 @@ export interface SiteCardProps {
   readonly site: PhysicalSite;
   readonly searchQuery?: string;
   readonly onEdit?: (site: PhysicalSite) => void;
+  readonly onManagePhotos?: (site: PhysicalSite) => void;
   readonly onDelete?: (site: PhysicalSite) => void;
 }
 
@@ -66,23 +67,10 @@ const rowBetweenSx = {
   flexWrap: 'nowrap',
   gap: 1,
 } as const;
-const cardSx = {
-  ...surfaceCardClippedSx,
-  display: 'flex',
-  flexDirection: 'column',
-} as const;
-const cardBodySx = {
-  p: 2.25,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 1.5,
-  flex: 1,
-} as const;
-const footerSx = {
-  ...rowBetweenSx,
-  mt: 'auto',
-  pt: 1.5,
-} as const;
+const colFlex = { display: 'flex', flexDirection: 'column' } as const;
+const cardSx = { ...surfaceCardClippedSx, ...colFlex } as const;
+const cardBodySx = { p: 2.25, ...colFlex, gap: 1.5, flex: 1 } as const;
+const footerSx = { ...rowBetweenSx, mt: 'auto', pt: 1.5 } as const;
 const titleRowSx = {
   ...actionRowSx,
   gap: 1,
@@ -115,9 +103,7 @@ const photoPillSx = {
   backgroundColor: tk.fleetColors.scrim,
   color: tk.fleetColors.onScrim,
 } as const;
-const photoNavBtnSx = {
-  width: tk.controlHeights.chipCompact,
-  height: tk.controlHeights.chipCompact,
+const scrimBtnBaseSx = {
   p: 0,
   color: tk.fleetColors.onScrim,
   '&:hover': { backgroundColor: tk.fleetColors.scrimHover },
@@ -125,6 +111,11 @@ const photoNavBtnSx = {
     outline: `2px solid ${tk.fleetColors.onScrim}`,
     outlineOffset: -2,
   },
+} as const;
+const photoNavBtnSx = {
+  ...scrimBtnBaseSx,
+  width: tk.controlHeights.chipCompact,
+  height: tk.controlHeights.chipCompact,
 } as const;
 const photoCountSx = {
   color: tk.fleetColors.onScrim,
@@ -146,20 +137,23 @@ const carouselBoxSx = {
   flexShrink: 0,
 } as const;
 const placeholderStackSx = {
-  display: 'flex',
-  flexDirection: 'column',
+  ...colFlex,
   alignItems: 'center',
-  justifyContent: 'center',
   gap: 0.5,
   color: tk.fleetColors.textTertiary,
 } as const;
+const photoEditBtnSx = {
+  ...scrimBtnBaseSx,
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  width: tk.controlHeights.button,
+  height: tk.controlHeights.button,
+  backgroundColor: tk.fleetColors.scrim,
+} as const;
 
-export const SiteCard = ({
-  site,
-  searchQuery,
-  onEdit,
-  onDelete,
-}: SiteCardProps) => {
+export const SiteCard = (props: SiteCardProps) => {
+  const { site, searchQuery, onEdit, onManagePhotos, onDelete } = props;
   const [photoIdx, setPhotoIdx] = useState(0);
   const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
@@ -167,18 +161,19 @@ export const SiteCard = ({
   const trimmedQuery = searchQuery?.trim() ?? '';
   const matchIdx = (t: string) =>
     trimmedQuery ? fuzzySubstring(trimmedQuery, t)[1] : undefined;
-  const validUrls = Array.from(
-    new Set(
+  const validUrls = [
+    ...new Set(
       (site.imageUrls ?? [])
         .map(normalizeSiteImageUrl)
         .filter((u): u is string => u !== null && !failedUrls[u]),
     ),
-  );
+  ];
   const safeIdx = validUrls.length > 0 ? photoIdx % validUrls.length : 0;
   const activeUrl = validUrls[safeIdx] ?? null;
-
   const campusMapsUrl = getCampusMapsUrl(site.id);
   const formattedUpdatedAt = formatSiteUpdatedAt(site.updatedAt);
+  const stepPhoto = (d: number) =>
+    setPhotoIdx((i) => (i + d + validUrls.length) % validUrls.length);
   const idBadge = (
     <HighlightCharacter
       variant="inherit"
@@ -211,23 +206,33 @@ export const SiteCard = ({
                 setFailedUrls((prev) => ({ ...prev, [url]: true }))
               }
               sx={{
-                width: '100%',
-                height: '100%',
+                width: 1,
+                height: 1,
                 objectFit: 'cover',
                 display: idx === safeIdx ? 'block' : 'none',
               }}
             />
           ))}
+          {onManagePhotos && (
+            <Tooltip {...tipProps} title="Manage facility photos">
+              <IconButton
+                size="small"
+                aria-label={`Manage photos for ${site.name}`}
+                onClick={() => onManagePhotos(site)}
+                sx={photoEditBtnSx}
+              >
+                <PhotoCameraOutlinedIcon
+                  sx={{ fontSize: tk.fontSizes.caption }}
+                />
+              </IconButton>
+            </Tooltip>
+          )}
           {validUrls.length > 1 && (
             <Box sx={photoPillSx}>
               <IconButton
                 size="small"
                 aria-label={`Previous photo for ${site.name}`}
-                onClick={() =>
-                  setPhotoIdx(
-                    (i) => (i - 1 + validUrls.length) % validUrls.length,
-                  )
-                }
+                onClick={() => stepPhoto(-1)}
                 sx={photoNavBtnSx}
               >
                 <ChevronLeftIcon sx={ctrlIconSx} />
@@ -238,7 +243,7 @@ export const SiteCard = ({
               <IconButton
                 size="small"
                 aria-label={`Next photo for ${site.name}`}
-                onClick={() => setPhotoIdx((i) => (i + 1) % validUrls.length)}
+                onClick={() => stepPhoto(1)}
                 sx={photoNavBtnSx}
               >
                 <ChevronRightIcon sx={ctrlIconSx} />
@@ -256,6 +261,19 @@ export const SiteCard = ({
             <Typography variant="caption" color="text.secondary">
               No facility photo
             </Typography>
+            {onManagePhotos && (
+              <Link
+                component="button"
+                type="button"
+                variant="caption"
+                underline="hover"
+                aria-label={`Manage photos for ${site.name}`}
+                onClick={() => onManagePhotos(site)}
+                sx={{ fontWeight: 500 }}
+              >
+                Add photos
+              </Link>
+            )}
           </Box>
         </Box>
       )}

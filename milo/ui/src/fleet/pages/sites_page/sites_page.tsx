@@ -55,7 +55,7 @@ import {
 
 import { DeleteSiteDialog } from './delete_site_dialog';
 import { SiteCard } from './site_card';
-import { SiteFormDialog } from './site_form_dialog';
+import { SiteFormDialog, SitePhotosDialog } from './site_form_dialog';
 import { filterAndSortSites, SUPPORTED_SITE_PLATFORMS } from './site_helpers';
 import { PLATFORM_LOGOS, usePhysicalSites } from './use_physical_sites';
 
@@ -100,6 +100,7 @@ export const SitesPage = () => {
   const [platformFilter, setPlatformFilter] = useState<Platform | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSite, setEditingSite] = useState<PhysicalSite | null>(null);
+  const [photosSite, setPhotosSite] = useState<PhysicalSite | null>(null);
   const [deletingSite, setDeletingSite] = useState<PhysicalSite | null>(null);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
 
@@ -140,6 +141,21 @@ export const SitesPage = () => {
       closeForm();
     } catch {
       // Surfaced inside SiteFormDialog.
+    }
+  };
+
+  const openPhotosDialog = (site: PhysicalSite) =>
+    void runWithAdmin(() => {
+      updateSiteMutation.reset();
+      setPhotosSite(site);
+    });
+
+  const handleSavePhotos = async (site: PhysicalSite) => {
+    try {
+      await updateSiteMutation.mutateAsync(site);
+      setPhotosSite(null);
+    } catch {
+      // Surfaced inside SitePhotosDialog.
     }
   };
 
@@ -311,6 +327,7 @@ export const SitesPage = () => {
                 site={site}
                 searchQuery={searchQuery}
                 onEdit={openForm}
+                onManagePhotos={openPhotosDialog}
                 onDelete={handleOpenDelete}
               />
             ))}
@@ -327,6 +344,14 @@ export const SitesPage = () => {
         error={saveErr}
         onClose={closeForm}
         onSave={handleSaveSite}
+      />
+      <SitePhotosDialog
+        key={photosSite ? `photos-${photosSite.id}` : 'photos-closed'}
+        site={photosSite}
+        isSaving={updateSiteMutation.isPending}
+        error={updateSiteMutation.error}
+        onClose={() => !updateSiteMutation.isPending && setPhotosSite(null)}
+        onSave={handleSavePhotos}
       />
       <DeleteSiteDialog
         site={deletingSite}

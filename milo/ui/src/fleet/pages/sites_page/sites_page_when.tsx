@@ -62,7 +62,6 @@ export const when = {
     chromeosFilter?: string;
     androidFilter?: string;
     browserFilter?: string;
-    snipItPhotoLink?: string;
   }) {
     const dialog = await screen.findByRole('dialog');
     const user = getUser();
@@ -94,28 +93,22 @@ export const when = {
         container: bar,
       });
     }
-    if (fields.snipItPhotoLink) {
-      const photoInput = within(dialog).getByLabelText(
-        /SnipIt screenshot link or URL/i,
-      );
-      await user.clear(photoInput);
-      await user.type(photoInput, fields.snipItPhotoLink);
-      await user.click(
-        within(dialog).getByRole('button', { name: 'Add photo' }),
-      );
-    }
   },
 
   async userSubmitsSiteForm() {
     const dialog = await screen.findByRole('dialog');
     const submitBtn = within(dialog).getByRole('button', {
-      name: /Add site|Save changes/i,
+      name: /Add site|Save changes|Save photos/i,
     });
     await getUser().click(submitBtn);
   },
 
   async userOpensEditSiteDialog(siteName: string) {
     await genericWhen.userClicksButton(`Edit ${siteName}`);
+  },
+
+  async userOpensManagePhotosDialog(siteName: string) {
+    await genericWhen.userClicksButton(`Manage photos for ${siteName}`);
   },
 
   async userClicksAddFiltersOnCard(siteId: string) {

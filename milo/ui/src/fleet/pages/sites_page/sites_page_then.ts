@@ -126,7 +126,7 @@ export const then = {
   async siteFormSubmitIsDisabled() {
     const dialog = await screen.findByRole('dialog');
     const submitBtn = within(dialog).getByRole('button', {
-      name: /Add site|Save changes/i,
+      name: /Add site|Save changes|Save photos/i,
     });
     expect(submitBtn).toBeDisabled();
   },

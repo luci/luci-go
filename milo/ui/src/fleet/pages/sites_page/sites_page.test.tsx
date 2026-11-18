@@ -136,7 +136,6 @@ describe('<SitesPage /> (Full Page Integration)', () => {
       id: 'EM25',
       name: 'Palo Alto EM25',
       chromeosFilter: 'labels.zone:ZONE_SFO36_OS',
-      snipItPhotoLink: 'screen/ddNrsT8xfFq4nJa',
     });
     await when.userSubmitsSiteForm();
 
@@ -150,15 +149,10 @@ describe('<SitesPage /> (Full Page Integration)', () => {
             filter: '(labels."zone" = "ZONE_SFO36_OS")',
           },
         ],
-        imageUrls: ['https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png'],
       },
     });
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
     await then.siteCardOrderIs(['Mountain View MTV', 'Palo Alto EM25']);
-    await then.siteCardShowsFacilityPhoto(
-      'EM25',
-      'https://screenshot.googleplex.com/ddNrsT8xfFq4nJa.png',
-    );
   });
 
   it('navigates across multiple facility photos in the site card carousel', async () => {
@@ -228,7 +222,7 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await then.siteCardShowsPhotoPlaceholder('EM25');
   });
 
-  it('adds, removes, and validates facility photo links in the site form dialog', async () => {
+  it('adds, removes, and validates facility photo links in the dedicated site photos dialog', async () => {
     given.sites([
       {
         id: 'EM25',
@@ -243,7 +237,7 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     when.pageIsRendered();
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
 
-    await when.userOpensEditSiteDialog('Palo Alto EM25');
+    await when.userOpensManagePhotosDialog('Palo Alto EM25');
     await when.userRemovesPhotoInDialog('screen/ddNrsT8xfFq4nJa');
 
     await when.userTypesPhotoInput('screen/YLwMYTzGAfHLEXf, invalid-token');

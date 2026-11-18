@@ -53,6 +53,15 @@ export interface SiteFormDialogProps {
   readonly open: boolean;
   readonly editingSite: PhysicalSite | null;
   readonly existingSites: readonly PhysicalSite[];
+  readonly mode?: 'site' | 'photos';
+  readonly isSaving: boolean;
+  readonly error: unknown;
+  readonly onClose: () => void;
+  readonly onSave: (site: PhysicalSite) => void;
+}
+
+export interface SitePhotosDialogProps {
+  readonly site: PhysicalSite | null;
   readonly isSaving: boolean;
   readonly error: unknown;
   readonly onClose: () => void;
@@ -63,10 +72,12 @@ const monoSlotProps = {
   htmlInput: { style: { fontFamily: tk.fontFamilies.mono } },
 } as const;
 const zeroTimeout = { timeout: 0 } as const;
+const ctrlIconSx = { fontSize: tk.iconSizes.control } as const;
 const dialogPaperProps = { sx: { maxWidth: 760 } } as const;
+const photosDialogPaperProps = { sx: { maxWidth: 640 } } as const;
+const colFlex = { display: 'flex', flexDirection: 'column' } as const;
 const contentSx = {
-  display: 'flex',
-  flexDirection: 'column',
+  ...colFlex,
   gap: 2.25,
   maxHeight: '55vh',
   '&&': { pt: 1.5 },
@@ -75,30 +86,38 @@ const topFieldsGridSx = {
   display: 'grid',
   gridTemplateColumns: { xs: '1fr', sm: '240px 1fr' },
   gap: 2,
-  alignItems: 'flex-start',
+} as const;
+const photoGridSx = {
+  display: 'grid',
+  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+  gap: 1.25,
+  mt: 0.5,
 } as const;
 const photoRowSx = {
-  ...actionRowSx,
-  justifyContent: 'space-between',
-  px: 1.25,
-  py: 0.5,
-  borderRadius: tk.radii.sm,
-  border: tk.borders.divider,
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr) auto',
+  alignItems: 'center',
+  gap: 0.75,
+  p: 1,
+  borderRadius: tk.radii.md,
+  border: tk.borders.default,
   backgroundColor: tk.fleetColors.surfaceTonal,
 } as const;
 const photoThumbSx = {
-  width: 36,
-  height: 24,
+  gridColumn: '1 / -1',
+  width: '100%',
+  height: 108,
   objectFit: 'cover',
   borderRadius: tk.radii.sm,
   border: tk.borders.default,
   backgroundColor: tk.fleetColors.surface,
-  flexShrink: 0,
 } as const;
 
 export const SiteFormDialog = (p: SiteFormDialogProps) => {
   const { open, editingSite, existingSites, isSaving, error, onClose, onSave } =
     p;
+  const mode = p.mode ?? 'site';
+  const isPhotosMode = mode === 'photos';
   const [siteId, setSiteId] = useState(editingSite?.id ?? '');
   const [siteName, setSiteName] = useState(editingSite?.name ?? '');
   const [filterByPlatform, setFilterByPlatform] = useState<
@@ -121,13 +140,9 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
     siteName.trim(),
     photoInput.trim(),
   ];
-  const rawPhotoTokens = trimmedPhoto
+  const isInvalidPhoto = trimmedPhoto
     .split(/[\n,]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const isInvalidPhoto = rawPhotoTokens.some(
-    (token) => normalizeSiteImageUrl(token) === null,
-  );
+    .some((t) => t.trim() && !normalizeSiteImageUrl(t));
   const eqCI = (a: string, b: string) =>
     a.trim().toLowerCase() === b.toLowerCase();
   const isDuplicateId =
@@ -139,14 +154,11 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
     existingSites.some(
       (s) => s.id !== editingSite?.id && eqCI(s.name, trimmedName),
     );
-  const canSave = Boolean(
-    trimmedId &&
-      trimmedName &&
-      !isDuplicateId &&
-      !isDuplicateName &&
-      !isInvalidPhoto &&
-      !isSaving,
+  const validSite = Boolean(
+    trimmedId && trimmedName && !isDuplicateId && !isDuplicateName,
   );
+  const canSave =
+    !isSaving && (isPhotosMode ? isEditing && !isInvalidPhoto : validSite);
 
   const handleAddPhoto = () => {
     if (isInvalidPhoto) return;
@@ -158,17 +170,23 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
 
   const handleSave = () => {
     if (!canSave) return;
-    const finalPhotos = Array.from(
-      new Set([...imageUrls, ...parseSiteImageUrlsInput(photoInput)]),
-    );
+    const base = {
+      ...editingSite,
+      imageUrls: Array.from(
+        new Set([...imageUrls, ...parseSiteImageUrlsInput(photoInput)]),
+      ),
+    };
     onSave(
-      PhysicalSite.fromPartial({
-        ...editingSite,
-        id: isEditing ? editingSite!.id : trimmedId,
-        name: trimmedName,
-        platformFilters: buildPlatformFilters(filterByPlatform),
-        imageUrls: finalPhotos,
-      }),
+      PhysicalSite.fromPartial(
+        isPhotosMode
+          ? base
+          : {
+              ...base,
+              id: isEditing ? editingSite!.id : trimmedId,
+              name: trimmedName,
+              platformFilters: buildPlatformFilters(filterByPlatform),
+            },
+      ),
     );
   };
 
@@ -194,19 +212,9 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
     onKeyDown,
   };
 
-  return (
-    <Dialog
-      open={open}
-      onClose={isSaving ? undefined : onClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={dialogPaperProps}
-      TransitionProps={zeroTimeout}
-    >
-      <DialogTitle sx={{ pb: 1 }}>
-        {isEditing ? 'Edit physical site' : 'Add physical site'}
-      </DialogTitle>
-      <DialogContent sx={contentSx}>
+  const dialogSections = {
+    site: (
+      <>
         <Box sx={topFieldsGridSx}>
           <TextField
             {...tfBase}
@@ -236,11 +244,14 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
             setFilterByPlatform((prev) => ({ ...prev, [plat]: val }))
           }
         />
-
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <Box sx={{ ...actionRowSx, justifyContent: 'space-between' }}>
-            <Typography variant="subtitle2">
-              Facility photos (SnipIt)
+      </>
+    ),
+    photos: (
+      <>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={{ ...actionRowSx, justifyContent: 'space-between', gap: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              Paste a SnipIt link (e.g. screen/ID) or image URL below.
             </Typography>
             <Link
               href={SNIPIT_UPLOAD_URL}
@@ -258,10 +269,6 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
               <OpenInNewIcon sx={{ fontSize: tk.fontSizes.caption }} />
             </Link>
           </Box>
-          <Typography variant="caption" color="text.secondary">
-            Upload photos on SnipIt, then paste each screenshot link (e.g.
-            screen/ID) or image URL below.
-          </Typography>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
             <TextField
               label="SnipIt screenshot link or URL"
@@ -288,11 +295,7 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
             />
             <Button
               variant="toolbar"
-              startIcon={
-                <AddPhotoAlternateOutlinedIcon
-                  sx={{ fontSize: tk.iconSizes.control }}
-                />
-              }
+              startIcon={<AddPhotoAlternateOutlinedIcon sx={ctrlIconSx} />}
               onClick={handleAddPhoto}
               disabled={!trimmedPhoto || isInvalidPhoto || isSaving}
               sx={{ flexShrink: 0, height: 40 }}
@@ -301,28 +304,19 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
             </Button>
           </Box>
           {imageUrls.length > 0 && (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0.75,
-                mt: 0.5,
-              }}
-            >
+            <Box sx={photoGridSx}>
               {imageUrls.map((url) => {
                 const label = getSnipItShortlinkLabel(url);
                 return (
                   <Box key={url} sx={photoRowSx}>
-                    <Box sx={{ ...actionRowSx, gap: 1, minWidth: 0 }}>
-                      <Box component="img" src={url} alt="" sx={photoThumbSx} />
-                      <Typography
-                        variant="caption"
-                        noWrap
-                        sx={{ fontFamily: tk.fontFamilies.mono }}
-                      >
-                        {label}
-                      </Typography>
-                    </Box>
+                    <Box component="img" src={url} alt="" sx={photoThumbSx} />
+                    <Typography
+                      variant="caption"
+                      noWrap
+                      sx={{ fontFamily: tk.fontFamilies.mono }}
+                    >
+                      {label}
+                    </Typography>
                     <Tooltip title="Remove photo">
                       <IconButton
                         size="small"
@@ -333,9 +327,7 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
                         disabled={isSaving}
                         sx={iconButtonSx}
                       >
-                        <DeleteOutlineIcon
-                          sx={{ fontSize: tk.iconSizes.control }}
-                        />
+                        <DeleteOutlineIcon sx={ctrlIconSx} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -344,14 +336,37 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
             </Box>
           )}
         </Box>
+      </>
+    ),
+  };
 
+  const errVerb = isPhotosMode
+    ? 'update facility photos'
+    : `${isEditing ? 'update' : 'create'} physical site`;
+  const saveLabel = isPhotosMode
+    ? 'Save photos'
+    : isEditing
+      ? 'Save changes'
+      : 'Add site';
+
+  return (
+    <Dialog
+      open={open}
+      onClose={isSaving ? undefined : onClose}
+      maxWidth={isPhotosMode ? 'sm' : 'md'}
+      fullWidth
+      PaperProps={isPhotosMode ? photosDialogPaperProps : dialogPaperProps}
+      TransitionProps={zeroTimeout}
+    >
+      <DialogTitle sx={{ pb: 1 }}>
+        {isPhotosMode
+          ? `Facility photos — ${editingSite?.name ?? ''}`
+          : `${isEditing ? 'Edit' : 'Add'} physical site`}
+      </DialogTitle>
+      <DialogContent sx={contentSx}>
+        {dialogSections[mode]}
         {Boolean(error) && (
-          <Alert severity="error">
-            {getErrorMessage(
-              error,
-              isEditing ? 'update physical site' : 'create physical site',
-            )}
-          </Alert>
+          <Alert severity="error">{getErrorMessage(error, errVerb)}</Alert>
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
@@ -364,9 +379,19 @@ export const SiteFormDialog = (p: SiteFormDialogProps) => {
           Cancel
         </Button>
         <Button variant="contained" onClick={handleSave} disabled={!canSave}>
-          {isEditing ? 'Save changes' : 'Add site'}
+          {saveLabel}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
+
+export const SitePhotosDialog = (p: SitePhotosDialogProps) => (
+  <SiteFormDialog
+    {...p}
+    open={Boolean(p.site)}
+    editingSite={p.site}
+    existingSites={[]}
+    mode="photos"
+  />
+);
