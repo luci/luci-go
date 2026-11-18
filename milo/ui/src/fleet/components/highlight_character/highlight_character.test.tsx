@@ -14,6 +14,8 @@
 
 import { render, screen } from '@testing-library/react';
 
+import { colors } from '@/fleet/theme/colors';
+
 import { HighlightCharacter } from './highlight_character';
 
 describe('HighlightCharacter', () => {
@@ -99,5 +101,20 @@ describe('HighlightCharacter', () => {
     // cSpan and threeSpan have Emotion generated class for blue color while hSpan does not
     expect(cSpan?.getAttribute('class')).not.toBe(hSpan?.getAttribute('class'));
     expect(threeSpan?.getAttribute('class')).toBe(cSpan?.getAttribute('class'));
+  });
+
+  it('renders a highlight background when highlightVariant="background"', () => {
+    const { container } = render(
+      <HighlightCharacter
+        highlightVariant="background"
+        highlightIndexes={[0, 1]}
+      >
+        Simple
+      </HighlightCharacter>,
+    );
+    const spans = container.querySelectorAll('span');
+    expect(spans[0]).toHaveStyle({ backgroundColor: colors.yellow[200] });
+    expect(spans[1]).toHaveStyle({ backgroundColor: colors.yellow[200] });
+    expect(spans[2]).not.toHaveStyle({ backgroundColor: colors.yellow[200] });
   });
 });

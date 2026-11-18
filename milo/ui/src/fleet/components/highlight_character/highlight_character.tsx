@@ -19,6 +19,7 @@ import { colors } from '@/fleet/theme/colors';
 export interface HighlightCharacterProps extends TypographyProps {
   children: string;
   highlightIndexes?: number[];
+  highlightVariant?: 'color' | 'background';
   truncate?: 'none' | 'end' | 'middle';
   suffixLength?: number;
 }
@@ -26,6 +27,7 @@ export interface HighlightCharacterProps extends TypographyProps {
 export const HighlightCharacter = ({
   children,
   highlightIndexes,
+  highlightVariant = 'color',
   truncate = 'end',
   suffixLength = 3,
   ...typographyProps
@@ -38,16 +40,37 @@ export const HighlightCharacter = ({
     if (!highlights || highlights.length === 0) {
       return text;
     }
-    return text.split('').map((letter, i) => (
-      <span
-        key={`item-${children}-letter-${startIndex + i}`}
-        css={{
-          color: highlights.includes(i) ? colors.blue[600] : '',
-        }}
-      >
-        {letter}
-      </span>
-    ));
+    const highlightSet = new Set(highlights);
+    return text.split('').map((letter, i) => {
+      const isHighlighted = highlightSet.has(i);
+      const prevHighlighted = highlightSet.has(i - 1);
+      const nextHighlighted = highlightSet.has(i + 1);
+      return (
+        <span
+          key={`item-${children}-letter-${startIndex + i}`}
+          css={
+            isHighlighted
+              ? highlightVariant === 'background'
+                ? {
+                    backgroundColor: colors.yellow[200],
+                    color: colors.grey[900],
+                    borderTopLeftRadius: prevHighlighted ? 0 : 2,
+                    borderBottomLeftRadius: prevHighlighted ? 0 : 2,
+                    borderTopRightRadius: nextHighlighted ? 0 : 2,
+                    borderBottomRightRadius: nextHighlighted ? 0 : 2,
+                  }
+                : {
+                    color: colors.blue[600],
+                  }
+              : {
+                  color: '',
+                }
+          }
+        >
+          {letter}
+        </span>
+      );
+    });
   };
 
   // Only perform middle truncation if string is longer than suffix + ellipsis ("..." is 3 chars)

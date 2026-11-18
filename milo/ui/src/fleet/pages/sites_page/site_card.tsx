@@ -33,6 +33,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+import { HighlightCharacter } from '@/fleet/components/highlight_character';
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
 import {
   actionRowSx,
@@ -40,6 +41,7 @@ import {
   surfaceCardClippedSx,
 } from '@/fleet/theme/recipes';
 import * as tk from '@/fleet/theme/tokens';
+import { fuzzySubstring } from '@/fleet/utils/fuzzy_sort';
 import { PhysicalSite } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
@@ -51,6 +53,7 @@ import { SitePlatformRollup } from './site_platform_rollup';
 
 export interface SiteCardProps {
   readonly site: PhysicalSite;
+  readonly searchQuery?: string;
   readonly onEdit?: (site: PhysicalSite) => void;
   readonly onDelete?: (site: PhysicalSite) => void;
 }
@@ -151,11 +154,19 @@ const placeholderStackSx = {
   color: tk.fleetColors.textTertiary,
 } as const;
 
-export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
+export const SiteCard = ({
+  site,
+  searchQuery,
+  onEdit,
+  onDelete,
+}: SiteCardProps) => {
   const [photoIdx, setPhotoIdx] = useState(0);
   const [failedUrls, setFailedUrls] = useState<Record<string, boolean>>({});
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const closeMenu = () => setMenuAnchorEl(null);
+  const trimmedQuery = searchQuery?.trim() ?? '';
+  const matchIdx = (t: string) =>
+    trimmedQuery ? fuzzySubstring(trimmedQuery, t)[1] : undefined;
   const validUrls = Array.from(
     new Set(
       (site.imageUrls ?? [])
@@ -168,6 +179,18 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
 
   const campusMapsUrl = getCampusMapsUrl(site.id);
   const formattedUpdatedAt = formatSiteUpdatedAt(site.updatedAt);
+  const idBadge = (
+    <HighlightCharacter
+      variant="inherit"
+      component="span"
+      truncate="none"
+      highlightVariant="background"
+      highlightIndexes={matchIdx(site.id)}
+      sx={{ display: 'inline', fontFamily: tk.fontFamilies.mono }}
+    >
+      {site.id}
+    </HighlightCharacter>
+  );
 
   return (
     <Box
@@ -242,14 +265,18 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
           <Box sx={titleRowSx}>
             <PlaceOutlinedIcon sx={placeIconSx} />
             <Tooltip title={site.name} enterDelay={500}>
-              <Typography
-                variant="subtitle1"
-                component="h2"
-                noWrap
-                sx={{ fontWeight: 600, minWidth: 0, flex: 1 }}
-              >
-                {site.name}
-              </Typography>
+              <Box tabIndex={0} sx={{ minWidth: 0, flex: 1 }}>
+                <HighlightCharacter
+                  variant="subtitle1"
+                  component="h2"
+                  aria-label={site.name}
+                  highlightVariant="background"
+                  highlightIndexes={matchIdx(site.name)}
+                  sx={{ fontWeight: 600 }}
+                >
+                  {site.name}
+                </HighlightCharacter>
+              </Box>
             </Tooltip>
           </Box>
           {(onEdit || onDelete) && (
@@ -328,7 +355,7 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
               >
                 <StatusPill tone="neutral" dot={false}>
                   <Box component="span" sx={pillInnerSx}>
-                    {site.id}
+                    {idBadge}
                     <OpenInNewIcon sx={{ fontSize: tk.fontSizes.caption }} />
                   </Box>
                 </StatusPill>
@@ -336,9 +363,7 @@ export const SiteCard = ({ site, onEdit, onDelete }: SiteCardProps) => {
             </Tooltip>
           ) : (
             <StatusPill tone="neutral" dot={false}>
-              <Box component="span" sx={{ fontFamily: tk.fontFamilies.mono }}>
-                {site.id}
-              </Box>
+              {idBadge}
             </StatusPill>
           )}
           {formattedUpdatedAt && (

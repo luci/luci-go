@@ -112,6 +112,7 @@ describe('<SitesPage /> (Full Page Integration)', () => {
     await when.userSearchesSites('EM25');
 
     await then.siteCardIsVisible('Palo Alto EM25', 'EM25');
+    await then.siteCardHighlightsSearchMatch('EM25', 'EM25');
     then.siteCardIsNotVisible('Mountain View MTV');
     await then.textIsVisible('1 site');
 

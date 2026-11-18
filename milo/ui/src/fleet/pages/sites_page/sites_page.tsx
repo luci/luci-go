@@ -309,6 +309,7 @@ export const SitesPage = () => {
               <SiteCard
                 key={site.id}
                 site={site}
+                searchQuery={searchQuery}
                 onEdit={openForm}
                 onDelete={handleOpenDelete}
               />

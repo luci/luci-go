@@ -35,7 +35,24 @@ export const then = {
     const card = await screen.findByTestId(`site-card-${id}`);
     expect(card).toHaveAttribute('aria-label', name);
     expect(within(card).getByRole('heading', { name })).toBeInTheDocument();
-    expect(within(card).getByText(id)).toBeInTheDocument();
+    expect(card).toHaveTextContent(id);
+  },
+
+  async siteCardHighlightsSearchMatch(
+    id: string,
+    expectedHighlightedSubstring: string,
+  ) {
+    const card = await screen.findByTestId(`site-card-${id}`);
+    const heading = within(card).getByRole('heading');
+    const spans = Array.from(heading.querySelectorAll('span'));
+    const highlightedText = spans
+      .filter((s) => {
+        const bg = window.getComputedStyle(s).backgroundColor;
+        return bg !== '' && bg !== 'transparent' && !bg.endsWith(', 0)');
+      })
+      .map((s) => s.textContent)
+      .join('');
+    expect(highlightedText).toBe(expectedHighlightedSubstring);
   },
 
   async siteCardHasLink(id: string, linkName: string, expectedHref: string) {
