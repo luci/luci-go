@@ -215,3 +215,28 @@ export function getSnipItShortlinkLabel(url: string): string {
   const m = SNIPIT_GOOGLEPLEX_RE.exec(url.trim());
   return m ? `screen/${m[1]}` : url.trim();
 }
+
+/**
+ * Builds repair-selector options for sites matching `platform`, formatting
+ * labels with optional broken-device counts and sorting by broken count
+ * descending (with alphabetical tie-breaking by site name and ID).
+ */
+export function resolvePlatformRepairSites(
+  sites: readonly PhysicalSite[],
+  platform: Platform,
+  brokenCounts: Readonly<Record<string, number | null>> = {},
+) {
+  return filterAndSortSites(sites, '', platform)
+    .map((s) => {
+      const filter = platformFiltersToMap(s.platformFilters)[platform] ?? '';
+      const brokenCount = brokenCounts[s.id] ?? null;
+      const base =
+        s.name && !s.name.includes('(') && !s.name.includes(s.id)
+          ? `${s.name} (${s.id})`
+          : s.name || s.id;
+      const label =
+        brokenCount !== null ? `${base} · ${brokenCount} broken` : base;
+      return { id: s.id, label, filter, brokenCount };
+    })
+    .sort((a, b) => (b.brokenCount ?? -1) - (a.brokenCount ?? -1));
+}

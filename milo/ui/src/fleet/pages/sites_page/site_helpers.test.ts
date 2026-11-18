@@ -30,6 +30,7 @@ import {
   normalizeSiteImageUrl,
   parseSiteImageUrlsInput,
   platformFiltersToMap,
+  resolvePlatformRepairSites,
 } from './site_helpers';
 
 describe('site_helpers', () => {
@@ -168,6 +169,79 @@ describe('site_helpers', () => {
     expect(
       filterAndSortSites(sites, '', Platform.ANDROID).map((s) => s.id),
     ).toEqual(['MTV']);
+  });
+
+  it('resolves and sorts platform repair sites by broken count', () => {
+    const repairSites = [
+      PhysicalSite.fromPartial({
+        id: 'SITE-ALPHA',
+        name: 'Alpha Lab',
+        platformFilters: [
+          { platform: Platform.ANDROID, filter: 'lab_name = "alpha"' },
+        ],
+      }),
+      PhysicalSite.fromPartial({
+        id: 'SITE-BETA',
+        name: 'Beta Lab (SITE-BETA)',
+        platformFilters: [
+          { platform: Platform.ANDROID, filter: 'lab_name = "beta"' },
+        ],
+      }),
+    ];
+    expect(
+      resolvePlatformRepairSites(repairSites, Platform.ANDROID, {
+        'SITE-ALPHA': 4,
+        'SITE-BETA': 15,
+      }),
+    ).toEqual([
+      {
+        id: 'SITE-BETA',
+        label: 'Beta Lab (SITE-BETA) · 15 broken',
+        filter: 'lab_name = "beta"',
+        brokenCount: 15,
+      },
+      {
+        id: 'SITE-ALPHA',
+        label: 'Alpha Lab (SITE-ALPHA) · 4 broken',
+        filter: 'lab_name = "alpha"',
+        brokenCount: 4,
+      },
+    ]);
+
+    // Omitted brokenCounts omits the suffix and keeps alphabetical order.
+    expect(resolvePlatformRepairSites(repairSites, Platform.ANDROID)).toEqual([
+      {
+        id: 'SITE-ALPHA',
+        label: 'Alpha Lab (SITE-ALPHA)',
+        filter: 'lab_name = "alpha"',
+        brokenCount: null,
+      },
+      {
+        id: 'SITE-BETA',
+        label: 'Beta Lab (SITE-BETA)',
+        filter: 'lab_name = "beta"',
+        brokenCount: null,
+      },
+    ]);
+
+    // Zero broken count formats explicitly and sorts ahead of null counts.
+    expect(
+      resolvePlatformRepairSites(repairSites, Platform.ANDROID, {
+        'SITE-ALPHA': null,
+        'SITE-BETA': 0,
+      }).map((o) => [o.id, o.label, o.brokenCount]),
+    ).toEqual([
+      ['SITE-BETA', 'Beta Lab (SITE-BETA) · 0 broken', 0],
+      ['SITE-ALPHA', 'Alpha Lab (SITE-ALPHA)', null],
+    ]);
+
+    // Tied broken counts preserve alphabetical order by site name and ID.
+    expect(
+      resolvePlatformRepairSites(repairSites, Platform.ANDROID, {
+        'SITE-ALPHA': 5,
+        'SITE-BETA': 5,
+      }).map((o) => o.id),
+    ).toEqual(['SITE-ALPHA', 'SITE-BETA']);
   });
 
   it('normalizes SnipIt shortlinks and URLs for facility photos', () => {

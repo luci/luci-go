@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 
 import androidLogo from '@/fleet/assets/logos/android.png';
 import browserLogo from '@/fleet/assets/logos/browser.png';
@@ -75,12 +80,21 @@ const BASELINE_FILTERS: Partial<
   ],
 };
 
-export const usePhysicalSites = () => {
+/**
+ * Fetches PhysicalSite records and provides create/update/delete mutations.
+ * Pass `enabled: false` to avoid issuing ListPhysicalSites when gated off.
+ */
+export const usePhysicalSites = ({
+  enabled = true,
+}: { enabled?: boolean } = {}) => {
   const c = useFleetConsoleClient();
   const qc = useQueryClient();
   const q = useQuery({
-    ...c.ListPhysicalSites.query({}),
+    ...(c.ListPhysicalSites?.query({}) ?? {
+      queryFn: async () => ({ physicalSites: [] }),
+    }),
     queryKey: PHYSICAL_SITES_QUERY_KEY,
+    enabled,
     retry: false,
   });
   const sites = useMemo(() => q.data?.physicalSites ?? [], [q.data]);
@@ -256,4 +270,75 @@ export function useSitePlatformFilterState(
     [st.filterValues],
   );
   return { filterCategoryDatas, isLoading };
+}
+
+/**
+ * Queries broken (need-manual-repair) device counts for each site's platform
+ * filter, deduplicating identical filters and mapping site IDs to counts
+ * (or `null` while loading, disabled, or missing a filter).
+ */
+export function usePlatformSiteBrokenCounts(
+  sites: readonly { readonly id: string; readonly filter: string }[],
+  platform: rpc.Platform,
+  baseFilter = '',
+  enabled = true,
+): Readonly<Record<string, number | null>> {
+  const c = useFleetConsoleClient();
+  const isAndroid = platform === P.ANDROID;
+  const uniqueFilters = useMemo(() => {
+    if (!enabled) return [] as string[];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const { filter } of sites) {
+      const trimmed = filter.trim();
+      if (trimmed && !seen.has(trimmed)) {
+        seen.add(trimmed);
+        out.push(trimmed);
+      }
+    }
+    return out;
+  }, [enabled, sites]);
+  const queries = useMemo(
+    () =>
+      uniqueFilters.map((f) => {
+        const filter = combineAipFiltersWithParentheses(baseFilter, f);
+        return {
+          ...((isAndroid
+            ? c.CountAndroidDevices?.query({ filter })
+            : c.CountDevices?.query({ filter, platform })) ?? {
+            queryKey: ['SiteBrokenCount', platform, baseFilter, f],
+            queryFn: async () => null,
+          }),
+          enabled,
+        };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [baseFilter, enabled, isAndroid, platform, uniqueFilters],
+  );
+  type Res = readonly {
+    data?: Partial<
+      rpc.CountAndroidDevicesResponse & rpc.CountDevicesResponse
+    > | null;
+  }[];
+  const combineCounts = useCallback(
+    (res: Res) => {
+      const byFilter = new Map<string, number | null>();
+      uniqueFilters.forEach((f, i) => {
+        const d = res[i]?.data;
+        const cnt = isAndroid
+          ? d?.healthCategoryNeedManualRepair?.total
+          : d?.deviceState?.needManualRepair;
+        byFilter.set(f, d ? (cnt ?? 0) : null);
+      });
+      return Object.fromEntries(
+        sites.map(({ id, filter }) => {
+          const trimmed = filter.trim();
+          if (!enabled || !trimmed) return [id, null];
+          return [id, byFilter.get(trimmed) ?? null];
+        }),
+      );
+    },
+    [enabled, isAndroid, sites, uniqueFilters],
+  );
+  return useQueries({ queries, combine: combineCounts });
 }
