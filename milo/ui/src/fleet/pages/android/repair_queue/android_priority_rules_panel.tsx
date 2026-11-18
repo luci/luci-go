@@ -21,10 +21,12 @@ import { useAndroidPriorityRules } from './use_android_priority_rules';
 
 export interface AndroidPriorityRulesPanelProps {
   workspace: AndroidPageWorkspace;
+  siteId?: string;
 }
 
 export const AndroidPriorityRulesPanel = ({
   workspace,
+  siteId = '',
 }: AndroidPriorityRulesPanelProps) => {
   const {
     rules,
@@ -37,7 +39,7 @@ export const AndroidPriorityRulesPanel = ({
     isUpdating,
     deleteRule,
     isDeleting,
-  } = useAndroidPriorityRules(workspace);
+  } = useAndroidPriorityRules(workspace, siteId);
 
   const { filterBuilders, isLoading: isBuildersLoading } =
     useAndroidPriorityRuleFilterBuilders(workspace);
@@ -46,6 +48,7 @@ export const AndroidPriorityRulesPanel = ({
 
   return (
     <PriorityRulesPanel
+      key={`${workspace}:${siteId}`}
       rules={rules}
       isLoading={isLoading}
       isError={isError}

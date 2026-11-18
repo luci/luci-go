@@ -60,6 +60,7 @@ export interface UseAndroidRepairQueueColumnsOptions {
   /** Zero-based index of the current page, used as a fallback when `row.rank` is unset. */
   pageIndex?: number;
   pageSize?: number;
+  siteId?: string;
   onError?: (message: string) => void;
 }
 
@@ -71,6 +72,7 @@ export const useAndroidRepairQueueColumns = (
   {
     pageIndex = 0,
     pageSize = 100,
+    siteId = '',
     onError,
   }: UseAndroidRepairQueueColumnsOptions = {},
 ) => {
@@ -92,7 +94,7 @@ export const useAndroidRepairQueueColumns = (
 
   const { filterBuilders } = useAndroidPriorityRuleFilterBuilders(workspace);
 
-  const { rules } = useAndroidPriorityRules(workspace);
+  const { rules } = useAndroidPriorityRules(workspace, siteId);
   const rulesById = useMemo(
     () => parsePriorityRules(rules, filterBuilders),
     [rules, filterBuilders],

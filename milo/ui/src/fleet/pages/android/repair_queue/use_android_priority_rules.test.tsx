@@ -37,12 +37,14 @@ const MOCK_PIXEL_RULES: readonly AndroidPriorityRule[] = [
     expressionAip160: 'run_target = "seahawk"',
     weight: '50',
     workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
+    siteId: 'SITE-ALPHA',
   },
   {
     id: '2',
     expressionAip160: 'state = "MISSING"',
     weight: '20',
     workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
+    siteId: '',
   },
 ];
 
@@ -52,6 +54,14 @@ const MOCK_ANDROID_RULES: readonly AndroidPriorityRule[] = [
     expressionAip160: 'state = "MISSING"',
     weight: '100',
     workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+    siteId: 'SITE-BETA',
+  },
+  {
+    id: '4',
+    expressionAip160: 'state = "DYING"',
+    weight: '250',
+    workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+    siteId: 'SITE-GAMMA',
   },
 ];
 
@@ -82,6 +92,7 @@ describe('use_android_priority_rules', () => {
             req.workspace === AndroidWorkspace.ANDROID_WORKSPACE_PIXEL
               ? 'Pixel'
               : 'Android',
+            req.siteId,
           ),
           queryFn: () => mockListRules(req),
         }),
@@ -104,20 +115,46 @@ describe('use_android_priority_rules', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  const getCachedRules = (workspace: 'Android' | 'Pixel') =>
+  const getCachedRules = (workspace: 'Android' | 'Pixel', siteId = '') =>
     queryClient.getQueryData<ListAndroidPriorityRulesResponse>(
-      getAndroidPriorityRulesQueryKey(workspace),
+      getAndroidPriorityRulesQueryKey(workspace, siteId),
     )?.priorityRules;
 
-  it('generates independent query keys for Pixel and Android workspaces', () => {
+  it('generates independent query keys for Pixel and Android workspaces and sites', () => {
     expect(getAndroidPriorityRulesQueryKey('Pixel')).toEqual([
       'ListAndroidPriorityRules',
       'Pixel',
+      '',
     ]);
     expect(getAndroidPriorityRulesQueryKey('Android')).toEqual([
       'ListAndroidPriorityRules',
       'Android',
+      '',
     ]);
+    expect(getAndroidPriorityRulesQueryKey('Android', 'SITE-GAMMA')).toEqual([
+      'ListAndroidPriorityRules',
+      'Android',
+      'SITE-GAMMA',
+    ]);
+  });
+
+  it('fetches rules scoped to workspace and siteId when provided', async () => {
+    mockListRules.mockResolvedValue({
+      priorityRules: [MOCK_ANDROID_RULES[1]],
+    });
+
+    const { result } = renderHook(
+      () => useAndroidPriorityRules('Android', 'SITE-GAMMA'),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(mockListRules).toHaveBeenCalledWith({
+      workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+      siteId: 'SITE-GAMMA',
+    });
+    expect(result.current.rules).toEqual([MOCK_ANDROID_RULES[1]]);
   });
 
   it('fetches rules scoped to the Pixel workspace', async () => {
@@ -133,6 +170,7 @@ describe('use_android_priority_rules', () => {
 
     expect(mockListRules).toHaveBeenCalledWith({
       workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
+      siteId: '',
     });
     expect(result.current.rules).toEqual(MOCK_PIXEL_RULES);
   });
@@ -150,18 +188,19 @@ describe('use_android_priority_rules', () => {
 
     expect(mockListRules).toHaveBeenCalledWith({
       workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+      siteId: '',
     });
     expect(result.current.rules).toEqual(MOCK_ANDROID_RULES);
   });
 
   describe('useCreateAndroidPriorityRule', () => {
-    it('sets the workspace on the rule only (no request-level workspace)', async () => {
+    it('sets the workspace and default siteId on the rule', async () => {
       mockCreateRule.mockResolvedValue({
         priorityRule: MOCK_PIXEL_RULES[0],
       });
 
       const { result } = renderHook(
-        () => useCreateAndroidPriorityRule('Pixel'),
+        () => useCreateAndroidPriorityRule('Pixel', 'SITE-ALPHA'),
         { wrapper },
       );
 
@@ -182,6 +221,7 @@ describe('use_android_priority_rules', () => {
           expressionAip160: 'run_target = "seahawk"',
           weight: '50',
           workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
+          siteId: 'SITE-ALPHA',
         },
       });
       expect(mockCreateRule.mock.calls[0][0]).not.toHaveProperty('workspace');

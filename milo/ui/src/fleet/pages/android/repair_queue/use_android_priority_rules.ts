@@ -31,7 +31,8 @@ export const ANDROID_PRIORITY_RULES_QUERY_KEY = ['ListAndroidPriorityRules'];
 
 export const getAndroidPriorityRulesQueryKey = (
   workspace: AndroidPageWorkspace,
-) => [...ANDROID_PRIORITY_RULES_QUERY_KEY, workspace];
+  siteId = '',
+) => [...ANDROID_PRIORITY_RULES_QUERY_KEY, workspace, siteId];
 
 const EMPTY_RULES: readonly AndroidPriorityRule[] = [];
 
@@ -39,7 +40,12 @@ const EMPTY_RULES: readonly AndroidPriorityRule[] = [];
  * The rule fields the panel edits. The workspace is always the one of the
  * hook, so callers do not need to (and cannot) override it.
  */
-export type AndroidPriorityRuleInput = Omit<AndroidPriorityRule, 'workspace'>;
+export type AndroidPriorityRuleInput = Omit<
+  AndroidPriorityRule,
+  'workspace' | 'siteId'
+> & {
+  readonly siteId?: string;
+};
 
 export interface CreateAndroidPriorityRuleInput
   extends Omit<CreateAndroidPriorityRuleRequest, 'priorityRule'> {
@@ -58,6 +64,7 @@ export type DeleteAndroidPriorityRuleInput = Omit<
 
 export const useCreateAndroidPriorityRule = (
   workspace: AndroidPageWorkspace,
+  siteId = '',
 ) => {
   const client = useFleetConsoleClient();
   const queryClient = useQueryClient();
@@ -70,7 +77,11 @@ export const useCreateAndroidPriorityRule = (
       client.CreateAndroidPriorityRule({
         ...req,
         priorityRule: req.priorityRule
-          ? { ...req.priorityRule, workspace: protoWorkspace }
+          ? {
+              ...req.priorityRule,
+              workspace: protoWorkspace,
+              siteId: req.priorityRule.siteId ?? siteId,
+            }
           : undefined,
       }),
     onSettled: () => {
@@ -86,11 +97,12 @@ export const useCreateAndroidPriorityRule = (
 
 export const useUpdateAndroidPriorityRule = (
   workspace: AndroidPageWorkspace,
+  siteId = '',
 ) => {
   const client = useFleetConsoleClient();
   const queryClient = useQueryClient();
   const protoWorkspace = toAndroidWorkspaceEnum(workspace);
-  const queryKey = getAndroidPriorityRulesQueryKey(workspace);
+  const queryKey = getAndroidPriorityRulesQueryKey(workspace, siteId);
 
   return useMutation({
     mutationFn: (req: UpdateAndroidPriorityRuleInput) =>
@@ -136,11 +148,12 @@ export const useUpdateAndroidPriorityRule = (
 
 export const useDeleteAndroidPriorityRule = (
   workspace: AndroidPageWorkspace,
+  siteId = '',
 ) => {
   const client = useFleetConsoleClient();
   const queryClient = useQueryClient();
   const protoWorkspace = toAndroidWorkspaceEnum(workspace);
-  const queryKey = getAndroidPriorityRulesQueryKey(workspace);
+  const queryKey = getAndroidPriorityRulesQueryKey(workspace, siteId);
 
   return useMutation({
     mutationFn: (req: DeleteAndroidPriorityRuleInput) =>
@@ -177,24 +190,30 @@ export const useDeleteAndroidPriorityRule = (
   });
 };
 
-export const useAndroidPriorityRules = (workspace: AndroidPageWorkspace) => {
+export const useAndroidPriorityRules = (
+  workspace: AndroidPageWorkspace,
+  siteId = '',
+) => {
   const client = useFleetConsoleClient();
   const protoWorkspace = toAndroidWorkspaceEnum(workspace);
-  const queryKey = getAndroidPriorityRulesQueryKey(workspace);
+  const queryKey = getAndroidPriorityRulesQueryKey(workspace, siteId);
 
   const rulesQuery = useQuery({
     ...client.ListAndroidPriorityRules.query({
       workspace: protoWorkspace,
+      siteId,
     }),
     queryKey,
   });
 
-  const createRuleMutation = useCreateAndroidPriorityRule(workspace);
-  const updateRuleMutation = useUpdateAndroidPriorityRule(workspace);
-  const deleteRuleMutation = useDeleteAndroidPriorityRule(workspace);
+  const rules = rulesQuery.data?.priorityRules ?? EMPTY_RULES;
+
+  const createRuleMutation = useCreateAndroidPriorityRule(workspace, siteId);
+  const updateRuleMutation = useUpdateAndroidPriorityRule(workspace, siteId);
+  const deleteRuleMutation = useDeleteAndroidPriorityRule(workspace, siteId);
 
   return {
-    rules: rulesQuery.data?.priorityRules ?? EMPTY_RULES,
+    rules,
     isLoading: rulesQuery.isLoading,
     isError: rulesQuery.isError,
     error: rulesQuery.error,

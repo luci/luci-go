@@ -30,6 +30,7 @@ import { useMrtColumnSizing } from '@/fleet/hooks/use_mrt_column_sizing';
 import { usePager } from '@/fleet/hooks/use_pager';
 import { fleetColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
+import { combineAipFiltersWithParentheses } from '@/fleet/utils/search_param';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { ListAndroidRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -48,12 +49,16 @@ interface AndroidRepairQueueTableProps {
   workspace: AndroidPageWorkspace;
   columns?: AndroidRepairQueueColumnDef[];
   filter?: string;
+  siteId?: string;
+  siteFilter?: string | null;
 }
 
 export const AndroidRepairQueueTable = ({
   workspace,
   columns: propColumns,
   filter = '',
+  siteId = '',
+  siteFilter = '',
 }: AndroidRepairQueueTableProps) => {
   const pagerCtx = usePagerContext({
     pageSizeOptions: [10, 25, 50, 100],
@@ -69,22 +74,32 @@ export const AndroidRepairQueueTable = ({
   const { columns: defaultColumns } = useAndroidRepairQueueColumns(workspace, {
     pageIndex,
     pageSize,
+    siteId,
     onError: setErrorMessage,
   });
   const columns = propColumns || defaultColumns;
+
+  const effectiveFilter = useMemo(
+    () => combineAipFiltersWithParentheses(siteFilter ?? '', filter),
+    [siteFilter, filter],
+  );
 
   const request = useMemo(
     () =>
       ListAndroidRepairQueueRequest.fromPartial({
         pageSize,
         pageToken,
-        filter,
+        filter: effectiveFilter,
         workspace: toAndroidWorkspaceEnum(workspace),
+        siteId,
       }),
-    [pageSize, pageToken, filter, workspace],
+    [pageSize, pageToken, effectiveFilter, workspace, siteId],
   );
 
-  const queueQuery = useAndroidRepairQueue(request);
+  const queueQuery = useAndroidRepairQueue(
+    request,
+    ...(siteFilter === null ? [{ enabled: false }] : []),
+  );
 
   const {
     repairQueueItems = [],

@@ -287,6 +287,12 @@ export interface ListAndroidRepairQueueRequest {
   readonly filter: string;
   /** Required. UNSPECIFIED is rejected with INVALID_ARGUMENT. */
   readonly workspace: AndroidWorkspace;
+  /**
+   * Optional PhysicalSite ID (`physical_sites.id`) selecting which priority
+   * ruleset scores the repair queue. Empty evaluates workspace-wide rules
+   * (`site_id = ""`).
+   */
+  readonly siteId: string;
 }
 
 export interface ListAndroidRepairQueueResponse {
@@ -329,8 +335,8 @@ export interface UnclaimAndroidRepairTaskResponse {
 
 /**
  * A rule that adds `weight` to the priority score of every open task in
- * `workspace` that matches `expression_aip160`. At most 5 rules per
- * workspace.
+ * `(workspace, site_id)` that matches `expression_aip160`. At most 15 rules
+ * per `(workspace, site_id)`.
  */
 export interface AndroidPriorityRule {
   readonly id: string;
@@ -345,11 +351,22 @@ export interface AndroidPriorityRule {
    * moved to another workspace afterwards.
    */
   readonly workspace: AndroidWorkspace;
+  /**
+   * Optional PhysicalSite ID (`physical_sites.id`) that scopes this rule to
+   * a site's repair queue ruleset and 15-rule quota. Empty means the
+   * workspace-wide ruleset. Immutable after creation.
+   */
+  readonly siteId: string;
 }
 
 export interface ListAndroidPriorityRulesRequest {
   /** Required. */
   readonly workspace: AndroidWorkspace;
+  /**
+   * Optional PhysicalSite ID (`physical_sites.id`) filtering rules to a
+   * specific site's ruleset. Empty returns workspace-wide rules (`site_id = ""`).
+   */
+  readonly siteId: string;
 }
 
 export interface ListAndroidPriorityRulesResponse {
@@ -2944,7 +2961,7 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
 };
 
 function createBaseListAndroidRepairQueueRequest(): ListAndroidRepairQueueRequest {
-  return { pageSize: 0, pageToken: "", filter: "", workspace: 0 };
+  return { pageSize: 0, pageToken: "", filter: "", workspace: 0, siteId: "" };
 }
 
 export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueRequest> = {
@@ -2960,6 +2977,9 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
     }
     if (message.workspace !== 0) {
       writer.uint32(40).int32(message.workspace);
+    }
+    if (message.siteId !== "") {
+      writer.uint32(50).string(message.siteId);
     }
     return writer;
   },
@@ -3009,6 +3029,14 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
             message.workspace = reader.int32() as any;
             continue;
           }
+          case 6: {
+            if (tag !== 50) {
+              break;
+            }
+
+            message.siteId = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3035,6 +3063,11 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
         : "",
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
       workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
+      siteId: isSet(object.siteId)
+        ? globalThis.String(object.siteId)
+        : isSet(object.site_id)
+        ? globalThis.String(object.site_id)
+        : "",
     };
   },
 
@@ -3052,6 +3085,9 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
     if (message.workspace !== 0) {
       obj.workspace = androidWorkspaceToJSON(message.workspace);
     }
+    if (message.siteId !== "") {
+      obj.siteId = message.siteId;
+    }
     return obj;
   },
 
@@ -3064,6 +3100,7 @@ export const ListAndroidRepairQueueRequest: MessageFns<ListAndroidRepairQueueReq
     message.pageToken = object.pageToken ?? "";
     message.filter = object.filter ?? "";
     message.workspace = object.workspace ?? 0;
+    message.siteId = object.siteId ?? "";
     return message;
   },
 };
@@ -3530,7 +3567,7 @@ export const UnclaimAndroidRepairTaskResponse: MessageFns<UnclaimAndroidRepairTa
 };
 
 function createBaseAndroidPriorityRule(): AndroidPriorityRule {
-  return { id: "0", expressionAip160: "", weight: "0", workspace: 0 };
+  return { id: "0", expressionAip160: "", weight: "0", workspace: 0, siteId: "" };
 }
 
 export const AndroidPriorityRule: MessageFns<AndroidPriorityRule> = {
@@ -3546,6 +3583,9 @@ export const AndroidPriorityRule: MessageFns<AndroidPriorityRule> = {
     }
     if (message.workspace !== 0) {
       writer.uint32(32).int32(message.workspace);
+    }
+    if (message.siteId !== "") {
+      writer.uint32(42).string(message.siteId);
     }
     return writer;
   },
@@ -3595,6 +3635,14 @@ export const AndroidPriorityRule: MessageFns<AndroidPriorityRule> = {
             message.workspace = reader.int32() as any;
             continue;
           }
+          case 5: {
+            if (tag !== 42) {
+              break;
+            }
+
+            message.siteId = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3617,6 +3665,11 @@ export const AndroidPriorityRule: MessageFns<AndroidPriorityRule> = {
         : "",
       weight: isSet(object.weight) ? globalThis.String(object.weight) : "0",
       workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
+      siteId: isSet(object.siteId)
+        ? globalThis.String(object.siteId)
+        : isSet(object.site_id)
+        ? globalThis.String(object.site_id)
+        : "",
     };
   },
 
@@ -3634,6 +3687,9 @@ export const AndroidPriorityRule: MessageFns<AndroidPriorityRule> = {
     if (message.workspace !== 0) {
       obj.workspace = androidWorkspaceToJSON(message.workspace);
     }
+    if (message.siteId !== "") {
+      obj.siteId = message.siteId;
+    }
     return obj;
   },
 
@@ -3646,18 +3702,22 @@ export const AndroidPriorityRule: MessageFns<AndroidPriorityRule> = {
     message.expressionAip160 = object.expressionAip160 ?? "";
     message.weight = object.weight ?? "0";
     message.workspace = object.workspace ?? 0;
+    message.siteId = object.siteId ?? "";
     return message;
   },
 };
 
 function createBaseListAndroidPriorityRulesRequest(): ListAndroidPriorityRulesRequest {
-  return { workspace: 0 };
+  return { workspace: 0, siteId: "" };
 }
 
 export const ListAndroidPriorityRulesRequest: MessageFns<ListAndroidPriorityRulesRequest> = {
   encode(message: ListAndroidPriorityRulesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.workspace !== 0) {
       writer.uint32(8).int32(message.workspace);
+    }
+    if (message.siteId !== "") {
+      writer.uint32(18).string(message.siteId);
     }
     return writer;
   },
@@ -3683,6 +3743,14 @@ export const ListAndroidPriorityRulesRequest: MessageFns<ListAndroidPriorityRule
             message.workspace = reader.int32() as any;
             continue;
           }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.siteId = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -3696,13 +3764,23 @@ export const ListAndroidPriorityRulesRequest: MessageFns<ListAndroidPriorityRule
   },
 
   fromJSON(object: any): ListAndroidPriorityRulesRequest {
-    return { workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0 };
+    return {
+      workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
+      siteId: isSet(object.siteId)
+        ? globalThis.String(object.siteId)
+        : isSet(object.site_id)
+        ? globalThis.String(object.site_id)
+        : "",
+    };
   },
 
   toJSON(message: ListAndroidPriorityRulesRequest): unknown {
     const obj: any = {};
     if (message.workspace !== 0) {
       obj.workspace = androidWorkspaceToJSON(message.workspace);
+    }
+    if (message.siteId !== "") {
+      obj.siteId = message.siteId;
     }
     return obj;
   },
@@ -3713,6 +3791,7 @@ export const ListAndroidPriorityRulesRequest: MessageFns<ListAndroidPriorityRule
   fromPartial(object: DeepPartial<ListAndroidPriorityRulesRequest>): ListAndroidPriorityRulesRequest {
     const message = createBaseListAndroidPriorityRulesRequest() as any;
     message.workspace = object.workspace ?? 0;
+    message.siteId = object.siteId ?? "";
     return message;
   },
 };

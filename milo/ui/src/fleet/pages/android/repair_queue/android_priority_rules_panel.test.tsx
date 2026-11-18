@@ -13,7 +13,13 @@
 // limitations under the License.
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, renderHook, screen } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 
 import * as UseAdminTaskPermissionModule from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
@@ -23,7 +29,10 @@ import * as PrpcClientsModule from '@/fleet/hooks/prpc_clients';
 import * as UseAndroidPriorityRulesModule from '@/fleet/pages/android/repair_queue/use_android_priority_rules';
 import * as UseDeviceDimensionsModule from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { createMockUseFleetConsoleClient } from '@/fleet/testing_tools/mocks/fleet_console_client';
-import { AndroidWorkspace } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
+import {
+  AndroidWorkspace,
+  ListAndroidPriorityRulesRequest,
+} from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { AndroidPriorityRulesPanel } from './android_priority_rules_panel';
@@ -196,6 +205,7 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
         expressionAip160: 'run_target = "seahawk"',
         weight,
         workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+        siteId: '',
       },
     ];
     const makeHookResult = (weight: string) => ({
@@ -252,39 +262,82 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
     expect(screen.getByTestId('rule-apply-button-rule-1')).toBeInTheDocument();
   });
 
-  it('calls useAndroidPriorityRules with the provided workspace', () => {
-    const mockUseRules = jest
-      .spyOn(UseAndroidPriorityRulesModule, 'useAndroidPriorityRules')
-      .mockReturnValue({
-        rules: [],
-        isLoading: false,
-        isError: false,
-        error: null,
-        refetch: jest.fn(),
-        createRule: jest.fn(),
-        isCreating: false,
-        createError: null,
-        updateRule: jest.fn(),
-        isUpdating: false,
-        updateError: null,
-        deleteRule: jest.fn(),
-        isDeleting: false,
-        deleteError: null,
-      });
+  it('queries ListAndroidPriorityRules with workspace and siteId and resets draft edits on site switch', async () => {
+    const mockListRules = jest
+      .fn()
+      .mockImplementation(async (req: ListAndroidPriorityRulesRequest) => ({
+        priorityRules: [
+          {
+            id: req.siteId ? `rule-${req.siteId}` : 'rule-global',
+            expressionAip160: 'run_target = "mock-target"',
+            weight: req.siteId ? '30' : '10',
+            workspace: req.workspace,
+            siteId: req.siteId,
+          },
+        ],
+      }));
+    const baseClient = createMockUseFleetConsoleClient()();
+    jest.spyOn(PrpcClientsModule, 'useFleetConsoleClient').mockReturnValue({
+      ...baseClient,
+      ListAndroidPriorityRules: {
+        query: (req: ListAndroidPriorityRulesRequest) => ({
+          queryKey: ['ListAndroidPriorityRules', req.workspace, req.siteId],
+          queryFn: () => mockListRules(req),
+        }),
+      },
+    } as unknown as ReturnType<typeof PrpcClientsModule.useFleetConsoleClient>);
 
-    render(
+    const renderPanel = (siteId?: string) => (
       <QueryClientProvider client={queryClient}>
         <FakeContextProvider>
           <SettingsProvider>
             <ShortcutProvider>
-              <AndroidPriorityRulesPanel workspace="Pixel" />
+              <AndroidPriorityRulesPanel workspace="Pixel" siteId={siteId} />
             </ShortcutProvider>
           </SettingsProvider>
         </FakeContextProvider>
-      </QueryClientProvider>,
+      </QueryClientProvider>
     );
 
-    expect(mockUseRules).toHaveBeenCalledWith('Pixel');
+    const { rerender } = render(renderPanel());
+
+    const initialInput = (await screen.findByTestId(
+      'rule-weight-input-rule-global',
+    )) as HTMLInputElement;
+    expect(mockListRules).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
+        siteId: '',
+      }),
+    );
+
+    // Dirty an unsaved draft edit on the initial site.
+    fireEvent.change(initialInput, { target: { value: '99' } });
+    expect(
+      screen.getByTestId('rule-apply-button-rule-global'),
+    ).toBeInTheDocument();
+
+    // Switching sites must query the new siteId and reset unsaved drafts via key.
+    rerender(renderPanel('SITE-ALPHA'));
+
+    const siteInput = (await screen.findByTestId(
+      'rule-weight-input-rule-SITE-ALPHA',
+    )) as HTMLInputElement;
+    await waitFor(() =>
+      expect(mockListRules).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
+          siteId: 'SITE-ALPHA',
+        }),
+      ),
+    );
+    expect(siteInput.value).toBe('30');
+    expect(
+      screen.queryByTestId('rule-apply-button-rule-global'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('rule-apply-button-rule-SITE-ALPHA'),
+    ).not.toBeInTheDocument();
   });
 
   it('hides edit controls when user does not have priority rules permission', () => {
@@ -306,6 +359,7 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
             expressionAip160: 'run_target = "seahawk"',
             weight: '10',
             workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+            siteId: '',
           },
         ],
         isLoading: false,
@@ -364,6 +418,7 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
             expressionAip160: '',
             weight: '10',
             workspace: AndroidWorkspace.ANDROID_WORKSPACE_PIXEL,
+            siteId: '',
           },
         ],
         isLoading: false,
@@ -419,6 +474,7 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
             expressionAip160: 'host_group_health_pct <= 0.5',
             weight: '30',
             workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+            siteId: '',
           },
         ],
         isLoading: false,
