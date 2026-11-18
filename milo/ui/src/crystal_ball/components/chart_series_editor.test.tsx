@@ -32,6 +32,8 @@ import {
 import { FiltersClipboardProvider } from '@/crystal_ball/context';
 import { UseEditorUiStateOptions } from '@/crystal_ball/hooks';
 import {
+  MeasurementFilterColumn,
+  MeasurementFilterColumn_ColumnDataType,
   PerfChartSeries,
   PerfChartSeries_MatchType,
   PerfFilter,
@@ -941,5 +943,94 @@ describe('ChartSeriesItem', () => {
     expect(await screen.findByText(RAW_DATA_STAT_LABEL)).toBeInTheDocument();
     expect(await screen.findByText('suggest1')).toBeInTheDocument();
     expect(await screen.findByText('suggest2')).toBeInTheDocument();
+  });
+});
+
+describe('ChartSeriesItem pattern series', () => {
+  const metricKeyColumn = MeasurementFilterColumn.fromPartial({
+    column: 'metric_key',
+    displayName: 'Metric Key',
+    primary: true,
+    dataType: MeasurementFilterColumn_ColumnDataType.STRING,
+    isMetricKey: true,
+  });
+
+  const excludeFilter = PerfFilter.fromPartial({
+    id: 'exclude-default-metrics',
+    column: 'metric_key',
+    textInput: {
+      defaultValue: {
+        values: ['^cb_health_.*$'],
+        filterOperator: PerfFilterDefault_FilterOperator.NOT_REGEX_MATCH,
+      },
+    },
+  });
+
+  // Dashboards loaded from the API carry enums as JSON names.
+  const regexSeriesFromApi = (filters: PerfFilter[] = []) =>
+    ({
+      ...PerfChartSeries.fromPartial({
+        displayName: 'Pattern',
+        metricField: '.*',
+        dataSpecId: 'test-spec-id',
+        filters,
+      }),
+      matchType: 'REGEX',
+    }) as unknown as PerfChartSeries;
+
+  const patternProps = {
+    onUpdate: jest.fn(),
+    onRemove: jest.fn(),
+    dataSpecId: 'test-spec-id',
+    metricFilterColumns: [],
+    metricKeyColumns: [metricKeyColumn],
+    uiStateOptions: { key: 'test-pattern-persist-key' },
+  };
+
+  it('shows RegEx for a saved series whose match type is the JSON enum name', async () => {
+    render(<ChartSeriesItem {...patternProps} series={regexSeriesFromApi()} />);
+    fireEvent.click(screen.getByText('Pattern'));
+    await screen.findByLabelText('Metric Field');
+
+    expect(screen.getByLabelText('Match Type')).toHaveTextContent('RegEx');
+  });
+
+  it('offers metric key operators for a metric key filter on a RegEx series', async () => {
+    render(
+      <ChartSeriesItem
+        {...patternProps}
+        series={regexSeriesFromApi([excludeFilter])}
+      />,
+    );
+    fireEvent.click(screen.getByText('Pattern'));
+    await screen.findByLabelText('Metric Field');
+
+    expect(screen.getByLabelText(COMMON_MESSAGES.OPERATOR)).toHaveTextContent(
+      'does not match regex',
+    );
+    expect(screen.getByLabelText(COMMON_MESSAGES.COLUMN)).toHaveTextContent(
+      'Metric Key',
+    );
+  });
+
+  it('does not offer metric key operators on an exact series', async () => {
+    render(
+      <ChartSeriesItem
+        {...patternProps}
+        series={PerfChartSeries.fromPartial({
+          displayName: 'Exact Series',
+          metricField: 'metric1',
+          dataSpecId: 'test-spec-id',
+          matchType: PerfChartSeries_MatchType.EXACT,
+          filters: [excludeFilter],
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByText('Exact Series'));
+    await screen.findByLabelText('Metric Field');
+
+    expect(
+      screen.getByLabelText(COMMON_MESSAGES.OPERATOR),
+    ).not.toHaveTextContent('does not match regex');
   });
 });

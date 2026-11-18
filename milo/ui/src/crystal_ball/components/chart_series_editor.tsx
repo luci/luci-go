@@ -93,9 +93,11 @@ import {
   formatChange,
   generateColor,
   getColumnDisplayNameMap,
+  getEffectiveMatchType,
   getFilterLabel,
   getSafeCssColor,
   getTrendInfo,
+  isPatternMatchType,
   isStringArray,
 } from '@/crystal_ball/utils';
 import {
@@ -107,19 +109,6 @@ import {
   PerfFilter,
   PerfFilterDefault_FilterOperator,
 } from '@/proto/go.chromium.org/luci/crystal_ball/api/perf_service.pb';
-
-function getEffectiveMatchType(
-  matchType?: PerfChartSeries_MatchType | null,
-): PerfChartSeries_MatchType {
-  if (
-    matchType === null ||
-    matchType === undefined ||
-    matchType === PerfChartSeries_MatchType.MATCH_TYPE_UNSPECIFIED
-  ) {
-    return PerfChartSeries_MatchType.EXACT;
-  }
-  return matchType;
-}
 
 const MATCH_TYPE_TO_OPERATOR: Partial<
   Record<PerfChartSeries_MatchType, PerfFilterDefault_FilterOperator>
@@ -427,6 +416,13 @@ export function ChartSeriesEditor({
     [filterColumns],
   );
 
+  // Metric key columns are not general series filters, but RegEx/Wildcard
+  // series may exclude matched metrics with a metric key filter.
+  const metricKeyColumns = useMemo(
+    () => filterColumns.filter((c) => c.isMetricKey),
+    [filterColumns],
+  );
+
   const renderSeriesTree = (
     parentId?: string,
     depth = 0,
@@ -489,6 +485,7 @@ export function ChartSeriesEditor({
             globalFilters={globalFilters}
             widgetFilters={widgetFilters}
             metricFilterColumns={metricFilterColumns}
+            metricKeyColumns={metricKeyColumns}
             isLoadingColumns={isLoadingFilterColumns}
             isVisible={!(s.hidden ?? false)}
             onToggleVisibility={() => handleToggleVisibility(originalIndex)}
@@ -828,6 +825,11 @@ export interface ChartSeriesItemProps {
   globalFilters?: readonly PerfFilter[];
   widgetFilters?: readonly PerfFilter[];
   metricFilterColumns: readonly MeasurementFilterColumn[];
+  /**
+   * Metric key columns. Offered as series filters only for RegEx/Wildcard
+   * series, to exclude some of the matched metrics.
+   */
+  metricKeyColumns?: readonly MeasurementFilterColumn[];
   isLoadingColumns?: boolean;
   hideColorPicker?: boolean;
   isVisible?: boolean;
@@ -857,6 +859,7 @@ export function ChartSeriesItem({
   globalFilters,
   widgetFilters,
   metricFilterColumns,
+  metricKeyColumns = [],
   isLoadingColumns,
   hideColorPicker,
   isVisible = true,
@@ -874,6 +877,22 @@ export function ChartSeriesItem({
   const columnDisplayNameMap = useMemo(
     () => getColumnDisplayNameMap(metricFilterColumns),
     [metricFilterColumns],
+  );
+
+  const allowMetricKeyFilters = isPatternMatchType(
+    getEffectiveMatchType(series.matchType),
+  );
+  const seriesFilterColumns = useMemo(
+    () =>
+      allowMetricKeyFilters
+        ? [
+            ...metricFilterColumns,
+            ...metricKeyColumns.filter(
+              (k) => !metricFilterColumns.some((c) => c.column === k.column),
+            ),
+          ]
+        : metricFilterColumns,
+    [allowMetricKeyFilters, metricFilterColumns, metricKeyColumns],
   );
 
   const trendInfo = useMemo(() => {
@@ -1880,7 +1899,8 @@ export function ChartSeriesItem({
             filters={nonStatFilters}
             onUpdateFilters={handleUpdateFilters}
             dataSpecId={dataSpecId}
-            availableColumns={metricFilterColumns}
+            availableColumns={seriesFilterColumns}
+            allowMetricKeyColumns={allowMetricKeyFilters}
             isLoadingColumns={isLoadingColumns}
             disableAccordion={true}
             globalFilters={globalFilters}

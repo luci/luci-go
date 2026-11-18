@@ -19,6 +19,7 @@ export * from './date_time';
 export * from './errors';
 export * from './filter_utils';
 export * from './markdown_utils';
+export * from './match_type_utils';
 export * from './raw_samples_utils';
 export * from './string';
 export * from './unit_scaling';

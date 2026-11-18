@@ -84,6 +84,12 @@ interface FilterEditorProps {
   onUpdateFilters: (updatedFilters: PerfFilter[]) => void;
   dataSpecId: string;
   availableColumns: readonly MeasurementFilterColumn[];
+  /**
+   * Whether metric key columns in `availableColumns` can be picked. Metric
+   * keys are normally chosen by the series metric field, so they are hidden
+   * unless a RegEx/Wildcard series needs them to exclude matched metrics.
+   */
+  allowMetricKeyColumns?: boolean;
   isLoadingColumns?: boolean;
   disableAccordion?: boolean;
   titleIcon?: React.ReactNode;
@@ -222,6 +228,7 @@ export function FilterEditor({
   onUpdateFilters,
   dataSpecId,
   availableColumns,
+  allowMetricKeyColumns = false,
   isLoadingColumns,
   disableAccordion = false,
   titleIcon,
@@ -461,13 +468,13 @@ export function FilterEditor({
             c.primary &&
             !!c.column &&
             c.column !== STATISTICAL_KEY_COLUMN &&
-            !c.isMetricKey &&
+            (allowMetricKeyColumns || !c.isMetricKey) &&
             c.column !== GLOBAL_TIME_RANGE_COLUMN,
         )
         .sort((a, b) =>
           getColumnDisplayName(a).localeCompare(getColumnDisplayName(b)),
         ),
-    [availableColumns],
+    [availableColumns, allowMetricKeyColumns],
   );
 
   const secondaryColumns = useMemo(
@@ -478,13 +485,13 @@ export function FilterEditor({
             !c.primary &&
             !!c.column &&
             c.column !== STATISTICAL_KEY_COLUMN &&
-            !c.isMetricKey &&
+            (allowMetricKeyColumns || !c.isMetricKey) &&
             c.column !== GLOBAL_TIME_RANGE_COLUMN,
         )
         .sort((a, b) =>
           getColumnDisplayName(a).localeCompare(getColumnDisplayName(b)),
         ),
-    [availableColumns],
+    [availableColumns, allowMetricKeyColumns],
   );
 
   const content = (
