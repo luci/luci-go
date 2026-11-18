@@ -241,6 +241,30 @@ message VM {
   // machine_type and disk.type must use the "{{.Zone}}" template placeholder
   // (e.g., "zones/{{.Zone}}/machineTypes/n2-standard-8").
   repeated string fallback_zones = 21;
+
+  // Whether to enable a virtual display device (DisplayDevice.EnableDisplay)
+  // for this VM.
+  // https://cloud.google.com/compute/docs/instances/enable-instance-virtual-display.
+  //
+  // Enabling a virtual display emulates a display adapter for headless VMs
+  // without a physical GPU (for example, Windows UEFI VMs running interactive
+  // GUI or browser tests using the google-compute-engine-driver-gga driver).
+  //
+  // Note:
+  //   - Virtual display devices are only supported on x86_64 non-bare-metal,
+  //     non-GPU machine series. Config validation rejects enable_display on
+  //     Arm VMs (e.g., t2a-*, c3a-*, c4a-*, e4a-*, c5a-*, n4a-*, n5a-*, a4x-*),
+  //     bare-metal instances (*-metal), GPU machine series (a2-*, a3-*, a4-*,
+  //     g2-*, g4-*), VMs using the "Intel Sandy Bridge" minimum CPU platform
+  //     (including "sandybridge" and "intel-sandybridge" aliases), and
+  //     Confidential VMs (enable_confidential_compute).
+  //   - enable_display: true requires compute.instances.updateDisplayDevice
+  //     IAM permission on the target GCP project (custom roles missing it fail
+  //     with HTTP 403 on Instances.Insert).
+  //   - Setting or changing enable_display applies only when creating or
+  //     recreating VMs (lifetime expiry); GCE does not update running VMs in
+  //     place.
+  bool enable_display = 22;
 }
 
 // A length of time.
