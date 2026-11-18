@@ -111,6 +111,8 @@ func HashFromString(h string) (core.HashAlgorithm, error) {
 		return core.HashAlgorithm_HASH_SHA1, nil
 	case "sha256":
 		return core.HashAlgorithm_HASH_SHA256, nil
+	case "sha512":
+		return core.HashAlgorithm_HASH_SHA512, nil
 	default:
 		return core.HashAlgorithm_HASH_UNSPECIFIED, fmt.Errorf("unknown hash algorithem: %q", h)
 	}

@@ -148,6 +148,26 @@ func TestExecuteURL(t *testing.T) {
 			}
 		})
 
+		t.Run("Test download file with sha512 verify", func(t *ftt.Test) {
+			a := &core.ActionURLFetch{
+				Url:           s.URL,
+				HashAlgorithm: core.HashAlgorithm_HASH_SHA512,
+				HashValue:     "983d43ddff6da90f6a5d3b6172446a1ffe228b803fe64fdd5dcfab5646078a896851fe82f623c9d6e5654b3d2f363a04ec17cfb62b607437a9c7c132d511e522",
+			}
+
+			err := ActionURLFetchExecutor(ctx, a, out)
+			assert.Loosely(t, err, should.BeNil)
+
+			{
+				f, err := os.Open(filepath.Join(out, "file"))
+				assert.Loosely(t, err, should.BeNil)
+				defer f.Close()
+				b, err := io.ReadAll(f)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, string(b), should.Equal("something"))
+			}
+		})
+
 		t.Run("Test download file with hash verify failed", func(t *ftt.Test) {
 			a := &core.ActionURLFetch{
 				Url:           s.URL,

@@ -103,5 +103,20 @@ func TestFetchURLs(t *testing.T) {
 				assert.Loosely(t, gen(), should.Match(as))
 			}
 		})
+
+		t.Run("HashFromString", func(t *ftt.Test) {
+			for name, want := range map[string]core.HashAlgorithm{
+				"md5":    core.HashAlgorithm_HASH_MD5,
+				"sha1":   core.HashAlgorithm_HASH_SHA1,
+				"sha256": core.HashAlgorithm_HASH_SHA256,
+				"sha512": core.HashAlgorithm_HASH_SHA512,
+			} {
+				got, err := HashFromString(name)
+				assert.NoErr(t, err)
+				assert.That(t, got, should.Equal(want))
+			}
+			_, err := HashFromString("unknown")
+			assert.Loosely(t, err, should.ErrLike("unknown hash algorithem"))
+		})
 	})
 }

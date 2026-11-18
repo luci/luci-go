@@ -43,6 +43,7 @@ const (
 	HashAlgorithm_HASH_MD5         HashAlgorithm = 1
 	HashAlgorithm_HASH_SHA256      HashAlgorithm = 2
 	HashAlgorithm_HASH_SHA1        HashAlgorithm = 3
+	HashAlgorithm_HASH_SHA512      HashAlgorithm = 4
 )
 
 // Enum value maps for HashAlgorithm.
@@ -52,12 +53,14 @@ var (
 		1: "HASH_MD5",
 		2: "HASH_SHA256",
 		3: "HASH_SHA1",
+		4: "HASH_SHA512",
 	}
 	HashAlgorithm_value = map[string]int32{
 		"HASH_UNSPECIFIED": 0,
 		"HASH_MD5":         1,
 		"HASH_SHA256":      2,
 		"HASH_SHA1":        3,
+		"HASH_SHA512":      4,
 	}
 )
 
@@ -776,12 +779,13 @@ const file_go_chromium_org_luci_cipkg_core_specs_proto_rawDesc = "" +
 	"\x10ActionCIPDExport\x12\x1f\n" +
 	"\vensure_file\x18\x01 \x01(\tR\n" +
 	"ensureFile\x12\x10\n" +
-	"\x03env\x18\x02 \x03(\tR\x03env*S\n" +
+	"\x03env\x18\x02 \x03(\tR\x03env*d\n" +
 	"\rHashAlgorithm\x12\x14\n" +
 	"\x10HASH_UNSPECIFIED\x10\x00\x12\f\n" +
 	"\bHASH_MD5\x10\x01\x12\x0f\n" +
 	"\vHASH_SHA256\x10\x02\x12\r\n" +
-	"\tHASH_SHA1\x10\x03B!Z\x1fgo.chromium.org/luci/cipkg/coreb\x06proto3"
+	"\tHASH_SHA1\x10\x03\x12\x0f\n" +
+	"\vHASH_SHA512\x10\x04B!Z\x1fgo.chromium.org/luci/cipkg/coreb\x06proto3"
 
 var (
 	file_go_chromium_org_luci_cipkg_core_specs_proto_rawDescOnce sync.Once

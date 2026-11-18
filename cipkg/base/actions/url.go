@@ -18,6 +18,7 @@ import (
 	"cmp"
 	"context"
 	"crypto"
+	"crypto/sha512"
 	"errors"
 	"fmt"
 	"hash"
@@ -96,6 +97,8 @@ func hashFromEnum(h core.HashAlgorithm) (hash.Hash, error) {
 		return crypto.SHA1.New(), nil
 	case core.HashAlgorithm_HASH_SHA256:
 		return crypto.SHA256.New(), nil
+	case core.HashAlgorithm_HASH_SHA512:
+		return sha512.New(), nil
 	}
 
 	return nil, fmt.Errorf("unknown hash algorithm: %s", h)
