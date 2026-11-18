@@ -121,7 +121,7 @@ func TestWorker(t *testing.T) {
 				tj.Status = tryjob.Status_ENDED
 				tj.ReusedBy = append(tj.ReusedBy, w.run.ID)
 				tj.Result = &tryjob.Result{
-					CreateTime: timestamppb.New(ct.Clock.Now().UTC().Add(-staleTryjobAge / 2)),
+					CreateTime: timestamppb.New(ct.Clock.Now().UTC().Add(-defaultStaleTryjobAge / 2)),
 					Backend: &tryjob.Result_Buildbucket_{
 						Buildbucket: &tryjob.Result_Buildbucket{
 							Builder: builder,

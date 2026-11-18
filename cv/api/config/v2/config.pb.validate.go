@@ -1497,15 +1497,37 @@ func (m *ReuseWindow) validate(all bool) error {
 
 	var errors []error
 
-	if m.GetMaxCommitDistance() <= 0 {
-		err := ReuseWindowValidationError{
-			field:  "MaxCommitDistance",
-			reason: "value must be greater than 0",
+	// no validation rules for MaxCommitDistance
+
+	if d := m.GetMaxAge(); d != nil {
+		dur, err := d.AsDuration(), d.CheckValid()
+		if err != nil {
+			err = ReuseWindowValidationError{
+				field:  "MaxAge",
+				reason: "value is not a valid duration",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		} else {
+
+			lte := time.Duration(86400*time.Second + 0*time.Nanosecond)
+			gt := time.Duration(0*time.Second + 0*time.Nanosecond)
+
+			if dur <= gt || dur > lte {
+				err := ReuseWindowValidationError{
+					field:  "MaxAge",
+					reason: "value must be inside range (0s, 24h0m0s]",
+				}
+				if !all {
+					return err
+				}
+				errors = append(errors, err)
+			}
+
 		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
 	}
 
 	if len(errors) > 0 {

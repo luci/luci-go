@@ -797,12 +797,13 @@ message Verifiers {
 
       // Optional. The reuse window configuration for this builder.
       //
-      // This allows reusing past successful builds based on "commit distance"
-      // (number of commits between the build's base revision and the branch tip)
-      // rather than just elapsed time. Only builds that completed successfully
-      // are eligible for reuse.
+      // This allows narrowing the default 24h time-based window in which past
+      // builds may be reused (see `ReuseWindow.max_age`), or reusing past
+      // successful builds based on "commit distance" (number of commits
+      // between the build's base revision and the branch tip) rather than just
+      // elapsed time (see `ReuseWindow.max_commit_distance`).
       //
-      // Note: This feature requires the project to have monotonically
+      // Note: `max_commit_distance` requires the project to have monotonically
       // increasing commit positions exposed in commit message footers (e.g.,
       // `Cr-Commit-Position: refs/heads/main@{#123456}`, typically generated
       // by the `git-numberer` Gerrit plugin). Validation and support are
@@ -1057,9 +1058,9 @@ message UserLimit {
 
 // ReuseWindow specifies the conditions under which a tryjob can be reused.
 //
-// This configuration is only supported for projects that use monotonic
-// commit positions in their commit footers (e.g., via the `git-numberer`
-// plugin), since they are used to calculate commit distance.
+// Without a ReuseWindow, a previous build may be reused if it was created
+// within the last 24h. With a ReuseWindow, exactly one of `max_commit_distance`
+// or `max_age` must be set (setting both is not allowed).
 message ReuseWindow {
   // Limit reuse by maximum commit distance.
   //
@@ -1067,6 +1068,30 @@ message ReuseWindow {
   // previous build and the current branch tip exceeds this value, the build
   // cannot be reused.
   //
-  // This requires the target branch to have monotonic commit positions.
-  uint32 max_commit_distance = 1 [(validate.rules).uint32.gt = 0];
+  // This requires the target branch to have monotonic commit positions (e.g.,
+  // via the `git-numberer` plugin), since they are used to calculate commit
+  // distance. As such, it is only supported for allowlisted projects.
+  //
+  // If set, it replaces the default 24h time-based window: a build within
+  // `max_commit_distance` may be reused regardless of its age. If commit
+  // distance can't be determined (e.g. due to Gitiles errors), CV falls back
+  // to the default 24h time-based window.
+  //
+  // Mutually exclusive with `max_age`.
+  uint32 max_commit_distance = 1;
+
+  // Limit reuse by maximum age of the previous build.
+  //
+  // The age is measured from the previous build's creation time as recorded
+  // by Buildbucket, the same as for the default 24h window. It doesn't depend
+  // on commit or patchset timestamps.
+  //
+  // A previous build created more than `max_age` ago cannot be reused.
+  // Must be positive and at most 24h.
+  //
+  // Mutually exclusive with `max_commit_distance`.
+  google.protobuf.Duration max_age = 2 [(validate.rules).duration = {
+    gt: {},
+    lte: {seconds: 86400},
+  }];
 }

@@ -690,7 +690,7 @@ func TestExecutePlan(t *testing.T) {
 
 			t.Run("New Tryjob is not launched when tryjob can be reused", func(t *ftt.Test) {
 				result := &tryjob.Result{
-					CreateTime: timestamppb.New(now.Add(-staleTryjobAge / 2)),
+					CreateTime: timestamppb.New(now.Add(-defaultStaleTryjobAge / 2)),
 					Backend: &tryjob.Result_Buildbucket_{
 						Buildbucket: &tryjob.Result_Buildbucket{
 							Id:      buildID,
@@ -701,7 +701,7 @@ func TestExecutePlan(t *testing.T) {
 				}
 				reuseTryjob := tryjob.MustBuildbucketID(bbHost, buildID).MustCreateIfNotExists(ctx)
 				reuseTryjob.EVersion = 1
-				reuseTryjob.EntityCreateTime = now.Add(-staleTryjobAge / 2)
+				reuseTryjob.EntityCreateTime = now.Add(-defaultStaleTryjobAge / 2)
 				reuseTryjob.EntityUpdateTime = now.Add(-1 * time.Minute)
 				reuseTryjob.ReuseKey = computeReuseKey([]*run.RunCL{runCL}, nil)
 				reuseTryjob.CLPatchsets = tryjob.CLPatchsets{tryjob.MakeCLPatchset(runCL.ID, gPatchset)}
@@ -741,7 +741,7 @@ func TestExecutePlan(t *testing.T) {
 				}
 				tj := tryjob.MustBuildbucketID(bbHost, buildID).MustCreateIfNotExists(ctx)
 				tj.EVersion = 1
-				tj.EntityCreateTime = now.Add(-staleTryjobAge * 2) // older than 24h
+				tj.EntityCreateTime = now.Add(-defaultStaleTryjobAge * 2) // older than 24h
 				tj.EntityUpdateTime = now.Add(-1 * time.Minute)
 				tj.ReuseKey = computeReuseKey([]*run.RunCL{runCL}, nil)
 				tj.CLPatchsets = tryjob.CLPatchsets{tryjob.MakeCLPatchset(runCL.ID, gPatchset)}
@@ -749,7 +749,7 @@ func TestExecutePlan(t *testing.T) {
 				tj.Status = tryjob.Status_ENDED
 				tj.LaunchedBy = common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh"))
 				tj.Result = &tryjob.Result{
-					CreateTime: timestamppb.New(now.Add(-staleTryjobAge * 2)),
+					CreateTime: timestamppb.New(now.Add(-defaultStaleTryjobAge * 2)),
 					Backend: &tryjob.Result_Buildbucket_{
 						Buildbucket: &tryjob.Result_Buildbucket{
 							Id:      buildID,

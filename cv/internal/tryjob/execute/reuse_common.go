@@ -44,8 +44,20 @@ import (
 	"go.chromium.org/luci/cv/internal/tryjob"
 )
 
-// staleTryjobAge is the age after which a Tryjob is too old to reuse.
-const staleTryjobAge time.Duration = 24 * time.Hour
+// defaultStaleTryjobAge is the default age after which a Tryjob is too old to
+// reuse.
+//
+// It can be shortened per builder via `reuse_window.max_age`.
+const defaultStaleTryjobAge time.Duration = 24 * time.Hour
+
+// maxReuseAge returns the age after which a Tryjob is too old to reuse for
+// the target requirement def, based on its time-based reuse window.
+func maxReuseAge(def *tryjob.Definition) time.Duration {
+	if maxAge := def.GetReuseWindow().GetMaxAge(); maxAge != nil {
+		return maxAge.AsDuration()
+	}
+	return defaultStaleTryjobAge
+}
 
 type reusability int
 
@@ -58,7 +70,7 @@ const (
 // canReuseTryjob checks if candidate Tryjob tj can be reused to satisfy target requirement def.
 //
 // Tryjob *can* be reused iff the Tryjob ends successfully and is fresh enough
-// against target requirement def (i.e created within `staleTryjobAge` or within the commit distance limit).
+// against target requirement def (i.e created within the max reuse age or within the commit distance limit).
 // Tryjob *may* be reused if the Tryjob is fresh enough and still running or
 // hasn't started yet.
 // Note: Freshness is evaluated against target requirement def rather than historical snapshot tj.Definition
@@ -120,14 +132,14 @@ func (w *worker) canReuseResult(ctx context.Context, tj *tryjob.Tryjob, mode run
 	}
 }
 
-// isTryjobStale checks whether the Tryjob is too old to use.
-func isTryjobStale(ctx context.Context, tj *tryjob.Tryjob) bool {
+// isTryjobStale checks whether the Tryjob is older than maxAge.
+func isTryjobStale(ctx context.Context, tj *tryjob.Tryjob, maxAge time.Duration) bool {
 	createTime := tj.Result.GetCreateTime()
 	if createTime == nil {
 		logging.Errorf(ctx, "Tryjob %d has nil create time when checking whether tryjob is stale", tj.ID)
 		return true // Be defensive. Consider Tryjob stale.
 	}
-	return clock.Now(ctx).Sub(createTime.AsTime()) >= staleTryjobAge
+	return clock.Now(ctx).Sub(createTime.AsTime()) >= maxAge
 }
 
 // evaluateReuseWindow checks whether candidate Tryjob tj is fresh enough to
@@ -142,7 +154,8 @@ func isTryjobStale(ctx context.Context, tj *tryjob.Tryjob) bool {
 // whether the distance between the target branch tip and tj's base commit position
 // is within the configured limit. If max_commit_distance is not set, or if commit
 // distance calculation fails unexpectedly (e.g., due to Gitiles errors or missing
-// metadata), we gracefully fall back to the time-based window.
+// metadata), we gracefully fall back to the time-based window (max_age if set,
+// 24h otherwise).
 //
 // Returns true if the Tryjob satisfies the applicable reuse window, and false
 // otherwise.
@@ -155,7 +168,7 @@ func (w *worker) evaluateReuseWindow(ctx context.Context, tj *tryjob.Tryjob, def
 		}
 		logging.Warningf(ctx, "Commit distance verification failed for tryjob %d: %s; falling back to time-based reuse window", tj.ID, err)
 	}
-	reusable := !isTryjobStale(ctx, tj)
+	reusable := !isTryjobStale(ctx, tj, maxReuseAge(def))
 	w.reportReuseEvaluation(ctx, reuseWindowTime, reusable)
 	return reusable
 }

@@ -715,7 +715,7 @@ func TestValidateProjectDetailed(t *testing.T) {
 					"err[4]: in <unspecified file> (config_group #1 \"test\" / verifiers / tryjob / retry_config): negative timeout_weight not allowed (-1 given)"))
 			})
 
-			t.Run("commit-distance reuse_window allowlist", func(t *ftt.Test) {
+			t.Run("reuse_window", func(t *ftt.Test) {
 				testCases := []struct {
 					name         string
 					project      string
@@ -761,10 +761,50 @@ func TestValidateProjectDetailed(t *testing.T) {
 						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 100},
 					},
 					{
-						name:        "zero max_commit_distance on allowed project rejected",
+						name:        "empty reuse_window rejected",
 						project:     "chromium",
-						reuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 0},
-						expectedErr: "MaxCommitDistance",
+						reuseWindow: &cfgpb.ReuseWindow{},
+						expectedErr: "at least one of max_commit_distance or max_age must be set",
+					},
+					{
+						name:        "max_age allowed for any project",
+						project:     "v8",
+						reuseWindow: &cfgpb.ReuseWindow{MaxAge: durationpb.New(4 * time.Hour)},
+					},
+					{
+						name:        "max_age of exactly 24h allowed",
+						project:     "v8",
+						reuseWindow: &cfgpb.ReuseWindow{MaxAge: durationpb.New(24 * time.Hour)},
+					},
+					{
+						name:        "max_age longer than 24h rejected",
+						project:     "v8",
+						reuseWindow: &cfgpb.ReuseWindow{MaxAge: durationpb.New(25 * time.Hour)},
+						expectedErr: "MaxAge: value must be inside range (0s, 24h0m0s]",
+					},
+					{
+						name:        "zero max_age rejected",
+						project:     "v8",
+						reuseWindow: &cfgpb.ReuseWindow{MaxAge: durationpb.New(0)},
+						expectedErr: "MaxAge: value must be inside range (0s, 24h0m0s]",
+					},
+					{
+						name:    "max_age and max_commit_distance cannot be used together",
+						project: "chromium",
+						reuseWindow: &cfgpb.ReuseWindow{
+							MaxCommitDistance: 1000,
+							MaxAge:            durationpb.New(4 * time.Hour),
+						},
+						expectedErr: "max_commit_distance and max_age cannot be used together",
+					},
+					{
+						name:    "max_age does not bypass commit-distance allowlist",
+						project: "v8",
+						reuseWindow: &cfgpb.ReuseWindow{
+							MaxCommitDistance: 1000,
+							MaxAge:            durationpb.New(4 * time.Hour),
+						},
+						expectedErr: "commit-distance-based reuse_window is only allowed for allowlisted projects",
 					},
 					{
 						name:        "disallowed project without reuse_window passes",
@@ -776,6 +816,13 @@ func TestValidateProjectDetailed(t *testing.T) {
 						project:      "chromium",
 						disableReuse: true,
 						reuseWindow:  &cfgpb.ReuseWindow{MaxCommitDistance: 1000},
+						expectedErr:  "disable_reuse and reuse_window cannot be used together",
+					},
+					{
+						name:         "disable_reuse and max_age cannot be used together",
+						project:      "v8",
+						disableReuse: true,
+						reuseWindow:  &cfgpb.ReuseWindow{MaxAge: durationpb.New(4 * time.Hour)},
 						expectedErr:  "disable_reuse and reuse_window cannot be used together",
 					},
 				}

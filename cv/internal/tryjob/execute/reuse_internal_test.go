@@ -70,14 +70,14 @@ func TestFindReuseInCV(t *testing.T) {
 			ID:               tjID,
 			ExternalID:       tryjob.MustBuildbucketID("buildbucket.example.com", 9821),
 			EVersion:         2,
-			EntityCreateTime: now.Add(-staleTryjobAge / 2),
+			EntityCreateTime: now.Add(-defaultStaleTryjobAge / 2),
 			EntityUpdateTime: now.Add(-1 * time.Minute),
 			ReuseKey:         reuseKey,
 			Definition:       defFoo,
 			Status:           tryjob.Status_ENDED,
 			LaunchedBy:       common.MakeRunID(lProject, now.Add(-2*time.Hour), 1, []byte("efgh")),
 			Result: &tryjob.Result{
-				CreateTime: timestamppb.New(now.Add(-staleTryjobAge / 2)),
+				CreateTime: timestamppb.New(now.Add(-defaultStaleTryjobAge / 2)),
 				Backend: &tryjob.Result_Buildbucket_{
 					Buildbucket: &tryjob.Result_Buildbucket{
 						Builder: builder,
@@ -166,7 +166,7 @@ func TestFindReuseInCV(t *testing.T) {
 		})
 
 		t.Run("Tryjob is not reusable", func(t *ftt.Test) {
-			tj.Result.CreateTime = timestamppb.New(now.Add(-2 * staleTryjobAge))
+			tj.Result.CreateTime = timestamppb.New(now.Add(-2 * defaultStaleTryjobAge))
 			assert.NoErr(t, datastore.Put(ctx, tj))
 			result, err := w.findReuseInCV(ctx, reuseKey, []*tryjob.Definition{defFoo})
 			assert.NoErr(t, err)

@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -64,7 +65,7 @@ func TestCanReuse(t *testing.T) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-defaultStaleTryjobAge / 2)),
 						Status:     tryjob.Result_SUCCEEDED,
 					},
 				}
@@ -76,7 +77,7 @@ func TestCanReuse(t *testing.T) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-defaultStaleTryjobAge / 2)),
 						Status:     tryjob.Result_SUCCEEDED,
 						Output: &recipe.Output{
 							Reusability: &recipe.Output_Reusability{
@@ -95,7 +96,7 @@ func TestCanReuse(t *testing.T) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_TRIGGERED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-defaultStaleTryjobAge / 2)),
 					},
 				}
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseMaybe))
@@ -115,7 +116,7 @@ func TestCanReuse(t *testing.T) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_TRIGGERED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge * 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-defaultStaleTryjobAge * 2)),
 					},
 				}
 				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, nil), should.Equal(reuseDenied))
@@ -126,7 +127,7 @@ func TestCanReuse(t *testing.T) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge * 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-defaultStaleTryjobAge * 2)),
 						Status:     tryjob.Result_SUCCEEDED,
 					},
 				}
@@ -138,7 +139,7 @@ func TestCanReuse(t *testing.T) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-defaultStaleTryjobAge / 2)),
 						Status:     tryjob.Result_FAILED_PERMANENTLY,
 					},
 				}
@@ -149,7 +150,7 @@ func TestCanReuse(t *testing.T) {
 				tj := &tryjob.Tryjob{
 					Status: tryjob.Status_ENDED,
 					Result: &tryjob.Result{
-						CreateTime: timestamppb.New(ct.Clock.Now().Add(-staleTryjobAge / 2)),
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-defaultStaleTryjobAge / 2)),
 						Status:     tryjob.Result_SUCCEEDED,
 						Output: &recipe.Output{
 							Reusability: &recipe.Output_Reusability{
@@ -325,6 +326,43 @@ func TestCanReuse(t *testing.T) {
 					assert.Loosely(t, wNil.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
 					assert.Loosely(t, ct.TSMonSentValue(ctx, metrics.Public.TryjobReuseEvaluated, lProject, configGroup, reuseWindowTime, false), should.Equal(1))
 				})
+			})
+		})
+
+		t.Run("max_age time-based evaluation", func(t *ftt.Test) {
+			def := &tryjob.Definition{
+				ReuseWindow: &cfgpb.ReuseWindow{
+					MaxAge: durationpb.New(4 * time.Hour),
+				},
+			}
+			makeTryjob := func(status tryjob.Status, age time.Duration) *tryjob.Tryjob {
+				return &tryjob.Tryjob{
+					Status: status,
+					Result: &tryjob.Result{
+						CreateTime: timestamppb.New(ct.Clock.Now().Add(-age)),
+						Status:     tryjob.Result_SUCCEEDED,
+					},
+				}
+			}
+
+			t.Run("ended tryjob younger than max_age", func(t *ftt.Test) {
+				tj := makeTryjob(tryjob.Status_ENDED, 2*time.Hour)
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseAllowed))
+			})
+
+			t.Run("ended tryjob older than max_age", func(t *ftt.Test) {
+				tj := makeTryjob(tryjob.Status_ENDED, 6*time.Hour)
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
+			})
+
+			t.Run("triggered tryjob younger than max_age", func(t *ftt.Test) {
+				tj := makeTryjob(tryjob.Status_TRIGGERED, 2*time.Hour)
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseMaybe))
+			})
+
+			t.Run("triggered tryjob older than max_age", func(t *ftt.Test) {
+				tj := makeTryjob(tryjob.Status_TRIGGERED, 6*time.Hour)
+				assert.Loosely(t, w.canReuseTryjob(ctx, tj, run.FullRun, def), should.Equal(reuseDenied))
 			})
 		})
 	})

@@ -1041,9 +1041,9 @@ func (x *UserLimit) GetOverrides() []*UserLimit_Override {
 
 // ReuseWindow specifies the conditions under which a tryjob can be reused.
 //
-// This configuration is only supported for projects that use monotonic
-// commit positions in their commit footers (e.g., via the `git-numberer`
-// plugin), since they are used to calculate commit distance.
+// Without a ReuseWindow, a previous build may be reused if it was created
+// within the last 24h. With a ReuseWindow, exactly one of `max_commit_distance`
+// or `max_age` must be set (setting both is not allowed).
 type ReuseWindow struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Limit reuse by maximum commit distance.
@@ -1052,10 +1052,30 @@ type ReuseWindow struct {
 	// previous build and the current branch tip exceeds this value, the build
 	// cannot be reused.
 	//
-	// This requires the target branch to have monotonic commit positions.
+	// This requires the target branch to have monotonic commit positions (e.g.,
+	// via the `git-numberer` plugin), since they are used to calculate commit
+	// distance. As such, it is only supported for allowlisted projects.
+	//
+	// If set, it replaces the default 24h time-based window: a build within
+	// `max_commit_distance` may be reused regardless of its age. If commit
+	// distance can't be determined (e.g. due to Gitiles errors), CV falls back
+	// to the default 24h time-based window.
+	//
+	// Mutually exclusive with `max_age`.
 	MaxCommitDistance uint32 `protobuf:"varint,1,opt,name=max_commit_distance,json=maxCommitDistance,proto3" json:"max_commit_distance,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Limit reuse by maximum age of the previous build.
+	//
+	// The age is measured from the previous build's creation time as recorded
+	// by Buildbucket, the same as for the default 24h window. It doesn't depend
+	// on commit or patchset timestamps.
+	//
+	// A previous build created more than `max_age` ago cannot be reused.
+	// Must be positive and at most 24h.
+	//
+	// Mutually exclusive with `max_commit_distance`.
+	MaxAge        *durationpb.Duration `protobuf:"bytes,2,opt,name=max_age,json=maxAge,proto3" json:"max_age,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReuseWindow) Reset() {
@@ -1093,6 +1113,13 @@ func (x *ReuseWindow) GetMaxCommitDistance() uint32 {
 		return x.MaxCommitDistance
 	}
 	return 0
+}
+
+func (x *ReuseWindow) GetMaxAge() *durationpb.Duration {
+	if x != nil {
+		return x.MaxAge
+	}
+	return nil
 }
 
 // Enumerates repositories on a Gerrit instance for which CQ should work.
@@ -2080,12 +2107,13 @@ type Verifiers_Tryjob_Builder struct {
 	SkipFooters []*Verifiers_Tryjob_Builder_SkipFooter `protobuf:"bytes,17,rep,name=skip_footers,json=skipFooters,proto3" json:"skip_footers,omitempty"`
 	// Optional. The reuse window configuration for this builder.
 	//
-	// This allows reusing past successful builds based on "commit distance"
-	// (number of commits between the build's base revision and the branch tip)
-	// rather than just elapsed time. Only builds that completed successfully
-	// are eligible for reuse.
+	// This allows narrowing the default 24h time-based window in which past
+	// builds may be reused (see `ReuseWindow.max_age`), or reusing past
+	// successful builds based on "commit distance" (number of commits
+	// between the build's base revision and the branch tip) rather than just
+	// elapsed time (see `ReuseWindow.max_commit_distance`).
 	//
-	// Note: This feature requires the project to have monotonically
+	// Note: `max_commit_distance` requires the project to have monotonically
 	// increasing commit positions exposed in commit message footers (e.g.,
 	// `Cr-Commit-Position: refs/heads/main@{#123456}`, typically generated
 	// by the `git-numberer` Gerrit plugin). Validation and support are
@@ -3210,9 +3238,10 @@ const file_go_chromium_org_luci_cv_api_config_v2_config_proto_rawDesc = "" +
 	"\x04days\x18\x02 \x03(\x0e2\x16.google.type.DayOfWeekR\x04days\x125\n" +
 	"\n" +
 	"start_time\x18\x03 \x01(\v2\x16.google.type.TimeOfDayR\tstartTime\x125\n" +
-	"\bduration\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\bduration\"F\n" +
-	"\vReuseWindow\x127\n" +
-	"\x13max_commit_distance\x18\x01 \x01(\rB\a\xfaB\x04*\x02 \x00R\x11maxCommitDistance*]\n" +
+	"\bduration\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\bduration\"\x81\x01\n" +
+	"\vReuseWindow\x12.\n" +
+	"\x13max_commit_distance\x18\x01 \x01(\rR\x11maxCommitDistance\x12B\n" +
+	"\amax_age\x18\x02 \x01(\v2\x19.google.protobuf.DurationB\x0e\xfaB\v\xaa\x01\b\"\x04\b\x80\xa3\x05*\x00R\x06maxAge*]\n" +
 	"\fCommentLevel\x12\x17\n" +
 	"\x13COMMENT_LEVEL_UNSET\x10\x00\x12\x16\n" +
 	"\x12COMMENT_LEVEL_FULL\x10\x01\x12\x1c\n" +
@@ -3303,34 +3332,35 @@ var file_go_chromium_org_luci_cv_api_config_v2_config_proto_depIdxs = []int32{
 	32, // 20: cv.config.UserLimit.run:type_name -> cv.config.UserLimit.Run
 	33, // 21: cv.config.UserLimit.tryjob:type_name -> cv.config.UserLimit.Tryjob
 	34, // 22: cv.config.UserLimit.overrides:type_name -> cv.config.UserLimit.Override
-	15, // 23: cv.config.ConfigGroup.Gerrit.projects:type_name -> cv.config.ConfigGroup.Gerrit.Project
-	16, // 24: cv.config.ConfigGroup.PostAction.conditions:type_name -> cv.config.ConfigGroup.PostAction.TriggeringCondition
-	17, // 25: cv.config.ConfigGroup.PostAction.vote_gerrit_labels:type_name -> cv.config.ConfigGroup.PostAction.VoteGerritLabels
-	19, // 26: cv.config.ConfigGroup.TryjobExperiment.condition:type_name -> cv.config.ConfigGroup.TryjobExperiment.Condition
-	37, // 27: cv.config.ConfigGroup.PostAction.TriggeringCondition.statuses:type_name -> cv.v1.Run.Status
-	18, // 28: cv.config.ConfigGroup.PostAction.VoteGerritLabels.votes:type_name -> cv.config.ConfigGroup.PostAction.VoteGerritLabels.Vote
-	3,  // 29: cv.config.Verifiers.GerritCQAbility.allow_owner_if_submittable:type_name -> cv.config.Verifiers.GerritCQAbility.CQAction
-	25, // 30: cv.config.Verifiers.Tryjob.builders:type_name -> cv.config.Verifiers.Tryjob.Builder
-	28, // 31: cv.config.Verifiers.Tryjob.retry_config:type_name -> cv.config.Verifiers.Tryjob.RetryConfig
-	1,  // 32: cv.config.Verifiers.Tryjob.cancel_stale_tryjobs:type_name -> cv.config.Toggle
-	0,  // 33: cv.config.Verifiers.Tryjob.Builder.result_visibility:type_name -> cv.config.CommentLevel
-	1,  // 34: cv.config.Verifiers.Tryjob.Builder.cancel_stale:type_name -> cv.config.Toggle
-	26, // 35: cv.config.Verifiers.Tryjob.Builder.equivalent_to:type_name -> cv.config.Verifiers.Tryjob.EquivalentBuilder
-	29, // 36: cv.config.Verifiers.Tryjob.Builder.location_filters:type_name -> cv.config.Verifiers.Tryjob.Builder.LocationFilter
-	30, // 37: cv.config.Verifiers.Tryjob.Builder.skip_footers:type_name -> cv.config.Verifiers.Tryjob.Builder.SkipFooter
-	11, // 38: cv.config.Verifiers.Tryjob.Builder.reuse_window:type_name -> cv.config.ReuseWindow
-	31, // 39: cv.config.UserLimit.Run.max_active:type_name -> cv.config.UserLimit.Limit
-	31, // 40: cv.config.UserLimit.Tryjob.max_active:type_name -> cv.config.UserLimit.Limit
-	35, // 41: cv.config.UserLimit.Override.schedule:type_name -> cv.config.UserLimit.Override.Schedule
-	32, // 42: cv.config.UserLimit.Override.run:type_name -> cv.config.UserLimit.Run
-	38, // 43: cv.config.UserLimit.Override.Schedule.days:type_name -> google.type.DayOfWeek
-	39, // 44: cv.config.UserLimit.Override.Schedule.start_time:type_name -> google.type.TimeOfDay
-	36, // 45: cv.config.UserLimit.Override.Schedule.duration:type_name -> google.protobuf.Duration
-	46, // [46:46] is the sub-list for method output_type
-	46, // [46:46] is the sub-list for method input_type
-	46, // [46:46] is the sub-list for extension type_name
-	46, // [46:46] is the sub-list for extension extendee
-	0,  // [0:46] is the sub-list for field type_name
+	36, // 23: cv.config.ReuseWindow.max_age:type_name -> google.protobuf.Duration
+	15, // 24: cv.config.ConfigGroup.Gerrit.projects:type_name -> cv.config.ConfigGroup.Gerrit.Project
+	16, // 25: cv.config.ConfigGroup.PostAction.conditions:type_name -> cv.config.ConfigGroup.PostAction.TriggeringCondition
+	17, // 26: cv.config.ConfigGroup.PostAction.vote_gerrit_labels:type_name -> cv.config.ConfigGroup.PostAction.VoteGerritLabels
+	19, // 27: cv.config.ConfigGroup.TryjobExperiment.condition:type_name -> cv.config.ConfigGroup.TryjobExperiment.Condition
+	37, // 28: cv.config.ConfigGroup.PostAction.TriggeringCondition.statuses:type_name -> cv.v1.Run.Status
+	18, // 29: cv.config.ConfigGroup.PostAction.VoteGerritLabels.votes:type_name -> cv.config.ConfigGroup.PostAction.VoteGerritLabels.Vote
+	3,  // 30: cv.config.Verifiers.GerritCQAbility.allow_owner_if_submittable:type_name -> cv.config.Verifiers.GerritCQAbility.CQAction
+	25, // 31: cv.config.Verifiers.Tryjob.builders:type_name -> cv.config.Verifiers.Tryjob.Builder
+	28, // 32: cv.config.Verifiers.Tryjob.retry_config:type_name -> cv.config.Verifiers.Tryjob.RetryConfig
+	1,  // 33: cv.config.Verifiers.Tryjob.cancel_stale_tryjobs:type_name -> cv.config.Toggle
+	0,  // 34: cv.config.Verifiers.Tryjob.Builder.result_visibility:type_name -> cv.config.CommentLevel
+	1,  // 35: cv.config.Verifiers.Tryjob.Builder.cancel_stale:type_name -> cv.config.Toggle
+	26, // 36: cv.config.Verifiers.Tryjob.Builder.equivalent_to:type_name -> cv.config.Verifiers.Tryjob.EquivalentBuilder
+	29, // 37: cv.config.Verifiers.Tryjob.Builder.location_filters:type_name -> cv.config.Verifiers.Tryjob.Builder.LocationFilter
+	30, // 38: cv.config.Verifiers.Tryjob.Builder.skip_footers:type_name -> cv.config.Verifiers.Tryjob.Builder.SkipFooter
+	11, // 39: cv.config.Verifiers.Tryjob.Builder.reuse_window:type_name -> cv.config.ReuseWindow
+	31, // 40: cv.config.UserLimit.Run.max_active:type_name -> cv.config.UserLimit.Limit
+	31, // 41: cv.config.UserLimit.Tryjob.max_active:type_name -> cv.config.UserLimit.Limit
+	35, // 42: cv.config.UserLimit.Override.schedule:type_name -> cv.config.UserLimit.Override.Schedule
+	32, // 43: cv.config.UserLimit.Override.run:type_name -> cv.config.UserLimit.Run
+	38, // 44: cv.config.UserLimit.Override.Schedule.days:type_name -> google.type.DayOfWeek
+	39, // 45: cv.config.UserLimit.Override.Schedule.start_time:type_name -> google.type.TimeOfDay
+	36, // 46: cv.config.UserLimit.Override.Schedule.duration:type_name -> google.protobuf.Duration
+	47, // [47:47] is the sub-list for method output_type
+	47, // [47:47] is the sub-list for method input_type
+	47, // [47:47] is the sub-list for extension type_name
+	47, // [47:47] is the sub-list for extension extendee
+	0,  // [0:47] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cv_api_config_v2_config_proto_init() }

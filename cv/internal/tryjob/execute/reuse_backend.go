@@ -17,6 +17,7 @@ package execute
 import (
 	"context"
 	"slices"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -37,22 +38,13 @@ import (
 // e.g. manually through Gerrit.
 func (w *worker) findReuseInBackend(ctx context.Context, reuseKey string, definitions []*tryjob.Definition) (map[*tryjob.Definition]*tryjob.Tryjob, error) {
 	candidates := make(map[*tryjob.Definition]*tryjob.Tryjob, len(definitions))
-	cutOffTime := clock.Now(ctx).Add(-staleTryjobAge)
+	now := clock.Now(ctx)
 	err := w.backend.Search(ctx, w.cls, definitions, w.run.ID.LUCIProject(), func(tj *tryjob.Tryjob) bool {
-		// backend.Search returns matching Tryjob from newest to oldest. If the build is
-		// older than the 24-hour time cutoff, we only continue searching if there is at least
-		// one unsatisfied definition that allows commit-distance reuse beyond 24 hours.
-		if createTime := tj.Result.GetCreateTime(); createTime != nil && createTime.AsTime().Before(cutOffTime) {
-			hasUnsatisfiedCommitDist := false
-			for _, d := range definitions {
-				if _, ok := candidates[d]; !ok && d.GetReuseWindow().GetMaxCommitDistance() > 0 {
-					hasUnsatisfiedCommitDist = true
-					break
-				}
-			}
-			if !hasUnsatisfiedCommitDist {
-				return false
-			}
+		// backend.Search returns matching Tryjob from newest to oldest. Once a
+		// build is too old to be reused by any of the unsatisfied definitions,
+		// all remaining builds are too, so stop searching.
+		if createTime := tj.Result.GetCreateTime(); createTime != nil && tooOldForAll(now.Sub(createTime.AsTime()), definitions, candidates) {
+			return false
 		}
 
 		def := tj.Definition
@@ -98,6 +90,24 @@ func (w *worker) findReuseInBackend(ctx context.Context, reuseKey string, defini
 	}
 
 	return ret, nil
+}
+
+// tooOldForAll reports whether a Tryjob of the given age is too old to be
+// reused by every definition that doesn't have a reuse candidate yet.
+func tooOldForAll(age time.Duration, definitions []*tryjob.Definition, candidates map[*tryjob.Definition]*tryjob.Tryjob) bool {
+	for _, d := range definitions {
+		if _, ok := candidates[d]; ok {
+			continue
+		}
+		if d.GetReuseWindow().GetMaxCommitDistance() > 0 {
+			// Commit-distance-based reuse isn't bounded by age.
+			return false
+		}
+		if age < maxReuseAge(d) {
+			return false
+		}
+	}
+	return true
 }
 
 // disableReuseFootersChanged determines whether any of the tryjob's

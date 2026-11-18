@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	bbpb "go.chromium.org/luci/buildbucket/proto"
@@ -292,6 +293,21 @@ func TestFindReuseInBackend(t *testing.T) {
 			assert.Loosely(t, result, should.ContainKey(defDist))
 		})
 
+		t.Run("Respects max_age reuse window", func(t *ftt.Test) {
+			ct.Clock.Add(2 * time.Hour) // The build is now ~3h old.
+
+			defFoo.ReuseWindow = &cfgpb.ReuseWindow{MaxAge: durationpb.New(4 * time.Hour)}
+			result, err := w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
+			assert.NoErr(t, err)
+			assert.Loosely(t, result, should.HaveLength(1))
+			assert.Loosely(t, result, should.ContainKey(defFoo))
+
+			defFoo.ReuseWindow = &cfgpb.ReuseWindow{MaxAge: durationpb.New(2 * time.Hour)}
+			result, err = w.findReuseInBackend(ctx, reuseKey, []*tryjob.Definition{defFoo})
+			assert.NoErr(t, err)
+			assert.Loosely(t, result, should.BeEmpty)
+		})
+
 		t.Run("Tryjob already exists", func(t *ftt.Test) {
 			eid := tryjob.MustBuildbucketID(bbHost, build.GetId())
 			tj := eid.MustCreateIfNotExists(ctx)
@@ -330,4 +346,42 @@ func TestFindReuseInBackend(t *testing.T) {
 			}))
 		})
 	})
+}
+
+func TestTooOldForAll(t *testing.T) {
+	t.Parallel()
+
+	defDefault := &tryjob.Definition{}
+	defMaxAge := &tryjob.Definition{
+		ReuseWindow: &cfgpb.ReuseWindow{MaxAge: durationpb.New(4 * time.Hour)},
+	}
+	defCommitDist := &tryjob.Definition{
+		ReuseWindow: &cfgpb.ReuseWindow{MaxCommitDistance: 100},
+	}
+
+	testCases := []struct {
+		name        string
+		age         time.Duration
+		definitions []*tryjob.Definition
+		satisfied   []*tryjob.Definition
+		want        bool
+	}{
+		{"default window, fresh", 12 * time.Hour, []*tryjob.Definition{defDefault}, nil, false},
+		{"default window, stale", 26 * time.Hour, []*tryjob.Definition{defDefault}, nil, true},
+		{"max_age, fresh", 2 * time.Hour, []*tryjob.Definition{defMaxAge}, nil, false},
+		{"max_age, stale", 6 * time.Hour, []*tryjob.Definition{defMaxAge}, nil, true},
+		{"max_age stale but default window fresh", 6 * time.Hour, []*tryjob.Definition{defMaxAge, defDefault}, nil, false},
+		{"max_age stale and default window satisfied", 6 * time.Hour, []*tryjob.Definition{defMaxAge, defDefault}, []*tryjob.Definition{defDefault}, true},
+		{"commit distance is not bounded by age", 100 * time.Hour, []*tryjob.Definition{defCommitDist}, nil, false},
+	}
+
+	for _, tc := range testCases {
+		ftt.Run(tc.name, t, func(t *ftt.Test) {
+			candidates := make(map[*tryjob.Definition]*tryjob.Tryjob)
+			for _, d := range tc.satisfied {
+				candidates[d] = &tryjob.Tryjob{}
+			}
+			assert.Loosely(t, tooOldForAll(tc.age, tc.definitions, candidates), should.Equal(tc.want))
+		})
+	}
 }

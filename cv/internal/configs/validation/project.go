@@ -584,14 +584,14 @@ func (vd *projectConfigValidator) validateTryjobVerifier(v *cfgpb.Verifiers, sup
 			if b.GetDisableReuse() {
 				vd.ctx.Errorf("disable_reuse and reuse_window cannot be used together")
 			}
-			vd.validateCommitDistanceReuseWindow(rw)
+			vd.validateReuseWindow(rw)
 		}
 	})
 }
 
-// validateCommitDistanceReuseWindow validates the commit-distance reuse_window configuration
-// and ensures it is only configured for allowlisted projects.
-func (vd *projectConfigValidator) validateCommitDistanceReuseWindow(rw *cfgpb.ReuseWindow) {
+// validateReuseWindow validates the reuse_window configuration and ensures
+// commit-distance-based reuse is only configured for allowlisted projects.
+func (vd *projectConfigValidator) validateReuseWindow(rw *cfgpb.ReuseWindow) {
 	vd.ctx.Enter("reuse_window")
 	defer vd.ctx.Exit()
 
@@ -599,7 +599,14 @@ func (vd *projectConfigValidator) validateCommitDistanceReuseWindow(rw *cfgpb.Re
 		vd.ctx.Errorf("%s", err)
 	}
 
-	if vd.project != "" && !canUseCommitDistanceReuseWindow(vd.project) {
+	switch {
+	case rw.GetMaxCommitDistance() == 0 && rw.GetMaxAge() == nil:
+		vd.ctx.Errorf("at least one of max_commit_distance or max_age must be set")
+	case rw.GetMaxCommitDistance() > 0 && rw.GetMaxAge() != nil:
+		vd.ctx.Errorf("max_commit_distance and max_age cannot be used together")
+	}
+
+	if rw.GetMaxCommitDistance() > 0 && vd.project != "" && !canUseCommitDistanceReuseWindow(vd.project) {
 		vd.ctx.Errorf("commit-distance-based reuse_window is only allowed for allowlisted projects (e.g. chromium, chrome), but project %q given", vd.project)
 	}
 }
