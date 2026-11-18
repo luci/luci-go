@@ -52,6 +52,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/perm"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
@@ -63,7 +64,7 @@ import (
 
 // PrefixesViewers is a group membership in which grants read access to all
 // prefix metadata regardless of individual prefix ACLs.
-const PrefixesViewers = "cipd-prefixes-viewers"
+const PrefixesViewers = perm.PrefixesViewers
 
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
@@ -354,7 +355,7 @@ func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.I
 		return nil, err
 	}
 
-	roles, err := rolesInPrefix(ctx, ident, cfg, metas)
+	roles, err := perm.RolesInPrefix(ctx, ident, cfg, metas)
 	if err != nil {
 		return nil, err
 	}
@@ -390,13 +391,13 @@ func (impl *repoImpl) checkRole(ctx context.Context, prefix string, role repopb.
 	}
 
 	var reason string
-	switch yes, policy, err := hasRole(ctx, cfg, metas, role); {
+	switch yes, policy, err := perm.HasRole(ctx, cfg, metas, role); {
 	case err != nil:
 		return nil, err
 	case yes:
 		return metas, nil
 	case role == repopb.Role_READER: // was checking for a reader, and caller is not
-		return nil, noAccessErr(ctx, prefix)
+		return nil, perm.NoAccessErr(ctx, prefix)
 	default:
 		reason = string(policy)
 	}
@@ -404,7 +405,7 @@ func (impl *repoImpl) checkRole(ctx context.Context, prefix string, role repopb.
 	// We end up here if role is something other than READER, and the caller
 	// doesn't have it. Maybe caller IS a reader, then we can give more concrete
 	// error message.
-	switch yes, _, err := hasRole(ctx, cfg, metas, repopb.Role_READER); {
+	switch yes, _, err := perm.HasRole(ctx, cfg, metas, repopb.Role_READER); {
 	case err != nil:
 		return nil, err
 	case yes:
@@ -412,21 +413,8 @@ func (impl *repoImpl) checkRole(ctx context.Context, prefix string, role repopb.
 			codes.PermissionDenied, "%q has no required %s role in prefix %q because: %s",
 			auth.CurrentIdentity(ctx), role, prefix, reason)
 	default:
-		return nil, noAccessErr(ctx, prefix)
+		return nil, perm.NoAccessErr(ctx, prefix)
 	}
-}
-
-// noAccessErr produces a grpc error saying that the given prefix doesn't
-// exist or the caller has no access to it. This is generic error message that
-// should not give away prefix presence to non-readers.
-func noAccessErr(ctx context.Context, prefix string) error {
-	var msg string
-	if ident := auth.CurrentIdentity(ctx); ident.Kind() == identity.Anonymous {
-		msg = "not visible to unauthenticated callers"
-	} else {
-		msg = fmt.Sprintf("%q is not allowed to see it", ident)
-	}
-	return status.Errorf(codes.PermissionDenied, "prefix %q doesn't exist or %s", prefix, msg)
 }
 
 // noMetadataErr produces a grpc error saying that the given prefix doesn't have
@@ -456,7 +444,7 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *repopb.ListPrefixReques
 		if err != nil {
 			return false, err
 		}
-		switch visible, _, err := hasRole(ctx, cfg, md, repopb.Role_READER); {
+		switch visible, _, err := perm.HasRole(ctx, cfg, md, repopb.Role_READER); {
 		case err != nil:
 			return false, err
 		case visible:
@@ -723,10 +711,10 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 		Object:      r.Instance,
 		UserProject: userProject,
 	})
-	switch code := status.Code(err); {
-	case code == codes.AlreadyExists:
+	switch status.Code(err) {
+	case codes.AlreadyExists:
 		break // the object is already there
-	case code == codes.OK:
+	case codes.OK:
 		// The object is not in the storage and we have just started the upload. Let
 		// the client finish it.
 		return &repopb.RegisterInstanceResponse{

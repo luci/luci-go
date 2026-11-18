@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repo
+package perm
 
 import (
 	"context"
+	"fmt"
 	"strings"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
@@ -27,9 +31,13 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 )
 
-// impliedRoles defines what roles are "inherited" by other roles, e.g.
-// WRITERs are automatically READERs, so hasRole(..., READER) should return true
-// for WRITERs too.
+// PrefixesViewers is a group membership in which grants read access to all
+// prefix metadata regardless of individual prefix ACLs.
+const PrefixesViewers = "cipd-prefixes-viewers"
+
+// impliedRoles defines what roles are "inherited" by other roles, e.g. WRITERs
+// are automatically READERs, so HasRole(..., READER) should return true for
+// WRITERs too.
 //
 // The format is "role -> {role itself} + set of roles implied by it, perhaps
 // indirectly".
@@ -62,11 +70,13 @@ func roleSet(roles ...repopb.Role) map[repopb.Role]struct{} {
 	return m
 }
 
-// isWriteAllowed checks whether `ident` is allowed to perform *any* write
-// action, regardless of the ACL in the realm or legacy DB ACLs.
+// IsWriteAllowed checks whether `ident` is allowed to perform *any* write
+// action, even if an ACL in the realm or legacy DB ACLs would permit it.
 //
-// This policy is independent from ACLs and will override any other policies.
-func isWriteAllowed(ident identity.Identity, cfg *prefixcfg.Entry) bool {
+// Denial from this policy is overrides all other ACLs/policies.
+//
+// If this returns `true`, ACLs must still be checked.
+func IsWriteAllowed(ident identity.Identity, cfg *prefixcfg.Entry) bool {
 	if cfg == nil || len(cfg.Service.AllowWritersFromRegexp) == 0 {
 		return true
 	}
@@ -81,17 +91,18 @@ func isWriteAllowed(ident identity.Identity, cfg *prefixcfg.Entry) bool {
 	return false
 }
 
-type rolePolicy string
+// RolePolicy identifies the policy source for a legacy [HasRole] decision.
+type RolePolicy string
 
 const (
-	rolePolicyConfig rolePolicy = "policy"
-	rolePolicyACL    rolePolicy = "acl"
+	RolePolicyConfig RolePolicy = "policy"
+	RolePolicyACL    RolePolicy = "acl"
 )
 
-// hasRole checks whether the current caller has the given role in any of the
+// HasRole checks whether the current caller has the given role in any of the
 // supplied PrefixMetadata objects.
 //
-// It understands the role inheritance defined by impliedRoles map.
+// It understands the role inheritance defined by the impliedRoles map.
 //
 // 'cfg' is the prefix config of the leaf prefix being checked.
 //
@@ -99,11 +110,12 @@ const (
 // to be ordered by the prefix length (shortest first). Ordering is not really
 // used now, but it may change in the future.
 //
-// Returns the result and the policy source. Result only contains transient errors.
-func hasRole(ctx context.Context, cfg *prefixcfg.Entry, metas []*repopb.PrefixMetadata, role repopb.Role) (bool, rolePolicy, error) {
+// Returns the result and the policy source. Result only contains transient
+// errors.
+func HasRole(ctx context.Context, cfg *prefixcfg.Entry, metas []*repopb.PrefixMetadata, role repopb.Role) (bool, RolePolicy, error) {
 	ident := auth.CurrentIdentity(ctx)
-	if role != repopb.Role_READER && !isWriteAllowed(ident, cfg) {
-		return false, rolePolicyConfig, nil
+	if role != repopb.Role_READER && !IsWriteAllowed(ident, cfg) {
+		return false, RolePolicyConfig, nil
 	}
 
 	caller := string(ident) // e.g. "user:abc@example.com"
@@ -114,11 +126,11 @@ func hasRole(ctx context.Context, cfg *prefixcfg.Entry, metas []*repopb.PrefixMe
 		roles = roleSet(role)
 	}
 
-	// Enumerate the set of principals that have any of the requested roles in any
-	// of the prefixes. Exit early if hitting the direct match, otherwise proceed
-	// to more expensive group membership checks. Note that we don't use isInACL
-	// here because we want to postpone all group checks until the very end,
-	// checking memberships in all groups mentioned in 'metas' at once.
+	// Enumerate the set of principals that have any of the requested roles in
+	// any of the prefixes. Exit early if hitting the direct match, otherwise
+	// proceed to more expensive group membership checks. Note that we don't use
+	// isInACL here because we want to postpone all group checks until the very
+	// end, checking memberships in all groups mentioned in 'metas' at once.
 	groups := stringset.New(10) // 10 is picked arbitrarily
 	for _, meta := range metas {
 		for _, acl := range meta.Acls {
@@ -127,7 +139,7 @@ func hasRole(ctx context.Context, cfg *prefixcfg.Entry, metas []*repopb.PrefixMe
 			}
 			for _, p := range acl.Principals {
 				if p == caller {
-					return true, rolePolicyACL, nil // the caller was specified in ACLs explicitly
+					return true, RolePolicyACL, nil // the caller was specified in ACLs explicitly
 				}
 				// Is this a reference to a group?
 				if s := strings.SplitN(p, ":", 2); len(s) == 2 && s[0] == "group" {
@@ -141,17 +153,17 @@ func hasRole(ctx context.Context, cfg *prefixcfg.Entry, metas []*repopb.PrefixMe
 	if err != nil {
 		return false, "", errors.Fmt("failed to check group memberships when checking ACLs for role %s: %w", role, err)
 	}
-	return yes, rolePolicyACL, nil
+	return yes, RolePolicyACL, nil
 }
 
-// rolesInPrefix returns a union of roles `ident` has in given supplied
+// RolesInPrefix returns a union of roles `ident` has in given supplied
 // PrefixMetadata objects.
 //
 // It understands the role inheritance defined by impliedRoles map.
 //
 // Returns only transient errors.
-func rolesInPrefix(ctx context.Context, ident identity.Identity, cfg *prefixcfg.Entry, metas []*repopb.PrefixMetadata) ([]repopb.Role, error) {
-	writeAllowed := isWriteAllowed(ident, cfg)
+func RolesInPrefix(ctx context.Context, ident identity.Identity, cfg *prefixcfg.Entry, metas []*repopb.PrefixMetadata) ([]repopb.Role, error) {
+	writeAllowed := IsWriteAllowed(ident, cfg)
 	roles := roleSet()
 	for _, meta := range metas {
 		for _, acl := range meta.Acls {
@@ -196,8 +208,8 @@ func isInACL(ctx context.Context, ident identity.Identity, acl *repopb.PrefixMet
 		}
 	}
 
-	// We don't use auth.IsMember because we want to check for `ident` rather than
-	// for the current caller.
+	// We don't use auth.IsMember because we want to check for `ident` rather
+	// than for the current caller.
 	var yes bool
 	var err error
 	if s := auth.GetState(ctx); s != nil {
@@ -209,4 +221,17 @@ func isInACL(ctx context.Context, ident identity.Identity, acl *repopb.PrefixMet
 		return false, errors.Fmt("failed to check group memberships when checking ACLs: %w", err)
 	}
 	return yes, nil
+}
+
+// NoAccessErr produces a grpc error saying that the given prefix doesn't exist
+// or the caller has no access to it. This is a generic error message that
+// should not give away prefix presence to non-readers.
+func NoAccessErr(ctx context.Context, prefix string) error {
+	var msg string
+	if ident := auth.CurrentIdentity(ctx); ident.Kind() == identity.Anonymous {
+		msg = "not visible to unauthenticated callers"
+	} else {
+		msg = fmt.Sprintf("%q is not allowed to see it", ident)
+	}
+	return status.Errorf(codes.PermissionDenied, "prefix %q doesn't exist or %s", prefix, msg)
 }

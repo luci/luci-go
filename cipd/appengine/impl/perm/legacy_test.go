@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repo
+package perm
 
 import (
 	"context"
@@ -108,11 +108,11 @@ func TestRoles(t *testing.T) {
 					},
 				}
 
-				// Get the roles by checking explicitly each one via hasRole.
-				t.Run("hasRole works", func(t *ftt.Test) {
+				// Get the roles by checking explicitly each one via HasRole.
+				t.Run("HasRole works", func(t *ftt.Test) {
 					haveRoles := []repopb.Role{}
 					for _, r := range allRoles {
-						yes, _, err := hasRole(ctx, cfg, metas, r)
+						yes, _, err := HasRole(ctx, cfg, metas, r)
 						assert.Loosely(t, err, should.BeNil)
 						if yes {
 							haveRoles = append(haveRoles, r)
@@ -121,9 +121,9 @@ func TestRoles(t *testing.T) {
 					assert.Loosely(t, haveRoles, should.Match(tc.expectedRoles))
 				})
 
-				// Get the same set of roles through rolesInPrefix.
-				t.Run("rolesInPrefix", func(t *ftt.Test) {
-					haveRoles, err := rolesInPrefix(ctx, tc.user, cfg, metas)
+				// Get the same set of roles through RolesInPrefix.
+				t.Run("RolesInPrefix", func(t *ftt.Test) {
+					haveRoles, err := RolesInPrefix(ctx, tc.user, cfg, metas)
 					assert.Loosely(t, err, should.BeNil)
 					assert.Loosely(t, haveRoles, should.Match(tc.expectedRoles))
 				})
