@@ -20,6 +20,8 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
+
+	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 )
 
 // boolCache is a simple map of comparable to bool for caching permission
@@ -58,8 +60,7 @@ type realmPerm struct {
 //
 // Not safe for concurrent use.
 //
-// TODO: Cache group memberships, hold metadata.Storage for legacy fallback, and
-// add ForPrefix.
+// TODO: Cache group memberships and hold metadata.Storage for legacy fallback.
 type Cache struct {
 	ident  identity.Identity
 	authdb authdb.DB
@@ -86,4 +87,14 @@ func (r *Cache) HasPerm(ctx context.Context, realm string, perm Permission) (has
 	return r.checkedPerms.getOrCompute(realmPerm{realm, perm}, func() (bool, error) {
 		return r.authdb.HasPermission(ctx, r.ident, perm.perm, realm, nil)
 	})
+}
+
+// ForPrefix returns a [PrefixCache] bound to `prefix` and its corresponding
+// `cfg` that shares identity-scoped caches with `r`.
+func (r *Cache) ForPrefix(prefix string, cfg *prefixcfg.Entry) *PrefixCache {
+	return &PrefixCache{
+		pcache: r,
+		prefix: prefix,
+		cfg:    cfg,
+	}
 }
