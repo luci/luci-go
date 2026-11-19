@@ -277,13 +277,16 @@ func cloudLoggingClient(ctx context.Context, luciProject, cloudProject string, o
 	cred, err := auth.GetPerRPCCredentials(
 		ctx, auth.AsProject,
 		auth.WithScopes(scopes.CloudScopeSet()...),
-		auth.WithProject(luciProject),
+		auth.WithProjectNoFallback(luciProject),
 	)
 	if err != nil {
 		return nil, errors.Fmt("failed to get per RPC credentials: %w", err)
 	}
 	cl, err := cloudlogging.NewClient(
 		ctx, cloudProject,
+		// Disable default ADC detection so the client uses only the per-RPC
+		// LUCI project credentials above and never attaches the pod's own SA.
+		option.WithoutAuthentication(),
 		option.WithGRPCDialOption(grpc.WithPerRPCCredentials(cred)),
 		option.WithGRPCDialOption(grpc.WithStatsHandler(&grpcmon.ClientRPCStatsMonitor{})),
 	)
