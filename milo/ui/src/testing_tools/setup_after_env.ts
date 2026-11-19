@@ -116,6 +116,11 @@ serverInjectedVars.SETTINGS = Object.freeze({
         assertNonNullable(process.env['VITE_FLEET_CONSOLE_HATS_PRODUCT_ID']),
       ),
     },
+    ...(process.env['VITE_FLEET_CONSOLE_OAUTH_CLIENT_ID']
+      ? {
+          oauthClientId: process.env['VITE_FLEET_CONSOLE_OAUTH_CLIENT_ID'],
+        }
+      : {}),
   },
   ufs: {
     host: assertNonNullable(process.env['VITE_UFS_HOST']),

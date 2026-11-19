@@ -93,6 +93,7 @@ declare const SETTINGS: {
   readonly fleetConsole: {
     readonly host: string;
     readonly hats: HaTSConfig;
+    readonly oauthClientId?: string;
   };
   readonly ufs: {
     readonly host: string;

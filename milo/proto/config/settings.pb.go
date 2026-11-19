@@ -969,7 +969,10 @@ type Settings_FleetConsole struct {
 	// host is the hostname of the FleetConsole instance we're pointing to (eg. fleet-console-dev-xxx.run.app).
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// HaTS configuration
-	Hats          *Settings_HaTSConfig `protobuf:"bytes,2,opt,name=hats,proto3" json:"hats,omitempty"`
+	Hats *Settings_HaTSConfig `protobuf:"bytes,2,opt,name=hats,proto3" json:"hats,omitempty"`
+	// Web OAuth 2.0 client ID used for browser-direct Google API flows
+	// (e.g. Google Drive and Google Sheets).
+	OauthClientId string `protobuf:"bytes,3,opt,name=oauth_client_id,json=oauthClientId,proto3" json:"oauth_client_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1016,6 +1019,13 @@ func (x *Settings_FleetConsole) GetHats() *Settings_HaTSConfig {
 		return x.Hats
 	}
 	return nil
+}
+
+func (x *Settings_FleetConsole) GetOauthClientId() string {
+	if x != nil {
+		return x.OauthClientId
+	}
+	return ""
 }
 
 type Settings_UFS struct {
@@ -1273,7 +1283,7 @@ var File_go_chromium_org_luci_milo_proto_config_settings_proto protoreflect.File
 
 const file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDesc = "" +
 	"\n" +
-	"5go.chromium.org/luci/milo/proto/config/settings.proto\x12\x10luci.milo.config\"\xfa\x15\n" +
+	"5go.chromium.org/luci/milo/proto/config/settings.proto\x12\x10luci.milo.config\"\xa3\x16\n" +
 	"\bSettings\x12H\n" +
 	"\vbuildbucket\x18\x02 \x01(\v2&.luci.milo.config.Settings.BuildbucketR\vbuildbucket\x12?\n" +
 	"\bswarming\x18\x03 \x01(\v2#.luci.milo.config.Settings.SwarmingR\bswarming\x12F\n" +
@@ -1338,10 +1348,11 @@ const file_go_chromium_org_luci_milo_proto_config_settings_proto_rawDesc = "" +
 	"\n" +
 	"trigger_id\x18\x02 \x01(\tR\ttriggerId\x12\x1d\n" +
 	"\n" +
-	"product_id\x18\x03 \x01(\tR\tproductId\x1a]\n" +
+	"product_id\x18\x03 \x01(\tR\tproductId\x1a\x85\x01\n" +
 	"\fFleetConsole\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x129\n" +
-	"\x04hats\x18\x02 \x01(\v2%.luci.milo.config.Settings.HaTSConfigR\x04hats\x1a\x19\n" +
+	"\x04hats\x18\x02 \x01(\v2%.luci.milo.config.Settings.HaTSConfigR\x04hats\x12&\n" +
+	"\x0foauth_client_id\x18\x03 \x01(\tR\roauthClientId\x1a\x19\n" +
 	"\x03UFS\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x1a\xfd\x01\n" +
 	"\x0fTestInvestigate\x12S\n" +

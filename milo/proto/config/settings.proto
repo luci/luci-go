@@ -164,6 +164,9 @@ message Settings {
     string host = 1;
     // HaTS configuration
     HaTSConfig hats = 2;
+    // Web OAuth 2.0 client ID used for browser-direct Google API flows
+    // (e.g. Google Drive and Google Sheets).
+    string oauth_client_id = 3;
   }
   FleetConsole fleet_console = 16;
 
