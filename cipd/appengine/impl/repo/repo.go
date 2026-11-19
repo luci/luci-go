@@ -1557,7 +1557,7 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *repopb.GetInstanceU
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
+	if _, _, err := impl.hasPermission(ctx, r.Package, perm.ReadInstanceData, nil); err != nil {
 		return nil, err
 	}
 

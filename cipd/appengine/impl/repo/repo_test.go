@@ -3125,7 +3125,9 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-data-reader@example.com", "project:realm", perm.ReadInstanceData.Perm()),
+		)
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
@@ -3145,7 +3147,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 		cas := testutil.MockCAS{}
 		impl := newMockImpl(&meta, &cas)
 		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
-			return &prefixcfg.Entry{Service: &prefixCfgPb}, nil
+			return &prefixcfg.Entry{Service: &prefixCfgPb, Realm: "project:realm"}, nil
 		}
 		impl.lookupBillingProject = func(ctx context.Context, luciProject, prefix string) (string, error) {
 			return "gcs-" + luciProject, nil
@@ -3184,6 +3186,15 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 					Instance: inst.Proto().Instance,
 				})
 				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
+					SignedUrl: "http://example.com/1111111111111111111111111111111111111111",
+				}))
+
+				resp, err = impl.GetInstanceURL(as("realm-data-reader@example.com"), &repopb.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				assert.NoErr(t, err)
 				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
 					SignedUrl: "http://example.com/1111111111111111111111111111111111111111",
 				}))

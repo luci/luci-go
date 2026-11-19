@@ -450,7 +450,8 @@ type RepositoryClient interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks `cipd.packages.readInstanceData`
+	//	    permission or legacy READER role for the prefix.
 	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if there's no such instance.
@@ -1160,7 +1161,8 @@ type RepositoryServer interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks `cipd.packages.readInstanceData`
+	//	    permission or legacy READER role for the prefix.
 	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if there's no such instance.
