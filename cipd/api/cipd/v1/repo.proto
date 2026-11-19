@@ -220,8 +220,9 @@ service Repository {
 
   // Lists instances of a package, most recent first.
   //
-  // Callers must have roles READER (or above) for the package prefix. Returns
-  // PERMISSION_DENIED otherwise.
+  // Callers must have `cipd.packages.listInstances` permission (or legacy
+  // READER role or above) for the package prefix. Returns PERMISSION_DENIED
+  // otherwise.
   //
   // If the package doesn't exist, returns NOT_FOUND.
   rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse);
@@ -231,8 +232,9 @@ service Repository {
   // Queries only instances of some particular package (i.e. this is not a
   // global query).
   //
-  // Callers must have roles READER (or above) for the package prefix. Returns
-  // PERMISSION_DENIED otherwise.
+  // Callers must have `cipd.packages.listInstances` and
+  // `cipd.packages.readInstanceTags` permissions (or legacy READER role or
+  // above) for the package prefix. Returns PERMISSION_DENIED otherwise.
   //
   // If the package doesn't exist, returns NOT_FOUND.
   rpc SearchInstances(SearchInstancesRequest) returns (SearchInstancesResponse);

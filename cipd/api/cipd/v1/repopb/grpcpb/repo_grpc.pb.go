@@ -255,8 +255,9 @@ type RepositoryClient interface {
 	RegisterInstance(ctx context.Context, in *Instance, opts ...grpc.CallOption) (*RegisterInstanceResponse, error)
 	// Lists instances of a package, most recent first.
 	//
-	// Callers must have roles READER (or above) for the package prefix. Returns
-	// PERMISSION_DENIED otherwise.
+	// Callers must have `cipd.packages.listInstances` permission (or legacy
+	// READER role or above) for the package prefix. Returns PERMISSION_DENIED
+	// otherwise.
 	//
 	// If the package doesn't exist, returns NOT_FOUND.
 	ListInstances(ctx context.Context, in *ListInstancesRequest, opts ...grpc.CallOption) (*ListInstancesResponse, error)
@@ -265,8 +266,9 @@ type RepositoryClient interface {
 	// Queries only instances of some particular package (i.e. this is not a
 	// global query).
 	//
-	// Callers must have roles READER (or above) for the package prefix. Returns
-	// PERMISSION_DENIED otherwise.
+	// Callers must have `cipd.packages.listInstances` and
+	// `cipd.packages.readInstanceTags` permissions (or legacy READER role or
+	// above) for the package prefix. Returns PERMISSION_DENIED otherwise.
 	//
 	// If the package doesn't exist, returns NOT_FOUND.
 	SearchInstances(ctx context.Context, in *SearchInstancesRequest, opts ...grpc.CallOption) (*SearchInstancesResponse, error)
@@ -943,8 +945,9 @@ type RepositoryServer interface {
 	RegisterInstance(context.Context, *Instance) (*RegisterInstanceResponse, error)
 	// Lists instances of a package, most recent first.
 	//
-	// Callers must have roles READER (or above) for the package prefix. Returns
-	// PERMISSION_DENIED otherwise.
+	// Callers must have `cipd.packages.listInstances` permission (or legacy
+	// READER role or above) for the package prefix. Returns PERMISSION_DENIED
+	// otherwise.
 	//
 	// If the package doesn't exist, returns NOT_FOUND.
 	ListInstances(context.Context, *ListInstancesRequest) (*ListInstancesResponse, error)
@@ -953,8 +956,9 @@ type RepositoryServer interface {
 	// Queries only instances of some particular package (i.e. this is not a
 	// global query).
 	//
-	// Callers must have roles READER (or above) for the package prefix. Returns
-	// PERMISSION_DENIED otherwise.
+	// Callers must have `cipd.packages.listInstances` and
+	// `cipd.packages.readInstanceTags` permissions (or legacy READER role or
+	// above) for the package prefix. Returns PERMISSION_DENIED otherwise.
 	//
 	// If the package doesn't exist, returns NOT_FOUND.
 	SearchInstances(context.Context, *SearchInstancesRequest) (*SearchInstancesResponse, error)

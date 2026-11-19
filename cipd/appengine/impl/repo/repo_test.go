@@ -1553,7 +1553,9 @@ func TestListInstances(t *testing.T) {
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ts := time.Unix(1525136124, 0).UTC()
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-lister@example.com", "project:realm", perm.ListInstances.Perm()),
+		)
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
@@ -1589,6 +1591,14 @@ func TestListInstances(t *testing.T) {
 		}
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
 		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.ListInstances(ctx, &repopb.ListInstancesRequest{
@@ -1646,6 +1656,14 @@ func TestListInstances(t *testing.T) {
 			assert.Loosely(t, res, should.Match(&repopb.ListInstancesResponse{
 				Instances: []*repopb.Instance{inst(3), inst(2), inst(1), inst(0)},
 			}))
+
+			res, err = impl.ListInstances(as("realm-lister@example.com"), &repopb.ListInstancesRequest{
+				Package: "a/b",
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, res, should.Match(&repopb.ListInstancesResponse{
+				Instances: []*repopb.Instance{inst(3), inst(2), inst(1), inst(0)},
+			}))
 		})
 
 		t.Run("Listing with pagination", func(t *ftt.Test) {
@@ -1678,7 +1696,11 @@ func TestSearchInstances(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-lister-only@example.com", "project:realm", perm.ListInstances.Perm()),
+			authtest.MockPermission("user:realm-searcher@example.com", "project:realm", perm.ListInstances.Perm()),
+			authtest.MockPermission("user:realm-searcher@example.com", "project:realm", perm.ReadInstanceTags.Perm()),
+		)
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
@@ -1731,6 +1753,14 @@ func TestSearchInstances(t *testing.T) {
 		}
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
 		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.SearchInstances(ctx, &repopb.SearchInstancesRequest{
@@ -1781,6 +1811,14 @@ func TestSearchInstances(t *testing.T) {
 				Tags:    []*repopb.Tag{{Key: "a", Value: "b"}},
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+
+			// Missing permReadInstanceTags.
+			_, err = impl.SearchInstances(as("realm-lister-only@example.com"), &repopb.SearchInstancesRequest{
+				Package: "a/b",
+				Tags:    []*repopb.Tag{{Key: "a", Value: "b"}},
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
 		})
 
 		t.Run("No package", func(t *ftt.Test) {
@@ -1809,6 +1847,13 @@ func TestSearchInstances(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, ids(out.Instances), should.Match(expectedIIDs))
 			assert.Loosely(t, out.NextPageToken, should.BeEmpty)
+
+			out, err = impl.SearchInstances(as("realm-searcher@example.com"), &repopb.SearchInstancesRequest{
+				Package: "a/b",
+				Tags:    []*repopb.Tag{{Key: "a", Value: "b"}},
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, ids(out.Instances), should.Match(expectedIIDs))
 		})
 
 		t.Run("Listing with pagination", func(t *ftt.Test) {

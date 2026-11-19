@@ -364,10 +364,6 @@ func (impl *repoImpl) GetRolesInPrefixOnBehalfOf(ctx context.Context, r *repopb.
 // Implements both GetRolesInPrefixOnBehalfOf and GetRolesInPrefix.
 //
 // `ident` must always be supplied - this function will validate it.
-// `getMeta` and `cfg` are optional - in the case of GetRolesInPrefixOnBehalfOf,
-// they may be provided as a side-effect of checking permissions. In other
-// cases, this function will fetch them directly without additional permission
-// checks.
 func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.Identity, checker *perm.PrefixCache, r *repopb.PrefixRequest) (resp *repopb.RolesInPrefixResponse, err error) {
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
 	if err != nil {
@@ -997,6 +993,7 @@ type paginatedQueryOpts struct {
 	PageToken string
 	PageSize  int32
 	Validator func() error // validates callback-specific fields in the request
+	ExtraPerm perm.Permission
 	Handler   func(cur datastore.RawCursor, pageSize int32) ([]*model.Instance, datastore.RawCursor, error)
 }
 
@@ -1028,7 +1025,8 @@ func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpt
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, opts.Package, repopb.Role_READER); err != nil {
+	_, _, err = impl.hasPermission(ctx, opts.Package, perm.SetOf(perm.ListInstances, opts.ExtraPerm), nil)
+	if err != nil {
 		return nil, "", err
 	}
 
@@ -1090,6 +1088,7 @@ func (impl *repoImpl) SearchInstances(ctx context.Context, r *repopb.SearchInsta
 		PageSize:  r.PageSize,
 		PageToken: r.PageToken,
 		Validator: func() error { return validateTagList(r.Tags) },
+		ExtraPerm: perm.ReadInstanceTags,
 		Handler: func(cur datastore.RawCursor, pageSize int32) ([]*model.Instance, datastore.RawCursor, error) {
 			return model.SearchInstances(ctx, r.Package, r.Tags, pageSize, cur)
 		},
