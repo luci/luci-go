@@ -18,18 +18,24 @@ import (
 	"context"
 	"maps"
 
+	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 )
 
 // PrefixCache evaluates permissions against a single prefix and its resolved
-// configuration.
-//
-// TODO: Track lazy PrefixMetadata and checked legacy roles.
+// configuration, lazily caching legacy PrefixMetadata and role evaluations for
+// `prefix`.
 type PrefixCache struct {
 	pcache       *Cache
 	prefix       string
 	cfg          *prefixcfg.Entry
 	writeAllowed bool
+
+	gotMeta      bool
+	metas        []*repopb.PrefixMetadata
+	checkedRoles boolCache[repopb.Role]
 }
 
 // Prefix returns the CIPD package prefix this PrefixCache is bound to.
@@ -37,6 +43,47 @@ func (p *PrefixCache) Prefix() string { return p.prefix }
 
 // Config returns the resolved [prefixcfg.Entry] this PrefixCache is bound to.
 func (p *PrefixCache) Config() *prefixcfg.Entry { return p.cfg }
+
+// GetMetadata returns the inherited PrefixMetadata for `p.prefix`, fetching
+// and caching it on first call.
+func (p *PrefixCache) GetMetadata(ctx context.Context) ([]*repopb.PrefixMetadata, error) {
+	if !p.gotMeta {
+		metas, err := p.pcache.metaSvc.GetMetadata(ctx, p.prefix)
+		if err != nil {
+			return nil, err
+		}
+		p.metas = metas
+		p.gotMeta = true
+	}
+	return p.metas, nil
+}
+
+// HasRole checks if the caller has the given legacy role on `p.prefix`,
+// exploiting role implication (OWNER => WRITER => READER) across cached
+// evaluations.
+func (p *PrefixCache) HasRole(ctx context.Context, role repopb.Role) (bool, error) {
+	if role <= repopb.Role_ROLE_UNSPECIFIED || role > repopb.Role_OWNER {
+		return false, nil
+	}
+
+	for cachedRole, cachedHas := range p.checkedRoles {
+		if cachedHas && cachedRole >= role {
+			return true, nil
+		}
+		if !cachedHas && cachedRole <= role {
+			return false, nil
+		}
+	}
+
+	return p.checkedRoles.getOrCompute(role, func() (bool, error) {
+		metas, err := p.GetMetadata(ctx)
+		if err != nil {
+			return false, err
+		}
+		ok, _, err := HasRole(ctx, p.cfg, metas, role)
+		return ok, err
+	})
+}
 
 // CanDiagnose checks to see if the caller is allowed to diagnose ACL problems.
 //
@@ -59,13 +106,21 @@ func (p *PrefixCache) CheckOne(ctx context.Context, perm Permission) (has, polic
 		return
 	}
 
-	// TODO: Legacy fallback.
+	if p.cfg.Service.EnableLegacyAclFallback {
+		has, err = p.HasRole(ctx, perm.core.role)
+		if has && p.cfg.Realm != "" {
+			// Only log this if there actually was a Realm we checked against
+			// above, otherwise as we start rolling this out this will generate
+			// incredible amounts of spam.
+			logging.Debugf(ctx, "PrefixCache.CheckOne(prefix=%q, perm=%s): realm=%q: granted via legacy fallback", p.prefix, perm, p.cfg.Realm)
+		}
+	}
 
 	return
 }
 
 // CheckSet checks all permissions in `perms` against global write policy,
-// group membership, and realm permissions.
+// group membership, realm permissions, and (if enabled) legacy role fallback.
 //
 // If any permissions are missing, they are returned in `missing`.
 func (p *PrefixCache) CheckSet(ctx context.Context, perms Set) (*MissingPerms, error) {

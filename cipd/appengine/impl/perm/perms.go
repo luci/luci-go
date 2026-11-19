@@ -14,9 +14,13 @@
 
 package perm
 
-// TODO: Register remaining CIPD realm permissions and attach role mappings.
+import (
+	"go.chromium.org/luci/cipd/api/cipd/v1/repopb"
+)
+
+// TODO: Register remaining CIPD realm permissions.
 var (
-	DiagnoseACL = definePerm("cipd.packages.diagnoseACL").withGroup(PrefixesViewers)
+	DiagnoseACL = definePerm("cipd.packages.diagnoseACL").withRole(repopb.Role_READER).withGroup(PrefixesViewers)
 
 	// AllPermissions is the set of all Grantables defined in this package.
 	AllPermissions = map[Grantable]struct{}{}

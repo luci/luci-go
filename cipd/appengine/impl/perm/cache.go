@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 
+	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 )
 
@@ -59,22 +60,22 @@ type realmPerm struct {
 // prefixes within a single request.
 //
 // Not safe for concurrent use.
-//
-// TODO: Hold metadata.Storage for legacy fallback.
 type Cache struct {
-	ident  identity.Identity
-	authdb authdb.DB
+	metaSvc metadata.Storage
+	ident   identity.Identity
+	authdb  authdb.DB
 
 	checkedPerms  boolCache[realmPerm]
 	checkedGroups boolCache[string]
 }
 
 // NewCache returns a new [Cache], extracting the current identity and authdb
-// from `ctx`.
-func NewCache(ctx context.Context) *Cache {
+// from `ctx` and using `metaSvc` for lazy legacy prefix metadata lookups.
+func NewCache(ctx context.Context, metaSvc metadata.Storage) *Cache {
 	return &Cache{
-		ident:  auth.CurrentIdentity(ctx),
-		authdb: auth.GetState(ctx).DB(),
+		metaSvc: metaSvc,
+		ident:   auth.CurrentIdentity(ctx),
+		authdb:  auth.GetState(ctx).DB(),
 	}
 }
 

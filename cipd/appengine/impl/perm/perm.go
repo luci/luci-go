@@ -22,6 +22,8 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/server/auth/realms"
+
+	"go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // Checkable is an interface which allows methods to accept either a [Set] or a
@@ -33,8 +35,6 @@ type Checkable interface {
 
 // corePermission is the core aspects of a Permission which don't change
 // with binding.
-//
-// TODO: Support legacy roles.
 type corePermission struct {
 	// perm is the realms permission for this Permission.
 	perm realms.Permission
@@ -54,6 +54,11 @@ type corePermission struct {
 	// does NOT imply this (e.g. "cipd.packages.readLegacyRoles" is implied by
 	// OWNER, but is not a write operation).
 	isWrite bool
+
+	// role is the smallest legacy role which implies this permission. If the
+	// caller has this role, and legacy ACLs are enabled for the prefix in which
+	// this is being checked, then they have this permission.
+	role repopb.Role
 
 	// group is a CRIA group which implies this permission. If the caller is in
 	// this group, then they have this permission.
@@ -125,6 +130,10 @@ func (c Permission) IsGroupOnly() bool { return c.core.groupOnly }
 // AllowWritersFromRegexp.
 func (c Permission) IsWrite() bool { return c.core.isWrite }
 
+// Role returns the smallest legacy role which implies this permission, or
+// [repopb.Role_ROLE_UNSPECIFIED].
+func (c Permission) Role() repopb.Role { return c.core.role }
+
 // Group returns the CRIA group whose membership implies this permission, or "".
 func (c Permission) Group() string { return c.core.group }
 
@@ -158,6 +167,17 @@ func (c Permission) withAttr(attrKey string) Bindable {
 	}
 	c.core.attrKey = attrKey
 	return Bindable{c.core}
+}
+
+// withRole modifies c.core.role, and returns c.
+//
+// Panics if used twice with the same [corePermission].
+func (c Permission) withRole(role repopb.Role) Permission {
+	if c.core.role != 0 {
+		panic("impossible: cannot use `withRole` twice on the same Permission")
+	}
+	c.core.role = role
+	return c
 }
 
 // withGroup modifies c.core.group, and returns c.

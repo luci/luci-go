@@ -65,7 +65,7 @@ func TestCacheHasPerm(t *testing.T) {
 		Identity: user,
 		FakeDB:   db,
 	})
-	cache := NewCache(ctx)
+	cache := NewCache(ctx, nil)
 
 	// Empty realm checks implied group (if any) and skips HasPermission; a
 	// permission with no implied group hits neither IsMember nor HasPermission.
@@ -139,7 +139,7 @@ func TestCacheHasPermAttrs(t *testing.T) {
 		Identity: condUser,
 		FakeDB:   db,
 	})
-	condCache := NewCache(condCtx)
+	condCache := NewCache(condCtx, nil)
 
 	has, err := condCache.HasPerm(condCtx, realm, testPermAttr.Bind("latest"))
 	assert.NoErr(t, err)
@@ -175,7 +175,7 @@ func TestCacheHasPermAttrs(t *testing.T) {
 		Identity: uncondUser,
 		FakeDB:   db,
 	})
-	uncondCache := NewCache(uncondCtx)
+	uncondCache := NewCache(uncondCtx, nil)
 
 	has, err = uncondCache.HasPerm(uncondCtx, realm, testPermAttr.Unconditional())
 	assert.NoErr(t, err)
@@ -201,7 +201,7 @@ func TestCacheRawGroupCheck(t *testing.T) {
 		Identity: user,
 		FakeDB:   db,
 	})
-	cache := NewCache(ctx)
+	cache := NewCache(ctx, nil)
 
 	has, err := cache.RawGroupCheck(ctx, "granted-group")
 	assert.NoErr(t, err)
@@ -255,7 +255,7 @@ func TestCacheHasPermGroups(t *testing.T) {
 		Identity: viewer,
 		FakeDB:   db,
 	})
-	viewerCache := NewCache(viewerCtx)
+	viewerCache := NewCache(viewerCtx, nil)
 
 	has, err := viewerCache.HasPerm(viewerCtx, "", DiagnoseACL)
 	assert.NoErr(t, err)
@@ -281,7 +281,7 @@ func TestCacheHasPermGroups(t *testing.T) {
 		Identity: admin,
 		FakeDB:   db,
 	})
-	adminCache := NewCache(adminCtx)
+	adminCache := NewCache(adminCtx, nil)
 
 	has, err = adminCache.HasPerm(adminCtx, "", testPermFake)
 	assert.NoErr(t, err)
@@ -299,7 +299,7 @@ func TestCacheHasPermGroups(t *testing.T) {
 		Identity: fakeRealmUsr,
 		FakeDB:   db,
 	})
-	fakeCache := NewCache(fakeCtx)
+	fakeCache := NewCache(fakeCtx, nil)
 
 	db.groupErr = errors.New("group check boom")
 	_, err = fakeCache.HasPerm(fakeCtx, realm, testPermFake)

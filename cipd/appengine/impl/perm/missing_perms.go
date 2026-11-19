@@ -16,9 +16,12 @@ package perm
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
 // MissingPerms is an error helper for formatting a collection of missing
@@ -64,9 +67,15 @@ func (m *MissingPerms) AsError(ctx context.Context) error {
 	if len(m.deniedByPolicy) > 0 {
 		toReport = m.deniedByPolicy
 		detailSuffix = ": rejected by global policy"
+	} else if m.pchk.cfg.Service.EnableLegacyAclFallback {
+		var maxRole repopb.Role
+		for perm := range toReport {
+			maxRole = max(maxRole, perm.core.role)
+		}
+		if maxRole != repopb.Role_ROLE_UNSPECIFIED {
+			detailSuffix = fmt.Sprintf(", and also does not have role: %s", maxRole)
+		}
 	}
-	// TODO: Report missing legacy role details when EnableLegacyAclFallback is
-	// enabled.
 
 	plural := ""
 	if len(toReport) > 1 {

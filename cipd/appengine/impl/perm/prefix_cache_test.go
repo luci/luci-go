@@ -30,7 +30,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
+	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
 
 func TestCheckRealms(t *testing.T) {
@@ -128,7 +130,7 @@ func TestCheckRealms(t *testing.T) {
 				FakeDB:   cmp.Or(tc.dbOverride, fakeDB),
 			})
 
-			pchk := NewCache(ctx).ForPrefix(prefix, cfg)
+			pchk := NewCache(ctx, nil).ForPrefix(prefix, cfg)
 			has, err := pchk.Check(ctx, tc.perm, nil)
 			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
 				assert.That(t, has, should.Match(Set(nil)))
@@ -158,7 +160,7 @@ func TestCheckRealms(t *testing.T) {
 			FakeDB:   fakeDB,
 		})
 		assert.That(t, func() {
-			_, _ = NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, Permission{}, nil)
+			_, _ = NewCache(ctx, nil).ForPrefix(prefix, cfg).Check(ctx, Permission{}, nil)
 		}, should.Panic)
 	})
 }
@@ -272,7 +274,7 @@ func TestCheckSetsAndOptional(t *testing.T) {
 				FakeDB:   fakeDB,
 			})
 
-			has, err := NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
+			has, err := NewCache(ctx, nil).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
 			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
 				assert.That(t, has, should.Match(Set(nil)))
 				assert.That(t, err, grpccode.ShouldBe(tc.wantCode))
@@ -303,10 +305,10 @@ func TestCheckSetsAndOptional(t *testing.T) {
 		})
 		assert.That(t, func() {
 			var empty Set
-			_, _ = NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, empty, nil)
+			_, _ = NewCache(ctx, nil).ForPrefix(prefix, cfg).Check(ctx, empty, nil)
 		}, should.Panic)
 		assert.That(t, func() {
-			_, _ = NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, SetOf(), nil)
+			_, _ = NewCache(ctx, nil).ForPrefix(prefix, cfg).Check(ctx, SetOf(), nil)
 		}, should.Panic)
 	})
 }
@@ -338,7 +340,7 @@ func TestCheckAttrsUnconditional(t *testing.T) {
 		Identity: "user:cond@admins.example.com",
 		FakeDB:   fakeDB,
 	})
-	pchkCond := NewCache(condCtx).ForPrefix(prefix, cfg)
+	pchkCond := NewCache(condCtx, nil).ForPrefix(prefix, cfg)
 	has, err := pchkCond.Check(condCtx, testPermAttr.Unconditional(), nil)
 	assert.That(t, has, should.Match(Set(nil)))
 	assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
@@ -353,7 +355,7 @@ func TestCheckAttrsUnconditional(t *testing.T) {
 		Identity: "user:uncond@admins.example.com",
 		FakeDB:   fakeDB,
 	})
-	pchkUncond := NewCache(uncondCtx).ForPrefix(prefix, cfg)
+	pchkUncond := NewCache(uncondCtx, nil).ForPrefix(prefix, cfg)
 	has, err = pchkUncond.Check(uncondCtx, testPermAttr.Unconditional(), testPermAttr.Bind("any"))
 	assert.NoErr(t, err)
 	assert.That(t, has, should.Match(SetOf(testPermAttr.Unconditional(), testPermAttr.Bind("any"))))
@@ -450,7 +452,7 @@ func TestCheckAttrs(t *testing.T) {
 				FakeDB:   fakeDB,
 			})
 
-			has, err := NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
+			has, err := NewCache(ctx, nil).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
 			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
 				assert.That(t, has, should.Match(Set(nil)))
 				assert.That(t, err, grpccode.ShouldBe(tc.wantCode))
@@ -571,7 +573,7 @@ func TestCheckGroups(t *testing.T) {
 				FakeDB:   cmp.Or(tc.dbOverride, fakeDB),
 			})
 
-			has, err := NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, tc.perms, nil)
+			has, err := NewCache(ctx, nil).ForPrefix(prefix, cfg).Check(ctx, tc.perms, nil)
 			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
 				assert.That(t, has, should.Match(Set(nil)))
 				if tc.wantCode != codes.OK {
@@ -702,7 +704,7 @@ func TestCheckWritePolicy(t *testing.T) {
 				FakeDB:   cmp.Or(tc.dbOverride, fakeDB),
 			})
 
-			has, err := NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
+			has, err := NewCache(ctx, nil).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
 			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
 				assert.That(t, has, should.Match(Set(nil)))
 				if tc.wantCode != codes.OK {
@@ -725,4 +727,330 @@ func TestCheckWritePolicy(t *testing.T) {
 			assert.That(t, has, should.Match(wantHas))
 		})
 	}
+}
+
+func TestPrefixCacheHasRoleEdgeCases(t *testing.T) {
+	t.Parallel()
+
+	meta := testutil.MetadataStore{}
+	cfg := &prefixcfg.Entry{
+		Service: &prefixcfg.ServiceEntry{EnableLegacyAclFallback: true},
+	}
+	ctx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: "user:stranger@example.com",
+		FakeDB:   authtest.NewFakeDB(),
+	})
+
+	pchk := NewCache(ctx, &meta).ForPrefix("a/b", cfg)
+
+	// Out-of-bounds roles return false without touching metadata.
+	has, err := pchk.HasRole(ctx, repopb.Role_ROLE_UNSPECIFIED)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, pchk.gotMeta, should.BeFalse)
+
+	has, err = pchk.HasRole(ctx, repopb.Role(999))
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, pchk.gotMeta, should.BeFalse)
+
+	// Negative role implication: lacking READER implies lacking WRITER and OWNER
+	// without additional evaluations in checkedRoles.
+	has, err = pchk.HasRole(ctx, repopb.Role_READER)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, pchk.gotMeta, should.BeTrue)
+
+	has, err = pchk.HasRole(ctx, repopb.Role_WRITER)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, pchk.checkedRoles, should.Match(boolCache[repopb.Role]{repopb.Role_READER: false}))
+
+	// GetMetadata error propagates without setting gotMeta.
+	badPchk := NewCache(ctx, &meta).ForPrefix("//bad", cfg)
+	_, err = badPchk.Check(ctx, DiagnoseACL, nil)
+	assert.Loosely(t, err, should.NotBeNil)
+	assert.That(t, badPchk.gotMeta, should.BeFalse)
+}
+
+func TestCheckLegacyFallback(t *testing.T) {
+	t.Parallel()
+
+	const (
+		prefix    = "a/b"
+		testRealm = "proj:realm"
+	)
+
+	meta := testutil.MetadataStore{}
+	rootMeta := meta.Populate("", &repopb.PrefixMetadata{
+		Acls: []*repopb.PrefixMetadata_ACL{
+			{
+				Role:       repopb.Role_OWNER,
+				Principals: []string{"user:legacy-root-owner@admins.example.com"},
+			},
+		},
+	})
+	pfxMeta := meta.Populate(prefix, &repopb.PrefixMetadata{
+		Acls: []*repopb.PrefixMetadata_ACL{
+			{
+				Role:       repopb.Role_READER,
+				Principals: []string{"user:legacy-reader@admins.example.com"},
+			},
+			{
+				Role:       repopb.Role_WRITER,
+				Principals: []string{"user:legacy-writer@admins.example.com", "user:legacy-writer@example.com", "group:legacy-writers"},
+			},
+			{
+				Role:       repopb.Role_OWNER,
+				Principals: []string{"user:legacy-owner@admins.example.com"},
+			},
+		},
+	})
+	expectedMetas := []*repopb.PrefixMetadata{rootMeta, pfxMeta}
+
+	adminsOnlyWriters := []*regexp.Regexp{regexp.MustCompile(`^.*@admins\.example\.com$`)}
+
+	fakeDB := authtest.NewFakeDB(
+		authtest.MockMembership("user:group-legacy-writer@admins.example.com", "legacy-writers"),
+		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, testPermRead.Perm()),
+		authtest.MockPermission("user:realm-diagnose-acl@admins.example.com", testRealm, DiagnoseACL.Perm()),
+		authtest.MockPermission("user:legacy-root-owner@admins.example.com", testRealm, testPermFake.Perm()),
+		authtest.MockPermission("user:legacy-root-owner@admins.example.com", testRealm, DiagnoseACL.Perm()),
+	)
+
+	cases := []struct {
+		name string
+
+		user         identity.Identity
+		perms        Checkable
+		optional     Checkable
+		wantOptional Checkable
+
+		realm           string
+		disableFallback bool
+		prefixcfg.ServiceEntry
+
+		dbOverride  *authtest.FakeDB
+		wantCode    codes.Code
+		wantErrLike string
+	}{
+		{
+			name:            "legacy_role_ignored_when_fallback_disabled",
+			user:            "user:legacy-owner@admins.example.com",
+			perms:           testPermRead,
+			realm:           testRealm,
+			disableFallback: true,
+			wantCode:        codes.PermissionDenied,
+			wantErrLike:     `prefix "a/b" doesn't exist or "user:legacy-owner@admins.example.com" is not allowed to see it`,
+		},
+		{
+			name:  "fallback_to_legacy_reader_with_realm_configured",
+			user:  "user:legacy-reader@admins.example.com",
+			perms: testPermRead,
+			realm: testRealm,
+		},
+		{
+			name:  "fallback_to_inherited_legacy_owner_when_no_realm_mapped",
+			user:  "user:legacy-root-owner@admins.example.com",
+			perms: testPermOwner.Bind("some-key"),
+		},
+		{
+			name:        "fallback_denied_returns_detailed_error_when_caller_has_realm_diagnose_acl",
+			user:        "user:realm-diagnose-acl@admins.example.com",
+			perms:       testPermWrite,
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
+		},
+		{
+			name:        "fallback_denied_returns_detailed_error_via_legacy_reader_diagnose_acl",
+			user:        "user:legacy-reader@admins.example.com",
+			perms:       testPermWrite,
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:legacy-reader@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
+		},
+		{
+			name:        "fallback_denied_returns_generic_error_for_stranger",
+			user:        "user:stranger@admins.example.com",
+			perms:       testPermWrite,
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `prefix "a/b" doesn't exist or "user:stranger@admins.example.com" is not allowed to see it`,
+		},
+		{
+			name:        "fake_perm_does_not_check_realm_or_legacy_fallback",
+			user:        "user:legacy-root-owner@admins.example.com",
+			perms:       testPermFake,
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:legacy-root-owner@admins.example.com" is missing the cipd.testing.fake permission in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:  "writers_regexp_blocks_disallowed_legacy_writer_but_preserves_legacy_diagnose",
+			user:  "user:legacy-writer@example.com",
+			perms: testPermWrite,
+			realm: testRealm,
+			ServiceEntry: prefixcfg.ServiceEntry{
+				AllowWritersFromRegexp: adminsOnlyWriters,
+			},
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:legacy-writer@example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
+		},
+		{
+			name:  "writers_regexp_does_not_block_read_permission_via_legacy_fallback",
+			user:  "user:legacy-writer@example.com",
+			perms: testPermRead,
+			realm: testRealm,
+			ServiceEntry: prefixcfg.ServiceEntry{
+				AllowWritersFromRegexp: adminsOnlyWriters,
+			},
+		},
+		{
+			name:  "multi_perm_fallback_allowed",
+			user:  "user:legacy-writer@admins.example.com",
+			perms: SetOf(testPermRead, testPermWrite),
+			realm: testRealm,
+		},
+		{
+			name:        "multi_perm_fallback_partial_satisfied_reports_only_missing_and_max_role",
+			user:        "user:legacy-reader@admins.example.com",
+			perms:       SetOf(testPermRead, testPermWrite),
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:legacy-reader@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
+		},
+		{
+			name:        "multi_perm_fallback_all_missing_reports_plural_and_max_role",
+			user:        "user:realm-diagnose-acl@admins.example.com",
+			perms:       SetOf(testPermRead, testPermOwner.Bind("k")),
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.testing.owner{cipd.testing.key:"k"},cipd.testing.read] permissions in prefix "a/b" (realm "proj:realm"), and also does not have role: OWNER`,
+		},
+		{
+			name:         "optional_multi_perm_granted_via_legacy_fallback",
+			user:         "user:legacy-reader@admins.example.com",
+			perms:        testPermRead,
+			optional:     SetOf(testPermExtra, DiagnoseACL, testPermWrite),
+			wantOptional: SetOf(testPermExtra, DiagnoseACL),
+			realm:        testRealm,
+		},
+		{
+			name:         "nil_required_with_optional_perms_via_legacy_fallback",
+			user:         "user:legacy-reader@admins.example.com",
+			perms:        nil,
+			optional:     SetOf(DiagnoseACL, testPermWrite),
+			wantOptional: DiagnoseACL,
+			realm:        testRealm,
+		},
+		{
+			name:        "check_role_fallback_error",
+			user:        "user:stranger@admins.example.com",
+			dbOverride:  authtest.NewFakeDB(authtest.MockError(errors.New("authdb role boom"))),
+			perms:       testPermWrite,
+			wantErrLike: "authdb role boom",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			se := tc.ServiceEntry
+			se.OwningLuciProject = cmp.Or(se.OwningLuciProject, "proj")
+			if !tc.disableFallback {
+				se.EnableLegacyAclFallback = true
+			}
+			cfg := &prefixcfg.Entry{Service: &se, Realm: tc.realm}
+
+			ctx := auth.WithState(t.Context(), &authtest.FakeState{
+				Identity: tc.user,
+				FakeDB:   cmp.Or(tc.dbOverride, fakeDB),
+			})
+
+			has, err := NewCache(ctx, &meta).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
+			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
+				assert.That(t, has, should.Match(Set(nil)))
+				if tc.wantCode != codes.OK {
+					assert.That(t, err, grpccode.ShouldBe(tc.wantCode))
+				}
+				assert.ErrIsLike(t, err, tc.wantErrLike)
+				return
+			}
+
+			assert.NoErr(t, err)
+			var wantHas Set
+			if tc.perms != nil {
+				wantHas = maps.Clone(tc.perms.Perms())
+			}
+			if tc.wantOptional != nil {
+				for p := range tc.wantOptional.Perms() {
+					wantHas.Add(p)
+				}
+			}
+			assert.That(t, has, should.Match(wantHas))
+		})
+	}
+
+	t.Run("prefix_cache_lazy_metadata_and_role_implication", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := &prefixcfg.Entry{
+			Service: &prefixcfg.ServiceEntry{
+				OwningLuciProject:       "proj",
+				EnableLegacyAclFallback: true,
+			},
+			Realm: testRealm,
+		}
+
+		// When satisfied by realm permissions, metadata is not fetched eagerly,
+		// but GetMetadata fetches it lazily on demand.
+		realmCtx := auth.WithState(t.Context(), &authtest.FakeState{
+			Identity: "user:realm-reader@admins.example.com",
+			FakeDB:   fakeDB,
+		})
+		pchk := NewCache(realmCtx, &meta).ForPrefix(prefix, cfg)
+		_, err := pchk.Check(realmCtx, testPermRead, nil)
+		assert.NoErr(t, err)
+		assert.That(t, pchk.gotMeta, should.BeFalse)
+
+		metas, err := pchk.GetMetadata(realmCtx)
+		assert.NoErr(t, err)
+		assert.That(t, pchk.gotMeta, should.BeTrue)
+		assert.That(t, metas, should.Match(expectedMetas))
+
+		// When satisfied via legacy WRITER role, READER is implied without
+		// recomputing, and metas is already cached.
+		legacyCtx := auth.WithState(t.Context(), &authtest.FakeState{
+			Identity: "user:group-legacy-writer@admins.example.com",
+			FakeDB:   fakeDB,
+		})
+		pchk2 := NewCache(legacyCtx, &meta).ForPrefix(prefix, cfg)
+		got, err := pchk2.Check(legacyCtx, testPermWrite, testPermRead)
+		assert.NoErr(t, err)
+		assert.That(t, got, should.Match(SetOf(testPermWrite, testPermRead)))
+		assert.That(t, pchk2.gotMeta, should.BeTrue)
+		assert.That(t, pchk2.checkedRoles, should.Match(boolCache[repopb.Role]{repopb.Role_WRITER: true}))
+
+		// Multi-prefix isolation: checkedRoles on "a/b" does not leak to sibling "other".
+		siblingMeta := testutil.MetadataStore{}
+		siblingMeta.Populate("a/b", &repopb.PrefixMetadata{
+			Acls: []*repopb.PrefixMetadata_ACL{
+				{Role: repopb.Role_READER, Principals: []string{"user:scoped-reader@admins.example.com"}},
+			},
+		})
+		cfgWithFallback := &prefixcfg.Entry{
+			Service: &prefixcfg.ServiceEntry{EnableLegacyAclFallback: true},
+		}
+		scopedCtx := auth.WithState(t.Context(), &authtest.FakeState{
+			Identity: "user:scoped-reader@admins.example.com",
+			FakeDB:   fakeDB,
+		})
+		pcache := NewCache(scopedCtx, &siblingMeta)
+		_, err = pcache.ForPrefix("a/b", cfgWithFallback).Check(scopedCtx, testPermRead, nil)
+		assert.NoErr(t, err)
+		_, err = pcache.ForPrefix("other", cfgWithFallback).Check(scopedCtx, testPermRead, nil)
+		assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+	})
 }
