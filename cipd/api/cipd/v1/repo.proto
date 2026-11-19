@@ -278,7 +278,8 @@ service Repository {
   // Lists refs defined in a package, most recently modified first.
   //
   // Returns:
-  //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   PERMISSION_DENIED if the caller lacks `cipd.packages.listRefs`
+  //       permission or legacy READER role for the prefix.
   //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if the package doesn't exist.
   rpc ListRefs(ListRefsRequest) returns (ListRefsResponse);

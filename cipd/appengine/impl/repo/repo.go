@@ -1177,7 +1177,7 @@ func (impl *repoImpl) ListRefs(ctx context.Context, r *repopb.ListRefsRequest) (
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
+	if _, _, err := impl.hasPermission(ctx, r.Package, perm.ListRefs, nil); err != nil {
 		return nil, err
 	}
 

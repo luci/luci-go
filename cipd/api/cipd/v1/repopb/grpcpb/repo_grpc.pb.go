@@ -312,7 +312,8 @@ type RepositoryClient interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks `cipd.packages.listRefs`
+	//	    permission or legacy READER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package doesn't exist.
 	ListRefs(ctx context.Context, in *ListRefsRequest, opts ...grpc.CallOption) (*ListRefsResponse, error)
@@ -1006,7 +1007,8 @@ type RepositoryServer interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks `cipd.packages.listRefs`
+	//	    permission or legacy READER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package doesn't exist.
 	ListRefs(context.Context, *ListRefsRequest) (*ListRefsResponse, error)
