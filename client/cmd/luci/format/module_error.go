@@ -788,7 +788,14 @@ func PrintModuleError(err *DiscoveredError, indent string) {
 
 // PrintModuleErrorForTarget prints a discovered module or work unit error, indicating if the error originated from a child or ancestor work unit or root invocation.
 func PrintModuleErrorForTarget(err *DiscoveredError, targetWorkUnit string, indent string) {
-	fprintModuleErrorForTarget(os.Stdout, err, targetWorkUnit, indent)
+	FprintModuleErrorForTarget(os.Stdout, err, targetWorkUnit, indent)
+}
+
+// FprintModuleErrorForTarget writes a discovered module or work unit error to
+// out, indicating if the error originated from a child or ancestor work unit or
+// root invocation.
+func FprintModuleErrorForTarget(out io.Writer, err *DiscoveredError, targetWorkUnit string, indent string) {
+	fprintModuleErrorForTarget(out, err, targetWorkUnit, indent)
 }
 
 func fprintModuleErrorForTarget(out io.Writer, err *DiscoveredError, targetWorkUnit string, indent string) {

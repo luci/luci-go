@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strings"
 	"text/tabwriter"
+	"unicode/utf8"
 
 	"golang.org/x/net/html"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -299,6 +300,15 @@ const maxInlineArtifactBytes = 64 * 1024
 // automatically expanding small embedded <text-artifact> tags inline when
 // rdbClient and httpClient are provided.
 func FormatSummaryHTML(ctx context.Context, rdbClient rdbpb.ResultDBClient, httpClient *http.Client, resName, htmlStr string) string {
+	summary, _ := FormatSummaryHTMLWithExpanded(ctx, rdbClient, httpClient, resName, htmlStr)
+	return summary
+}
+
+// FormatSummaryHTMLWithExpanded converts a test result's summary_html into
+// plain text and returns the set of direct test-result artifact IDs whose full
+// contents were expanded inline.
+func FormatSummaryHTMLWithExpanded(ctx context.Context, rdbClient rdbpb.ResultDBClient, httpClient *http.Client, resName, htmlStr string) (string, map[string]bool) {
+	var expanded map[string]bool
 	re := regexp.MustCompile(`<text-artifact\s+([^>]+)>`)
 	htmlStr = re.ReplaceAllStringFunc(htmlStr, func(tag string) string {
 		match := re.FindStringSubmatch(tag)
@@ -339,13 +349,85 @@ func FormatSummaryHTML(ctx context.Context, rdbClient rdbpb.ResultDBClient, http
 		if err := FetchArtifactContent(ctx, httpClient, art.FetchUrl, &buf); err != nil {
 			return fmt.Sprintf("[Failed to fetch embedded artifact: %s]", artID)
 		}
+		if !isInvLevel {
+			if expanded == nil {
+				expanded = make(map[string]bool)
+			}
+			expanded[artID] = true
+		}
 		return fmt.Sprintf("\n--- Embedded Artifact: %s ---\n%s\n--- End Artifact ---", artID, buf.String())
 	})
 	htmlStr = strings.ReplaceAll(htmlStr, "<br>", "\n")
 	htmlStr = strings.ReplaceAll(htmlStr, "<br/>", "\n")
 	htmlStr = strings.ReplaceAll(htmlStr, "<br />", "\n")
 	htmlStr = strings.ReplaceAll(htmlStr, "</p>", "\n")
-	return StripHTML(htmlStr)
+	return StripHTML(htmlStr), expanded
+}
+
+// TruncateUTF8Prefix truncates s to at most maxBytes bytes without splitting a
+// multi-byte UTF-8 rune.
+func TruncateUTF8Prefix(s string, maxBytes int) string {
+	if maxBytes <= 0 {
+		return ""
+	}
+	if len(s) <= maxBytes {
+		return s
+	}
+	for maxBytes > 0 && !utf8.RuneStart(s[maxBytes]) {
+		maxBytes--
+	}
+	return s[:maxBytes]
+}
+
+// TruncateOutputBytes middle-truncates s to at most maxBytes UTF-8 bytes when
+// len(s) > maxBytes, preserving the leading ~60% (headers and primary error)
+// and trailing ~40% (bottom stack frames) with an inline marker containing hint.
+func TruncateOutputBytes(s string, maxBytes int, hint string) string {
+	if maxBytes <= 0 || len(s) <= maxBytes {
+		return s
+	}
+	omit := len(s) - maxBytes
+	for range 3 {
+		marker := fmt.Sprintf("\n... (%d bytes truncated; %s) ...\n", omit, hint)
+		if len(marker) >= maxBytes {
+			return TruncateUTF8Prefix(s, maxBytes)
+		}
+		avail := maxBytes - len(marker)
+		headLen := (avail * 3) / 5
+		for headLen > 0 && !utf8.RuneStart(s[headLen]) {
+			headLen--
+		}
+		if nl := strings.LastIndexByte(s[:headLen], '\n'); nl >= headLen/2 {
+			headLen = nl
+		}
+		tailLen := avail - headLen
+		tailStart := len(s) - tailLen
+		for tailStart < len(s) && !utf8.RuneStart(s[tailStart]) {
+			tailStart++
+		}
+		if nl := strings.IndexByte(s[tailStart:], '\n'); nl >= 0 && nl < tailLen/2 {
+			tailStart += nl + 1
+		}
+		newOmit := tailStart - headLen
+		if newOmit == omit {
+			return s[:headLen] + marker + s[tailStart:]
+		}
+		omit = newOmit
+	}
+	marker := fmt.Sprintf("\n... (%d bytes truncated; %s) ...\n", omit, hint)
+	if len(marker) >= maxBytes {
+		return TruncateUTF8Prefix(s, maxBytes)
+	}
+	avail := maxBytes - len(marker)
+	headLen := (avail * 3) / 5
+	for headLen > 0 && !utf8.RuneStart(s[headLen]) {
+		headLen--
+	}
+	tailStart := len(s) - (avail - headLen)
+	for tailStart < len(s) && !utf8.RuneStart(s[tailStart]) {
+		tailStart++
+	}
+	return s[:headLen] + marker + s[tailStart:]
 }
 
 func PrintAdditionalMetadata(res *rdbpb.TestResult) {
@@ -889,10 +971,12 @@ func SortArtifacts(artifacts []*rdbpb.Artifact) {
 }
 
 // FormatArtifactFetchHint returns a copy-pasteable CLI command template for
-// fetching an artifact from the same parent or root invocation as sampleArtifactName.
-// Returns "" if sampleArtifactName does not belong to a root invocation.
+// fetching an artifact from the same parent or invocation as sampleArtifactName.
+// Returns "" if sampleArtifactName does not belong to a root or legacy invocation.
 func FormatArtifactFetchHint(sampleArtifactName string, invocationWide bool) string {
-	if !strings.HasPrefix(sampleArtifactName, "rootInvocations/") {
+	isRoot := strings.HasPrefix(sampleArtifactName, "rootInvocations/")
+	isLegacy := strings.HasPrefix(sampleArtifactName, "invocations/")
+	if !isRoot && !isLegacy {
 		return ""
 	}
 	meta := base.ExtractArtifactMetadata(sampleArtifactName)
@@ -904,9 +988,15 @@ func FormatArtifactFetchHint(sampleArtifactName string, invocationWide bool) str
 		return fmt.Sprintf("luci artifact <get|head|tail> -invocationid=%s -artifactid=<ARTIFACT_ID> [FLAGS]", quotedInv)
 	}
 	if meta.TestID != "" && meta.ResultID != "" {
-		return fmt.Sprintf("luci test-result artifact <get|head|tail> -invocationid=%s -workunitid=%s -testid=%s -resultid=%s -artifactid=<ARTIFACT_ID>",
+		if meta.WorkUnitID != "" {
+			return fmt.Sprintf("luci test-result artifact <get|head|tail> -invocationid=%s -workunitid=%s -testid=%s -resultid=%s -artifactid=<ARTIFACT_ID>",
+				quotedInv,
+				base.ShellQuoteIfNeeded(meta.WorkUnitID),
+				base.ShellQuoteIfNeeded(meta.TestID),
+				base.ShellQuoteIfNeeded(meta.ResultID))
+		}
+		return fmt.Sprintf("luci test-result artifact <get|head|tail> -invocationid=%s -testid=%s -resultid=%s -artifactid=<ARTIFACT_ID>",
 			quotedInv,
-			base.ShellQuoteIfNeeded(meta.WorkUnitID),
 			base.ShellQuoteIfNeeded(meta.TestID),
 			base.ShellQuoteIfNeeded(meta.ResultID))
 	}
@@ -914,6 +1004,38 @@ func FormatArtifactFetchHint(sampleArtifactName string, invocationWide bool) str
 		return fmt.Sprintf("luci work-unit artifact <get|head|tail> -invocationid=%s -workunitid=%s -artifactid=<ARTIFACT_ID>",
 			quotedInv,
 			base.ShellQuoteIfNeeded(meta.WorkUnitID))
+	}
+	if isLegacy {
+		return fmt.Sprintf("luci artifact <get|head|tail> -invocationid=%s -artifactid=<ARTIFACT_ID>", quotedInv)
+	}
+	return ""
+}
+
+// FormatReadyArtifactGetCommand returns a literal, shell-quoted
+// `luci ... artifact get` command targeting artifactName with concrete owning
+// ID and artifact ID flags filled in. Returns "" if artifactName does not belong
+// to a root or legacy invocation or does not specify an invocation and artifact ID.
+func FormatReadyArtifactGetCommand(artifactName string) string {
+	isRoot := strings.HasPrefix(artifactName, "rootInvocations/")
+	isLegacy := strings.HasPrefix(artifactName, "invocations/")
+	if !isRoot && !isLegacy {
+		return ""
+	}
+	meta := base.ExtractArtifactMetadata(artifactName)
+	if meta.InvocationID == "" || meta.ArtifactID == "" {
+		return ""
+	}
+	quotedInv := base.ShellQuoteIfNeeded(meta.InvocationID)
+	quotedArt := base.ShellQuoteIfNeeded(meta.ArtifactID)
+	flags := meta.FormatFlags()
+	if flags != "" {
+		flags = " " + flags
+	}
+	if meta.TestID != "" && meta.ResultID != "" {
+		return fmt.Sprintf("luci test-result artifact get -invocationid=%s%s -artifactid=%s", quotedInv, flags, quotedArt)
+	}
+	if meta.WorkUnitID != "" || isLegacy {
+		return fmt.Sprintf("luci artifact get -invocationid=%s%s -artifactid=%s", quotedInv, flags, quotedArt)
 	}
 	return ""
 }
@@ -945,6 +1067,10 @@ func PrintInvocationArtifactListTo(out io.Writer, artifacts []*rdbpb.Artifact) {
 // PrintArtifactTableTo prints the compact 1-line-per-artifact table rows for
 // artifacts in their given order, without sorting or printing a footer hint.
 func PrintArtifactTableTo(out io.Writer, artifacts []*rdbpb.Artifact, includeMetadata bool) {
+	printArtifactTable(out, artifacts, includeMetadata, false)
+}
+
+func printArtifactTable(out io.Writer, artifacts []*rdbpb.Artifact, includeMetadata, includeLegacyInvFlag bool) {
 	if len(artifacts) == 0 {
 		return
 	}
@@ -970,6 +1096,14 @@ func PrintArtifactTableTo(out io.Writer, artifacts []*rdbpb.Artifact, includeMet
 		if includeMetadata {
 			meta := base.ExtractArtifactMetadata(art.GetName())
 			flags := meta.FormatFlags()
+			if includeLegacyInvFlag && meta.InvocationID != "" {
+				invFlag := "-invocationid=" + base.ShellQuoteIfNeeded(meta.InvocationID)
+				if flags != "" {
+					flags = invFlag + " " + flags
+				} else {
+					flags = invFlag
+				}
+			}
 			if flags == "" {
 				flags = "-"
 			}

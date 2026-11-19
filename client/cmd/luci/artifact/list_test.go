@@ -18,7 +18,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -550,6 +552,156 @@ func TestListCmd(t *testing.T) {
 			assert.Loosely(t, wuOut, should.ContainSubstring("other artifacts in work unit ants-wu97100270499472114; run 'luci artifact list -invocationid=ants-i26000010636495227 -workunitid=ants-wu97100270499472114 -all [-filter=...]' to view all\n"))
 			assert.Loosely(t, wuOut, should.ContainSubstring("Ancestor Work Unit Artifacts:\n"))
 			assert.Loosely(t, wuOut, should.ContainSubstring("root_bugreport.zip"))
+
+			// Explicit -max-artifacts=100 via ListCmd bypasses the 9.5 KB default byte cap.
+			var explicit100Buf bytes.Buffer
+			explicit100Cmd := ListCmd(nil, ParentTypeInvocation)
+			explicit100Run := explicit100Cmd.CommandRun().(*artifactListRun)
+			explicit100Run.client = invClient
+			explicit100Run.out = &explicit100Buf
+			assert.Loosely(t, explicit100Run.Run(nil, []string{"-invocationid", "ants-i26000010636495227", "-max-artifacts", "100"}, nil), should.Equal(0))
+			assert.Loosely(t, len(explicit100Buf.String()) > DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, explicit100Buf.String(), should.ContainSubstring("injectables-deviceinfo-bundle-096"))
+
+			// Explicit -max-artifacts=0 via ListCmd means unlimited artifacts and bypasses the 9.5 KB byte cap.
+			var explicitZeroBuf bytes.Buffer
+			explicitZeroCmd := ListCmd(nil, ParentTypeInvocation)
+			explicitZeroRun := explicitZeroCmd.CommandRun().(*artifactListRun)
+			explicitZeroRun.client = invClient
+			explicitZeroRun.out = &explicitZeroBuf
+			assert.Loosely(t, explicitZeroRun.Run(nil, []string{"-invocationid", "ants-i26000010636495227", "-max-artifacts", "0"}, nil), should.Equal(0))
+			assert.Loosely(t, len(explicitZeroBuf.String()) > DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, explicitZeroBuf.String(), should.ContainSubstring("injectables-deviceinfo-bundle-119"))
+		})
+
+		t.Run(`strictly enforces DefaultMaxOutputBytes on tight budgets and legacy parent notices`, func(t *ftt.Test) {
+			longTestID := "suite/" + strings.Repeat("LongTestName_", 700)
+			legacyClient := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest) (*rdbpb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *rdbpb.GetInvocationRequest) (*rdbpb.Invocation, error) {
+					return &rdbpb.Invocation{Name: in.Name}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest) (*rdbpb.QueryTestVerdictsResponse, error) {
+					return &rdbpb.QueryTestVerdictsResponse{}, nil
+				},
+				queryTestResults: func(ctx context.Context, in *rdbpb.QueryTestResultsRequest) (*rdbpb.QueryTestResultsResponse, error) {
+					return &rdbpb.QueryTestResultsResponse{
+						TestResults: []*rdbpb.TestResult{
+							{
+								Name:     fmt.Sprintf("invocations/build-999/tests/%s/results/r1", longTestID),
+								TestId:   longTestID,
+								ResultId: "r1",
+							},
+						},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					if strings.HasSuffix(in.Parent, "/results/r1") {
+						var arts []*rdbpb.Artifact
+						for i := range 25 {
+							id := fmt.Sprintf("artifact_output_chunk_%02d.txt", i)
+							arts = append(arts, &rdbpb.Artifact{
+								Name:       in.Parent + "/artifacts/" + id,
+								ArtifactId: id,
+								SizeBytes:  1024,
+							})
+						}
+						return &rdbpb.ListArtifactsResponse{Artifacts: arts}, nil
+					}
+					return &rdbpb.ListArtifactsResponse{
+						Artifacts: []*rdbpb.Artifact{
+							{Name: "invocations/build-999/artifacts/inv_log.txt", ArtifactId: "inv_log.txt"},
+						},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			run := &artifactListRun{
+				artifactCommonRun: artifactCommonRun{
+					client:       legacyClient,
+					out:          &buf,
+					parentType:   ParentTypeTestResult,
+					invocationID: "build-999",
+					testID:       longTestID,
+					resultID:     "r1",
+				},
+				maxArtifacts: DefaultMaxArtifacts,
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, len(out) <= DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, utf8.ValidString(out), should.BeTrue)
+
+			// renderPrimaryArtifactSection respects tiny maxBytes even below build(0) or when empty, preserving UTF-8.
+			tinyArts := []*rdbpb.Artifact{
+				{
+					Name:       "rootInvocations/inv-1/workUnits/wu-1/artifacts/log.txt",
+					ArtifactId: "log.txt",
+					SizeBytes:  128,
+				},
+			}
+			tinyOut := renderPrimaryArtifactSection("日志Work Unit", "wu-1", "rootInvocations/inv-1/workUnits/wu-1", tinyArts, 50, true, 100, false, "", 28)
+			assert.Loosely(t, len(tinyOut) <= 28, should.BeTrue)
+			assert.Loosely(t, utf8.ValidString(tinyOut), should.BeTrue)
+			assert.Loosely(t, tinyOut, should.ContainSubstring("Work"))
+
+			emptyTinyOut := renderPrimaryArtifactSection("日志Test Result", strings.Repeat("x", 100), "", nil, 0, false, 100, false, "", 18)
+			assert.Loosely(t, len(emptyTinyOut) <= 18, should.BeTrue)
+			assert.Loosely(t, utf8.ValidString(emptyTinyOut), should.BeTrue)
+		})
+
+		t.Run(`preserves active -filter and -glob flags in omitted view-all hint`, func(t *ftt.Test) {
+			var invArts []*rdbpb.Artifact
+			for i := range 120 {
+				id := fmt.Sprintf("16502346/test-mapping-presubmit/inv_18332426392137930719/device_logcat_chunk_%03d.txt", i)
+				invArts = append(invArts, &rdbpb.Artifact{
+					Name:         "rootInvocations/ants-i26000010636495227/workUnits/ants-wu97100270499472114/artifacts/" + id,
+					ArtifactId:   id,
+					ArtifactType: "LOGCAT",
+					ContentType:  "text/plain",
+					SizeBytes:    2048,
+				})
+			}
+			invClient := &mockResultDBClient{
+				queryArtifacts: func(ctx context.Context, in *rdbpb.QueryArtifactsRequest) (*rdbpb.QueryArtifactsResponse, error) {
+					cp := make([]*rdbpb.Artifact, len(invArts))
+					copy(cp, invArts)
+					return &rdbpb.QueryArtifactsResponse{Artifacts: cp}, nil
+				},
+			}
+
+			var filterBuf bytes.Buffer
+			filterRun := &artifactListRun{
+				artifactCommonRun: artifactCommonRun{
+					client:       invClient,
+					out:          &filterBuf,
+					parentType:   ParentTypeInvocation,
+					invocationID: "ants-i26000010636495227",
+				},
+				filter:       "logcat|bugreport",
+				maxArtifacts: DefaultMaxArtifacts,
+			}
+			assert.Loosely(t, filterRun.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, filterBuf.String(), should.ContainSubstring("run 'luci artifact list -invocationid=ants-i26000010636495227 -all -filter='logcat|bugreport'' to view all"))
+			assert.Loosely(t, filterBuf.String(), should.NotContainSubstring("[-filter=...]"))
+
+			var globBuf bytes.Buffer
+			globRun := &artifactListRun{
+				artifactCommonRun: artifactCommonRun{
+					client:       invClient,
+					out:          &globBuf,
+					parentType:   ParentTypeInvocation,
+					invocationID: "ants-i26000010636495227",
+				},
+				glob:         "*logcat*.txt",
+				maxArtifacts: DefaultMaxArtifacts,
+			}
+			assert.Loosely(t, globRun.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, globBuf.String(), should.ContainSubstring("-all -glob='*logcat*.txt'"))
+			assert.Loosely(t, globBuf.String(), should.NotContainSubstring("[-filter=...]"))
 		})
 	})
 }

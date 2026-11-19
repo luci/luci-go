@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"unicode/utf8"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -302,6 +303,56 @@ func TestFormatSummaryHTML(t *testing.T) {
 			res := FormatSummaryHTML(ctx, fakeClient, http.DefaultClient, "invocations/inv1/tests/t1/results/r1", html)
 			assert.Loosely(t, res, should.Equal("Test failed\n[Embedded Artifact: big.txt (128.0 KiB (131072 bytes)) - use 'luci artifact get' to view]"))
 		})
+
+		t.Run(`FormatSummaryHTMLWithExpanded tracks only expanded direct test-result artifacts`, func(t *ftt.Test) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("inline content"))
+			}))
+			defer server.Close()
+
+			fakeClient := &fakeRDBClient{
+				getArtifactFunc: func(ctx context.Context, in *rdbpb.GetArtifactRequest, opts ...grpc.CallOption) (*rdbpb.Artifact, error) {
+					if in.Name == "invocations/inv1/tests/t1/results/r1/artifacts/big.txt" {
+						return &rdbpb.Artifact{Name: in.Name, ArtifactId: "big.txt", SizeBytes: 128 * 1024, FetchUrl: server.URL}, nil
+					}
+					return &rdbpb.Artifact{Name: in.Name, ArtifactId: "small.txt", SizeBytes: 14, FetchUrl: server.URL}, nil
+				},
+			}
+
+			html := `<text-artifact artifact-id="small.txt"><text-artifact artifact-id="big.txt"><text-artifact artifact-id="inv_log.txt" inv-level>`
+			_, expanded := FormatSummaryHTMLWithExpanded(ctx, fakeClient, server.Client(), "invocations/inv1/tests/t1/results/r1", html)
+			assert.Loosely(t, expanded["small.txt"], should.BeTrue)
+			assert.Loosely(t, expanded["big.txt"], should.BeFalse)
+			assert.Loosely(t, expanded["inv_log.txt"], should.BeFalse)
+		})
+	})
+}
+
+func TestTruncateOutputBytes(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`TruncateOutputBytes`, t, func(t *ftt.Test) {
+		assert.Loosely(t, TruncateOutputBytes("short", 100, "pass -show-metadata"), should.Equal("short"))
+
+		var lines bytes.Buffer
+		for i := range 200 {
+			fmt.Fprintf(&lines, "frame %03d: at com.example.Test.method%03d(Test.java:%d) — 详情\n", i, i, i)
+		}
+		full := lines.String()
+		hint := "pass -show-metadata to view full output"
+		got := TruncateOutputBytes(full, 600, hint)
+		assert.Loosely(t, len(got) <= 600, should.BeTrue)
+		assert.Loosely(t, utf8.ValidString(got), should.BeTrue)
+		assert.Loosely(t, got, should.ContainSubstring("frame 000:"))
+		assert.Loosely(t, got, should.ContainSubstring("bytes truncated; pass -show-metadata to view full output"))
+		assert.Loosely(t, got, should.ContainSubstring("frame 199:"))
+
+		for _, limit := range []int{1, 5, 10, 50, 72, 73, 74, 75, 76, 120} {
+			capped := TruncateOutputBytes(full, limit, hint)
+			assert.Loosely(t, len(capped) <= limit, should.BeTrue)
+			assert.Loosely(t, utf8.ValidString(capped), should.BeTrue)
+		}
 	})
 }
 
@@ -573,6 +624,39 @@ func TestPrintFailureReason(t *testing.T) {
 			assert.Loosely(t, gotGeneric[0].ArtifactId, should.Equal("WidgetCheck_test_dump.txt"))
 			assert.Loosely(t, gotGeneric[1].ArtifactId, should.Equal("device_logcat_test_oriole.txt"))
 		})
+	})
+
+	ftt.Run(`FormatArtifactFetchHint supports legacy invocations`, t, func(t *ftt.Test) {
+		assert.Loosely(t,
+			FormatArtifactFetchHint("invocations/build-8765/tests/ninja:%2F%2Fchrome%2Ftest:browser_tests%2FFoo.Bar/results/r1/artifacts/crash.txt", false),
+			should.Equal("luci test-result artifact <get|head|tail> -invocationid=build-8765 -testid=ninja://chrome/test:browser_tests/Foo.Bar -resultid=r1 -artifactid=<ARTIFACT_ID>"))
+		assert.Loosely(t,
+			FormatArtifactFetchHint("invocations/build-8765/artifacts/vm_logs.txt", false),
+			should.Equal("luci artifact <get|head|tail> -invocationid=build-8765 -artifactid=<ARTIFACT_ID>"))
+		assert.Loosely(t,
+			FormatArtifactFetchHint("invocations/build-8765/tests/t1/results/r1/artifacts/a1", true),
+			should.Equal("luci artifact <get|head|tail> -invocationid=build-8765 -artifactid=<ARTIFACT_ID> [FLAGS]"))
+	})
+
+	ftt.Run(`FormatReadyArtifactGetCommand`, t, func(t *ftt.Test) {
+		assert.Loosely(t,
+			FormatReadyArtifactGetCommand("rootInvocations/ants-i123/workUnits/wu-1/tests/com.android.FooTest%23testBar/results/0/artifacts/logcat.txt"),
+			should.Equal("luci test-result artifact get -invocationid=ants-i123 -workunitid=wu-1 -testid='com.android.FooTest#testBar' -resultid=0 -artifactid=logcat.txt"))
+		assert.Loosely(t,
+			FormatReadyArtifactGetCommand("invocations/build-8765/tests/ninja:%2F%2Fchrome%2Ftest:browser_tests%2FFoo.Bar/results/r1/artifacts/my%20crash%20log.txt"),
+			should.Equal("luci test-result artifact get -invocationid=build-8765 -testid=ninja://chrome/test:browser_tests/Foo.Bar -resultid=r1 -artifactid='my crash log.txt'"))
+		assert.Loosely(t,
+			FormatReadyArtifactGetCommand("rootInvocations/ants-i123/workUnits/ants-wu505/artifacts/host_log.txt"),
+			should.Equal("luci artifact get -invocationid=ants-i123 -workunitid=ants-wu505 -artifactid=host_log.txt"))
+		assert.Loosely(t,
+			FormatReadyArtifactGetCommand("invocations/build-8765/artifacts/vm_logs.txt"),
+			should.Equal("luci artifact get -invocationid=build-8765 -artifactid=vm_logs.txt"))
+		assert.Loosely(t,
+			FormatReadyArtifactGetCommand("rootInvocations/ants-i123/workUnits/ants-wu505"),
+			should.Equal(""))
+		assert.Loosely(t,
+			FormatReadyArtifactGetCommand("invalid/path"),
+			should.Equal(""))
 	})
 
 	ftt.Run(`PrintArtifactListTo and PrintInvocationArtifactListTo`, t, func(t *ftt.Test) {
