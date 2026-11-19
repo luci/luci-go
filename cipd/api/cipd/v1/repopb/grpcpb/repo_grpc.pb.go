@@ -409,7 +409,11 @@ type RepositoryClient interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks the
+	//	    `cipd.packages.readInstanceMetadata` and
+	//	    `cipd.packages.detachInstanceMetadata` (which is checked with the
+	//	    attribute `cipd.instance.metadataKey` on a per-key basis)
+	//	    permissions or legacy OWNER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package or the instance doesn't exist.
 	DetachMetadata(ctx context.Context, in *DetachMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -1112,7 +1116,11 @@ type RepositoryServer interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks the
+	//	    `cipd.packages.readInstanceMetadata` and
+	//	    `cipd.packages.detachInstanceMetadata` (which is checked with the
+	//	    attribute `cipd.instance.metadataKey` on a per-key basis)
+	//	    permissions or legacy OWNER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package or the instance doesn't exist.
 	DetachMetadata(context.Context, *DetachMetadataRequest) (*emptypb.Empty, error)

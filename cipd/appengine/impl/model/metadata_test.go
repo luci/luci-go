@@ -15,6 +15,7 @@
 package model
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -314,53 +315,61 @@ func TestMetadata(t *testing.T) {
 			// Detach one existing using a key-value pair.
 			tc.Add(time.Second)
 			assert.Loosely(t, getMD("a", "0", inst), should.NotBeNil)
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
+			assert.NoErr(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("0")},
-			}), should.BeNil)
+			}, nil))
 			assert.Loosely(t, getMD("a", "0", inst), should.BeNil)
 
 			// Detach one existing using a fingerprint pair.
 			tc.Add(time.Second)
 			assert.Loosely(t, getMD("a", "1", inst), should.NotBeNil)
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
+			assert.NoErr(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Fingerprint: fp("a", "1")},
-			}), should.BeNil)
+			}, nil))
 			assert.Loosely(t, getMD("a", "1", inst), should.BeNil)
 
 			// Detach one missing.
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
+			assert.NoErr(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("z0")},
-			}), should.BeNil)
+			}, nil))
 
 			// Detach a bunch of existing, including dups.
 			tc.Add(time.Second)
 			assert.Loosely(t, getMD("a", "2", inst), should.NotBeNil)
 			assert.Loosely(t, getMD("a", "3", inst), should.NotBeNil)
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
+			assert.NoErr(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("2")},
 				{Key: "a", Value: []byte("3")},
 				{Key: "a", Value: []byte("2")},
 				{Fingerprint: fp("a", "3")},
-			}), should.BeNil)
+			}, nil))
 			assert.Loosely(t, getMD("a", "2", inst), should.BeNil)
 			assert.Loosely(t, getMD("a", "3", inst), should.BeNil)
 
 			// Detach a bunch of missing.
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
+			assert.NoErr(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("z1")},
 				{Key: "a", Value: []byte("z2")},
-			}), should.BeNil)
+			}, nil))
+
+			// Detach rejected by checkKeys leaves metadata intact.
+			assert.ErrIsLike(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
+				{Fingerprint: fp("a", "4")},
+			}, func(keys []string) error {
+				return errors.New("denied key " + strings.Join(keys, ","))
+			}), "denied key a")
+			assert.Loosely(t, getMD("a", "4", inst), should.NotBeNil)
 
 			// Detach a mix of existing and missing.
 			tc.Add(time.Second)
 			assert.Loosely(t, getMD("a", "4", inst), should.NotBeNil)
 			assert.Loosely(t, getMD("a", "5", inst), should.NotBeNil)
-			assert.Loosely(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
+			assert.NoErr(t, DetachMetadata(ctx, inst, []*repopb.InstanceMetadata{
 				{Key: "a", Value: []byte("z3")},
 				{Key: "a", Value: []byte("4")},
 				{Key: "a", Value: []byte("z4")},
 				{Key: "a", Value: []byte("5")},
-			}), should.BeNil)
+			}, nil))
 			assert.Loosely(t, getMD("a", "4", inst), should.BeNil)
 			assert.Loosely(t, getMD("a", "5", inst), should.BeNil)
 

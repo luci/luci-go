@@ -195,12 +195,15 @@ func attachMetadataImplInTxn(ctx context.Context, inst *Instance, md []*repopb.I
 // DetachMetadata detaches a bunch of metadata entries from an instance.
 //
 // Assumes inputs are already validated. If Fingerprint is populated, uses it
-// to identifies entries to detach. Otherwise calculates it from Key and Value
+// to identify entries to detach. Otherwise calculates it from Key and Value
 // (which must be populated in this case).
+//
+// If checkKeys is non-nil, calls it with all existing metadata keys before
+// deleting any.
 //
 // Launches a transaction inside (and thus can't be a part of a transaction
 // itself).
-func DetachMetadata(ctx context.Context, inst *Instance, md []*repopb.InstanceMetadata) error {
+func DetachMetadata(ctx context.Context, inst *Instance, md []*repopb.InstanceMetadata, checkKeys func(keys []string) error) error {
 	now := clock.Now(ctx).UTC()
 	who := string(auth.CurrentIdentity(ctx))
 
@@ -253,8 +256,17 @@ func DetachMetadata(ctx context.Context, inst *Instance, md []*repopb.InstanceMe
 		if len(existing) == 0 {
 			return nil
 		}
+		if checkKeys != nil {
+			keys := make([]string, len(existing))
+			for i, ent := range existing {
+				keys[i] = ent.Key
+			}
+			if err := checkKeys(keys); err != nil {
+				return err
+			}
+		}
 
-		// Store everything.
+		// Delete everything.
 		if err := datastore.Delete(ctx, existing); err != nil {
 			return transient.Tag.Apply(err)
 		}

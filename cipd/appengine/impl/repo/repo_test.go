@@ -2513,10 +2513,10 @@ func TestInstanceMetadata(t *testing.T) {
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-md-detacher-no-read@example.com", "project:realm", perm.DetachInstanceMetadata.Perm(), authtest.RestrictAttribute("cipd.instance.metadataKey", "k0")),
+			authtest.MockPermission("user:realm-md-detacher@example.com", "project:realm", perm.DetachInstanceMetadata.Perm(), authtest.RestrictAttribute("cipd.instance.metadataKey", "k0")),
+			authtest.MockPermission("user:realm-md-detacher@example.com", "project:realm", perm.ReadInstanceMetadata.Perm()),
 			authtest.MockPermission("user:realm-md-writer@example.com", "project:realm", perm.WriteInstanceMetadata.Perm(), authtest.RestrictAttribute("cipd.instance.metadataKey", "k0")),
-			authtest.MockPermission("user:reader@example.com", "project:realm", perm.DiagnoseACL.Perm()),
-			authtest.MockPermission("user:writer@google.com", "project:realm", perm.DiagnoseACL.Perm()),
-			authtest.MockPermission("user:owner@google.com", "project:realm", perm.DiagnoseACL.Perm()),
 		)
 
 		meta := testutil.MetadataStore{}
@@ -2609,6 +2609,62 @@ func TestInstanceMetadata(t *testing.T) {
 			assert.Loosely(t, getMD(inst, "k0:2"), should.BeNil)
 			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.ErrIsLike(t, err, "is not allowed to see it")
+		})
+
+		t.Run("DetachMetadata via realm permission with attribute", func(t *ftt.Test) {
+			_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k0:0", "k0:1", "k1:1"),
+			})
+			assert.NoErr(t, err)
+
+			// Missing permReadInstanceMetadata fails even when permDetachInstanceMetadata is granted.
+			_, err = impl.DetachMetadata(as("realm-md-detacher-no-read@example.com"), &repopb.DetachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k0:0"),
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+
+			// Key "k1" is not allowed by key-value.
+			_, err = impl.DetachMetadata(as("realm-md-detacher@example.com"), &repopb.DetachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k0:0", "k1:1"),
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+			assert.Loosely(t, getMD(inst, "k0:0"), should.NotBeNil)
+
+			// Key "k1" is not allowed by fingerprint either.
+			_, err = impl.DetachMetadata(as("realm-md-detacher@example.com"), &repopb.DetachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: []*repopb.InstanceMetadata{
+					{Fingerprint: common.InstanceMetadataFingerprint("k0", []byte{'0'})},
+					{Fingerprint: common.InstanceMetadataFingerprint("k1", []byte{'1'})},
+				},
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+			assert.Loosely(t, getMD(inst, "k0:0"), should.NotBeNil)
+			assert.Loosely(t, getMD(inst, "k1:1"), should.NotBeNil)
+
+			// Key "k0" is allowed by key-value and by fingerprint.
+			_, err = impl.DetachMetadata(as("realm-md-detacher@example.com"), &repopb.DetachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: []*repopb.InstanceMetadata{
+					{Key: "k0", Value: []byte{'0'}},
+					{Fingerprint: common.InstanceMetadataFingerprint("k0", []byte{'1'})},
+				},
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, getMD(inst, "k0:0"), should.BeNil)
+			assert.Loosely(t, getMD(inst, "k0:1"), should.BeNil)
+			assert.Loosely(t, getMD(inst, "k1:1"), should.NotBeNil)
 		})
 
 		t.Run("AttachMetadata/DetachMetadata/ListMetadata happy path", func(t *ftt.Test) {
@@ -2827,8 +2883,8 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike("has no required OWNER role"))
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.ErrIsLike(t, err, `missing the cipd.packages.detachInstanceMetadata{cipd.instance.metadataKey:"k"} permission`)
 			})
 			t.Run("ListMetadata", func(t *ftt.Test) {
 				_, err := impl.ListMetadata(as("unknown@google.com"), &repopb.ListMetadataRequest{

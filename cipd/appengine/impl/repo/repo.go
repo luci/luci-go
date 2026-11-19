@@ -1388,8 +1388,31 @@ func (impl *repoImpl) DetachMetadata(ctx context.Context, r *repopb.DetachMetada
 		}
 	}
 
-	// Check ACLs. Require OWNER role for destructive operations.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_OWNER); err != nil {
+	// Check ACLs.
+	//
+	// We can check all detach requests which are Key+Value up front, but for
+	// fingerprint-based entries we have to wait until DetachMetadata runs in
+	// order to know which key we need to check the permission for.
+	//
+	// In order to prevent excessive lookups of cfg/roles/groups, we decompose
+	// the hasPermission function a bit.
+	var permsToCheck perm.Set
+	permsToCheck.Add(perm.ReadInstanceMetadata)
+	for _, m := range r.Metadata {
+		if m.Fingerprint == "" {
+			permsToCheck.Add(perm.DetachInstanceMetadata.Bind(m.Key))
+		}
+	}
+
+	pchk, err := impl.prefixPermChecker(ctx, r.Package)
+	if err != nil {
+		return nil, err
+	}
+	missing, err := pchk.CheckSet(ctx, permsToCheck)
+	if err != nil {
+		return nil, err
+	}
+	if err := missing.AsError(ctx); err != nil {
 		return nil, err
 	}
 
@@ -1403,7 +1426,17 @@ func (impl *repoImpl) DetachMetadata(ctx context.Context, r *repopb.DetachMetada
 	}
 
 	// Actually detach the metadata.
-	if err := model.DetachMetadata(ctx, inst, r.Metadata); err != nil {
+	if err := model.DetachMetadata(ctx, inst, r.Metadata, func(keys []string) error {
+		var toCheck perm.Set
+		for _, key := range keys {
+			toCheck.Add(perm.DetachInstanceMetadata.Bind(key))
+		}
+		missing, err := pchk.CheckSet(ctx, toCheck)
+		if err != nil {
+			return err
+		}
+		return missing.AsError(ctx)
+	}); err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
