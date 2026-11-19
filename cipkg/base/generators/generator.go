@@ -93,5 +93,12 @@ func (dep *Dependency) Generate(ctx context.Context, plats Platforms) (*core.Act
 	default:
 		return nil, ErrUnknowDependencyType
 	}
+	// If the dependency's target is universal (empty), default it to its host
+	// platform so build tools (e.g. DepsBuildHost for a universal package)
+	// target the host they run on, while host-side dependencies (e.g.
+	// DepsHostTarget) remain universal.
+	if depPlats.Target.IsZero() {
+		depPlats.Target = depPlats.Host
+	}
 	return dep.Generator.Generate(ctx, depPlats)
 }
