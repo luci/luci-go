@@ -17,6 +17,10 @@ package verdict
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -24,6 +28,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -35,6 +40,8 @@ type mockAggResultDBClient struct {
 	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
 	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
 	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
+	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
+	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
 }
 
 func (m *mockAggResultDBClient) QueryTestAggregations(ctx context.Context, in *pb.QueryTestAggregationsRequest, opts ...grpc.CallOption) (*pb.QueryTestAggregationsResponse, error) {
@@ -67,10 +74,16 @@ func (m *mockAggResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInv
 }
 
 func (m *mockAggResultDBClient) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
+	if m.queryWorkUnits != nil {
+		return m.queryWorkUnits(ctx, in)
+	}
 	return &pb.QueryWorkUnitsResponse{}, nil
 }
 
 func (m *mockAggResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
+	if m.listArtifacts != nil {
+		return m.listArtifacts(ctx, in)
+	}
 	return &pb.ListArtifactsResponse{}, nil
 }
 
@@ -490,6 +503,278 @@ func TestQueryRootInvocationVerdicts(t *testing.T) {
 			_, _, _, errAndroid := QueryVerdictResultsAndExonerations(ctx, client, "ants-i26000010636495227", testID, "", false, 10)
 			assert.Loosely(t, errAndroid, should.ErrLike("missing ResultDB realm permission"))
 			assert.Loosely(t, errAndroid, should.ErrLike(base.AndroidAccessHint))
+		})
+	})
+}
+
+func TestPrintVerdictSummaryInlineArtifacts(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`printVerdictSummary surfaces inline failure artifacts within budget`, t, func(t *ftt.Test) {
+		ctx := context.Background()
+
+		t.Run(`surfaces direct and ancestor failure artifacts within 1.5 KB cap on FAILED verdict`, func(t *ftt.Test) {
+			trName := "rootInvocations/ants-i123/workUnits/wu-leaf/tests/:ModA!junit:pkg:Cls%23testOne/results/res-1"
+			leafWU := "rootInvocations/ants-i123/workUnits/wu-leaf"
+			rootWU := "rootInvocations/ants-i123/workUnits/root"
+
+			noisyRoot := make([]*pb.Artifact, 0, 200)
+			for i := range 200 {
+				noisyRoot = append(noisyRoot, &pb.Artifact{
+					Name:       fmt.Sprintf("%s/artifacts/injectables_%03d.json", rootWU, i),
+					ArtifactId: fmt.Sprintf("injectables_%03d.json", i),
+					SizeBytes:  2048,
+				})
+			}
+
+			client := &mockAggResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{{Name: rootWU}},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					switch in.Parent {
+					case trName:
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:         trName + "/artifacts/logcat-on-failure.txt",
+									ArtifactId:   "logcat-on-failure.txt",
+									ArtifactType: "LOGCAT",
+									ContentType:  "text/plain",
+									SizeBytes:    131072,
+								},
+							},
+						}, nil
+					case leafWU:
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:         leafWU + "/artifacts/host_log.txt",
+									ArtifactId:   "host_log.txt",
+									ArtifactType: "HOST_LOG",
+									ContentType:  "text/plain",
+									SizeBytes:    32768,
+								},
+							},
+						}, nil
+					case rootWU:
+						return &pb.ListArtifactsResponse{Artifacts: noisyRoot}, nil
+					default:
+						return &pb.ListArtifactsResponse{}, nil
+					}
+				},
+			}
+
+			vg := &VerdictGroup{
+				Key: VerdictKey{TestID: ":ModA!junit:pkg:Cls#testOne", VariantHash: "vhash1"},
+				Results: []*pb.TestResult{
+					{
+						Name:        trName,
+						TestId:      ":ModA!junit:pkg:Cls#testOne",
+						ResultId:    "res-1",
+						VariantHash: "vhash1",
+						StatusV2:    pb.TestResult_FAILED,
+					},
+				},
+			}
+
+			var buf bytes.Buffer
+			printVerdictSummary(&buf, ctx, nil, client, nil, "ants-i123", vg, false, false)
+			out := buf.String()
+
+			idx := strings.Index(out, "Test Result Artifacts")
+			assert.Loosely(t, idx > 0, should.BeTrue)
+			inlineSection := out[idx:]
+			assert.Loosely(t, inlineSection, should.ContainSubstring("Test Result Artifacts (result_id: res-1, 1 artifact):"))
+			assert.Loosely(t, inlineSection, should.ContainSubstring("logcat-on-failure.txt"))
+			assert.Loosely(t, inlineSection, should.ContainSubstring("To fetch a test result artifact:"))
+			assert.Loosely(t, inlineSection, should.ContainSubstring("e.g. luci test-result artifact get -invocationid=ants-i123 -workunitid=wu-leaf -testid=':ModA!junit:pkg:Cls#testOne' -resultid=res-1 -artifactid=logcat-on-failure.txt"))
+			assert.Loosely(t, inlineSection, should.ContainSubstring("host_log.txt"))
+			assert.Loosely(t, inlineSection, should.ContainSubstring("e.g. luci artifact get -invocationid=ants-i123 -workunitid=wu-leaf -artifactid=host_log.txt"))
+			assert.Loosely(t, len(inlineSection) <= format.DefaultInlineGetArtifactBudget, should.BeTrue)
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+		})
+
+		t.Run(`FLAKY verdict only queries artifacts for non-passing attempts`, func(t *ftt.Test) {
+			passTR := "rootInvocations/ants-i123/workUnits/wu-pass/tests/t1/results/r-pass"
+			failTR := "rootInvocations/ants-i123/workUnits/wu-fail/tests/t1/results/r-fail"
+
+			var mu sync.Mutex
+			queriedParents := make(map[string]bool)
+			client := &mockAggResultDBClient{
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					mu.Lock()
+					queriedParents[in.Parent] = true
+					mu.Unlock()
+					if in.Parent == failTR {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:         failTR + "/artifacts/crash_stderr.txt",
+									ArtifactId:   "crash_stderr.txt",
+									ContentType:  "text/plain",
+									SizeBytes:    2048,
+									ArtifactType: "STDERR",
+								},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			vg := &VerdictGroup{
+				Key: VerdictKey{TestID: "t1", VariantHash: "vhash1"},
+				Results: []*pb.TestResult{
+					{Name: passTR, TestId: "t1", ResultId: "r-pass", StatusV2: pb.TestResult_PASSED},
+					{Name: failTR, TestId: "t1", ResultId: "r-fail", StatusV2: pb.TestResult_FAILED},
+				},
+			}
+
+			var buf bytes.Buffer
+			printVerdictSummary(&buf, ctx, nil, client, nil, "ants-i123", vg, false, false)
+			out := buf.String()
+
+			mu.Lock()
+			sawPassTR := queriedParents[passTR]
+			sawFailTR := queriedParents[failTR]
+			mu.Unlock()
+			assert.Loosely(t, sawPassTR, should.BeFalse)
+			assert.Loosely(t, sawFailTR, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("Test Result Artifacts (result_id: r-fail, 1 artifact):"))
+			assert.Loosely(t, out, should.ContainSubstring("crash_stderr.txt"))
+		})
+
+		t.Run(`PASSED and SKIPPED verdicts make zero test-result artifact RPCs`, func(t *ftt.Test) {
+			trName := "rootInvocations/ants-i123/workUnits/wu-1/tests/t1/results/r1"
+			var trArtCalls atomic.Int32
+			client := &mockAggResultDBClient{
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == trName {
+						trArtCalls.Add(1)
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			for _, st := range []pb.TestResult_Status{pb.TestResult_PASSED, pb.TestResult_SKIPPED} {
+				vg := &VerdictGroup{
+					Key: VerdictKey{TestID: "t1", VariantHash: "vhash1"},
+					Results: []*pb.TestResult{
+						{
+							Name:     trName,
+							TestId:   "t1",
+							ResultId: "r1",
+							StatusV2: st,
+						},
+					},
+				}
+				var buf bytes.Buffer
+				printVerdictSummary(&buf, ctx, nil, client, nil, "ants-i123", vg, false, false)
+				assert.Loosely(t, buf.String(), should.NotContainSubstring("Test Result Artifacts"))
+				assert.Loosely(t, buf.String(), should.NotContainSubstring("Work Unit Artifacts:"))
+			}
+
+			assert.Loosely(t, trArtCalls.Load(), should.Equal(int32(0)))
+		})
+
+		t.Run(`caps oversized default verdict get output at 9.5 KB with inline artifacts while explicit -max-results bypasses cap`, func(t *ftt.Test) {
+			testID := ":ModA!junit:pkg:Cls#testManyRetries"
+			results := make([]*pb.TestResult, 0, 50)
+			for i := range 50 {
+				resID := fmt.Sprintf("r-%02d", i)
+				trName := fmt.Sprintf("rootInvocations/ants-i123/workUnits/wu-long-shard-identifier-%02d/tests/t1/results/%s", i, resID)
+				results = append(results, &pb.TestResult{
+					Name:        trName,
+					TestId:      testID,
+					ResultId:    resID,
+					VariantHash: "vhash1",
+					StatusV2:    pb.TestResult_FAILED,
+					FailureReason: &pb.FailureReason{
+						PrimaryErrorMessage: fmt.Sprintf("AssertionError on attempt %02d: expected success during retry execution", i),
+					},
+				})
+			}
+			exonerations := []*pb.TestExoneration{
+				{
+					TestId:          testID,
+					VariantHash:     "vhash1",
+					Reason:          pb.ExonerationReason_OCCURS_ON_MAINLINE,
+					ExplanationHtml: "<pre>" + strings.Repeat("Flake analysis detail line 1234567890\n", 230) + "</pre>",
+				},
+			}
+
+			firstTR := results[0].Name
+			client := &mockAggResultDBClient{
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					limit := len(results)
+					if in.PageSize > 0 && int(in.PageSize) < limit {
+						limit = int(in.PageSize)
+					}
+					nextTok := ""
+					if limit < len(results) {
+						nextTok = "more"
+					}
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId:       testID,
+								Results:      results[:limit],
+								Exonerations: exonerations,
+							},
+						},
+						NextPageToken: nextTok,
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == firstTR {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:         firstTR + "/artifacts/crash_stderr.txt",
+									ArtifactId:   "crash_stderr.txt",
+									ArtifactType: "STDERR",
+									ContentType:  "text/plain",
+									SizeBytes:    2048,
+								},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			runGet := func(args ...string) string {
+				var buf bytes.Buffer
+				cmd := GetCmd(nil)
+				run := cmd.CommandRun().(*verdictGetRun)
+				run.client = client
+				run.out = &buf
+				assert.Loosely(t, run.Run(nil, args, nil), should.Equal(0))
+				return buf.String()
+			}
+
+			// 1. Default verdict get caps oversized primary output at <= 9,500 B and retains inline artifacts.
+			defaultOut := runGet("-invocationid", "ants-i123", "-testid", testID)
+			assert.Loosely(t, len(defaultOut) <= format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, defaultOut, should.ContainSubstring("bytes truncated; pass -show-metadata to view full output"))
+			assert.Loosely(t, defaultOut, should.ContainSubstring("Test Result Artifacts"))
+			assert.Loosely(t, defaultOut, should.ContainSubstring("crash_stderr.txt"))
+
+			// 2. Explicit -max-results 0 bypasses the 9.5 KB cap and displays all 50 results.
+			zeroOut := runGet("-invocationid", "ants-i123", "-testid", testID, "-max-results", "0")
+			assert.Loosely(t, len(zeroOut) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, zeroOut, should.NotContainSubstring("bytes truncated"))
+			assert.Loosely(t, zeroOut, should.ContainSubstring("AssertionError on attempt 49"))
+			assert.Loosely(t, zeroOut, should.ContainSubstring("crash_stderr.txt"))
+
+			// 3. Explicit -max-results 50 also bypasses the 9.5 KB cap.
+			fiftyOut := runGet("-invocationid", "ants-i123", "-testid", testID, "-max-results", "50")
+			assert.Loosely(t, len(fiftyOut) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, fiftyOut, should.NotContainSubstring("bytes truncated"))
+			assert.Loosely(t, fiftyOut, should.ContainSubstring("AssertionError on attempt 49"))
 		})
 	})
 }

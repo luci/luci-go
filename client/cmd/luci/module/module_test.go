@@ -31,8 +31,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/client/cmd/luci/testutil"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -1065,11 +1065,43 @@ func TestModuleDetails(t *testing.T) {
 			var buf bytes.Buffer
 			fprintModuleDetails(&buf, details, false)
 			out := buf.String()
-			assert.Loosely(t, len(out) <= artifact.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
 			assert.Loosely(t, out, should.ContainSubstring("  ... and 80 more work units\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:\n"))
 			assert.Loosely(t, out, should.ContainSubstring("more work units with artifacts; run 'luci artifact list -invocationid=ants-i14600010609614895' to view all"))
 			assert.Loosely(t, out, should.ContainSubstring("Ancestor Work Unit Artifacts:\n"))
+			idx := strings.Index(out, "Work Unit Artifacts:\n")
+			assert.Loosely(t, idx > 0, should.BeTrue)
+			assert.Loosely(t, len(out[idx:]) <= format.DefaultInlineGetArtifactBudget, should.BeTrue)
+		})
+
+		t.Run(`includes derived IDs prefix within DefaultMaxOutputBytes cap`, func(t *ftt.Test) {
+			derivedPrefix := "Invocation ID: ants-i14600010609614895\n" + strings.Repeat("d", 1200) + "\n\n"
+			details := &ModuleDetails{
+				ModuleName:   "CellBroadcastReceiverMTS",
+				InvocationID: "ants-i14600010609614895",
+				ModuleStatus: "FAILED",
+				WorkUnits: []*WorkUnitInfo{
+					{
+						WorkUnitID: "ants-wu001",
+						State:      "FAILED",
+						Error: &format.DiscoveredError{
+							Message:    "java.lang.RuntimeException: fatal failure",
+							StackTrace: strings.Repeat("at com.android.Foo.bar(Foo.java:42)\n", 260),
+						},
+					},
+				},
+				ArtifactNotices: "Work Unit Artifacts:\n  host_log.txt  HOST_LOG  4.0 KiB  text/plain\n",
+			}
+
+			var buf bytes.Buffer
+			fprintModuleDetailsWithDerived(&buf, derivedPrefix, details, false)
+			out := buf.String()
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, strings.HasPrefix(out, "Invocation ID: ants-i14600010609614895\n"), should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("bytes truncated; pass -show-metadata to view full output"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:\n"))
+			assert.Loosely(t, out, should.ContainSubstring("host_log.txt"))
 		})
 
 		t.Run(`discovers and displays failed shard beyond maxDisplayedModuleWorkUnits`, func(t *ftt.Test) {

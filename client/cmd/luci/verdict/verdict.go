@@ -15,12 +15,15 @@
 package verdict
 
 import (
+	"bytes"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/maruel/subcommands"
 
@@ -59,6 +62,8 @@ func (r *verdictRun) Run(a subcommands.Application, args []string, env subcomman
 	}, args)
 }
 
+const defaultMaxVerdictResults = 10
+
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get [-invocationid <invocation_id> -testid <test_id>] [-varianthash <hash>] [<target>]",
@@ -68,7 +73,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			"  $ luci verdict get https://ci.chromium.org/ui/test-investigate/invocations/build-123/tests/ninja:%2F%2Fchrome%2Ftest/variants/b7de9035241e76cc\n" +
 			"  $ luci verdict get -invocationid build-123 -testid ninja://chrome/test",
 		CommandRun: func() subcommands.CommandRun {
-			r := &verdictGetRun{af: af, maxResults: 10}
+			r := &verdictGetRun{af: af, maxResults: defaultMaxVerdictResults}
 			if r.af != nil {
 				r.af.Register(&r.Flags)
 			}
@@ -79,7 +84,7 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 			r.Flags.StringVar(&r.variantHash, "varianthash", "", "Variant hash (optional, e.g. b7de9035241e76cc)")
 			r.Flags.StringVar(&r.variantHash, "variant-hash", "", "Alias for -varianthash")
-			r.Flags.IntVar(&r.maxResults, "max-results", 10, "Maximum number of results to display (default: 10, 0 for all)")
+			r.Flags.IntVar(&r.maxResults, "max-results", defaultMaxVerdictResults, "Maximum number of results to display (default: 10, 0 for all; setting explicitly bypasses 9.5 KB cap)")
 			r.Flags.BoolVar(&r.allResults, "all", false, "Show all results without truncation")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print test metadata, tags, and properties")
 			// -legacy is now unused and will be removed in the future.
@@ -113,6 +118,19 @@ func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, m
 // Defaults to querying as a root invocation using QueryTestVerdicts unless legacy is true.
 func QueryVerdictResultsAndExonerations(ctx context.Context, client pb.ResultDBClient, invID, testID, variantHash string, legacy bool, maxFetch int) ([]*pb.TestResult, []*pb.TestExoneration, bool, error) {
 	return base.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, variantHash, legacy, maxFetch)
+}
+
+func (r *verdictGetRun) hasExplicitMaxResultsFlag() bool {
+	if r.maxResults > 0 && r.maxResults != defaultMaxVerdictResults {
+		return true
+	}
+	explicit := false
+	r.Flags.Visit(func(f *flag.Flag) {
+		if f.Name == "max-results" {
+			explicit = true
+		}
+	})
+	return explicit
 }
 
 func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -202,8 +220,9 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 	if out == nil {
 		out = os.Stdout
 	}
+	var derivedBuf bytes.Buffer
 	extracted.EnrichFromTestResult(verdictResults[0])
-	ids.PrintDerivedIDs(out, extracted)
+	ids.PrintDerivedIDs(&derivedBuf, extracted)
 
 	vg := &VerdictGroup{
 		Key:          VerdictKey{TestID: verdictResults[0].TestId, VariantHash: r.variantHash},
@@ -213,41 +232,93 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		HasMore:      hasMore,
 	}
 
-	printVerdictSummary(out, ctx, schemasClient, client, httpClient, invID, vg, r.showMetadata, legacy)
+	renderVerdictSummary(ctx, out, vg, verdictSummaryOptions{
+		derivedPrefix: derivedBuf.String(),
+		schemasClient: schemasClient,
+		rdbClient:     client,
+		httpClient:    httpClient,
+		invID:         invID,
+		showMetadata:  r.showMetadata,
+		capOutput:     !r.showMetadata && !r.allResults && !r.hasExplicitMaxResultsFlag(),
+		legacy:        legacy,
+	})
 	return 0
 }
 
+type verdictSummaryOptions struct {
+	derivedPrefix string
+	schemasClient pb.SchemasClient
+	rdbClient     pb.ResultDBClient
+	httpClient    *http.Client
+	invID         string
+	showMetadata  bool
+	capOutput     bool
+	legacy        bool
+}
+
 func printVerdictSummary(out io.Writer, ctx context.Context, schemasClient pb.SchemasClient, rdbClient pb.ResultDBClient, httpClient *http.Client, invID string, g *VerdictGroup, showMetadata, legacy bool) {
+	renderVerdictSummary(ctx, out, g, verdictSummaryOptions{
+		schemasClient: schemasClient,
+		rdbClient:     rdbClient,
+		httpClient:    httpClient,
+		invID:         invID,
+		showMetadata:  showMetadata,
+		capOutput:     !showMetadata,
+		legacy:        legacy,
+	})
+}
+
+func renderVerdictSummary(ctx context.Context, out io.Writer, g *VerdictGroup, opts verdictSummaryOptions) {
+	if out == nil {
+		out = os.Stdout
+	}
+	ctx = format.WithDiscoveryCache(ctx)
+
+	var (
+		artFormatter format.VerdictArtifactFormatter
+		wg           sync.WaitGroup
+	)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		artFormatter = format.FetchVerdictInlineFailureArtifactFormatter(ctx, opts.rdbClient, opts.invID, g.Results, opts.legacy)
+	}()
+
+	var primaryBuf bytes.Buffer
+	if opts.derivedPrefix != "" {
+		primaryBuf.WriteString(opts.derivedPrefix)
+	}
+
 	status := g.DisplayStatus()
 
 	var firstRes *pb.TestResult
 	if len(g.Results) > 0 {
 		firstRes = g.Results[0]
 	}
-	aggs := FetchHierarchyAggregations(ctx, rdbClient, invID, firstRes, legacy)
-	invLine := invID
+	aggs := FetchHierarchyAggregations(ctx, opts.rdbClient, opts.invID, firstRes, opts.legacy)
+	invLine := opts.invID
 	if c := format.FormatVerdictCountsInline(aggs.GetInvocation()); c != "" {
 		invLine += " " + c
 	}
-	fmt.Fprintf(out, "Invocation:   %s\n", invLine)
+	fmt.Fprintf(&primaryBuf, "Invocation:   %s\n", invLine)
 	if firstRes != nil {
-		format.FprintTestIDWithAggregations(out, ctx, schemasClient, firstRes, aggs)
+		format.FprintTestIDWithAggregations(&primaryBuf, ctx, opts.schemasClient, firstRes, aggs)
 		if firstRes.TestMetadata != nil && firstRes.TestMetadata.Name != "" {
-			fmt.Fprintf(out, "Test Name:    %s\n", firstRes.TestMetadata.Name)
+			fmt.Fprintf(&primaryBuf, "Test Name:    %s\n", firstRes.TestMetadata.Name)
 		}
 	}
-	fmt.Fprintf(out, "Status:       %s\n", status)
+	fmt.Fprintf(&primaryBuf, "Status:       %s\n", status)
 	if g.Variant != nil && len(g.Variant.GetDef()) > 0 {
-		fmt.Fprintf(out, "Variant:      %s\n", format.FormatVariant(g.Variant))
+		fmt.Fprintf(&primaryBuf, "Variant:      %s\n", format.FormatVariant(g.Variant))
 	}
 	if len(g.Exonerations) > 0 {
-		fmt.Fprintf(out, "Exonerations:\n")
+		fmt.Fprintf(&primaryBuf, "Exonerations:\n")
 		for _, ex := range g.Exonerations {
 			reasonStr := format.StripHTML(ex.ExplanationHtml)
 			if reasonStr == "" {
 				reasonStr = "No explanation provided"
 			}
-			fmt.Fprintf(out, "  - Reason: %s [%s]\n", reasonStr, ex.Reason)
+			fmt.Fprintf(&primaryBuf, "  - Reason: %s [%s]\n", reasonStr, ex.Reason)
 		}
 	}
 	type groupedRuns struct {
@@ -269,9 +340,9 @@ func printVerdictSummary(out io.Writer, ctx context.Context, schemasClient pb.Sc
 	}
 
 	if g.HasMore {
-		fmt.Fprintf(out, "Runs (showing %d results, use -all to see all):\n", len(g.Results))
+		fmt.Fprintf(&primaryBuf, "Runs (showing %d results, use -all to see all):\n", len(g.Results))
 	} else {
-		fmt.Fprintf(out, "Runs (%d):\n", len(g.Results))
+		fmt.Fprintf(&primaryBuf, "Runs (%d):\n", len(g.Results))
 	}
 	for _, grp := range groups {
 		runCountStr := ""
@@ -280,9 +351,9 @@ func printVerdictSummary(out io.Writer, ctx context.Context, schemasClient pb.Sc
 		} else {
 			runCountStr = fmt.Sprintf("%d runs", len(grp.items))
 		}
-		fmt.Fprintf(out, "- %s (%s):\n", grp.parent.Label, runCountStr)
-		if !legacy && grp.parent.ID != "" {
-			modErr, _ := format.DiscoverWorkUnitError(ctx, rdbClient, httpClient, grp.parent.ID)
+		fmt.Fprintf(&primaryBuf, "- %s (%s):\n", grp.parent.Label, runCountStr)
+		if !opts.legacy && grp.parent.ID != "" {
+			modErr, _ := format.DiscoverWorkUnitError(ctx, opts.rdbClient, opts.httpClient, grp.parent.ID)
 			if modErr != nil {
 				firstLine, truncated := format.FormatDiscoveredErrorFirstLine(modErr, 120)
 				if firstLine != "" {
@@ -290,12 +361,12 @@ func printVerdictSummary(out io.Writer, ctx context.Context, schemasClient pb.Sc
 					if truncated {
 						label = "Module Error (truncated):"
 					}
-					fmt.Fprintf(out, "  %s %s\n", label, firstLine)
+					fmt.Fprintf(&primaryBuf, "  %s %s\n", label, firstLine)
 				}
 			}
 		}
 		for _, tr := range grp.items {
-			fmt.Fprintf(out, "  - %s (%s) - result_id: %s\n", tr.StatusV2, format.FormatDuration(tr.Duration), tr.ResultId)
+			fmt.Fprintf(&primaryBuf, "  - %s (%s) - result_id: %s\n", tr.StatusV2, format.FormatDuration(tr.Duration), tr.ResultId)
 			if tr.FailureReason != nil {
 				firstLine, truncated := format.FormatFailureReasonFirstLine(tr.FailureReason, 120)
 				if firstLine != "" {
@@ -303,7 +374,7 @@ func printVerdictSummary(out io.Writer, ctx context.Context, schemasClient pb.Sc
 					if truncated {
 						label = "Error (truncated):"
 					}
-					fmt.Fprintf(out, "    %s %s\n", label, firstLine)
+					fmt.Fprintf(&primaryBuf, "    %s %s\n", label, firstLine)
 				}
 			}
 			if tr.SummaryHtml != "" {
@@ -313,22 +384,26 @@ func printVerdictSummary(out io.Writer, ctx context.Context, schemasClient pb.Sc
 					if truncated {
 						label = "Summary (truncated):"
 					}
-					fmt.Fprintf(out, "    %s %s\n", label, firstLine)
+					fmt.Fprintf(&primaryBuf, "    %s %s\n", label, firstLine)
 				}
 			}
 		}
 	}
-	if showMetadata {
+	if opts.showMetadata {
 		if len(g.Results) > 0 {
-			fmt.Fprintln(out)
-			format.FprintAdditionalMetadata(out, g.Results[0])
+			fmt.Fprintln(&primaryBuf)
+			format.FprintAdditionalMetadata(&primaryBuf, g.Results[0])
 		}
-		if !legacy {
-			if rootInv := format.FetchRootInvocation(ctx, rdbClient, invID); rootInv != nil {
-				fmt.Fprintln(out)
-				format.FprintRootInvocationMetadata(out, rootInv)
-				format.FprintRootInvocationAdditionalMetadata(out, rootInv)
+		if !opts.legacy {
+			if rootInv := format.FetchRootInvocation(ctx, opts.rdbClient, opts.invID); rootInv != nil {
+				fmt.Fprintln(&primaryBuf)
+				format.FprintRootInvocationMetadata(&primaryBuf, rootInv)
+				format.FprintRootInvocationAdditionalMetadata(&primaryBuf, rootInv)
 			}
 		}
 	}
+
+	wg.Wait()
+	finalOut := format.FitPrimaryAndInlineArtifacts(primaryBuf.String(), artFormatter, opts.capOutput)
+	fmt.Fprint(out, finalOut)
 }

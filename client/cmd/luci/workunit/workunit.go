@@ -15,8 +15,10 @@
 package workunit
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -94,6 +96,7 @@ type workUnitGetRun struct {
 	af           *base.AuthFlags
 	client       pb.ResultDBClient
 	httpClient   *http.Client
+	out          io.Writer
 	host         string
 	invocationID string
 	workUnitID   string
@@ -215,51 +218,55 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		return 1
 	}
 
+	format.CacheWorkUnit(rpcCtx, wu)
+
+	var buf bytes.Buffer
 	extracted.EnrichFromWorkUnit(wu)
-	ids.PrintDerivedIDs(os.Stdout, extracted)
+	ids.PrintDerivedIDs(&buf, extracted)
 
 	isRoot := wu.WorkUnitId == "root"
 	var rootAgg *pb.TestAggregation
 	if isRoot {
 		rootAgg = format.FetchRootInvocationAggregation(rpcCtx, client, invID)
 	}
+	isZeroVerdictRoot := isRoot && rootAgg != nil && rootAgg.GetTotalVerdictCounts() != nil && format.VerdictCountsTotal(rootAgg.GetTotalVerdictCounts()) == 0
 
 	if wu.WorkUnitId != "" && (extracted == nil || extracted.WorkUnitID == "") {
-		fmt.Printf("Work Unit ID: %s\n", wu.WorkUnitId)
+		fmt.Fprintf(&buf, "Work Unit ID: %s\n", wu.WorkUnitId)
 	}
 	if wu.Parent != "" {
-		fmt.Printf("Parent:       %s\n", format.FormatWorkUnitBreadcrumb(wu.Parent))
+		fmt.Fprintf(&buf, "Parent:       %s\n", format.FormatWorkUnitBreadcrumb(wu.Parent))
 	}
 	if isRoot {
-		printRootInvocationMetadata(resolved.RootInvocation)
+		fprintRootInvocationMetadata(&buf, resolved.RootInvocation)
 	}
 	if wu.Kind != "" {
-		fmt.Printf("Kind:         %s\n", wu.Kind)
+		fmt.Fprintf(&buf, "Kind:         %s\n", wu.Kind)
 	}
 	if modID := wu.GetModuleId(); modID != nil && modID.GetModuleName() != "" {
-		fmt.Printf("Module:       %s\n", modID.GetModuleName())
+		fmt.Fprintf(&buf, "Module:       %s\n", modID.GetModuleName())
 	}
 	if wu.ModuleShardKey != "" {
-		fmt.Printf("Shard Key:    %s\n", wu.ModuleShardKey)
+		fmt.Fprintf(&buf, "Shard Key:    %s\n", wu.ModuleShardKey)
 	}
-	fmt.Printf("State:        %s\n", wu.State)
+	fmt.Fprintf(&buf, "State:        %s\n", wu.State)
 	if wu.FinalizationState != pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
-		fmt.Printf("Finalization: %s\n", wu.FinalizationState)
+		fmt.Fprintf(&buf, "Finalization: %s\n", wu.FinalizationState)
 	}
-	format.FprintRootInvocationAggregationSummary(os.Stdout, rootAgg)
+	format.FprintRootInvocationAggregationSummary(&buf, rootAgg)
 	if len(wu.ChildWorkUnits) > 0 {
-		fmt.Printf("Child Work Units (%d):\n", len(wu.ChildWorkUnits))
+		fmt.Fprintf(&buf, "Child Work Units (%d):\n", len(wu.ChildWorkUnits))
 		const maxChildrenShown = 10
 		for i, child := range wu.ChildWorkUnits {
 			if i >= maxChildrenShown {
-				fmt.Printf("  ... and %d more child work units\n", len(wu.ChildWorkUnits)-maxChildrenShown)
+				fmt.Fprintf(&buf, "  ... and %d more child work units\n", len(wu.ChildWorkUnits)-maxChildrenShown)
 				break
 			}
 			_, childWUID := base.ExtractWorkUnitComponents(child)
 			if childWUID == "" {
 				childWUID = child
 			}
-			fmt.Printf("  - %s\n", childWUID)
+			fmt.Fprintf(&buf, "  - %s\n", childWUID)
 		}
 	}
 	wuFailure := format.DiscoverSingleWorkUnitFailure(rpcCtx, client, httpClient, wu)
@@ -273,62 +280,94 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 	hasDistinctSummary := strings.TrimSpace(summaryToPrint) != "" &&
 		(!isRoot || !format.IsRedundantExternalSummary(summaryToPrint, resolved.RootInvocation))
+	var hasDiscoveredErr bool
 	if hasDistinctSummary {
-		fmt.Printf("Summary:\n%s\n", summaryToPrint)
-	} else if len(childFailures) == 0 {
-		discErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, clean)
+		fmt.Fprintf(&buf, "Summary:\n%s\n", summaryToPrint)
+	} else if len(childFailures) == 0 && ((wu.GetState() != pb.WorkUnit_SUCCEEDED && wu.GetState() != pb.WorkUnit_PENDING && wu.GetState() != pb.WorkUnit_RUNNING && wu.GetState() != pb.WorkUnit_SKIPPED) || isZeroVerdictRoot) {
+		discErr, _ := format.DiscoverWorkUnitError(rpcCtx, client, httpClient, clean)
 		if discErr != nil && (!isRoot || !format.IsRedundantExternalSummary(discErr.RawSummary, resolved.RootInvocation)) {
-			format.PrintModuleErrorForTarget(discErr, clean, "")
+			hasDiscoveredErr = true
+			format.FprintModuleErrorForTarget(&buf, discErr, clean, "")
 		}
 	}
 	if wuFailure != nil {
-		format.FprintWorkUnitFailureArtifacts(os.Stdout, invID, wuFailure, "")
+		format.FprintWorkUnitFailureArtifacts(&buf, invID, wuFailure, "")
 	}
 	if len(childFailures) > 0 {
-		format.FprintFirstLevelWorkUnitFailures(os.Stdout, invID, childFailures, "")
+		format.FprintFirstLevelWorkUnitFailures(&buf, invID, childFailures, "")
 	}
 	if r.showMetadata {
-		fmt.Println()
-		format.FprintWorkUnitMetadata(os.Stdout, wu, "", false)
+		fmt.Fprintln(&buf)
+		format.FprintWorkUnitMetadata(&buf, wu, "", false)
 		if resolved.RootInvocation != nil {
-			fmt.Println()
+			fmt.Fprintln(&buf)
 			if isRoot {
-				format.FprintRootInvocationCoreMetadata(os.Stdout, resolved.RootInvocation)
+				format.FprintRootInvocationCoreMetadata(&buf, resolved.RootInvocation)
 			} else {
-				format.FprintRootInvocationMetadata(os.Stdout, resolved.RootInvocation)
+				format.FprintRootInvocationMetadata(&buf, resolved.RootInvocation)
 			}
-			format.FprintRootInvocationAdditionalMetadata(os.Stdout, resolved.RootInvocation)
+			format.FprintRootInvocationAdditionalMetadata(&buf, resolved.RootInvocation)
 		}
 	}
 
-	artifact.PrintWorkUnitAndAncestorNotices(rpcCtx, client, []string{clean}, os.Stdout)
 	if isRoot && resolved.RootInvocation != nil {
-		format.FprintZeroVerdictDiagnostics(os.Stdout, invID, resolved.RootInvocation, rootAgg, format.ZeroVerdictDiagnosticOptions{})
+		format.FprintZeroVerdictDiagnostics(&buf, invID, resolved.RootInvocation, rootAgg, format.ZeroVerdictDiagnosticOptions{})
 	}
+
+	var noticeFormatter func(maxBytes int) string
+	hasWUFailureContext := wuFailure != nil && (len(wuFailure.Artifacts) > 0 || wuFailure.FullSummaryText != "")
+	shouldInlineArtifacts := wu.GetState() == pb.WorkUnit_FAILED ||
+		wu.GetState() == pb.WorkUnit_CANCELLED ||
+		hasWUFailureContext ||
+		len(childFailures) > 0 ||
+		hasDiscoveredErr ||
+		isZeroVerdictRoot
+	if shouldInlineArtifacts {
+		var excludedByWU map[string]map[string]bool
+		if wuFailure != nil && len(wuFailure.Artifacts) > 0 {
+			excluded := make(map[string]bool, len(wuFailure.Artifacts))
+			for _, art := range wuFailure.Artifacts {
+				if art.ID != "" {
+					excluded[art.ID] = true
+				}
+			}
+			excludedByWU = map[string]map[string]bool{clean: excluded}
+		}
+		noticeFormatter, _ = format.FetchWorkUnitAndAncestorNoticeFormatterExcluding(rpcCtx, client, []string{clean}, excludedByWU)
+	}
+	finalOut := format.FitPrimaryAndInlineArtifacts(buf.String(), noticeFormatter, !r.showMetadata)
+	out := r.out
+	if out == nil && a != nil {
+		out = a.GetOut()
+	}
+	if out == nil {
+		out = os.Stdout
+	}
+	fmt.Fprint(out, finalOut)
 
 	return 0
 }
 
-func printRootInvocationMetadata(rootInv *pb.RootInvocation) {
+func fprintRootInvocationMetadata(out io.Writer, rootInv *pb.RootInvocation) {
 	if rootInv == nil {
 		return
 	}
 	if realm := rootInv.GetRealm(); realm != "" {
-		fmt.Printf("Realm:        %s\n", realm)
+		fmt.Fprintf(out, "Realm:        %s\n", realm)
 	}
 	if ab := rootInv.GetPrimaryBuild().GetAndroidBuild(); ab != nil {
 		if ab.GetBranch() != "" {
-			fmt.Printf("Branch:       %s\n", ab.GetBranch())
+			fmt.Fprintf(out, "Branch:       %s\n", ab.GetBranch())
 		}
 		if ab.GetBuildTarget() != "" {
-			fmt.Printf("Target:       %s\n", ab.GetBuildTarget())
+			fmt.Fprintf(out, "Target:       %s\n", ab.GetBuildTarget())
 		}
 		if ab.GetBuildId() != "" {
-			fmt.Printf("Build ID:     %s\n", ab.GetBuildId())
+			fmt.Fprintf(out, "Build ID:     %s\n", ab.GetBuildId())
 		}
 	}
 	if sys := rootInv.GetProducerResource().GetSystem(); sys != "" {
-		fmt.Printf("Scheduler:    %s\n", sys)
+		fmt.Fprintf(out, "Scheduler:    %s\n", sys)
 	}
-	format.FprintRootInvocationExternalMetadata(os.Stdout, rootInv, 14)
+	format.FprintRootInvocationExternalMetadata(out, rootInv, 14)
 }

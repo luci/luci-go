@@ -17,12 +17,17 @@ package testresult
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -38,6 +43,7 @@ type mockResultDBClient struct {
 	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
 	queryTestResults      func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error)
 	queryTestExonerations func(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error)
+	getArtifact           func(ctx context.Context, in *pb.GetArtifactRequest) (*pb.Artifact, error)
 	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
 	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
 }
@@ -86,6 +92,13 @@ func (m *mockResultDBClient) QueryTestExonerations(ctx context.Context, in *pb.Q
 		return m.queryTestExonerations(ctx, in)
 	}
 	return &pb.QueryTestExonerationsResponse{}, nil
+}
+
+func (m *mockResultDBClient) GetArtifact(ctx context.Context, in *pb.GetArtifactRequest, opts ...grpc.CallOption) (*pb.Artifact, error) {
+	if m.getArtifact != nil {
+		return m.getArtifact(ctx, in)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
 }
 
 func (m *mockResultDBClient) ListArtifacts(ctx context.Context, in *pb.ListArtifactsRequest, opts ...grpc.CallOption) (*pb.ListArtifactsResponse, error) {
@@ -271,7 +284,7 @@ func TestFetchTestResult(t *testing.T) {
 func TestPrintTestResult(t *testing.T) {
 	t.Parallel()
 
-	ftt.Run(`printTestResult prints test result and parent work unit artifact counts`, t, func(t *ftt.Test) {
+	ftt.Run(`printTestResult prints inline test result and parent work unit artifacts within budget`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 		trName := "rootInvocations/ants-i123/workUnits/wu-1/tests/test1/results/res1"
 
@@ -315,11 +328,17 @@ func TestPrintTestResult(t *testing.T) {
 			run.printTestResult(ctx, &buf, client, nil, nil, "ants-i123", res, false)
 			out := buf.String()
 
-			assert.Loosely(t, out, should.ContainSubstring(`Artifact Count: 1 (run 'luci test-result artifact list -invocationid ants-i123 -testid "test1" -resultid res1' to view)`))
+			assert.Loosely(t, out, should.NotContainSubstring("Artifact Count:"))
+			assert.Loosely(t, out, should.ContainSubstring("Test Result Artifacts (1 artifact):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("logcat-on-failure-123.txt"))
+			assert.Loosely(t, out, should.ContainSubstring("LOGCAT"))
+			assert.Loosely(t, out, should.ContainSubstring("190.4 KiB"))
+			assert.Loosely(t, out, should.ContainSubstring("To fetch a test result artifact:\n  luci test-result artifact <get|head|tail> -invocationid=ants-i123 -workunitid=wu-1 -testid=test1 -resultid=res1 -artifactid=<ARTIFACT_ID>"))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
 			assert.Loosely(t, out, should.ContainSubstring("  Work unit wu-1 (2 artifacts):\n"))
 			assert.Loosely(t, out, should.ContainSubstring("host_log.txt"))
 			assert.Loosely(t, out, should.ContainSubstring("tradefed-expanded.xml"))
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
 		})
 
 		t.Run(`with 0 test result artifacts and artifacts only on ancestor wu_1 (wu_1 -> wu_2 -> wu_3 -> tr_1)`, func(t *ftt.Test) {
@@ -358,12 +377,148 @@ func TestPrintTestResult(t *testing.T) {
 			run.printTestResult(ctx, &buf, client, nil, nil, "ants-i123", res, false)
 			out := buf.String()
 
-			assert.Loosely(t, out, should.ContainSubstring("Artifact Count: 0\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Artifact Count:"))
+			assert.Loosely(t, out, should.NotContainSubstring("Test Result Artifacts"))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:"))
 			assert.Loosely(t, out, should.ContainSubstring("  Work unit wu_1 (1 artifact):\n"))
 			assert.Loosely(t, out, should.ContainSubstring("host_log.txt"))
 			assert.Loosely(t, out, should.NotContainSubstring("wu_2"))
 			assert.Loosely(t, out, should.NotContainSubstring("Work unit wu_3"))
+		})
+
+		t.Run(`caps inline artifact section to 1.5 KB and deduplicates expanded text-artifact`, func(t *ftt.Test) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = w.Write([]byte("expanded crash snippet"))
+			}))
+			defer srv.Close()
+
+			rootWU := "rootInvocations/ants-i123/workUnits/root"
+			noisyRoot := make([]*pb.Artifact, 0, 200)
+			for i := range 200 {
+				noisyRoot = append(noisyRoot, &pb.Artifact{
+					Name:       fmt.Sprintf("%s/artifacts/injectables_%03d.json", rootWU, i),
+					ArtifactId: fmt.Sprintf("injectables_%03d.json", i),
+					SizeBytes:  4096,
+				})
+			}
+
+			client := &mockResultDBClient{
+				getArtifact: func(ctx context.Context, in *pb.GetArtifactRequest) (*pb.Artifact, error) {
+					if in.Name == trName+"/artifacts/expanded_summary.txt" {
+						return &pb.Artifact{
+							Name:        in.Name,
+							ArtifactId:  "expanded_summary.txt",
+							ContentType: "text/plain",
+							SizeBytes:   22,
+							FetchUrl:    srv.URL + "/expanded",
+						}, nil
+					}
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{{Name: rootWU}},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					switch in.Parent {
+					case trName:
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:        trName + "/artifacts/expanded_summary.txt",
+									ArtifactId:  "expanded_summary.txt",
+									ContentType: "text/plain",
+									SizeBytes:   22,
+									FetchUrl:    srv.URL + "/expanded",
+								},
+								{
+									Name:         trName + "/artifacts/logcat-on-failure.txt",
+									ArtifactId:   "logcat-on-failure.txt",
+									ArtifactType: "LOGCAT",
+									ContentType:  "text/plain",
+									SizeBytes:    98304,
+								},
+							},
+						}, nil
+					case rootWU:
+						return &pb.ListArtifactsResponse{Artifacts: noisyRoot}, nil
+					default:
+						return &pb.ListArtifactsResponse{}, nil
+					}
+				},
+			}
+
+			res := &pb.TestResult{
+				Name:        trName,
+				TestId:      "test1",
+				ResultId:    "res1",
+				StatusV2:    pb.TestResult_FAILED,
+				SummaryHtml: `<p><text-artifact artifact-id="expanded_summary.txt"></text-artifact></p>`,
+			}
+
+			var buf bytes.Buffer
+			run := &testResultGetRun{invocationID: "ants-i123", out: &buf}
+			run.printTestResult(ctx, &buf, client, nil, srv.Client(), "ants-i123", res, false)
+			out := buf.String()
+
+			assert.Loosely(t, out, should.ContainSubstring("expanded crash snippet"))
+			idx := strings.Index(out, "Test Result Artifacts")
+			assert.Loosely(t, idx > 0, should.BeTrue)
+			inlineSection := out[idx:]
+			assert.Loosely(t, inlineSection, should.NotContainSubstring("expanded_summary.txt"))
+			assert.Loosely(t, inlineSection, should.ContainSubstring("logcat-on-failure.txt"))
+			assert.Loosely(t, len(inlineSection) <= format.DefaultInlineGetArtifactBudget, should.BeTrue)
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+		})
+
+		t.Run(`caps oversized failure stack trace within 9.5 KB while preserving inline artifacts`, func(t *ftt.Test) {
+			client := &mockResultDBClient{
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == trName {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									ArtifactId:   "logcat-on-failure.txt",
+									ArtifactType: "LOGCAT",
+									ContentType:  "text/plain",
+									SizeBytes:    65536,
+								},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			hugeTrace := strings.Repeat("  at com.example.DeepStackFrame.invokeMethod(DeepStackFrame.java:142)\n", 220)
+			res := &pb.TestResult{
+				Name:     trName,
+				TestId:   "test1",
+				ResultId: "res1",
+				StatusV2: pb.TestResult_FAILED,
+				FailureReason: &pb.FailureReason{
+					PrimaryErrorMessage: "java.lang.AssertionError: boom",
+					Errors: []*pb.FailureReason_Error{
+						{Message: "java.lang.AssertionError: boom", Trace: hugeTrace},
+					},
+				},
+			}
+
+			var defaultBuf bytes.Buffer
+			defaultRun := &testResultGetRun{invocationID: "ants-i123", showMetadata: false, out: &defaultBuf}
+			defaultRun.printTestResult(ctx, &defaultBuf, client, nil, nil, "ants-i123", res, false)
+			defaultOut := defaultBuf.String()
+			assert.Loosely(t, len(defaultOut) <= format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, defaultOut, should.ContainSubstring("Test Result Artifacts (1 artifact):"))
+			assert.Loosely(t, defaultOut, should.ContainSubstring("logcat-on-failure.txt"))
+
+			var metaBuf bytes.Buffer
+			metaRun := &testResultGetRun{invocationID: "ants-i123", showMetadata: true, out: &metaBuf}
+			metaRun.printTestResult(ctx, &metaBuf, client, nil, nil, "ants-i123", res, false)
+			metaOut := metaBuf.String()
+			assert.Loosely(t, len(metaOut) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, metaOut, should.ContainSubstring("logcat-on-failure.txt"))
 		})
 
 		t.Run(`gates RootInvocation metadata behind -show-metadata`, func(t *ftt.Test) {

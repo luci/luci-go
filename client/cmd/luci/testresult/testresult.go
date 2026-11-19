@@ -15,11 +15,13 @@
 package testresult
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/maruel/subcommands"
 
@@ -183,29 +185,51 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 	if out == nil {
 		out = os.Stdout
 	}
+	var derivedBuf bytes.Buffer
 	extracted.EnrichFromTestResult(res)
-	ids.PrintDerivedIDs(out, extracted)
+	ids.PrintDerivedIDs(&derivedBuf, extracted)
 
-	r.printTestResult(ctx, out, client, schemasClient, httpClient, invID, res, legacy)
+	r.printTestResultWithDerived(ctx, out, derivedBuf.String(), client, schemasClient, httpClient, invID, res, legacy)
 	return 0
 }
 
 func (r *testResultGetRun) printTestResult(ctx context.Context, out io.Writer, client pb.ResultDBClient, schemasClient pb.SchemasClient, httpClient *http.Client, invID string, res *pb.TestResult, legacy bool) {
+	r.printTestResultWithDerived(ctx, out, "", client, schemasClient, httpClient, invID, res, legacy)
+}
+
+func (r *testResultGetRun) printTestResultWithDerived(ctx context.Context, out io.Writer, derivedPrefix string, client pb.ResultDBClient, schemasClient pb.SchemasClient, httpClient *http.Client, invID string, res *pb.TestResult, legacy bool) {
 	if out == nil {
 		out = os.Stdout
 	}
+	ctx = format.WithDiscoveryCache(ctx)
+
+	var (
+		artFormatter format.TestResultArtifactFormatter
+		wg           sync.WaitGroup
+	)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		artFormatter = format.FetchTestResultInlineArtifactFormatter(ctx, client, invID, res, legacy)
+	}()
+
+	var primaryBuf bytes.Buffer
+	if derivedPrefix != "" {
+		primaryBuf.WriteString(derivedPrefix)
+	}
+
 	aggs := verdict.FetchHierarchyAggregations(ctx, client, invID, res, legacy)
 	if c := format.FormatVerdictCountsInline(aggs.GetInvocation()); c != "" {
-		fmt.Fprintf(out, "Invocation: %s %s\n", invID, c)
+		fmt.Fprintf(&primaryBuf, "Invocation: %s %s\n", invID, c)
 	}
-	fmt.Fprintf(out, "Result ID: %s\n", res.ResultId)
-	format.FprintTestIDWithAggregations(out, ctx, schemasClient, res, aggs)
+	fmt.Fprintf(&primaryBuf, "Result ID: %s\n", res.ResultId)
+	format.FprintTestIDWithAggregations(&primaryBuf, ctx, schemasClient, res, aggs)
 	if res.TestMetadata != nil && res.TestMetadata.Name != "" {
-		fmt.Fprintf(out, "Test Name: %s\n", res.TestMetadata.Name)
+		fmt.Fprintf(&primaryBuf, "Test Name: %s\n", res.TestMetadata.Name)
 	}
 	pg := format.GetParentGroup(res.Name)
 	if pg.Label != "" {
-		fmt.Fprintf(out, "Run in:    %s\n", pg.Label)
+		fmt.Fprintf(&primaryBuf, "Run in:    %s\n", pg.Label)
 		if !legacy && pg.ID != "" {
 			modErr, _ := format.DiscoverWorkUnitError(ctx, client, httpClient, pg.ID)
 			if modErr != nil {
@@ -215,47 +239,48 @@ func (r *testResultGetRun) printTestResult(ctx context.Context, out io.Writer, c
 					if truncated {
 						label = "Module Error (truncated):"
 					}
-					fmt.Fprintf(out, "  %s %s\n", label, firstLine)
+					fmt.Fprintf(&primaryBuf, "  %s %s\n", label, firstLine)
 				}
 			}
 		}
 	}
-	printVerdictContext(ctx, out, client, invID, res, legacy)
+	printVerdictContext(ctx, &primaryBuf, client, invID, res, legacy)
 	if res.Variant != nil && len(res.Variant.GetDef()) > 0 {
-		fmt.Fprintf(out, "Variant:   %s\n", format.FormatVariant(res.Variant))
+		fmt.Fprintf(&primaryBuf, "Variant:   %s\n", format.FormatVariant(res.Variant))
 	}
-	fmt.Fprintf(out, "Status:    %s\n", res.StatusV2)
-	fmt.Fprintf(out, "Duration:  %s\n", format.FormatDuration(res.Duration))
+	fmt.Fprintf(&primaryBuf, "Status:    %s\n", res.StatusV2)
+	fmt.Fprintf(&primaryBuf, "Duration:  %s\n", format.FormatDuration(res.Duration))
 	if res.FailureReason != nil {
-		format.FprintFailureReason(out, res.FailureReason, "")
+		format.FprintFailureReason(&primaryBuf, res.FailureReason, "")
 	}
+	var expandedArtIDs map[string]bool
 	if res.SummaryHtml != "" {
-		fmt.Fprintf(out, "Summary:\n%s\n", format.FormatSummaryHTML(ctx, client, httpClient, res.Name, res.SummaryHtml))
+		var summaryText string
+		summaryText, expandedArtIDs = format.FormatSummaryHTMLWithExpanded(ctx, client, httpClient, res.Name, res.SummaryHtml)
+		fmt.Fprintf(&primaryBuf, "Summary:\n%s\n", summaryText)
 	}
 	if r.showMetadata {
-		fmt.Fprintln(out)
-		fmt.Fprintf(out, "Full Name: %s\n", res.Name)
-		format.FprintAdditionalMetadata(out, res)
+		fmt.Fprintln(&primaryBuf)
+		fmt.Fprintf(&primaryBuf, "Full Name: %s\n", res.Name)
+		format.FprintAdditionalMetadata(&primaryBuf, res)
 		if !legacy {
 			if rootInv := format.FetchRootInvocation(ctx, client, invID); rootInv != nil {
-				fmt.Fprintln(out)
-				format.FprintRootInvocationMetadata(out, rootInv)
-				format.FprintRootInvocationAdditionalMetadata(out, rootInv)
+				fmt.Fprintln(&primaryBuf)
+				format.FprintRootInvocationMetadata(&primaryBuf, rootInv)
+				format.FprintRootInvocationAdditionalMetadata(&primaryBuf, rootInv)
 			}
 		}
 	}
-	if arts, err := artifact.QueryAllArtifacts(ctx, client, res.Name); err == nil {
-		if len(arts) > 0 {
-			fmt.Fprintf(out, "Artifact Count: %d (run 'luci test-result artifact list -invocationid %s -testid %q -resultid %s' to view)\n", len(arts), invID, res.TestId, res.ResultId)
-		} else {
-			fmt.Fprintf(out, "Artifact Count: 0\n")
+
+	wg.Wait()
+	var formatInline func(int) string
+	if artFormatter != nil {
+		formatInline = func(maxBytes int) string {
+			return artFormatter(expandedArtIDs, maxBytes)
 		}
 	}
-	if legacy {
-		artifact.PrintImmediateParentInvocationNotice(ctx, client, res.Name, out)
-	} else {
-		artifact.PrintAncestorWorkUnitNotices(ctx, client, res.Name, artifact.ParentTypeTestResult, out)
-	}
+	finalOut := format.FitPrimaryAndInlineArtifacts(primaryBuf.String(), formatInline, !r.showMetadata)
+	fmt.Fprint(out, finalOut)
 }
 
 func printVerdictContext(ctx context.Context, out io.Writer, rdbClient pb.ResultDBClient, invID string, res *pb.TestResult, legacy bool) {

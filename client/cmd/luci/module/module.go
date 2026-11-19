@@ -177,9 +177,10 @@ func (r *moduleGetRun) Run(a subcommands.Application, args []string, env subcomm
 		return 0
 	}
 
-	ids.PrintDerivedIDs(os.Stdout, extracted)
+	var derivedBuf bytes.Buffer
+	ids.PrintDerivedIDs(&derivedBuf, extracted)
 
-	printModuleDetails(modDetails, r.showMetadata)
+	printModuleDetailsWithDerived(derivedBuf.String(), modDetails, r.showMetadata)
 	return 0
 }
 
@@ -361,7 +362,7 @@ func FetchModuleDetails(ctx context.Context, client pb.ResultDBClient, httpClien
 	formatter, directArtIDs := artifact.FetchWorkUnitAndAncestorNoticeFormatter(ctx, client, targetWUNames)
 	details.formatNotices = formatter
 	if formatter != nil {
-		details.ArtifactNotices = formatter(artifact.DefaultMaxOutputBytes)
+		details.ArtifactNotices = formatter(format.DefaultInlineGetArtifactBudget)
 	}
 	for _, wu := range workUnits {
 		if artIDs := directArtIDs[wu.FullName]; len(artIDs) > 0 {
@@ -787,12 +788,19 @@ func truncateModuleSummary(s string, maxBytes int) string {
 	return s[:end] + "\n... (truncated)"
 }
 
-func printModuleDetails(details *ModuleDetails, showMetadata bool) {
-	fprintModuleDetails(os.Stdout, details, showMetadata)
+func printModuleDetailsWithDerived(derivedPrefix string, details *ModuleDetails, showMetadata bool) {
+	fprintModuleDetailsWithDerived(os.Stdout, derivedPrefix, details, showMetadata)
 }
 
 func fprintModuleDetails(out io.Writer, details *ModuleDetails, showMetadata bool) {
+	fprintModuleDetailsWithDerived(out, "", details, showMetadata)
+}
+
+func fprintModuleDetailsWithDerived(out io.Writer, derivedPrefix string, details *ModuleDetails, showMetadata bool) {
 	var buf bytes.Buffer
+	if derivedPrefix != "" {
+		buf.WriteString(derivedPrefix)
+	}
 	statusClean := strings.TrimPrefix(details.ModuleStatus, "MODULE_STATUS_")
 	fmt.Fprintf(&buf, "Module:        %s\n", details.ModuleName)
 	fmt.Fprintf(&buf, "Invocation:    rootInvocations/%s\n", details.InvocationID)
@@ -909,20 +917,15 @@ func fprintModuleDetails(out io.Writer, details *ModuleDetails, showMetadata boo
 		format.FprintRootInvocationAdditionalMetadata(&buf, details.RootInvocation)
 	}
 
-	notices := details.ArtifactNotices
-	if details.formatNotices != nil {
-		remaining := artifact.DefaultMaxOutputBytes - buf.Len() - 1
-		if remaining <= 0 {
-			notices = ""
-		} else {
-			notices = details.formatNotices(remaining)
+	formatInline := details.formatNotices
+	if formatInline == nil && details.ArtifactNotices != "" {
+		notices := details.ArtifactNotices
+		formatInline = func(maxBytes int) string {
+			if maxBytes > 0 && len(notices) > maxBytes {
+				return ""
+			}
+			return notices
 		}
-	} else if notices != "" && buf.Len()+1+len(notices) > artifact.DefaultMaxOutputBytes {
-		notices = ""
 	}
-	if notices != "" {
-		fmt.Fprintln(&buf)
-		fmt.Fprint(&buf, notices)
-	}
-	fmt.Fprint(out, buf.String())
+	fmt.Fprint(out, format.FitPrimaryAndInlineArtifacts(buf.String(), formatInline, !showMetadata))
 }

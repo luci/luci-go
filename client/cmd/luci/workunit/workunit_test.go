@@ -15,11 +15,13 @@
 package workunit
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -27,6 +29,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/client/cmd/luci/testutil"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -761,7 +764,7 @@ func TestCmdWorkUnit(t *testing.T) {
 			childName := "rootInvocations/ants-i11400010573721720/workUnits/ants-wu11400010573721720"
 			passChildName := "rootInvocations/ants-i11400010573721720/workUnits/ants-wu11400010573721721"
 
-			var childListArtCalls int
+			var childListArtCalls atomic.Int32
 			client := &mockWorkUnitResultDBClient{
 				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
 					switch in.Name {
@@ -775,7 +778,7 @@ func TestCmdWorkUnit(t *testing.T) {
 				},
 				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
 					if in.Parent == childName {
-						childListArtCalls++
+						childListArtCalls.Add(1)
 						return &pb.ListArtifactsResponse{
 							Artifacts: []*pb.Artifact{
 								{Name: childName + "/artifacts/invocationFailed_summary_markdown", ArtifactId: "invocationFailed_summary_markdown", FetchUrl: srv.URL + "/summary"},
@@ -797,14 +800,373 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, outRoot, should.ContainSubstring("DeviceNotAvailableException: Device lost"))
 			assert.Loosely(t, outRoot, should.ContainSubstring("luci artifact get -invocationid=ants-i11400010573721720 -workunitid=ants-wu11400010573721720 -artifactid=invocationFailed_trace"))
 
-			childListArtCalls = 0
+			childListArtCalls.Store(0)
 			rChild := &workUnitGetRun{client: client, httpClient: srv.Client(), invocationID: "ants-i11400010573721720", workUnitID: "ants-wu11400010573721720"}
 			outChild := testutil.CaptureStdout(func() {
 				assert.Loosely(t, rChild.Run(nil, nil, nil), should.Equal(0))
 			})
-			assert.Loosely(t, childListArtCalls, should.Equal(2))
+			assert.Loosely(t, childListArtCalls.Load(), should.Equal(int32(2)))
 			assert.Loosely(t, outChild, should.ContainSubstring("Full summary from invocationFailed_summary_markdown"))
 			assert.Loosely(t, outChild, should.ContainSubstring("luci artifact get -invocationid=ants-i11400010573721720 -workunitid=ants-wu11400010573721720 -artifactid=invocationFailed_summary_markdown"))
+			assert.Loosely(t, outChild, should.NotContainSubstring("Work Unit Artifacts:"))
+		})
+
+		t.Run(`caps noisy work-unit artifacts to 1.5 KB and deduplicates invocationFailed_trace`, func(t *ftt.Test) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = w.Write([]byte("TargetSetupError: failed to flash device"))
+			}))
+			defer srv.Close()
+
+			wuName := "rootInvocations/ants-i77100010600769898/workUnits/ants-wu900"
+			arts := make([]*pb.Artifact, 0, 202)
+			arts = append(arts,
+				&pb.Artifact{
+					Name:       wuName + "/artifacts/invocationFailed_trace",
+					ArtifactId: "invocationFailed_trace",
+					FetchUrl:   srv.URL + "/trace",
+					SizeBytes:  40,
+				},
+				&pb.Artifact{
+					Name:         wuName + "/artifacts/host_log_setup.txt",
+					ArtifactId:   "host_log_setup.txt",
+					ArtifactType: "HOST_LOG",
+					ContentType:  "text/plain",
+					SizeBytes:    65536,
+				},
+			)
+			for i := range 200 {
+				arts = append(arts, &pb.Artifact{
+					Name:       fmt.Sprintf("%s/artifacts/injectables_%03d.json", wuName, i),
+					ArtifactId: fmt.Sprintf("injectables_%03d.json", i),
+					SizeBytes:  2048,
+				})
+			}
+
+			client := &mockWorkUnitResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:            wuName,
+						WorkUnitId:      "ants-wu900",
+						Kind:            "TFC_COMMAND_TASK",
+						State:           pb.WorkUnit_FAILED,
+						SummaryMarkdown: "TargetSetupError",
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == wuName {
+						return &pb.ListArtifactsResponse{Artifacts: arts}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			r := &workUnitGetRun{
+				client:       client,
+				httpClient:   srv.Client(),
+				invocationID: "ants-i77100010600769898",
+				workUnitID:   "ants-wu900",
+				out:          &buf,
+			}
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, out, should.ContainSubstring("TargetSetupError: failed to flash device"))
+			idx := strings.Index(out, "Work Unit Artifacts:\n")
+			assert.Loosely(t, idx > 0, should.BeTrue)
+			inlineSection := out[idx:]
+			assert.Loosely(t, inlineSection, should.ContainSubstring("host_log_setup.txt"))
+			assert.Loosely(t, inlineSection, should.NotContainSubstring("invocationFailed_trace"))
+			assert.Loosely(t, len(inlineSection) <= format.DefaultInlineGetArtifactBudget, should.BeTrue)
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+		})
+
+		t.Run(`skips artifact RPCs for SUCCEEDED and benign SKIPPED work units, while inlining CANCELLED`, func(t *ftt.Test) {
+			rootWUName := "rootInvocations/ants-i77100010600769898/workUnits/root"
+			wuName := "rootInvocations/ants-i77100010600769898/workUnits/ants-wu100"
+
+			for _, tc := range []struct {
+				name            string
+				wu              *pb.WorkUnit
+				rootAgg         *pb.TestAggregation
+				expectListArts  bool
+				expectQueryWU   bool
+				expectArtifacts bool
+			}{
+				{
+					name: "non-root SUCCEEDED with empty summary makes zero artifact RPCs",
+					wu: &pb.WorkUnit{
+						Name:       wuName,
+						WorkUnitId: "ants-wu100",
+						Parent:     rootWUName,
+						State:      pb.WorkUnit_SUCCEEDED,
+					},
+					expectListArts:  false,
+					expectQueryWU:   false,
+					expectArtifacts: false,
+				},
+				{
+					name: "root SUCCEEDED with verdicts makes zero artifact RPCs",
+					wu: &pb.WorkUnit{
+						Name:       rootWUName,
+						WorkUnitId: "root",
+						State:      pb.WorkUnit_SUCCEEDED,
+					},
+					rootAgg: &pb.TestAggregation{
+						TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{Passed: 5},
+					},
+					expectListArts:  false,
+					expectQueryWU:   false,
+					expectArtifacts: false,
+				},
+				{
+					name: "benign SKIPPED without failure artifacts makes zero ancestor QueryWorkUnits RPCs and omits inline artifact block",
+					wu: &pb.WorkUnit{
+						Name:       wuName,
+						WorkUnitId: "ants-wu100",
+						Parent:     rootWUName,
+						State:      pb.WorkUnit_SKIPPED,
+					},
+					expectListArts:  true,
+					expectQueryWU:   false,
+					expectArtifacts: false,
+				},
+				{
+					name: "CANCELLED work unit inlines work-unit and ancestor artifacts within 1.5 KB",
+					wu: &pb.WorkUnit{
+						Name:            wuName,
+						WorkUnitId:      "ants-wu100",
+						Parent:          rootWUName,
+						State:           pb.WorkUnit_CANCELLED,
+						SummaryMarkdown: "Cancelled due to timeout",
+					},
+					expectListArts:  true,
+					expectQueryWU:   true,
+					expectArtifacts: true,
+				},
+			} {
+				t.Run(tc.name, func(t *ftt.Test) {
+					var listArtCalls, queryWUCalls atomic.Int32
+					client := &mockWorkUnitResultDBClient{
+						getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+							return tc.wu, nil
+						},
+						queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+							if tc.rootAgg != nil {
+								return &pb.QueryTestAggregationsResponse{Aggregations: []*pb.TestAggregation{tc.rootAgg}}, nil
+							}
+							return &pb.QueryTestAggregationsResponse{}, nil
+						},
+						queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+							queryWUCalls.Add(1)
+							if in.GetPredicate().GetAncestorsOf() == wuName {
+								return &pb.QueryWorkUnitsResponse{
+									WorkUnits: []*pb.WorkUnit{{Name: rootWUName, WorkUnitId: "root"}},
+								}, nil
+							}
+							return &pb.QueryWorkUnitsResponse{}, nil
+						},
+						listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+							listArtCalls.Add(1)
+							if in.Parent == wuName {
+								return &pb.ListArtifactsResponse{
+									Artifacts: []*pb.Artifact{
+										{
+											Name:         wuName + "/artifacts/host_log_cancelled.txt",
+											ArtifactId:   "host_log_cancelled.txt",
+											ArtifactType: "HOST_LOG",
+											ContentType:  "text/plain",
+											SizeBytes:    4096,
+										},
+									},
+								}, nil
+							}
+							if in.Parent == rootWUName {
+								return &pb.ListArtifactsResponse{
+									Artifacts: []*pb.Artifact{
+										{
+											Name:         rootWUName + "/artifacts/root_bugreport.zip",
+											ArtifactId:   "root_bugreport.zip",
+											ArtifactType: "BUGREPORTZ",
+											SizeBytes:    8192,
+										},
+									},
+								}, nil
+							}
+							return &pb.ListArtifactsResponse{}, nil
+						},
+					}
+
+					wuID := tc.wu.GetWorkUnitId()
+					var buf bytes.Buffer
+					r := &workUnitGetRun{
+						client:       client,
+						invocationID: "ants-i77100010600769898",
+						workUnitID:   wuID,
+						out:          &buf,
+					}
+					assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+					out := buf.String()
+
+					if !tc.expectListArts {
+						assert.Loosely(t, listArtCalls.Load(), should.Equal(int32(0)))
+					}
+					if !tc.expectQueryWU {
+						assert.Loosely(t, queryWUCalls.Load(), should.Equal(int32(0)))
+					}
+					if tc.expectArtifacts {
+						assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:\n"))
+						assert.Loosely(t, out, should.ContainSubstring("host_log_cancelled.txt"))
+						assert.Loosely(t, out, should.ContainSubstring("Ancestor Work Unit Artifacts:\n"))
+						assert.Loosely(t, out, should.ContainSubstring("root_bugreport.zip"))
+						idx := strings.Index(out, "Work Unit Artifacts:\n")
+						assert.Loosely(t, len(out[idx:]) <= format.DefaultInlineGetArtifactBudget, should.BeTrue)
+					} else {
+						assert.Loosely(t, out, should.NotContainSubstring("Work Unit Artifacts:"))
+						assert.Loosely(t, out, should.NotContainSubstring("Ancestor Work Unit Artifacts:"))
+					}
+				})
+			}
+		})
+
+		t.Run(`benign SKIPPED child work unit does not leak FAILED parent or RootInvocation error summary`, func(t *ftt.Test) {
+			rootWUName := "rootInvocations/ants-i77100010600769898/workUnits/root"
+			parentWUName := "rootInvocations/ants-i77100010600769898/workUnits/ants-wu-parent"
+			skippedChildName := "rootInvocations/ants-i77100010600769898/workUnits/ants-wu-skipped"
+
+			var queryWUCalls atomic.Int32
+			client := &mockWorkUnitResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:            in.Name,
+						State:           pb.RootInvocation_FAILED,
+						SummaryMarkdown: "Root invocation harness crash: infrastructure failure",
+					}, nil
+				},
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					switch in.Name {
+					case skippedChildName:
+						return &pb.WorkUnit{
+							Name:       skippedChildName,
+							WorkUnitId: "ants-wu-skipped",
+							Parent:     parentWUName,
+							State:      pb.WorkUnit_SKIPPED,
+						}, nil
+					case parentWUName:
+						return &pb.WorkUnit{
+							Name:            parentWUName,
+							WorkUnitId:      "ants-wu-parent",
+							Parent:          rootWUName,
+							State:           pb.WorkUnit_FAILED,
+							SummaryMarkdown: "Parent TradeFed crash: DeviceNotAvailableException",
+						}, nil
+					default:
+						return &pb.WorkUnit{
+							Name:            rootWUName,
+							WorkUnitId:      "root",
+							State:           pb.WorkUnit_FAILED,
+							SummaryMarkdown: "Root work unit failed",
+						}, nil
+					}
+				},
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					queryWUCalls.Add(1)
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{
+								Name:            parentWUName,
+								WorkUnitId:      "ants-wu-parent",
+								Parent:          rootWUName,
+								State:           pb.WorkUnit_FAILED,
+								SummaryMarkdown: "Parent TradeFed crash: DeviceNotAvailableException",
+							},
+							{
+								Name:            rootWUName,
+								WorkUnitId:      "root",
+								State:           pb.WorkUnit_FAILED,
+								SummaryMarkdown: "Root work unit failed",
+							},
+						},
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					return &pb.ListArtifactsResponse{
+						Artifacts: []*pb.Artifact{
+							{
+								Name:         in.Parent + "/artifacts/host_log.txt",
+								ArtifactId:   "host_log.txt",
+								ArtifactType: "HOST_LOG",
+								SizeBytes:    2048,
+							},
+						},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			r := &workUnitGetRun{
+				client:       client,
+				httpClient:   &http.Client{},
+				invocationID: "ants-i77100010600769898",
+				workUnitID:   "ants-wu-skipped",
+				out:          &buf,
+			}
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, queryWUCalls.Load(), should.Equal(int32(0)))
+			assert.Loosely(t, out, should.ContainSubstring("State:        SKIPPED"))
+			assert.Loosely(t, out, should.NotContainSubstring("Parent TradeFed crash"))
+			assert.Loosely(t, out, should.NotContainSubstring("Root invocation harness crash"))
+			assert.Loosely(t, out, should.NotContainSubstring("Work Unit Artifacts:"))
+			assert.Loosely(t, out, should.NotContainSubstring("Ancestor Work Unit Artifacts:"))
+		})
+
+		t.Run(`caps oversized work-unit primary summary at 9.5 KB while retaining inline failure artifacts`, func(t *ftt.Test) {
+			wuName := "rootInvocations/ants-i77100010600769898/workUnits/ants-wu-huge"
+			hugeSummary := "TOP_SETUP_FAILURE\n" + strings.Repeat("  at com.android.tradefed.targetprep.DeviceFlashPreparer.setUp(DeviceFlashPreparer.java:180)\n", 140)
+			client := &mockWorkUnitResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:            wuName,
+						WorkUnitId:      "ants-wu-huge",
+						State:           pb.WorkUnit_FAILED,
+						SummaryMarkdown: hugeSummary,
+					}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == wuName {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:         wuName + "/artifacts/host_log_flash.txt",
+									ArtifactId:   "host_log_flash.txt",
+									ArtifactType: "HOST_LOG",
+									ContentType:  "text/plain",
+									SizeBytes:    16384,
+								},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			r := &workUnitGetRun{
+				client:       client,
+				invocationID: "ants-i77100010600769898",
+				workUnitID:   "ants-wu-huge",
+				out:          &buf,
+			}
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("TOP_SETUP_FAILURE"))
+			assert.Loosely(t, out, should.ContainSubstring("bytes truncated; pass -show-metadata to view full output"))
+			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:\n"))
+			assert.Loosely(t, out, should.ContainSubstring("host_log_flash.txt"))
 		})
 	})
 }
