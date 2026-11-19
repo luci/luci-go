@@ -2210,7 +2210,12 @@ func TestTags(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-tag-writer@example.com", "project:realm", perm.WriteInstanceTag.Perm(), authtest.RestrictAttribute("cipd.instance.tagKey", "a")),
+			authtest.MockPermission("user:reader@example.com", "project:realm", perm.DiagnoseACL.Perm()),
+			authtest.MockPermission("user:writer@google.com", "project:realm", perm.DiagnoseACL.Perm()),
+			authtest.MockPermission("user:owner@google.com", "project:realm", perm.DiagnoseACL.Perm()),
+		)
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &repopb.PrefixMetadata{
@@ -2270,6 +2275,35 @@ func TestTags(t *testing.T) {
 		}
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
+
+		t.Run("AttachTags via realm permission with attribute", func(t *ftt.Test) {
+			_, err := impl.AttachTags(as("realm-tag-writer@example.com"), &repopb.AttachTagsRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Tags:     tags("a:0", "a:1"),
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, getTag(inst, "a:0").RegisteredBy, should.Equal("user:realm-tag-writer@example.com"))
+			assert.Loosely(t, getTag(inst, "a:1").RegisteredBy, should.Equal("user:realm-tag-writer@example.com"))
+
+			// Second tag key "b" is not allowed; permitted "a:2" is not attached either.
+			_, err = impl.AttachTags(as("realm-tag-writer@example.com"), &repopb.AttachTagsRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Tags:     tags("a:2", "b:1"),
+			})
+			assert.Loosely(t, getTag(inst, "a:2"), should.BeNil)
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+		})
 
 		t.Run("AttachTags/DetachTags happy path", func(t *ftt.Test) {
 			_, err := impl.AttachTags(as("writer@google.com"), &repopb.AttachTagsRequest{
@@ -2383,8 +2417,8 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     tags("good:tag"),
 				})
-				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike("has no required WRITER role"))
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.ErrIsLike(t, err, "does not have role: WRITER")
 			})
 			t.Run("DetachTags", func(t *ftt.Test) {
 				_, err := impl.DetachTags(as("writer@google.com"), &repopb.DetachTagsRequest{

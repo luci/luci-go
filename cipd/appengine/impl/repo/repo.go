@@ -1234,7 +1234,11 @@ func (impl *repoImpl) AttachTags(ctx context.Context, r *repopb.AttachTagsReques
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
+	var permsToCheck perm.Set
+	for _, t := range r.Tags {
+		permsToCheck.Add(perm.WriteInstanceTag.Bind(t.Key))
+	}
+	if _, _, err := impl.hasPermission(ctx, r.Package, permsToCheck, nil); err != nil {
 		return nil, err
 	}
 
