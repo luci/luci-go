@@ -811,10 +811,32 @@ function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
+const DEFAULT_STORAGE_KEY = 'fcon_prototype_mock_fixtures';
+
+function getDefaultPrototypeStorageKey(): string {
+  if (typeof window === 'undefined') {
+    return DEFAULT_STORAGE_KEY;
+  }
+  const rawPathname = window.location?.pathname?.trim();
+  if (!rawPathname) {
+    return DEFAULT_STORAGE_KEY;
+  }
+  const normalizedPath =
+    rawPathname
+      .replace(/\/+/g, '/')
+      .replace(/\/+$/, '')
+      .replace(/(?:^|\/)index\.html$/i, '') || '/';
+  return `${DEFAULT_STORAGE_KEY}:${normalizedPath}`;
+}
+
 export interface PrototypeOptions {
   /** If true, persists fixture mutations to localStorage */
   persistToLocalStorage?: boolean;
-  /** Key for localStorage state storage */
+  /**
+   * Key for localStorage state storage. Defaults to a path-scoped key
+   * (`fcon_prototype_mock_fixtures:<pathname>`) so prototypes hosted on a
+   * shared origin do not collide.
+   */
   localStorageKey?: string;
   /** Simulated network latency in milliseconds */
   latencyMs?: number;
@@ -846,7 +868,7 @@ export class FleetConsoleMockAPI {
   private static latencyMs = 0;
   private static prototypeMode = false;
   private static persistStorage = false;
-  private static storageKey = 'fcon_prototype_mock_fixtures';
+  private static storageKey = DEFAULT_STORAGE_KEY;
   private static nativeFetch: typeof globalThis.fetch | null = null;
 
   /**
@@ -855,9 +877,8 @@ export class FleetConsoleMockAPI {
   static initPrototypeMode(options: PrototypeOptions = {}): void {
     this.prototypeMode = true;
     this.persistStorage = options.persistToLocalStorage ?? true;
-    if (options.localStorageKey) {
-      this.storageKey = options.localStorageKey;
-    }
+    const customStorageKey = options.localStorageKey?.trim();
+    this.storageKey = customStorageKey || getDefaultPrototypeStorageKey();
     if (options.latencyMs !== undefined) {
       this.latencyMs = options.latencyMs;
     }
@@ -1011,7 +1032,7 @@ export class FleetConsoleMockAPI {
     this.prototypeMode = false;
     this.latencyMs = 0;
     this.persistStorage = false;
-    this.storageKey = 'fcon_prototype_mock_fixtures';
+    this.storageKey = DEFAULT_STORAGE_KEY;
   }
 
   /**

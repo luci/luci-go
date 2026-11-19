@@ -26,11 +26,15 @@ import { FleetConsoleMockAPI } from './mock_api_handler';
 
 describe('FleetConsoleMockAPI', () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    window.history.replaceState(null, '', '/');
     FleetConsoleMockAPI.resetFixtures();
   });
 
   afterEach(() => {
     FleetConsoleMockAPI.disableBrowserInterceptor();
+    window.localStorage.clear();
+    window.history.replaceState(null, '', '/');
   });
 
   it('provides default fixtures for standard pRPC endpoints', () => {
@@ -178,6 +182,130 @@ describe('FleetConsoleMockAPI', () => {
     const elapsed = Date.now() - startTime;
     expect(elapsed).toBeLessThan(100);
     FleetConsoleMockAPI.disableBrowserInterceptor();
+  });
+
+  it('isolates persisted prototype fixtures by normalized pathname across mocks on the same origin', () => {
+    const defaultTotal =
+      sampleChromeosDevices.length + sampleAndroidDevices.length;
+    window.localStorage.setItem(
+      'fcon_prototype_mock_fixtures',
+      JSON.stringify({ CountDevices: { total: 1 } }),
+    );
+    window.history.replaceState(
+      null,
+      '',
+      '/asset/mock-a/#/ui/fleet/p/chromeos/repairs',
+    );
+
+    FleetConsoleMockAPI.initPrototypeMode();
+    FleetConsoleMockAPI.setFixture('CountDevices', { total: 111 });
+
+    expect(
+      JSON.parse(
+        window.localStorage.getItem(
+          'fcon_prototype_mock_fixtures:/asset/mock-a',
+        )!,
+      ).CountDevices,
+    ).toEqual({ total: 111 });
+
+    // Opening a second mock on the same origin ignores both mock-a and legacy
+    // unscoped localStorage entries.
+    FleetConsoleMockAPI.disableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+    window.history.replaceState(
+      null,
+      '',
+      '/asset/mock-b/#/ui/fleet/p/chromeos/repairs',
+    );
+    FleetConsoleMockAPI.initPrototypeMode();
+
+    expect(
+      (FleetConsoleMockAPI.getFixture('CountDevices') as { total: number })
+        .total,
+    ).toBe(defaultTotal);
+
+    // Resetting fixtures on mock-b only clears mock-b storage.
+    FleetConsoleMockAPI.setFixture('CountDevices', { total: 222 });
+    FleetConsoleMockAPI.resetFixtures();
+
+    expect(
+      window.localStorage.getItem('fcon_prototype_mock_fixtures:/asset/mock-b'),
+    ).toBeNull();
+    expect(
+      window.localStorage.getItem('fcon_prototype_mock_fixtures:/asset/mock-a'),
+    ).not.toBeNull();
+
+    // Reloading mock-a with /index.html and a different hash route restores its
+    // persisted state.
+    FleetConsoleMockAPI.disableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+    window.history.replaceState(
+      null,
+      '',
+      '/asset/mock-a/index.html#/ui/fleet/p/chromeos/devices',
+    );
+    FleetConsoleMockAPI.initPrototypeMode();
+
+    expect(FleetConsoleMockAPI.getFixture('CountDevices')).toEqual({
+      total: 111,
+    });
+  });
+
+  it('honors an explicit localStorageKey option and falls back to the path-scoped key when omitted', () => {
+    window.history.replaceState(
+      null,
+      '',
+      '/hosting/v1/mocks/demo-a/v1/index.html#/ui/fleet/p/chromeos/devices',
+    );
+
+    FleetConsoleMockAPI.initPrototypeMode({
+      localStorageKey: 'custom_proto_key',
+    });
+    FleetConsoleMockAPI.setFixture('CountDevices', { total: 333 });
+
+    expect(
+      JSON.parse(window.localStorage.getItem('custom_proto_key')!).CountDevices,
+    ).toEqual({ total: 333 });
+    expect(
+      window.localStorage.getItem(
+        'fcon_prototype_mock_fixtures:/hosting/v1/mocks/demo-a/v1',
+      ),
+    ).toBeNull();
+
+    FleetConsoleMockAPI.initPrototypeMode({ localStorageKey: '   ' });
+    FleetConsoleMockAPI.setFixture('CountDevices', { total: 444 });
+
+    expect(
+      JSON.parse(
+        window.localStorage.getItem(
+          'fcon_prototype_mock_fixtures:/hosting/v1/mocks/demo-a/v1',
+        )!,
+      ).CountDevices,
+    ).toEqual({ total: 444 });
+    expect(
+      JSON.parse(window.localStorage.getItem('custom_proto_key')!).CountDevices,
+    ).toEqual({ total: 333 });
+
+    // Root path and /index.html normalize to the same root-scoped key.
+    FleetConsoleMockAPI.disableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+    window.history.replaceState(null, '', '/index.html#/ui/fleet/p/chromeos');
+    FleetConsoleMockAPI.initPrototypeMode();
+    FleetConsoleMockAPI.setFixture('CountDevices', { total: 555 });
+
+    expect(
+      JSON.parse(window.localStorage.getItem('fcon_prototype_mock_fixtures:/')!)
+        .CountDevices,
+    ).toEqual({ total: 555 });
+
+    FleetConsoleMockAPI.disableBrowserInterceptor();
+    FleetConsoleMockAPI.resetFixtures();
+    window.history.replaceState(null, '', '/#/ui/fleet/p/chromeos');
+    FleetConsoleMockAPI.initPrototypeMode();
+
+    expect(FleetConsoleMockAPI.getFixture('CountDevices')).toEqual({
+      total: 555,
+    });
   });
 
   it('provides GetDevice fixture as typed default', () => {
