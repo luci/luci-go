@@ -246,8 +246,9 @@ type RepositoryClient interface {
 	// If such instance is already registered by someone else, returns
 	// ALREADY_REGISTERED status. This is not an error.
 	//
-	// Callers must have roles WRITER or OWNER for the package prefix. Returns
-	// PERMISSION_DENIED otherwise.
+	// Callers must have `cipd.packages.writeInstance` permission (or legacy
+	// WRITER or OWNER role) for the package prefix. Returns PERMISSION_DENIED
+	// otherwise.
 	//
 	// Also returns PERMISSION_DENIED if the prefix is configured to bill GCS
 	// usage to a user project, but the CIPD backend has no permission to do so.
@@ -933,8 +934,9 @@ type RepositoryServer interface {
 	// If such instance is already registered by someone else, returns
 	// ALREADY_REGISTERED status. This is not an error.
 	//
-	// Callers must have roles WRITER or OWNER for the package prefix. Returns
-	// PERMISSION_DENIED otherwise.
+	// Callers must have `cipd.packages.writeInstance` permission (or legacy
+	// WRITER or OWNER role) for the package prefix. Returns PERMISSION_DENIED
+	// otherwise.
 	//
 	// Also returns PERMISSION_DENIED if the prefix is configured to bill GCS
 	// usage to a user project, but the CIPD backend has no permission to do so.

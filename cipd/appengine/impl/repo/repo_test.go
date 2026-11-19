@@ -1026,7 +1026,10 @@ func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:owner@example.com", "project:realm", perm.DiagnoseACL.Perm()),
+			authtest.MockPermission("user:realm-writer@google.com", "project:realm", perm.WriteInstance.Perm()),
+		)
 		ctx = as("owner@google.com")
 
 		meta := testutil.MetadataStore{}
@@ -1052,10 +1055,16 @@ func TestRegisterInstance(t *testing.T) {
 		impl := newMockImpl(&meta, &cas)
 		impl.registerTasks()
 		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			realm := ""
+			if strings.HasPrefix(pkg, "a/") {
+				realm = "project:realm"
+			}
 			return &prefixcfg.Entry{
 				Service: &prefixcfg.ServiceEntry{
-					AllowWritersFromRegexp: []*regexp.Regexp{regexp.MustCompile(`^.*@google.com$`)},
+					AllowWritersFromRegexp:  []*regexp.Regexp{regexp.MustCompile(`^.*@google\.com$`)},
+					EnableLegacyAclFallback: true,
 				},
+				Realm: realm,
 			}, nil
 		}
 
@@ -1155,6 +1164,10 @@ func TestRegisterInstance(t *testing.T) {
 					RegisteredBy: "user:someone@google.com",
 				},
 			}))
+
+			resp, err = impl.RegisterInstance(as("realm-writer@google.com"), inst)
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp.Status, should.Equal(repopb.RegistrationStatus_ALREADY_REGISTERED))
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
@@ -1198,16 +1211,16 @@ func TestRegisterInstance(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`prefix "some/other/root" doesn't exist or "user:owner@google.com" is not allowed to see it`))
 		})
 
-		t.Run("No owner access - acl", func(t *ftt.Test) {
+		t.Run("No writer access - acl", func(t *ftt.Test) {
 			_, err := impl.RegisterInstance(as("reader@google.com"), inst)
-			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike(`"user:reader@google.com" has no required WRITER role in prefix "a/b" because: acl`))
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, `"user:reader@google.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "project:realm"), and also does not have role: WRITER`)
 		})
 
-		t.Run("No owner access - config", func(t *ftt.Test) {
+		t.Run("No writer access - config", func(t *ftt.Test) {
 			_, err := impl.RegisterInstance(as("owner@example.com"), inst)
-			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike(`"user:owner@example.com" has no required WRITER role in prefix "a/b" because: policy`))
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, `"user:owner@example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "project:realm"): rejected by global policy`)
 		})
 
 		t.Run("Corrupted package zip", func(t *ftt.Test) {
@@ -4120,6 +4133,7 @@ func TestVSA(t *testing.T) {
 			impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
 				return &prefixcfg.Entry{
 					Service: &prefixcfg.ServiceEntry{
+						EnableLegacyAclFallback:           true,
 						ExemptFromVerifySoftwareArtifacts: true,
 					},
 				}, nil

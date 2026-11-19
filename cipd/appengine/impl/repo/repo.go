@@ -674,15 +674,12 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
+	prefix, _, err := impl.hasPermission(ctx, r.Package, perm.WriteInstance, nil)
+	if err != nil {
 		return nil, err
 	}
 
 	instance := (&model.Instance{}).FromProto(ctx, r)
-	prefix, err := impl.lookupPrefixCfg(ctx, r.Package)
-	if err != nil {
-		return nil, err
-	}
 
 	var vsaResp *api.VerifySoftwareArtifactResponse
 	if prefix.Service.ExemptFromVerifySoftwareArtifacts {
