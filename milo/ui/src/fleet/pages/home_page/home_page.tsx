@@ -97,10 +97,10 @@ export const HomePage = () => {
       : undefined;
   const chromeosRepairQueueTotal =
     chromeosRepairQueueQuery.data?.totalSize ?? 0;
-  const chromeosIsLoading =
-    chromeosQuery.isPending || chromeosRepairQueueQuery.isPending;
-  const chromeosIsError =
-    chromeosQuery.isError || chromeosRepairQueueQuery.isError;
+  const chromeosIsLoading = chromeosQuery.isPending;
+  const chromeosIsError = chromeosQuery.isError;
+  const chromeosRepairIsLoading = chromeosRepairQueueQuery.isPending;
+  const chromeosRepairIsError = chromeosRepairQueueQuery.isError;
 
   const browserTotal = browserQuery.data?.total ?? 0;
 
@@ -188,6 +188,8 @@ export const HomePage = () => {
                   secondaryLinkIcon={<ConstructionIcon />}
                   secondTotalText="Need manual repair"
                   secondTotal={chromeosRepairQueueTotal}
+                  isSecondaryLoading={chromeosRepairIsLoading}
+                  isSecondaryError={chromeosRepairIsError}
                 />
               </Grid2>
               {/* Browser Card */}

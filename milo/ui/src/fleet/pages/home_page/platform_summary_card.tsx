@@ -77,6 +77,8 @@ export interface PlatformSummaryCardProps {
   secondaryLinkIcon?: ReactNode;
   secondTotal?: number;
   secondTotalText?: string;
+  isSecondaryLoading?: boolean;
+  isSecondaryError?: boolean;
   healthyPercentage?: number;
   healthChipSuffix?: string;
 }
@@ -96,6 +98,8 @@ export function PlatformSummaryCard({
   secondaryLinkIcon,
   secondTotal,
   secondTotalText,
+  isSecondaryLoading,
+  isSecondaryError,
   healthyPercentage,
   healthChipSuffix,
 }: PlatformSummaryCardProps) {
@@ -114,6 +118,9 @@ export function PlatformSummaryCard({
       : null;
 
   const hasAnyIcon = Boolean(linkIcon || secondaryLinkIcon);
+  const secondaryLoading = isSecondaryLoading ?? isLoading;
+  const showSecondaryWarning =
+    !secondaryLoading && !isLoading && total === 0 && secondTotal === 0;
 
   return (
     <Card
@@ -127,14 +134,7 @@ export function PlatformSummaryCard({
       }}
     >
       <CardContent>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            mb: 2,
-          }}
-        >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
           {logoSrc && (
             <img
               src={logoSrc}
@@ -145,7 +145,7 @@ export function PlatformSummaryCard({
           <Typography variant="h5" component="h2" sx={{ m: 0 }}>
             {title}
           </Typography>
-          {roundedPercentage !== undefined && (
+          {!isError && roundedPercentage !== undefined && (
             <Box
               sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}
             >
@@ -199,64 +199,15 @@ export function PlatformSummaryCard({
               ) : (
                 <Box sx={{ gridColumn: 1 }} />
               ))}
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                minWidth: 'max-content',
-                gridColumn: hasAnyIcon ? 3 : 1,
-                '@container (max-width: 320px)': {
-                  gridColumn: hasAnyIcon ? 2 : 1,
-                  ml: hasAnyIcon ? 1 : 0,
-                },
-              }}
-            >
-              <Button
-                variant="text"
-                component={NavLink}
-                to={linkTo}
-                sx={{
-                  ...metricTileSx,
-                  textTransform: 'none',
-                  color: 'inherit',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  padding: 1,
-                  minWidth: 0,
-                }}
-              >
-                <Typography
-                  variant="h3"
-                  component="div"
-                  sx={{ mb: 0.5, minWidth: 60 }}
-                >
-                  {isLoading ? (
-                    <Skeleton variant="text" width="100%" />
-                  ) : (
-                    (total?.toLocaleString('en-US') ?? 0)
-                  )}
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                  }}
-                  aria-label={
-                    totalText
-                      ? `${totalText} in ${title} platform`
-                      : `Total Devices in ${title} platform`
-                  }
-                >
-                  <Typography color="text.secondary" variant="body2" noWrap>
-                    {totalText ?? 'Total Devices'}
-                  </Typography>
-                </Box>
-              </Button>
-              {!isLoading && total === 0 && <PermissionWarningTooltip />}
-            </Box>
+            <SummaryMetricTile
+              title={title}
+              hasAnyIcon={hasAnyIcon}
+              total={total}
+              totalText={totalText}
+              isLoading={isLoading}
+              showPermissionWarning={!isLoading && total === 0}
+              linkTo={linkTo}
+            />
             <Box
               sx={{
                 display: 'flex',
@@ -303,66 +254,16 @@ export function PlatformSummaryCard({
                   ) : (
                     <Box sx={{ gridColumn: 1 }} />
                   ))}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    minWidth: 'max-content',
-                    gridColumn: hasAnyIcon ? 3 : 1,
-                    '@container (max-width: 320px)': {
-                      gridColumn: hasAnyIcon ? 2 : 1,
-                      ml: hasAnyIcon ? 1 : 0,
-                    },
-                  }}
-                >
-                  <Button
-                    variant="text"
-                    component={NavLink}
-                    to={secondaryLinkTo}
-                    sx={{
-                      ...metricTileSx,
-                      textTransform: 'none',
-                      color: 'inherit',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      padding: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <Typography
-                      variant="h3"
-                      component="div"
-                      sx={{ mb: 0.5, minWidth: 60 }}
-                    >
-                      {isLoading ? (
-                        <Skeleton variant="text" width="100%" />
-                      ) : (
-                        (secondTotal?.toLocaleString('en-US') ?? 0)
-                      )}
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                      aria-label={
-                        secondTotalText
-                          ? `${secondTotalText} in ${title} platform`
-                          : `Total Devices in ${title} platform`
-                      }
-                    >
-                      <Typography color="text.secondary" variant="body2" noWrap>
-                        {secondTotalText ?? 'Total Devices'}
-                      </Typography>
-                    </Box>
-                  </Button>
-                  {!isLoading && total === 0 && secondTotal === 0 && (
-                    <PermissionWarningTooltip />
-                  )}
-                </Box>
+                <SummaryMetricTile
+                  title={title}
+                  hasAnyIcon={hasAnyIcon}
+                  total={secondTotal}
+                  totalText={secondTotalText}
+                  isLoading={secondaryLoading}
+                  isError={isSecondaryError}
+                  showPermissionWarning={showSecondaryWarning}
+                  linkTo={secondaryLinkTo}
+                />
                 <Box
                   sx={{
                     display: 'flex',
@@ -397,5 +298,100 @@ export function PlatformSummaryCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+interface SummaryMetricTileProps {
+  title: string;
+  hasAnyIcon: boolean;
+  total?: number;
+  totalText?: string;
+  isLoading?: boolean;
+  isError?: boolean;
+  showPermissionWarning?: boolean;
+  linkTo: string;
+}
+
+function SummaryMetricTile({
+  title,
+  hasAnyIcon,
+  total,
+  totalText,
+  isLoading,
+  isError,
+  showPermissionWarning,
+  linkTo,
+}: SummaryMetricTileProps) {
+  const metricLabel = totalText ?? 'Total Devices';
+  const ariaLabel = `${metricLabel} in ${title} platform`;
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        minWidth: 'max-content',
+        gridColumn: hasAnyIcon ? 3 : 1,
+        '@container (max-width: 320px)': {
+          gridColumn: hasAnyIcon ? 2 : 1,
+          ml: hasAnyIcon ? 1 : 0,
+        },
+      }}
+    >
+      {isError ? (
+        <Box role="group" sx={{ p: 1 }} aria-label={ariaLabel}>
+          <Typography
+            color="error"
+            variant="body2"
+            sx={{ fontWeight: 500, mb: 0.5 }}
+          >
+            Error loading data
+          </Typography>
+          <Typography color="text.secondary" variant="body2" noWrap>
+            {metricLabel}
+          </Typography>
+        </Box>
+      ) : (
+        <>
+          <Button
+            variant="text"
+            component={NavLink}
+            to={linkTo}
+            sx={{
+              ...metricTileSx,
+              textTransform: 'none',
+              color: 'inherit',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              padding: 1,
+              minWidth: 0,
+            }}
+          >
+            <Typography
+              variant="h3"
+              component="div"
+              sx={{ mb: 0.5, minWidth: 60 }}
+            >
+              {isLoading ? (
+                <Skeleton variant="text" width="100%" />
+              ) : (
+                (total?.toLocaleString('en-US') ?? 0)
+              )}
+            </Typography>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              aria-label={ariaLabel}
+            >
+              <Typography color="text.secondary" variant="body2" noWrap>
+                {metricLabel}
+              </Typography>
+            </Box>
+          </Button>
+          {showPermissionWarning && <PermissionWarningTooltip />}
+        </>
+      )}
+    </Box>
   );
 }

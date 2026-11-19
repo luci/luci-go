@@ -242,6 +242,9 @@ describe('<HomePage />', () => {
 
     const errorMessages = await screen.findAllByText('Error loading data');
     expect(errorMessages.length).toBe(4); // One for each platform
+    expect(
+      screen.queryByText(/% (Healthy|In Service)/),
+    ).not.toBeInTheDocument();
   });
 
   it('displays the error state on Android and Pixel cards when health query fails', async () => {
@@ -378,7 +381,7 @@ describe('<HomePage />', () => {
     ).toHaveAttribute('href', '/ui/fleet/p/pixel/repairs');
   });
 
-  it('displays the error state on ChromeOS card when ListRepairQueue fails', async () => {
+  it('keeps Total Devices visible and shows repair row error on ChromeOS card when ListRepairQueue fails', async () => {
     FleetConsoleMockAPI.setFixture('ListRepairQueue', null);
 
     render(
@@ -387,9 +390,32 @@ describe('<HomePage />', () => {
       </FakeContextProvider>,
     );
 
-    const errorMessages = await screen.findAllByText('Error loading data');
-    expect(errorMessages.length).toBe(1);
+    expect(await screen.findByText('1,000')).toBeInTheDocument();
+    expect(await screen.findByText('Error loading data')).toBeInTheDocument();
     expect(await screen.findByText('200')).toBeInTheDocument();
     expect(await screen.findByText('500')).toBeInTheDocument();
+
+    expect(screen.getByText('90.0% Healthy')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'View all devices in ChromeOS platform',
+      }),
+    ).toHaveAttribute('href', '/ui/fleet/p/chromeos/devices');
+    expect(
+      screen.getByRole('link', {
+        name: 'View all repairs in ChromeOS platform',
+      }),
+    ).toHaveAttribute('href', '/ui/fleet/p/chromeos/repairs');
+
+    const repairMetric = screen.getByLabelText(
+      'Need manual repair in ChromeOS platform',
+    );
+    expect(
+      within(repairMetric).getByText('Error loading data'),
+    ).toBeInTheDocument();
+    expect(
+      within(repairMetric).getByText('Need manual repair'),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('InfoOutlinedIcon')).not.toBeInTheDocument();
   });
 });
