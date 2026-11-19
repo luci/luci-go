@@ -1329,7 +1329,11 @@ func (impl *repoImpl) AttachMetadata(ctx context.Context, r *repopb.AttachMetada
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
+	var permsToCheck perm.Set
+	for _, m := range r.Metadata {
+		permsToCheck.Add(perm.WriteInstanceMetadata.Bind(m.Key))
+	}
+	if _, _, err := impl.hasPermission(ctx, r.Package, permsToCheck, nil); err != nil {
 		return nil, err
 	}
 

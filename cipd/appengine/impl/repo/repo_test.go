@@ -2512,7 +2512,12 @@ func TestInstanceMetadata(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-md-writer@example.com", "project:realm", perm.WriteInstanceMetadata.Perm(), authtest.RestrictAttribute("cipd.instance.metadataKey", "k0")),
+			authtest.MockPermission("user:reader@example.com", "project:realm", perm.DiagnoseACL.Perm()),
+			authtest.MockPermission("user:writer@google.com", "project:realm", perm.DiagnoseACL.Perm()),
+			authtest.MockPermission("user:owner@google.com", "project:realm", perm.DiagnoseACL.Perm()),
+		)
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &repopb.PrefixMetadata{
@@ -2576,6 +2581,35 @@ func TestInstanceMetadata(t *testing.T) {
 		}
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
+
+		t.Run("AttachMetadata via realm permission with attribute", func(t *ftt.Test) {
+			_, err := impl.AttachMetadata(as("realm-md-writer@example.com"), &repopb.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k0:0", "k0:1"),
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, getMD(inst, "k0:0").AttachedBy, should.Equal("user:realm-md-writer@example.com"))
+			assert.Loosely(t, getMD(inst, "k0:1").AttachedBy, should.Equal("user:realm-md-writer@example.com"))
+
+			// Second metadata key "k1" is not allowed; permitted "k0:2" is not attached either.
+			_, err = impl.AttachMetadata(as("realm-md-writer@example.com"), &repopb.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k0:2", "k1:1"),
+			})
+			assert.Loosely(t, getMD(inst, "k0:2"), should.BeNil)
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+		})
 
 		t.Run("AttachMetadata/DetachMetadata/ListMetadata happy path", func(t *ftt.Test) {
 			_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
@@ -2784,8 +2818,8 @@ func TestInstanceMetadata(t *testing.T) {
 					Instance: objRef,
 					Metadata: md("k:0", "k:1"),
 				})
-				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike("has no required WRITER role"))
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.ErrIsLike(t, err, `missing the cipd.packages.writeInstanceMetadata{cipd.instance.metadataKey:"k"} permission`)
 			})
 			t.Run("DetachMetadata", func(t *ftt.Test) {
 				_, err := impl.DetachMetadata(as("writer@google.com"), &repopb.DetachMetadataRequest{
