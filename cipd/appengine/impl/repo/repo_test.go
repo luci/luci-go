@@ -76,7 +76,11 @@ func newMockImpl(meta *testutil.MetadataStore, cas *testutil.MockCAS) *repoImpl 
 		cas:  cas,
 		vsa:  vsa.NewClient(),
 		lookupPrefixCfg: func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
-			return &prefixcfg.Entry{Service: &prefixcfg.ServiceEntry{}}, nil
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+			}, nil
 		},
 	}
 }
