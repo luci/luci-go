@@ -203,15 +203,15 @@ type RepositoryClient interface {
 	// This removes it from the ListPrefix results, but doesn't otherwise affect
 	// its usage (e.g. it is still fetchable).
 	//
-	// Requires OWNER role for the package prefix. Returns PERMISSION_DENIED
-	// otherwise.
+	// Requires `cipd.packages.hide` permission (or legacy OWNER role) for the
+	// package prefix. Returns PERMISSION_DENIED otherwise.
 	HidePackage(ctx context.Context, in *PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// UnhidePackage marks the package as visible again.
 	//
 	// It's reverse of HidePackage.
 	//
-	// Requires OWNER role for the package prefix. Returns PERMISSION_DENIED
-	// otherwise.
+	// Requires `cipd.packages.hide` permission (or legacy OWNER role) for the
+	// package prefix. Returns PERMISSION_DENIED otherwise.
 	UnhidePackage(ctx context.Context, in *PackageRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// DeletePackage removes the package (along with all its instances, tags, refs
 	// etc) from the repository.
@@ -890,15 +890,15 @@ type RepositoryServer interface {
 	// This removes it from the ListPrefix results, but doesn't otherwise affect
 	// its usage (e.g. it is still fetchable).
 	//
-	// Requires OWNER role for the package prefix. Returns PERMISSION_DENIED
-	// otherwise.
+	// Requires `cipd.packages.hide` permission (or legacy OWNER role) for the
+	// package prefix. Returns PERMISSION_DENIED otherwise.
 	HidePackage(context.Context, *PackageRequest) (*emptypb.Empty, error)
 	// UnhidePackage marks the package as visible again.
 	//
 	// It's reverse of HidePackage.
 	//
-	// Requires OWNER role for the package prefix. Returns PERMISSION_DENIED
-	// otherwise.
+	// Requires `cipd.packages.hide` permission (or legacy OWNER role) for the
+	// package prefix. Returns PERMISSION_DENIED otherwise.
 	UnhidePackage(context.Context, *PackageRequest) (*emptypb.Empty, error)
 	// DeletePackage removes the package (along with all its instances, tags, refs
 	// etc) from the repository.

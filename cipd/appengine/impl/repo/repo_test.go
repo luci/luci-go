@@ -865,7 +865,9 @@ func TestHideUnhidePackage(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-owner@example.com", "project:realm", perm.HidePackage.Perm()),
+		)
 		ctx = as("owner@google.com")
 
 		meta := testutil.MetadataStore{}
@@ -887,6 +889,14 @@ func TestHideUnhidePackage(t *testing.T) {
 		}
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
 		t.Run("Hides and unhides", func(t *ftt.Test) {
 			_, err := impl.HidePackage(ctx, &repopb.PackageRequest{Package: "a/b"})
@@ -900,6 +910,25 @@ func TestHideUnhidePackage(t *testing.T) {
 
 			_, err = impl.UnhidePackage(ctx, &repopb.PackageRequest{Package: "a/b"})
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, fetch("a/b").Hidden, should.BeFalse)
+		})
+
+		t.Run("Hides and unhides via realm permission", func(t *ftt.Test) {
+			impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+				return &prefixcfg.Entry{
+					Service: &prefixcfg.ServiceEntry{
+						EnableLegacyAclFallback: false,
+					},
+					Realm: "project:realm",
+				}, nil
+			}
+			rctx := as("realm-owner@example.com")
+			_, err := impl.HidePackage(rctx, &repopb.PackageRequest{Package: "a/b"})
+			assert.NoErr(t, err)
+			assert.Loosely(t, fetch("a/b").Hidden, should.BeTrue)
+
+			_, err = impl.UnhidePackage(rctx, &repopb.PackageRequest{Package: "a/b"})
+			assert.NoErr(t, err)
 			assert.Loosely(t, fetch("a/b").Hidden, should.BeFalse)
 		})
 

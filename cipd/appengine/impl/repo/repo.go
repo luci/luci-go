@@ -622,7 +622,7 @@ func (impl *repoImpl) setPackageHidden(ctx context.Context, r *repopb.PackageReq
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package': %s", err)
 	}
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_OWNER); err != nil {
+	if _, _, err := impl.hasPermission(ctx, r.Package, perm.HidePackage, nil); err != nil {
 		return nil, err
 	}
 
