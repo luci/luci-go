@@ -1122,7 +1122,7 @@ func (impl *repoImpl) CreateRef(ctx context.Context, r *repopb.Ref) (resp *empty
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
+	if _, _, err := impl.hasPermission(ctx, r.Package, perm.WriteRef.Bind(r.Name), nil); err != nil {
 		return nil, err
 	}
 

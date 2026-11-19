@@ -1886,7 +1886,9 @@ func TestRefs(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-ref-writer@example.com", "project:realm", perm.WriteRef.Perm(), authtest.RestrictAttribute("cipd.package.refName", "latest")),
+		)
 		ctx = as("writer@google.com")
 
 		meta := testutil.MetadataStore{}
@@ -1914,6 +1916,37 @@ func TestRefs(t *testing.T) {
 		putInst("a/b/c", digest, nil, nil)
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
+
+		t.Run("CreateRef via realm permission with attribute", func(t *ftt.Test) {
+			_, err := impl.CreateRef(as("realm-ref-writer@example.com"), &repopb.Ref{
+				Name:    "latest",
+				Package: "a/b/c",
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
+					HexDigest: digest,
+				},
+			})
+			assert.NoErr(t, err)
+
+			_, err = impl.CreateRef(as("realm-ref-writer@example.com"), &repopb.Ref{
+				Name:    "other",
+				Package: "a/b/c",
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
+					HexDigest: digest,
+				},
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+		})
 
 		t.Run("CreateRef/ListRefs/DeleteRef happy path", func(t *ftt.Test) {
 			_, err := impl.CreateRef(ctx, &repopb.Ref{

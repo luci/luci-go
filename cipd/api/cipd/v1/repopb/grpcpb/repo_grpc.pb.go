@@ -287,7 +287,9 @@ type RepositoryClient interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks the `cipd.packages.writeRef`
+	//	    permission (which is checked with the attribute
+	//	    `cipd.package.refName`) or legacy WRITER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package or the instance the ref points to doesn't exist.
 	//	FAILED_PRECONDITION if the instance is still being processed.
@@ -977,7 +979,9 @@ type RepositoryServer interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks the `cipd.packages.writeRef`
+	//	    permission (which is checked with the attribute
+	//	    `cipd.package.refName`) or legacy WRITER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package or the instance the ref points to doesn't exist.
 	//	FAILED_PRECONDITION if the instance is still being processed.
