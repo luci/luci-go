@@ -425,7 +425,9 @@ type RepositoryClient interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks
+	//	    `cipd.packages.readInstanceMetadata` permission or legacy READER
+	//	    role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package or the instance doesn't exist.
 	ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (*ListMetadataResponse, error)
@@ -1132,7 +1134,9 @@ type RepositoryServer interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks
+	//	    `cipd.packages.readInstanceMetadata` permission or legacy READER
+	//	    role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package or the instance doesn't exist.
 	ListMetadata(context.Context, *ListMetadataRequest) (*ListMetadataResponse, error)

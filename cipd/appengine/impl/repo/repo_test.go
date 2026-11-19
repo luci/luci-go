@@ -2516,6 +2516,7 @@ func TestInstanceMetadata(t *testing.T) {
 			authtest.MockPermission("user:realm-md-detacher-no-read@example.com", "project:realm", perm.DetachInstanceMetadata.Perm(), authtest.RestrictAttribute("cipd.instance.metadataKey", "k0")),
 			authtest.MockPermission("user:realm-md-detacher@example.com", "project:realm", perm.DetachInstanceMetadata.Perm(), authtest.RestrictAttribute("cipd.instance.metadataKey", "k0")),
 			authtest.MockPermission("user:realm-md-detacher@example.com", "project:realm", perm.ReadInstanceMetadata.Perm()),
+			authtest.MockPermission("user:realm-md-reader@example.com", "project:realm", perm.ReadInstanceMetadata.Perm()),
 			authtest.MockPermission("user:realm-md-writer@example.com", "project:realm", perm.WriteInstanceMetadata.Perm(), authtest.RestrictAttribute("cipd.instance.metadataKey", "k0")),
 		)
 
@@ -2665,6 +2666,22 @@ func TestInstanceMetadata(t *testing.T) {
 			assert.Loosely(t, getMD(inst, "k0:0"), should.BeNil)
 			assert.Loosely(t, getMD(inst, "k0:1"), should.BeNil)
 			assert.Loosely(t, getMD(inst, "k1:1"), should.NotBeNil)
+		})
+
+		t.Run("ListMetadata via realm permission", func(t *ftt.Test) {
+			_, err := impl.AttachMetadata(as("writer@google.com"), &repopb.AttachMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Metadata: md("k1:1"),
+			})
+			assert.NoErr(t, err)
+
+			resp, err := impl.ListMetadata(as("realm-md-reader@example.com"), &repopb.ListMetadataRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp.Metadata, should.HaveLength(1))
 		})
 
 		t.Run("AttachMetadata/DetachMetadata/ListMetadata happy path", func(t *ftt.Test) {
