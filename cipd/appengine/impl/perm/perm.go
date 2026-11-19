@@ -34,11 +34,22 @@ type Checkable interface {
 // corePermission is the core aspects of a Permission which don't change
 // with binding.
 //
-// TODO: Support implied groups, fake permissions, global write policy, and
-// legacy roles.
+// TODO: Support global write policy and legacy roles.
 type corePermission struct {
 	// perm is the realms permission for this Permission.
 	perm realms.Permission
+
+	// groupOnly indicates that this permission is NOT actually grantable via
+	// LUCI Realms, but is *only* grantable via `group`.
+	//
+	// We use this for `cipd.packages.delete` just for internal uniformity (so
+	// that the repo implementation can use [DeletePackage] instead of having to
+	// 'know' that this permission check is special).
+	groupOnly bool
+
+	// group is a CRIA group which implies this permission. If the caller is in
+	// this group, then they have this permission.
+	group string
 
 	// attrKey is the attribute key of this corePermission (if any).
 	//
@@ -98,6 +109,13 @@ func (c Permission) Perm() realms.Permission {
 	return c.core.Perm()
 }
 
+// IsGroupOnly reports whether this permission is only grantable via
+// [Permission.Group] (and not via LUCI Realms).
+func (c Permission) IsGroupOnly() bool { return c.core.groupOnly }
+
+// Group returns the CRIA group whose membership implies this permission, or "".
+func (c Permission) Group() string { return c.core.group }
+
 // Perms implements [Checkable].
 func (c Permission) Perms() Set { return SetOf(c) }
 
@@ -128,6 +146,29 @@ func (c Permission) withAttr(attrKey string) Bindable {
 	}
 	c.core.attrKey = attrKey
 	return Bindable{c.core}
+}
+
+// withGroup modifies c.core.group, and returns c.
+//
+// Panics if used twice with the same [corePermission].
+func (c Permission) withGroup(group string) Permission {
+	if c.core.group != "" {
+		panic("impossible: cannot use `withGroup` twice on the same Permission")
+	}
+	c.core.group = group
+	return c
+}
+
+// groupOnly modifies c.core.groupOnly and c.core.group, and returns c.
+//
+// Panics if used twice with the same [corePermission].
+func (c Permission) groupOnly(group string) Permission {
+	if c.core.groupOnly {
+		panic("impossible: cannot use `groupOnly` twice on the same Permission")
+	}
+	c = c.withGroup(group)
+	c.core.groupOnly = true
+	return c
 }
 
 // definePerm registers `permission` as a realms permission, and returns a new

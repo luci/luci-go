@@ -51,8 +51,6 @@ func (p *PrefixCache) CanDiagnose(ctx context.Context) (bool, error) {
 func (p *PrefixCache) CheckOne(ctx context.Context, perm Permission) (has bool, err error) {
 	// TODO: Global write policy.
 
-	// TODO: Group.
-
 	if has, err = p.pcache.HasPerm(ctx, p.cfg.Realm, perm); has || err != nil {
 		return
 	}

@@ -25,16 +25,18 @@ import (
 // TODO: Remove temporary test permissions once real CIPD permissions are
 // registered in perms.go.
 var (
-	testPermRead  = definePerm("cipd.testing.read")
+	testPermRead  = definePerm("cipd.testing.read").withGroup(PrefixesViewers)
 	testPermWrite = definePerm("cipd.testing.write")
 	testPermExtra = definePerm("cipd.testing.extra")
 	testPermAttr  = definePerm("cipd.testing.attr").withAttr("cipd.testing.key")
+	testPermGroup = definePerm("cipd.testing.group").withGroup("administrators")
+	testPermFake  = definePerm("cipd.testing.fake").groupOnly("administrators")
 )
 
 func TestRegisteredPermissionsInvariants(t *testing.T) {
 	t.Parallel()
 
-	assert.That(t, len(AllPermissions), should.Equal(5))
+	assert.That(t, len(AllPermissions), should.Equal(7))
 	seen := make(map[realms.Permission]struct{}, len(AllPermissions))
 	for g := range AllPermissions {
 		seen[g.Perm()] = struct{}{}

@@ -468,3 +468,120 @@ func TestCheckAttrs(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckGroups(t *testing.T) {
+	t.Parallel()
+
+	const (
+		prefix    = "a/b"
+		testRealm = "proj:realm"
+	)
+
+	fakeDB := authtest.NewFakeDB(
+		authtest.MockMembership("user:viewer@admins.example.com", PrefixesViewers),
+		authtest.MockMembership("user:admin@admins.example.com", "administrators"),
+
+		// Even if granted in a realm, a fake permission must not be checked against realms.
+		authtest.MockPermission("user:realm-fake-holder@admins.example.com", testRealm, testPermFake.Perm()),
+		authtest.MockPermission("user:realm-fake-holder@admins.example.com", testRealm, DiagnoseACL.Perm()),
+
+		// user@ is not an admin, but has testPermGroup.
+		// Conversely, admin@ IS an admin, but doesn't explicitly have testPermGroup.
+		authtest.MockPermission("user:user@example.com", testRealm, testPermGroup.Perm()),
+	)
+
+	cases := []struct {
+		name string
+
+		user  identity.Identity
+		perms Checkable
+		realm string
+
+		dbOverride  *authtest.FakeDB
+		wantCode    codes.Code
+		wantErrLike string
+	}{
+		{
+			name:  "implied_group_prefixes_viewers_allows_read",
+			user:  "user:viewer@admins.example.com",
+			perms: testPermRead,
+		},
+		{
+			name:        "implied_group_prefixes_viewers_denies_write_with_detailed_error",
+			user:        "user:viewer@admins.example.com",
+			perms:       testPermWrite,
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:viewer@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:        "implied_group_prefixes_viewers_denies_fake_admin_perm",
+			user:        "user:viewer@admins.example.com",
+			perms:       testPermFake,
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:viewer@admins.example.com" is missing the cipd.testing.fake permission in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:  "implied_group_administrators_allows_fake_admin_perm",
+			user:  "user:admin@admins.example.com",
+			perms: testPermFake,
+		},
+		{
+			name:        "fake_perm_does_not_check_realm",
+			user:        "user:realm-fake-holder@admins.example.com",
+			perms:       testPermFake,
+			realm:       testRealm,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-fake-holder@admins.example.com" is missing the cipd.testing.fake permission in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:        "authdb_group_check_error",
+			user:        "user:viewer@admins.example.com",
+			dbOverride:  authtest.NewFakeDB(authtest.MockError(errors.New("authdb group boom"))),
+			perms:       testPermRead,
+			realm:       testRealm,
+			wantErrLike: "authdb group boom",
+		},
+		{
+			name:  "user_has_permission_without_group",
+			user:  "user:user@example.com",
+			realm: testRealm,
+			perms: testPermGroup,
+		},
+		{
+			name:  "admin_has_permission_via_group",
+			user:  "user:admin@admins.example.com",
+			realm: testRealm,
+			perms: testPermGroup,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{OwningLuciProject: "proj"},
+				Realm:   tc.realm,
+			}
+			ctx := auth.WithState(t.Context(), &authtest.FakeState{
+				Identity: tc.user,
+				FakeDB:   cmp.Or(tc.dbOverride, fakeDB),
+			})
+
+			has, err := NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, tc.perms, nil)
+			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
+				assert.That(t, has, should.Match(Set(nil)))
+				if tc.wantCode != codes.OK {
+					assert.That(t, err, grpccode.ShouldBe(tc.wantCode))
+				}
+				assert.ErrIsLike(t, err, tc.wantErrLike)
+				return
+			}
+
+			assert.NoErr(t, err)
+			assert.That(t, has, should.Match(tc.perms.Perms()))
+		})
+	}
+}

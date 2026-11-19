@@ -55,17 +55,18 @@ type realmPerm struct {
 	perm  Permission
 }
 
-// Cache caches identity-scoped permission lookups (e.g. realm permissions,
-// group memberships) across one or more prefixes within a single request.
+// Cache caches identity-scoped permission and group lookups across one or more
+// prefixes within a single request.
 //
 // Not safe for concurrent use.
 //
-// TODO: Cache group memberships and hold metadata.Storage for legacy fallback.
+// TODO: Hold metadata.Storage for legacy fallback.
 type Cache struct {
 	ident  identity.Identity
 	authdb authdb.DB
 
-	checkedPerms boolCache[realmPerm]
+	checkedPerms  boolCache[realmPerm]
+	checkedGroups boolCache[string]
 }
 
 // NewCache returns a new [Cache], extracting the current identity and authdb
@@ -77,16 +78,37 @@ func NewCache(ctx context.Context) *Cache {
 	}
 }
 
-// HasPerm checks the realm permission in `realm`.
+// RawGroupCheck checks if the caller has membership in the given group.
+//
+// This is exposed only to allow Repo to reuse the group cache for some legacy
+// ACL things.
+func (r *Cache) RawGroupCheck(ctx context.Context, group string) (bool, error) {
+	return r.checkedGroups.getOrCompute(group, func() (bool, error) {
+		return r.authdb.IsMember(ctx, r.ident, []string{group})
+	})
+}
+
+// HasPerm checks whether the current identity has `perm` via its implied group
+// (if any) or via LUCI Realms in `realm` (when `realm` is non-empty and `perm`
+// is not groupOnly).
 func (r *Cache) HasPerm(ctx context.Context, realm string, perm Permission) (has bool, err error) {
-	// TODO: Skip fake (non-realm) permissions.
-	if realm == "" {
-		return false, nil
+	// Check if the current identity has access to the group which implies `perm`
+	// (if any).
+	if perm.core.group != "" {
+		if has, err = r.RawGroupCheck(ctx, perm.core.group); has || err != nil {
+			return
+		}
 	}
 
-	return r.checkedPerms.getOrCompute(realmPerm{realm, perm}, func() (bool, error) {
-		return r.authdb.HasPermission(ctx, r.ident, perm.Perm(), realm, perm.attrs())
-	})
+	// Next, check if there is a realm, and this permission actually can be
+	// granted via realms, if the current identity has this permission.
+	if realm != "" && !perm.core.groupOnly {
+		return r.checkedPerms.getOrCompute(realmPerm{realm, perm}, func() (bool, error) {
+			return r.authdb.HasPermission(ctx, r.ident, perm.Perm(), realm, perm.attrs())
+		})
+	}
+
+	return false, nil
 }
 
 // ForPrefix returns a [PrefixCache] bound to `prefix` and its corresponding

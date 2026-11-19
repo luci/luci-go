@@ -14,10 +14,9 @@
 
 package perm
 
-// TODO: Register remaining CIPD realm permissions and attach group/role
-// mappings.
+// TODO: Register remaining CIPD realm permissions and attach role mappings.
 var (
-	DiagnoseACL = definePerm("cipd.packages.diagnoseACL")
+	DiagnoseACL = definePerm("cipd.packages.diagnoseACL").withGroup(PrefixesViewers)
 
 	// AllPermissions is the set of all Grantables defined in this package.
 	AllPermissions = map[Grantable]struct{}{}

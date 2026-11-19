@@ -30,8 +30,10 @@ import (
 
 type countingDB struct {
 	authdb.DB
-	permCalls int
-	err       error
+	permCalls  int
+	groupCalls int
+	err        error
+	groupErr   error
 }
 
 func (d *countingDB) HasPermission(ctx context.Context, id identity.Identity, perm realms.Permission, realm string, attrs realms.Attrs) (bool, error) {
@@ -40,6 +42,14 @@ func (d *countingDB) HasPermission(ctx context.Context, id identity.Identity, pe
 		return false, d.err
 	}
 	return d.DB.HasPermission(ctx, id, perm, realm, attrs)
+}
+
+func (d *countingDB) IsMember(ctx context.Context, id identity.Identity, groups []string) (bool, error) {
+	d.groupCalls++
+	if d.groupErr != nil {
+		return false, d.groupErr
+	}
+	return d.DB.IsMember(ctx, id, groups)
 }
 
 func TestCacheHasPerm(t *testing.T) {
@@ -57,27 +67,39 @@ func TestCacheHasPerm(t *testing.T) {
 	})
 	cache := NewCache(ctx)
 
-	// Empty realm short-circuits without hitting authdb.
+	// Empty realm checks implied group (if any) and skips HasPermission; a
+	// permission with no implied group hits neither IsMember nor HasPermission.
 	has, err := cache.HasPerm(ctx, "", DiagnoseACL)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.groupCalls, should.Equal(1))
 	assert.That(t, db.permCalls, should.Equal(0))
 
-	// Granted permission is cached across repeated lookups.
+	has, err = cache.HasPerm(ctx, "", testPermWrite)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.groupCalls, should.Equal(1))
+	assert.That(t, db.permCalls, should.Equal(0))
+
+	// Granted permission is cached across repeated lookups; implied group lookup
+	// is also served from checkedGroups.
 	has, err = cache.HasPerm(ctx, "proj:granted", DiagnoseACL)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(1))
 	assert.That(t, db.permCalls, should.Equal(1))
 
 	has, err = cache.HasPerm(ctx, "proj:granted", DiagnoseACL)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(1))
 	assert.That(t, db.permCalls, should.Equal(1))
 
 	// Transient errors are not cached; subsequent calls retry authdb.
 	db.err = errors.New("authdb boom")
 	_, err = cache.HasPerm(ctx, "proj:denied", DiagnoseACL)
 	assert.ErrIsLike(t, err, "authdb boom")
+	assert.That(t, db.groupCalls, should.Equal(1))
 	assert.That(t, db.permCalls, should.Equal(2))
 
 	// Denied permission is cached once the error clears.
@@ -85,11 +107,13 @@ func TestCacheHasPerm(t *testing.T) {
 	has, err = cache.HasPerm(ctx, "proj:denied", DiagnoseACL)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.groupCalls, should.Equal(1))
 	assert.That(t, db.permCalls, should.Equal(3))
 
 	has, err = cache.HasPerm(ctx, "proj:denied", DiagnoseACL)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.groupCalls, should.Equal(1))
 	assert.That(t, db.permCalls, should.Equal(3))
 }
 
@@ -162,4 +186,131 @@ func TestCacheHasPermAttrs(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
 	assert.That(t, db.permCalls, should.Equal(5))
+}
+
+func TestCacheRawGroupCheck(t *testing.T) {
+	t.Parallel()
+
+	const user = identity.Identity("user:member@example.com")
+	db := &countingDB{
+		DB: authtest.NewFakeDB(
+			authtest.MockMembership(user, "granted-group"),
+		),
+	}
+	ctx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: user,
+		FakeDB:   db,
+	})
+	cache := NewCache(ctx)
+
+	has, err := cache.RawGroupCheck(ctx, "granted-group")
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(1))
+
+	has, err = cache.RawGroupCheck(ctx, "granted-group")
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(1))
+
+	// Transient errors are not cached.
+	db.groupErr = errors.New("group boom")
+	_, err = cache.RawGroupCheck(ctx, "denied-group")
+	assert.ErrIsLike(t, err, "group boom")
+	assert.That(t, db.groupCalls, should.Equal(2))
+
+	db.groupErr = nil
+	has, err = cache.RawGroupCheck(ctx, "denied-group")
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.groupCalls, should.Equal(3))
+
+	has, err = cache.RawGroupCheck(ctx, "denied-group")
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.groupCalls, should.Equal(3))
+}
+
+func TestCacheHasPermGroups(t *testing.T) {
+	t.Parallel()
+
+	const (
+		viewer       = identity.Identity("user:viewer@example.com")
+		admin        = identity.Identity("user:admin@example.com")
+		fakeRealmUsr = identity.Identity("user:fake-realm@example.com")
+		realm        = "proj:realm"
+	)
+	db := &countingDB{
+		DB: authtest.NewFakeDB(
+			authtest.MockMembership(viewer, PrefixesViewers),
+			authtest.MockMembership(admin, "administrators"),
+			authtest.MockPermission(fakeRealmUsr, realm, testPermFake.Perm()),
+		),
+	}
+
+	// Implied group grants permission even with empty realm, short-circuits
+	// HasPermission when realm is non-empty, and shares checkedGroups across
+	// permissions with the same group.
+	viewerCtx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: viewer,
+		FakeDB:   db,
+	})
+	viewerCache := NewCache(viewerCtx)
+
+	has, err := viewerCache.HasPerm(viewerCtx, "", DiagnoseACL)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(1))
+	assert.That(t, db.permCalls, should.Equal(0))
+
+	has, err = viewerCache.HasPerm(viewerCtx, realm, DiagnoseACL)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(1))
+	assert.That(t, db.permCalls, should.Equal(0))
+
+	has, err = viewerCache.HasPerm(viewerCtx, realm, testPermRead)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(1))
+	assert.That(t, db.permCalls, should.Equal(0))
+
+	// groupOnly permission grants via group (with or without realm) and never
+	// falls back to HasPermission even when mocked in a realm.
+	adminCtx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: admin,
+		FakeDB:   db,
+	})
+	adminCache := NewCache(adminCtx)
+
+	has, err = adminCache.HasPerm(adminCtx, "", testPermFake)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(2))
+	assert.That(t, db.permCalls, should.Equal(0))
+
+	has, err = adminCache.HasPerm(adminCtx, realm, testPermFake)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.groupCalls, should.Equal(2))
+	assert.That(t, db.permCalls, should.Equal(0))
+
+	fakeCtx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: fakeRealmUsr,
+		FakeDB:   db,
+	})
+	fakeCache := NewCache(fakeCtx)
+
+	db.groupErr = errors.New("group check boom")
+	_, err = fakeCache.HasPerm(fakeCtx, realm, testPermFake)
+	assert.ErrIsLike(t, err, "group check boom")
+	assert.That(t, db.groupCalls, should.Equal(3))
+	assert.That(t, db.permCalls, should.Equal(0))
+
+	db.groupErr = nil
+	has, err = fakeCache.HasPerm(fakeCtx, realm, testPermFake)
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.groupCalls, should.Equal(4))
+	assert.That(t, db.permCalls, should.Equal(0))
 }
