@@ -1531,7 +1531,7 @@ func (impl *repoImpl) ResolveVersion(ctx context.Context, r *repopb.ResolveVersi
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
+	if _, _, err := impl.hasPermission(ctx, r.Package, perm.ResolveVersion, nil); err != nil {
 		return nil, err
 	}
 

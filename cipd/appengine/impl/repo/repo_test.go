@@ -2984,7 +2984,9 @@ func TestResolveVersion(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-resolver@example.com", "project:realm", perm.ResolveVersion.Perm()),
+		)
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
@@ -2997,6 +2999,14 @@ func TestResolveVersion(t *testing.T) {
 			},
 		})
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
 		pkg := &model.Package{Name: "a/pkg"}
 		inst1 := &model.Instance{
@@ -3023,6 +3033,13 @@ func TestResolveVersion(t *testing.T) {
 
 		t.Run("Happy path", func(t *ftt.Test) {
 			inst, err := impl.ResolveVersion(ctx, &repopb.ResolveVersionRequest{
+				Package: "a/pkg",
+				Version: "latest",
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, inst, should.Match(inst2.Proto()))
+
+			inst, err = impl.ResolveVersion(as("realm-resolver@example.com"), &repopb.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "latest",
 			})
@@ -3121,7 +3138,9 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			},
 		})
 
-		prefixCfgPb := prefixcfg.ServiceEntry{}
+		prefixCfgPb := prefixcfg.ServiceEntry{
+			EnableLegacyAclFallback: true,
+		}
 
 		cas := testutil.MockCAS{}
 		impl := newMockImpl(&meta, &cas)
