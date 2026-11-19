@@ -2212,9 +2212,7 @@ func TestTags(t *testing.T) {
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext(
 			authtest.MockPermission("user:realm-tag-writer@example.com", "project:realm", perm.WriteInstanceTag.Perm(), authtest.RestrictAttribute("cipd.instance.tagKey", "a")),
-			authtest.MockPermission("user:reader@example.com", "project:realm", perm.DiagnoseACL.Perm()),
-			authtest.MockPermission("user:writer@google.com", "project:realm", perm.DiagnoseACL.Perm()),
-			authtest.MockPermission("user:owner@google.com", "project:realm", perm.DiagnoseACL.Perm()),
+			authtest.MockPermission("user:realm-tag-detacher@example.com", "project:realm", perm.DetachInstanceTag.Perm(), authtest.RestrictAttribute("cipd.instance.tagKey", "a")),
 		)
 
 		meta := testutil.MetadataStore{}
@@ -2303,6 +2301,33 @@ func TestTags(t *testing.T) {
 			assert.Loosely(t, getTag(inst, "a:2"), should.BeNil)
 			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.ErrIsLike(t, err, "is not allowed to see it")
+		})
+
+		t.Run("DetachTags via realm permission with attribute", func(t *ftt.Test) {
+			_, err := impl.AttachTags(as("writer@google.com"), &repopb.AttachTagsRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Tags:     tags("a:0", "b:1"),
+			})
+			assert.NoErr(t, err)
+
+			// Second tag key "b" is not allowed.
+			_, err = impl.DetachTags(as("realm-tag-detacher@example.com"), &repopb.DetachTagsRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Tags:     tags("a:0", "b:1"),
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+			assert.Loosely(t, getTag(inst, "a:0"), should.NotBeNil)
+
+			_, err = impl.DetachTags(as("realm-tag-detacher@example.com"), &repopb.DetachTagsRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Tags:     tags("a:0"),
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, getTag(inst, "a:0"), should.BeNil)
 		})
 
 		t.Run("AttachTags/DetachTags happy path", func(t *ftt.Test) {
@@ -2426,8 +2451,8 @@ func TestTags(t *testing.T) {
 					Instance: objRef,
 					Tags:     tags("good:tag"),
 				})
-				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-				assert.Loosely(t, err, should.ErrLike("has no required OWNER role"))
+				assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.ErrIsLike(t, err, "does not have role: OWNER")
 			})
 		})
 

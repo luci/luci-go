@@ -358,12 +358,15 @@ type RepositoryClient interface {
 	// static (and thus not detachable).
 	//
 	// It is occasionally useful for fixing screw ups though. For that reason,
-	// DetachTags is allowed only by OWNERS of a prefix (not WRITERS, like
-	// AttachTags).
+	// DetachTags requires the `cipd.packages.detachInstanceTag` permission
+	// (which is checked with the attribute `cipd.instance.tagKey` on a per-key
+	// basis) or legacy OWNER role for the prefix.
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks the `cipd.packages.detachInstanceTag`
+	//	    permission (which is checked with the attribute `cipd.instance.tagKey`
+	//	    on a per-key basis) or legacy OWNER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package or the instance doesn't exist.
 	DetachTags(ctx context.Context, in *DetachTagsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -1055,12 +1058,15 @@ type RepositoryServer interface {
 	// static (and thus not detachable).
 	//
 	// It is occasionally useful for fixing screw ups though. For that reason,
-	// DetachTags is allowed only by OWNERS of a prefix (not WRITERS, like
-	// AttachTags).
+	// DetachTags requires the `cipd.packages.detachInstanceTag` permission
+	// (which is checked with the attribute `cipd.instance.tagKey` on a per-key
+	// basis) or legacy OWNER role for the prefix.
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks the `cipd.packages.detachInstanceTag`
+	//	    permission (which is checked with the attribute `cipd.instance.tagKey`
+	//	    on a per-key basis) or legacy OWNER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package or the instance doesn't exist.
 	DetachTags(context.Context, *DetachTagsRequest) (*emptypb.Empty, error)

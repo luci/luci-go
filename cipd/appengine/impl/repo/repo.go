@@ -1263,8 +1263,12 @@ func (impl *repoImpl) DetachTags(ctx context.Context, r *repopb.DetachTagsReques
 		return nil, err
 	}
 
-	// Check ACLs. Note this is scoped to OWNERS, see the proto doc.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_OWNER); err != nil {
+	// Check ACLs. Note legacy ACL fallback is scoped to OWNERS, see the proto doc.
+	var permsToCheck perm.Set
+	for _, t := range r.Tags {
+		permsToCheck.Add(perm.DetachInstanceTag.Bind(t.Key))
+	}
+	if _, _, err := impl.hasPermission(ctx, r.Package, permsToCheck, nil); err != nil {
 		return nil, err
 	}
 
