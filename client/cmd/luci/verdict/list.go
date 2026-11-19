@@ -15,7 +15,9 @@
 package verdict
 
 import (
+	"bytes"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -32,20 +34,22 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+const defaultMaxVerdicts = 100
+
 func ListCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "list [-invocationid <invocation_id>] [<target>]",
 		ShortDesc: "List test verdicts in an invocation",
 		LongDesc: "List test verdicts in an invocation in UI priority order.\n\n" +
-			"By default, only failed or execution errored verdicts are printed, up to 100.\n" +
+			"By default, only failed or execution errored verdicts are printed (up to 100 verdicts, capped within 9.5 KB).\n" +
 			"Flags can be used to include other verdict statuses (e.g. -flaky, -exonerated, -passed, -all-statuses),\n" +
-			"filter by module or test substring (-modulename, -filter), and list more than 100 results (-max-verdicts 200, -all).\n\n" +
+			"filter by module or test substring (-modulename, -filter), and bypass the default output cap (-max-verdicts 200, -all).\n\n" +
 			"Works with both root invocations and legacy invocations.\n\n" +
 			"Examples:\n" +
 			"  $ luci verdict list https://ci.chromium.org/ui/b/8765432109876543210\n" +
 			"  $ luci verdict list -invocationid build-123",
 		CommandRun: func() subcommands.CommandRun {
-			r := &verdictListRun{af: af, maxVerdicts: 100}
+			r := &verdictListRun{af: af, maxVerdicts: defaultMaxVerdicts}
 			if r.af != nil {
 				r.af.Register(&r.Flags)
 			}
@@ -56,8 +60,8 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.moduleName, "module-name", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.moduleName, "module", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.filter, "filter", "", "Filter verdicts by test result filter expression or substring (AIP-160)")
-			r.Flags.IntVar(&r.maxVerdicts, "max-verdicts", 100, "Maximum number of verdicts to display (default: 100, 0 for all)")
-			r.Flags.IntVar(&r.maxVerdicts, "limit", 100, "Alias for -max-verdicts")
+			r.Flags.IntVar(&r.maxVerdicts, "max-verdicts", defaultMaxVerdicts, "Maximum number of verdicts to display (default: 100, 0 for all; setting explicitly bypasses 9.5 KB cap)")
+			r.Flags.IntVar(&r.maxVerdicts, "limit", defaultMaxVerdicts, "Alias for -max-verdicts")
 			r.Flags.BoolVar(&r.allVerdicts, "all", false, "Show all verdicts without truncation")
 			r.Flags.StringVar(&r.rawStatus, "status", "", "Comma-separated list of verdict statuses to include (e.g. failed,flaky,exonerated,passed,skipped,precluded,all)")
 			r.Flags.BoolVar(&r.includeExonerated, "exonerated", false, "Include exonerated verdicts")
@@ -125,6 +129,67 @@ func (f statusFilter) hasScopeFilter() bool {
 
 func (f statusFilter) IsDefault() bool {
 	return f.hasDefaultStatuses() && !f.hasScopeFilter()
+}
+
+func (f statusFilter) formatCLIFlags() string {
+	var parts []string
+	if f.All() {
+		parts = append(parts, "-all-statuses")
+	} else if !f.hasDefaultStatuses() {
+		if f.failed && f.executionErrored {
+			if f.precluded {
+				parts = append(parts, "-precluded")
+			}
+			if f.flaky {
+				parts = append(parts, "-flaky")
+			}
+			if f.exonerated {
+				parts = append(parts, "-exonerated")
+			}
+			if f.skipped {
+				parts = append(parts, "-skipped")
+			}
+			if f.passed {
+				parts = append(parts, "-passed")
+			}
+		} else {
+			var statuses []string
+			if f.failed {
+				statuses = append(statuses, "failed")
+			}
+			if f.executionErrored {
+				statuses = append(statuses, "execution_errored")
+			}
+			if f.precluded {
+				statuses = append(statuses, "precluded")
+			}
+			if f.flaky {
+				statuses = append(statuses, "flaky")
+			}
+			if f.exonerated {
+				statuses = append(statuses, "exonerated")
+			}
+			if f.skipped {
+				statuses = append(statuses, "skipped")
+			}
+			if f.passed {
+				statuses = append(statuses, "passed")
+			}
+			if len(statuses) > 0 {
+				parts = append(parts, "-status="+strings.Join(statuses, ","))
+			}
+		}
+	}
+	if f.moduleName != "" {
+		parts = append(parts, "-modulename="+base.ShellQuoteIfNeeded(f.moduleName))
+	}
+	if f.containsFilter != "" {
+		parts = append(parts, "-filter="+base.ShellQuoteIfNeeded(f.containsFilter))
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return " " + strings.Join(parts, " ")
 }
 
 func (f statusFilter) buildContainsTestResultFilter() string {
@@ -579,12 +644,46 @@ func printEmptyRootInvocationVerdicts(out io.Writer, invID string, rootInv *pb.R
 		return
 	}
 
-	printListedVerdicts(out, invID, nil, false, false)
+	printListedVerdicts(out, invID, nil, false, filter)
 }
 
-func printListedVerdicts(out io.Writer, invID string, verdicts []*ListedVerdict, hasMore bool, isDefaultFilter bool) {
+func formatListedVerdictEntry(v *ListedVerdict) string {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, "- %s %s\n", v.Status, v.TestID)
+	if len(v.Variant.GetDef()) > 0 {
+		varStr := format.FormatVariant(v.Variant)
+		if v.VariantHash != "" {
+			fmt.Fprintf(&b, "    Variant: %s (hash: %s)\n", varStr, v.VariantHash)
+		} else {
+			fmt.Fprintf(&b, "    Variant: %s\n", varStr)
+		}
+	}
+	if v.FailureReason != "" {
+		label := "Error:"
+		if v.FailureReasonTruncated {
+			label = "Error (truncated):"
+		}
+		fmt.Fprintf(&b, "    %s %s\n", label, v.FailureReason)
+	}
+	for _, ex := range v.Exonerations {
+		reasonStr := format.StripHTML(ex.ExplanationHtml)
+		if reasonStr != "" {
+			reasonStr, _ = format.TruncateFirstLine(reasonStr, 120)
+			fmt.Fprintf(&b, "    Exoneration: %s [%s]\n", reasonStr, ex.Reason)
+		} else if ex.Reason != pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED {
+			fmt.Fprintf(&b, "    Exoneration: [%s]\n", ex.Reason)
+		}
+	}
+	return b.String()
+}
+
+func printListedVerdicts(out io.Writer, invID string, verdicts []*ListedVerdict, hasMore bool, filter statusFilter) {
+	printListedVerdictsWithBudget(out, invID, verdicts, hasMore, filter, 0)
+}
+
+func printListedVerdictsWithBudget(out io.Writer, invID string, verdicts []*ListedVerdict, hasMore bool, filter statusFilter, maxBytes int) {
 	if len(verdicts) == 0 {
-		if isDefaultFilter {
+		if filter.IsDefault() {
 			fmt.Fprintf(out, "No failed or execution errored verdicts found in invocation %q (use -all-statuses or status flags to see other verdicts)\n", invID)
 		} else {
 			fmt.Fprintf(out, "No matching verdicts found in invocation %q\n", invID)
@@ -592,41 +691,97 @@ func printListedVerdicts(out io.Writer, invID string, verdicts []*ListedVerdict,
 		return
 	}
 
-	if hasMore {
-		fmt.Fprintf(out, "Verdicts (showing %d, use -max-verdicts or -all to see more):\n", len(verdicts))
-	} else {
-		fmt.Fprintf(out, "Verdicts (%d):\n", len(verdicts))
+	entries := make([]string, len(verdicts))
+	prefixLen := make([]int, len(verdicts)+1)
+	for i, v := range verdicts {
+		entries[i] = formatListedVerdictEntry(v)
+		prefixLen[i+1] = prefixLen[i] + len(entries[i])
 	}
 
-	for _, v := range verdicts {
-		fmt.Fprintf(out, "- %s %s\n", v.Status, v.TestID)
-		if v.Variant != nil && len(v.Variant.GetDef()) > 0 {
-			varStr := format.FormatVariant(v.Variant)
-			if v.VariantHash != "" {
-				fmt.Fprintf(out, "    Variant: %s (hash: %s)\n", varStr, v.VariantHash)
-			} else {
-				fmt.Fprintf(out, "    Variant: %s\n", varStr)
-			}
+	var fullHeader string
+	if hasMore {
+		fullHeader = fmt.Sprintf("Verdicts (showing %d, use -max-verdicts or -all to see more):\n", len(verdicts))
+	} else {
+		fullHeader = fmt.Sprintf("Verdicts (%d):\n", len(verdicts))
+	}
+
+	if maxBytes <= 0 || len(fullHeader)+prefixLen[len(verdicts)] <= maxBytes {
+		fmt.Fprint(out, fullHeader)
+		for _, entry := range entries {
+			fmt.Fprint(out, entry)
 		}
-		if v.FailureReason != "" {
-			label := "Error:"
-			if v.FailureReasonTruncated {
-				label = "Error (truncated):"
-			}
-			fmt.Fprintf(out, "    %s %s\n", label, v.FailureReason)
+		return
+	}
+
+	totalStr := fmt.Sprintf("%d", len(verdicts))
+	if hasMore {
+		totalStr += "+"
+	}
+	quotedInv := ""
+	if invID != "" {
+		quotedInv = base.ShellQuoteIfNeeded(invID)
+	}
+	extraFlags := filter.formatCLIFlags()
+
+	buildCapped := func(k int) (string, string) {
+		hdr := fmt.Sprintf("Verdicts (showing %d of %s within 9.5 KB output limit; pass -all, -max-verdicts=<N>, or -filter=<SUBSTR> to see more):\n", k, totalStr)
+		omitted := len(verdicts) - k
+		omittedStr := fmt.Sprintf("%d", omitted)
+		verdictNoun := "verdicts"
+		if hasMore {
+			omittedStr += "+"
+		} else if omitted == 1 {
+			verdictNoun = "verdict"
 		}
-		if len(v.Exonerations) > 0 {
-			for _, ex := range v.Exonerations {
-				reasonStr := format.StripHTML(ex.ExplanationHtml)
-				if reasonStr != "" {
-					reasonStr, _ = format.TruncateFirstLine(reasonStr, 120)
-					fmt.Fprintf(out, "    Exoneration: %s [%s]\n", reasonStr, ex.Reason)
-				} else if ex.Reason != pb.ExonerationReason_EXONERATION_REASON_UNSPECIFIED {
-					fmt.Fprintf(out, "    Exoneration: [%s]\n", ex.Reason)
-				}
+		var ftr string
+		if k == 0 {
+			ftr = fmt.Sprintf("... %s %s omitted to stay within 9.5 KB limit; run 'luci verdict list -invocationid=%s%s -all' (or pass -modulename / -filter) to view more\n",
+				omittedStr, verdictNoun, quotedInv, extraFlags)
+		} else {
+			ftr = fmt.Sprintf("... and %s more %s omitted to stay within 9.5 KB limit; run 'luci verdict list -invocationid=%s%s -all' (or pass -modulename / -filter) to view more\n",
+				omittedStr, verdictNoun, quotedInv, extraFlags)
+		}
+		return hdr, ftr
+	}
+
+	for k := len(verdicts) - 1; k >= 0; k-- {
+		hdr, ftr := buildCapped(k)
+		if len(hdr)+prefixLen[k]+len(ftr) <= maxBytes {
+			fmt.Fprint(out, hdr)
+			for i := range k {
+				fmt.Fprint(out, entries[i])
 			}
+			fmt.Fprint(out, ftr)
+			return
 		}
 	}
+
+	fallback := fmt.Sprintf("Verdicts (%s omitted to stay within output limit; pass -all to view)\n", totalStr)
+	fmt.Fprint(out, format.TruncateUTF8Prefix(fallback, maxBytes))
+}
+
+func truncateVerdictListOutput(s string, maxBytes int) string {
+	if maxBytes <= 0 || len(s) <= maxBytes {
+		return s
+	}
+	capped := format.TruncateOutputBytes(s, maxBytes-1, "pass -all to view full output")
+	if capped != "" && !strings.HasSuffix(capped, "\n") {
+		capped += "\n"
+	}
+	return capped
+}
+
+func (r *verdictListRun) hasExplicitLimitFlag() bool {
+	if r.maxVerdicts > 0 && r.maxVerdicts != defaultMaxVerdicts {
+		return true
+	}
+	explicit := false
+	r.Flags.Visit(func(f *flag.Flag) {
+		if f.Name == "max-verdicts" || f.Name == "limit" {
+			explicit = true
+		}
+	})
+	return explicit
 }
 
 func (r *verdictListRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -707,18 +862,54 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 	}
 
 	out := r.out
+	if out == nil && a != nil {
+		out = a.GetOut()
+	}
 	if out == nil {
 		out = os.Stdout
 	}
-	ids.PrintDerivedIDs(out, extracted)
+	capOutput := !r.allVerdicts && !r.hasExplicitLimitFlag()
+	var headerBuf bytes.Buffer
+	ids.PrintDerivedIDs(&headerBuf, extracted)
 	if !legacy {
-		format.FprintRootInvocationMetadata(out, resolved.RootInvocation)
+		format.FprintRootInvocationMetadata(&headerBuf, resolved.RootInvocation)
 		if len(verdicts) == 0 {
 			rootAgg := format.FetchRootInvocationAggregation(ctx, client, invID)
-			printEmptyRootInvocationVerdicts(out, invID, resolved.RootInvocation, rootAgg, filter)
+			printEmptyRootInvocationVerdicts(&headerBuf, invID, resolved.RootInvocation, rootAgg, filter)
+			headerStr := headerBuf.String()
+			if capOutput && len(headerStr) > format.DefaultMaxOutputBytes {
+				headerStr = truncateVerdictListOutput(headerStr, format.DefaultMaxOutputBytes)
+			}
+			fmt.Fprint(out, headerStr)
 			return 0
 		}
 	}
-	printListedVerdicts(out, invID, verdicts, hasMore, filter.IsDefault())
+	const minVerdictSectionBytes = 2500
+	headerStr := headerBuf.String()
+	if !capOutput {
+		fmt.Fprint(out, headerStr)
+		printListedVerdictsWithBudget(out, invID, verdicts, hasMore, filter, 0)
+		return 0
+	}
+
+	var uncappedVerdicts bytes.Buffer
+	printListedVerdictsWithBudget(&uncappedVerdicts, invID, verdicts, hasMore, filter, 0)
+	if len(headerStr)+uncappedVerdicts.Len() <= format.DefaultMaxOutputBytes {
+		fmt.Fprint(out, headerStr)
+		fmt.Fprint(out, uncappedVerdicts.String())
+		return 0
+	}
+
+	verdictReserve := min(uncappedVerdicts.Len(), minVerdictSectionBytes)
+	if len(headerStr) > format.DefaultMaxOutputBytes-verdictReserve {
+		headerStr = truncateVerdictListOutput(headerStr, format.DefaultMaxOutputBytes-verdictReserve)
+	}
+	fmt.Fprint(out, headerStr)
+	budget := format.DefaultMaxOutputBytes - len(headerStr)
+	if uncappedVerdicts.Len() <= budget {
+		fmt.Fprint(out, uncappedVerdicts.String())
+	} else {
+		printListedVerdictsWithBudget(out, invID, verdicts, hasMore, filter, budget)
+	}
 	return 0
 }

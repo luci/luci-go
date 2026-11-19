@@ -17,13 +17,17 @@ package verdict
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -376,7 +380,8 @@ func TestPrintListedVerdicts(t *testing.T) {
 	ftt.Run(`printListedVerdicts`, t, func(t *ftt.Test) {
 		t.Run(`empty with default filter`, func(t *ftt.Test) {
 			var buf bytes.Buffer
-			printListedVerdicts(&buf, "build-123", nil, false, true)
+			defaultFilter, _ := parseStatusFilter("", false, false, false, false, false, false)
+			printListedVerdicts(&buf, "build-123", nil, false, defaultFilter)
 			out := buf.String()
 			assert.Loosely(t, out, should.ContainSubstring("No failed or execution errored verdicts found in invocation \"build-123\""))
 			assert.Loosely(t, out, should.ContainSubstring("-all-statuses"))
@@ -409,7 +414,8 @@ func TestPrintListedVerdicts(t *testing.T) {
 			}
 
 			var buf bytes.Buffer
-			printListedVerdicts(&buf, "build-123", verdicts, true, false)
+			allFilter, _ := parseStatusFilter("all", false, false, false, false, false, true)
+			printListedVerdicts(&buf, "build-123", verdicts, true, allFilter)
 			out := buf.String()
 			assert.Loosely(t, out, should.ContainSubstring("Verdicts (showing 2, use -max-verdicts or -all to see more):"))
 			assert.Loosely(t, out, should.ContainSubstring("- FAILED :no-module-name!junit:pkg.Class#testA"))
@@ -781,6 +787,319 @@ func TestVerdictListRunAutoDetect(t *testing.T) {
 			}
 			assert.Loosely(t, runZeroMod.Run(nil, nil, nil), should.Equal(0))
 			assert.Loosely(t, buf.String(), should.ContainSubstring("Inspect module state and setup errors: luci module get -invocationid=ants-i789 -modulename=BrokenSetupModule"))
+		})
+	})
+}
+
+func TestVerdictListDefaultByteCap(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`verdictListRun enforces format.DefaultMaxOutputBytes by default and bypasses on -all or explicit -max-verdicts`, t, func(t *ftt.Test) {
+		testVerdicts := make([]*pb.TestVerdict, 0, 100)
+		for i := range 100 {
+			testID := fmt.Sprintf("://\\:CtsMediaAudioTestCases!cts:android.media.audio.cts:AudioFocusParameterizedTest#testAudioFocusRequest_gainTransientMayDuck_case_%03d", i)
+			testVerdicts = append(testVerdicts, &pb.TestVerdict{
+				TestId: testID,
+				Status: pb.TestVerdict_FAILED,
+				TestIdStructured: &pb.TestIdentifier{
+					ModuleName:        "//:CtsMediaAudioTestCases",
+					ModuleScheme:      "cts",
+					ModuleVariantHash: "b7de9035241e76cc",
+					ModuleVariant: &pb.Variant{
+						Def: map[string]string{
+							"abi":          "arm64-v8a",
+							"build_target": "cf_x86_64_phone-trunk_staging-userdebug",
+						},
+					},
+				},
+				Results: []*pb.TestResult{
+					{
+						StatusV2: pb.TestResult_FAILED,
+						FailureReason: &pb.FailureReason{
+							PrimaryErrorMessage: "java.lang.AssertionError: expected AUDIOFOCUS_REQUEST_GRANTED (1) but was AUDIOFOCUS_REQUEST_FAILED (0) during playback transition",
+						},
+					},
+				},
+			})
+		}
+
+		client := &mockListResultDBClient{
+			getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+				return &pb.RootInvocation{
+					Name:              in.Name,
+					State:             pb.RootInvocation_FAILED,
+					FinalizationState: pb.RootInvocation_FINALIZED,
+					PrimaryBuild: &pb.BuildDescriptor{
+						Definition: &pb.BuildDescriptor_AndroidBuild{
+							AndroidBuild: &pb.AndroidBuildDescriptor{
+								Branch:      "git_main",
+								BuildTarget: "cf_x86_64_phone-trunk_staging-userdebug",
+								BuildId:     "16133789",
+							},
+						},
+					},
+				}, nil
+			},
+			queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+				return &pb.QueryTestVerdictsResponse{
+					TestVerdicts:  testVerdicts,
+					NextPageToken: "more-verdicts-token",
+				}, nil
+			},
+		}
+
+		t.Run(`default invocation stays strictly within 9.5 KB and preserves whole entries`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			cmd := ListCmd(nil)
+			run := cmd.CommandRun().(*verdictListRun)
+			run.client = client
+			run.out = &buf
+
+			rc := run.Run(nil, []string{"rootInvocations/ants-i999"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("within 9.5 KB output limit; pass -all, -max-verdicts=<N>, or -filter=<SUBSTR> to see more"))
+			assert.Loosely(t, out, should.ContainSubstring("more verdicts omitted to stay within 9.5 KB limit; run 'luci verdict list -invocationid=ants-i999 -all' (or pass -modulename / -filter) to view more"))
+			assert.Loosely(t, out, should.ContainSubstring("case_000"))
+			assert.Loosely(t, out, should.NotContainSubstring("case_099"))
+		})
+
+		t.Run(`-all bypasses the 9.5 KB cap`, func(t *ftt.Test) {
+			plainClient := &mockListResultDBClient{
+				getRootInvocation: client.getRootInvocation,
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{TestVerdicts: testVerdicts}, nil
+				},
+			}
+			var buf bytes.Buffer
+			cmd := ListCmd(nil)
+			run := cmd.CommandRun().(*verdictListRun)
+			run.client = plainClient
+			run.out = &buf
+
+			rc := run.Run(nil, []string{"-invocationid", "ants-i999", "-all"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, len(out) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("case_000"))
+			assert.Loosely(t, out, should.ContainSubstring("case_099"))
+			assert.Loosely(t, out, should.NotContainSubstring("within 9.5 KB output limit"))
+		})
+
+		t.Run(`explicit -max-verdicts=100 bypasses the 9.5 KB cap`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			cmd := ListCmd(nil)
+			run := cmd.CommandRun().(*verdictListRun)
+			run.client = client
+			run.out = &buf
+
+			rc := run.Run(nil, []string{"-invocationid", "ants-i999", "-max-verdicts", "100"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, len(out) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("case_099"))
+			assert.Loosely(t, out, should.NotContainSubstring("within 9.5 KB output limit"))
+		})
+
+		t.Run(`explicit -limit=100 alias bypasses the 9.5 KB cap`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			cmd := ListCmd(nil)
+			run := cmd.CommandRun().(*verdictListRun)
+			run.client = client
+			run.out = &buf
+
+			rc := run.Run(nil, []string{"-invocationid", "ants-i999", "-limit", "100"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, len(out) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("case_099"))
+			assert.Loosely(t, out, should.NotContainSubstring("within 9.5 KB output limit"))
+		})
+
+		t.Run(`caps 0-verdict root invocation with oversized SummaryMarkdown and allows -all bypass`, func(t *ftt.Test) {
+			oversizedSummary := "TOP_ERROR_LINE\n" + strings.Repeat("diagnostic harness detail line 1234567890\n", 320) + "BOTTOM_TRACE_LINE"
+			zeroClient := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:              in.Name,
+						State:             pb.RootInvocation_SUCCEEDED,
+						FinalizationState: pb.RootInvocation_FINALIZED,
+						SummaryMarkdown:   oversizedSummary,
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{}, nil
+				},
+				queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+					return &pb.QueryTestAggregationsResponse{
+						Aggregations: []*pb.TestAggregation{
+							{
+								ModuleStatusCounts: &pb.TestAggregation_ModuleStatusCounts{Skipped: 1},
+								TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{},
+							},
+						},
+					}, nil
+				},
+			}
+
+			var cappedBuf bytes.Buffer
+			cappedCmd := ListCmd(nil)
+			cappedRun := cappedCmd.CommandRun().(*verdictListRun)
+			cappedRun.client = zeroClient
+			cappedRun.out = &cappedBuf
+			assert.Loosely(t, cappedRun.Run(nil, []string{"-invocationid", "ants-i999"}, nil), should.Equal(0))
+			cappedOut := cappedBuf.String()
+			assert.Loosely(t, len(cappedOut) <= format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, utf8.ValidString(cappedOut), should.BeTrue)
+			assert.Loosely(t, cappedOut, should.ContainSubstring("TOP_ERROR_LINE"))
+			assert.Loosely(t, cappedOut, should.ContainSubstring("0 tests ran"))
+			assert.Loosely(t, cappedOut, should.ContainSubstring("Next steps:"))
+			assert.Loosely(t, cappedOut, should.ContainSubstring("bytes truncated; pass -all to view full output"))
+
+			var allBuf bytes.Buffer
+			allCmd := ListCmd(nil)
+			allRun := allCmd.CommandRun().(*verdictListRun)
+			allRun.client = zeroClient
+			allRun.out = &allBuf
+			assert.Loosely(t, allRun.Run(nil, []string{"-invocationid", "ants-i999", "-all"}, nil), should.Equal(0))
+			allOut := allBuf.String()
+			assert.Loosely(t, len(allOut) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, allOut, should.ContainSubstring("BOTTOM_TRACE_LINE"))
+			assert.Loosely(t, allOut, should.NotContainSubstring("bytes truncated"))
+		})
+
+		t.Run(`caps oversized RootInvocation header metadata while preserving an actionable Verdicts section`, func(t *ftt.Test) {
+			extraBuilds := make([]*pb.BuildDescriptor, 0, 200)
+			for i := range 200 {
+				extraBuilds = append(extraBuilds, &pb.BuildDescriptor{
+					Definition: &pb.BuildDescriptor_AndroidBuild{
+						AndroidBuild: &pb.AndroidBuildDescriptor{
+							Branch:      "git_main",
+							BuildTarget: fmt.Sprintf("extra_build_target_with_long_name_%03d_userdebug", i),
+							BuildId:     fmt.Sprintf("16133%03d", i),
+						},
+					},
+				})
+			}
+			defProps := make(map[string]string, 100)
+			for i := range 100 {
+				defProps[fmt.Sprintf("prop_%03d", i)] = strings.Repeat("v", 80)
+			}
+			heavyHeaderClient := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:              in.Name,
+						State:             pb.RootInvocation_FAILED,
+						FinalizationState: pb.RootInvocation_FINALIZED,
+						ExtraBuilds:       extraBuilds,
+						Definition: &pb.RootInvocationDefinition{
+							System:     "atp",
+							Name:       "suite-name",
+							Properties: &pb.RootInvocationDefinition_Properties{Def: defProps},
+						},
+					}, nil
+				},
+				queryTestVerdicts: client.queryTestVerdicts,
+			}
+
+			var buf bytes.Buffer
+			cmd := ListCmd(nil)
+			run := cmd.CommandRun().(*verdictListRun)
+			run.client = heavyHeaderClient
+			run.out = &buf
+			assert.Loosely(t, run.Run(nil, []string{"-invocationid", "ants-i999"}, nil), should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, utf8.ValidString(out), should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("bytes truncated; pass -all to view full output"))
+			assert.Loosely(t, out, should.ContainSubstring("case_000"))
+			assert.Loosely(t, out, should.ContainSubstring("Verdicts ("))
+			assert.Loosely(t, out, should.ContainSubstring("run 'luci verdict list -invocationid=ants-i999 -all'"))
+		})
+
+		t.Run(`preserves active status and scope flags in suggested -all command`, func(t *ftt.Test) {
+			runArgs := func(args ...string) string {
+				var buf bytes.Buffer
+				cmd := ListCmd(nil)
+				run := cmd.CommandRun().(*verdictListRun)
+				run.client = client
+				run.out = &buf
+				assert.Loosely(t, run.Run(nil, args, nil), should.Equal(0))
+				out := buf.String()
+				assert.Loosely(t, len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+				return out
+			}
+
+			outAllStatuses := runArgs("-invocationid", "ants-i999", "-all-statuses")
+			assert.Loosely(t, outAllStatuses, should.ContainSubstring("run 'luci verdict list -invocationid=ants-i999 -all-statuses -all'"))
+
+			outPassed := runArgs("-invocationid", "ants-i999", "-passed")
+			assert.Loosely(t, outPassed, should.ContainSubstring("run 'luci verdict list -invocationid=ants-i999 -passed -all'"))
+
+			outStatusOnly := runArgs("-invocationid", "ants-i999", "-status", "FAILED,FLAKY")
+			assert.Loosely(t, outStatusOnly, should.ContainSubstring("run 'luci verdict list -invocationid=ants-i999 -status=failed,flaky -all'"))
+
+			outScoped := runArgs("-invocationid", "ants-i999", "-modulename", "//:CtsMediaAudioTestCases", "-filter", `test_id:"AudioFocus case"`)
+			assert.Loosely(t, outScoped, should.ContainSubstring(`run 'luci verdict list -invocationid=ants-i999 -modulename=//:CtsMediaAudioTestCases -filter='test_id:"AudioFocus case"' -all'`))
+		})
+
+		t.Run(`does not truncate ~8 KB RootInvocation header when 1 short verdict fits within 9.5 KB`, func(t *ftt.Test) {
+			defProps := make(map[string]string, 80)
+			for i := range 80 {
+				defProps[fmt.Sprintf("prop_%03d", i)] = strings.Repeat("p", 82)
+			}
+			eightKBHeaderClient := &mockListResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:              in.Name,
+						State:             pb.RootInvocation_FAILED,
+						FinalizationState: pb.RootInvocation_FINALIZED,
+						Definition: &pb.RootInvocationDefinition{
+							System:     "atp",
+							Name:       "suite-eight-kb",
+							Properties: &pb.RootInvocationDefinition_Properties{Def: defProps},
+						},
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: ":CtsShortModule!junit:pkg.Cls#testSingleFailure",
+								Status: pb.TestVerdict_FAILED,
+								Results: []*pb.TestResult{
+									{
+										StatusV2: pb.TestResult_FAILED,
+										FailureReason: &pb.FailureReason{
+											PrimaryErrorMessage: "AssertionError: expected true",
+										},
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			cmd := ListCmd(nil)
+			run := cmd.CommandRun().(*verdictListRun)
+			run.client = eightKBHeaderClient
+			run.out = &buf
+			assert.Loosely(t, run.Run(nil, []string{"-invocationid", "ants-i999"}, nil), should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, len(out) > 7500 && len(out) <= format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, out, should.NotContainSubstring("bytes truncated"))
+			assert.Loosely(t, out, should.NotContainSubstring("omitted"))
+			assert.Loosely(t, out, should.ContainSubstring("Verdicts (1):\n"))
+			assert.Loosely(t, out, should.ContainSubstring("testSingleFailure"))
 		})
 	})
 }
