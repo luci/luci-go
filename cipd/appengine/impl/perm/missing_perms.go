@@ -29,17 +29,18 @@ import (
 type MissingPerms struct {
 	pchk *PrefixCache
 
-	permSet Set
+	deniedByPolicy Set
+	deniedByACL    Set
 }
 
 // Empty reports whether no permissions were missing.
 func (m *MissingPerms) Empty() bool {
-	return len(m.permSet) == 0
+	return len(m.deniedByPolicy) == 0 && len(m.deniedByACL) == 0
 }
 
 // Has reports whether `c` is in the missing set.
 func (m *MissingPerms) Has(c Permission) bool {
-	return m.permSet.Has(c)
+	return m.deniedByPolicy.Has(c) || m.deniedByACL.Has(c)
 }
 
 // AsError formats the missing permission(s) as a gRPC PermissionDenied error
@@ -58,13 +59,20 @@ func (m *MissingPerms) AsError(ctx context.Context) error {
 		return NoAccessErr(ctx, m.pchk.prefix)
 	}
 
-	// TODO: Report global write policy rejection and missing legacy role details.
+	toReport := m.deniedByACL
+	var detailSuffix string
+	if len(m.deniedByPolicy) > 0 {
+		toReport = m.deniedByPolicy
+		detailSuffix = ": rejected by global policy"
+	}
+	// TODO: Report missing legacy role details when EnableLegacyAclFallback is
+	// enabled.
 
 	plural := ""
-	if len(m.permSet) > 1 {
+	if len(toReport) > 1 {
 		plural = "s"
 	}
 	return status.Errorf(
-		codes.PermissionDenied, "%q is missing the %s permission%s in prefix %q (realm %q)",
-		m.pchk.pcache.ident, m.permSet, plural, m.pchk.prefix, m.pchk.cfg.Realm)
+		codes.PermissionDenied, "%q is missing the %s permission%s in prefix %q (realm %q)%s",
+		m.pchk.pcache.ident, toReport, plural, m.pchk.prefix, m.pchk.cfg.Realm, detailSuffix)
 }

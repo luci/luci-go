@@ -84,6 +84,7 @@ func TestPermission(t *testing.T) {
 	assert.That(t, DiagnoseACL.String(), should.Equal("cipd.packages.diagnoseACL"))
 	assert.That(t, DiagnoseACL.Group(), should.Equal(PrefixesViewers))
 	assert.That(t, DiagnoseACL.IsGroupOnly(), should.BeFalse)
+	assert.That(t, DiagnoseACL.IsWrite(), should.BeFalse)
 	assert.That(t, (Permission{}).Perm().Name(), should.Equal(""))
 	assert.That(t, (Permission{}).String(), should.Equal("<invalid>"))
 	assert.That(t, (Bindable{}).Perm().Name(), should.Equal(""))
@@ -95,20 +96,28 @@ func TestPermission(t *testing.T) {
 
 		p1 := testPermAttr.Bind("v1")
 		p2 := testPermAttr.Bind("v2")
+		assert.That(t, p1.IsWrite(), should.BeFalse)
 		assert.That(t, p1.Group(), should.Equal(""))
 		assert.That(t, p1.IsGroupOnly(), should.BeFalse)
 		assert.That(t, p1.String(), should.Equal(`cipd.testing.attr{cipd.testing.key:"v1"}`))
 		assert.That(t, p2.String(), should.Equal(`cipd.testing.attr{cipd.testing.key:"v2"}`))
 
+		assert.That(t, testPermWrite.IsWrite(), should.BeTrue)
+
 		assert.That(t, testPermGroup.IsGroupOnly(), should.BeFalse)
 		assert.That(t, testPermGroup.Group(), should.Equal("administrators"))
 
+		assert.That(t, testPermFake.IsWrite(), should.BeTrue)
 		assert.That(t, testPermFake.IsGroupOnly(), should.BeTrue)
 		assert.That(t, testPermFake.Group(), should.Equal("administrators"))
 	})
 
 	t.Run("duplicate_modifiers_panic", func(t *testing.T) {
 		t.Parallel()
+
+		assert.That(t, func() {
+			testPermWrite.asWrite()
+		}, should.Panic)
 
 		assert.That(t, func() {
 			DiagnoseACL.withGroup("b")

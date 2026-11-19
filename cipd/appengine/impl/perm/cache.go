@@ -115,8 +115,9 @@ func (r *Cache) HasPerm(ctx context.Context, realm string, perm Permission) (has
 // `cfg` that shares identity-scoped caches with `r`.
 func (r *Cache) ForPrefix(prefix string, cfg *prefixcfg.Entry) *PrefixCache {
 	return &PrefixCache{
-		pcache: r,
-		prefix: prefix,
-		cfg:    cfg,
+		pcache:       r,
+		prefix:       prefix,
+		cfg:          cfg,
+		writeAllowed: IsWriteAllowed(r.ident, cfg),
 	}
 }

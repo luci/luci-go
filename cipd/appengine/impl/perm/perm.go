@@ -34,7 +34,7 @@ type Checkable interface {
 // corePermission is the core aspects of a Permission which don't change
 // with binding.
 //
-// TODO: Support global write policy and legacy roles.
+// TODO: Support legacy roles.
 type corePermission struct {
 	// perm is the realms permission for this Permission.
 	perm realms.Permission
@@ -46,6 +46,14 @@ type corePermission struct {
 	// that the repo implementation can use [DeletePackage] instead of having to
 	// 'know' that this permission check is special).
 	groupOnly bool
+
+	// isWrite indicates that this permission mutates state and is subject to the
+	// prefix's AllowWritersFromRegexp policy.
+	//
+	// If role is set, this implies that role is >= WRITER, but role >= WRITER
+	// does NOT imply this (e.g. "cipd.packages.readLegacyRoles" is implied by
+	// OWNER, but is not a write operation).
+	isWrite bool
 
 	// group is a CRIA group which implies this permission. If the caller is in
 	// this group, then they have this permission.
@@ -113,6 +121,10 @@ func (c Permission) Perm() realms.Permission {
 // [Permission.Group] (and not via LUCI Realms).
 func (c Permission) IsGroupOnly() bool { return c.core.groupOnly }
 
+// IsWrite reports whether this permission mutates state and is subject to
+// AllowWritersFromRegexp.
+func (c Permission) IsWrite() bool { return c.core.isWrite }
+
 // Group returns the CRIA group whose membership implies this permission, or "".
 func (c Permission) Group() string { return c.core.group }
 
@@ -168,6 +180,17 @@ func (c Permission) groupOnly(group string) Permission {
 	}
 	c = c.withGroup(group)
 	c.core.groupOnly = true
+	return c
+}
+
+// asWrite modifies c.core.isWrite, and returns c.
+//
+// Panics if used twice with the same [corePermission].
+func (c Permission) asWrite() Permission {
+	if c.core.isWrite {
+		panic("impossible: cannot use `asWrite` twice on the same Permission")
+	}
+	c.core.isWrite = true
 	return c
 }
 

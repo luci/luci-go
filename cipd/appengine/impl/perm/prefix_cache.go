@@ -24,11 +24,12 @@ import (
 // PrefixCache evaluates permissions against a single prefix and its resolved
 // configuration.
 //
-// TODO: Track writeAllowed, lazy PrefixMetadata, and checked legacy roles.
+// TODO: Track lazy PrefixMetadata and checked legacy roles.
 type PrefixCache struct {
-	pcache *Cache
-	prefix string
-	cfg    *prefixcfg.Entry
+	pcache       *Cache
+	prefix       string
+	cfg          *prefixcfg.Entry
+	writeAllowed bool
 }
 
 // Prefix returns the CIPD package prefix this PrefixCache is bound to.
@@ -41,15 +42,18 @@ func (p *PrefixCache) Config() *prefixcfg.Entry { return p.cfg }
 //
 // This is based on [DiagnoseACL].
 func (p *PrefixCache) CanDiagnose(ctx context.Context) (bool, error) {
-	return p.CheckOne(ctx, DiagnoseACL)
+	has, _, err := p.CheckOne(ctx, DiagnoseACL)
+	return has, err
 }
 
 // CheckOne checks to see if the current identity has `perm`.
 //
 // The realm (if any) is implied by the `prefix` that this PrefixCache is
 // bound to.
-func (p *PrefixCache) CheckOne(ctx context.Context, perm Permission) (has bool, err error) {
-	// TODO: Global write policy.
+func (p *PrefixCache) CheckOne(ctx context.Context, perm Permission) (has, policyReject bool, err error) {
+	if perm.core.isWrite && !p.writeAllowed {
+		return false, true, nil
+	}
 
 	if has, err = p.pcache.HasPerm(ctx, p.cfg.Realm, perm); has || err != nil {
 		return
@@ -60,21 +64,26 @@ func (p *PrefixCache) CheckOne(ctx context.Context, perm Permission) (has bool, 
 	return
 }
 
-// CheckSet checks all permissions in `perms`.
+// CheckSet checks all permissions in `perms` against global write policy,
+// group membership, and realm permissions.
 //
 // If any permissions are missing, they are returned in `missing`.
 func (p *PrefixCache) CheckSet(ctx context.Context, perms Set) (*MissingPerms, error) {
-	var missing Set
+	ret := &MissingPerms{pchk: p}
 	for perm := range perms {
-		has, err := p.CheckOne(ctx, perm)
+		has, policyReject, err := p.CheckOne(ctx, perm)
 		if err != nil {
 			return nil, err
 		}
 		if !has {
-			missing.Add(perm)
+			if policyReject {
+				ret.deniedByPolicy.Add(perm)
+			} else {
+				ret.deniedByACL.Add(perm)
+			}
 		}
 	}
-	return &MissingPerms{pchk: p, permSet: missing}, nil
+	return ret, nil
 }
 
 // Check verifies that the current user has all `required` permissions on

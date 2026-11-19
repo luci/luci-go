@@ -18,6 +18,7 @@ import (
 	"cmp"
 	"errors"
 	"maps"
+	"regexp"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -582,6 +583,146 @@ func TestCheckGroups(t *testing.T) {
 
 			assert.NoErr(t, err)
 			assert.That(t, has, should.Match(tc.perms.Perms()))
+		})
+	}
+}
+
+func TestCheckWritePolicy(t *testing.T) {
+	t.Parallel()
+
+	const (
+		prefix    = "a/b"
+		testRealm = "proj:realm"
+	)
+
+	adminsOnlyWriters := []*regexp.Regexp{regexp.MustCompile(`^.*@admins\.example\.com$`)}
+
+	fakeDB := authtest.NewFakeDB(
+		authtest.MockMembership("user:viewer@example.com", PrefixesViewers),
+		authtest.MockMembership("user:admin@example.com", "administrators"),
+
+		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, testPermWrite.Perm()),
+		authtest.MockPermission("user:realm-writer@example.com", testRealm, testPermRead.Perm()),
+		authtest.MockPermission("user:realm-writer@example.com", testRealm, testPermWrite.Perm()),
+		authtest.MockPermission("user:realm-writer@example.com", testRealm, DiagnoseACL.Perm()),
+		authtest.MockPermission("user:realm-diagnose@example.com", testRealm, DiagnoseACL.Perm()),
+		authtest.MockPermission("user:realm-nonwrite@example.com", testRealm, testPermExtra.Perm()),
+	)
+
+	cases := []struct {
+		name string
+
+		user         identity.Identity
+		perms        Checkable
+		optional     Checkable
+		wantOptional Checkable
+
+		dbOverride  *authtest.FakeDB
+		wantCode    codes.Code
+		wantErrLike string
+	}{
+		{
+			name:        "writers_regexp_blocks_disallowed_realm_writer",
+			user:        "user:realm-writer@example.com",
+			perms:       testPermWrite,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-writer@example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
+		},
+		{
+			name:  "writers_regexp_allows_matching_writer",
+			user:  "user:realm-writer@admins.example.com",
+			perms: testPermWrite,
+		},
+		{
+			name:  "writers_regexp_does_not_block_read_permission",
+			user:  "user:realm-writer@example.com",
+			perms: testPermRead,
+		},
+		{
+			name:  "writers_regexp_does_not_block_non_write_perm_via_realm",
+			user:  "user:realm-nonwrite@example.com",
+			perms: testPermExtra,
+		},
+		{
+			name:  "writers_regexp_does_not_block_non_write_perm_for_prefixes_viewer",
+			user:  "user:viewer@example.com",
+			perms: testPermRead,
+		},
+		{
+			name:        "writers_regexp_blocks_fake_write_perm",
+			user:        "user:admin@example.com",
+			perms:       testPermFake,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `prefix "a/b" doesn't exist or "user:admin@example.com" is not allowed to see it`,
+		},
+		{
+			name:        "multi_perm_writers_regexp_blocks_only_write_perm",
+			user:        "user:realm-writer@example.com",
+			perms:       SetOf(testPermRead, testPermWrite),
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-writer@example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
+		},
+		{
+			name:        "multi_perm_both_read_and_write_missing_reports_policy_rejected_write_perm",
+			user:        "user:realm-diagnose@example.com",
+			perms:       SetOf(testPermRead, testPermWrite),
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-diagnose@example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
+		},
+		{
+			name:         "nil_required_with_writers_regexp_filters_write_optional_perms",
+			user:         "user:realm-writer@example.com",
+			perms:        nil,
+			optional:     SetOf(testPermRead, DiagnoseACL, testPermWrite),
+			wantOptional: SetOf(testPermRead, DiagnoseACL),
+		},
+		{
+			name:        "can_diagnose_authdb_error_propagated",
+			user:        "user:realm-writer@example.com",
+			dbOverride:  authtest.NewFakeDB(authtest.MockError(errors.New("authdb diagnose boom"))),
+			perms:       testPermWrite,
+			wantErrLike: "authdb diagnose boom",
+		},
+	}
+
+	cfg := &prefixcfg.Entry{
+		Service: &prefixcfg.ServiceEntry{
+			OwningLuciProject:      "proj",
+			AllowWritersFromRegexp: adminsOnlyWriters,
+		},
+		Realm: testRealm,
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := auth.WithState(t.Context(), &authtest.FakeState{
+				Identity: tc.user,
+				FakeDB:   cmp.Or(tc.dbOverride, fakeDB),
+			})
+
+			has, err := NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
+			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
+				assert.That(t, has, should.Match(Set(nil)))
+				if tc.wantCode != codes.OK {
+					assert.That(t, err, grpccode.ShouldBe(tc.wantCode))
+				}
+				assert.ErrIsLike(t, err, tc.wantErrLike)
+				return
+			}
+
+			assert.NoErr(t, err)
+			var wantHas Set
+			if tc.perms != nil {
+				wantHas = maps.Clone(tc.perms.Perms())
+			}
+			if tc.wantOptional != nil {
+				for p := range tc.wantOptional.Perms() {
+					wantHas.Add(p)
+				}
+			}
+			assert.That(t, has, should.Match(wantHas))
 		})
 	}
 }

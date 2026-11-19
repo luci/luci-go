@@ -26,11 +26,11 @@ import (
 // registered in perms.go.
 var (
 	testPermRead  = definePerm("cipd.testing.read").withGroup(PrefixesViewers)
-	testPermWrite = definePerm("cipd.testing.write")
+	testPermWrite = definePerm("cipd.testing.write").asWrite()
 	testPermExtra = definePerm("cipd.testing.extra")
 	testPermAttr  = definePerm("cipd.testing.attr").withAttr("cipd.testing.key")
 	testPermGroup = definePerm("cipd.testing.group").withGroup("administrators")
-	testPermFake  = definePerm("cipd.testing.fake").groupOnly("administrators")
+	testPermFake  = definePerm("cipd.testing.fake").groupOnly("administrators").asWrite()
 )
 
 func TestRegisteredPermissionsInvariants(t *testing.T) {
