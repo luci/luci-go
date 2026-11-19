@@ -950,12 +950,24 @@ export function ChartSeriesItem({
     ? `dashboardStates/${dashboardId}/dataSpecs/${dataSpecId}`
     : '';
 
+  const nonStatFilters = useMemo(
+    () =>
+      series.filters?.filter((f) => f.column !== STATISTICAL_KEY_COLUMN) ?? [],
+    [series.filters],
+  );
+
+  // Scope metric suggestions to the series' own filters (e.g. atp_test_name)
+  // as well as the global and widget filters. Without them, F1 has to scan
+  // every test's measurements and the query times out. The series'
+  // statistical_key is excluded so that metrics with other statistics are
+  // still suggested.
   const filterString = useMemo(() => {
     return buildFilterString([
       ...(globalFilters ?? []),
       ...(widgetFilters ?? []),
+      ...nonStatFilters,
     ]);
-  }, [globalFilters, widgetFilters]);
+  }, [globalFilters, widgetFilters, nonStatFilters]);
 
   const { data: suggestionData, isLoading: isLoadingSuggestions } =
     useSuggestMeasurementFilterValues(
@@ -990,12 +1002,6 @@ export function ChartSeriesItem({
       currentStatKeyValue === '' ? RAW_DATA_STAT_LABEL : currentStatKeyValue,
     );
   }, [currentStatKeyValue]);
-
-  const nonStatFilters = useMemo(
-    () =>
-      series.filters?.filter((f) => f.column !== STATISTICAL_KEY_COLUMN) ?? [],
-    [series.filters],
-  );
 
   const effectiveMetricField = (
     series.metricField ||

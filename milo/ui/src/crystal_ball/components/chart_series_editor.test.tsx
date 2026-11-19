@@ -27,6 +27,7 @@ import {
   Column,
   COMMON_MESSAGES,
   RAW_DATA_STAT_LABEL,
+  STATISTICAL_KEY_COLUMN,
   UNCACHED_SUGGEST_STALE_TIME_MS,
 } from '@/crystal_ball/constants';
 import { FiltersClipboardProvider } from '@/crystal_ball/context';
@@ -323,6 +324,75 @@ describe('ChartSeriesEditor', () => {
         expect.objectContaining({
           filter:
             'atp_test_name = "globalValue" AND atp_test_name = "widgetValue"',
+        }),
+        expect.objectContaining({ enabled: true }),
+      );
+    });
+  });
+
+  it('scopes metric suggestions to the series filters except statistical_key', async () => {
+    const globalFilters: PerfFilter[] = [
+      PerfFilter.fromPartial({
+        id: 'global-filter-1',
+        column: Column.BUILD_BRANCH,
+        textInput: {
+          defaultValue: {
+            values: ['git_main'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      }),
+    ];
+    const initialSeries: PerfChartSeries[] = [
+      PerfChartSeries.fromPartial({
+        displayName: 'Series 1',
+        metricField: 'metric1',
+        dataSpecId: 'test-spec-id',
+        filters: [
+          PerfFilter.fromPartial({
+            id: 'series-filter-1',
+            column: Column.ATP_TEST_NAME,
+            textInput: {
+              defaultValue: {
+                values: ['v2/team/test'],
+                filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+              },
+            },
+          }),
+          PerfFilter.fromPartial({
+            id: 'series-filter-2',
+            column: STATISTICAL_KEY_COLUMN,
+            textInput: {
+              defaultValue: {
+                values: ['p50'],
+                filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+              },
+            },
+          }),
+        ],
+      }),
+    ];
+    render(
+      <ChartSeriesEditor
+        {...defaultProps}
+        series={initialSeries}
+        globalFilters={globalFilters}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Series 1'));
+    const metricInput = await screen.findByLabelText('Metric Field');
+
+    fireEvent.focus(metricInput);
+    fireEvent.change(metricInput, { target: { value: 'newMetric' } });
+
+    await waitFor(() => {
+      expect(mockedSuggestValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          column: Column.METRIC_KEY,
+          filter:
+            'build_branch = "git_main" AND atp_test_name = "v2/team/test"',
+          query: 'newMetric',
         }),
         expect.objectContaining({ enabled: true }),
       );
