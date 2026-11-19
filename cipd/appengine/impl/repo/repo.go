@@ -255,6 +255,24 @@ func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *repopb.Prefix
 	}
 
 	// Check ACLs.
+	//
+	// NOTE: This API only makes sense in terms of legacy ACLs, so there is no
+	// equivalent realm permission.
+	cfg, err := impl.lookupPrefixCfg(ctx, r.Prefix)
+	if err != nil {
+		return nil, err
+	}
+	if !cfg.Service.EnableLegacyAclFallback {
+		canDiag, err := impl.newPermissionCache(ctx).ForPrefix(r.Prefix, cfg).CanDiagnose(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if canDiag {
+			return nil, status.Errorf(
+				codes.PermissionDenied, "prefix %q has legacy ACLs disabled", r.Prefix)
+		}
+		return nil, perm.NoAccessErr(ctx, r.Prefix)
+	}
 	if _, err := impl.checkRole(ctx, r.Prefix, repopb.Role_OWNER); err != nil {
 		return nil, err
 	}

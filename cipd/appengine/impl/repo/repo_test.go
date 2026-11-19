@@ -262,7 +262,9 @@ func TestMetadataUpdating(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, tc, as := testutil.TestingContext()
+		ctx, tc, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-diagnose@google.com", "project:realm", perm.DiagnoseACL.Perm()),
+		)
 
 		meta := testutil.MetadataStore{}
 
@@ -385,6 +387,30 @@ func TestMetadataUpdating(t *testing.T) {
 				Prefix: "zzz",
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, meta, should.BeNil)
+		})
+
+		t.Run("Legacy ACL fallback disabled", func(t *ftt.Test) {
+			impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+				return &prefixcfg.Entry{
+					Service: &prefixcfg.ServiceEntry{},
+					Realm:   "project:realm",
+				}, nil
+			}
+			// Revoked legacy owner without realm diagnoseACL gets generic error.
+			meta, err := callUpdate("user:top-owner@google.com", &repopb.PrefixMetadata{
+				Prefix: "a/b",
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, `prefix "a/b" doesn't exist or "user:top-owner@google.com" is not allowed to see it`)
+			assert.Loosely(t, meta, should.BeNil)
+
+			// Caller with diagnoseACL sees that legacy ACLs are disabled.
+			meta, err = callUpdate("user:realm-diagnose@google.com", &repopb.PrefixMetadata{
+				Prefix: "a/b",
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, `prefix "a/b" has legacy ACLs disabled`)
 			assert.Loosely(t, meta, should.BeNil)
 		})
 

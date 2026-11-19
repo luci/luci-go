@@ -139,8 +139,9 @@ type RepositoryClient interface {
 	GetInheritedPrefixMetadata(ctx context.Context, in *PrefixRequest, opts ...grpc.CallOption) (*InheritedPrefixMetadata, error)
 	// Updates or creates metadata associated with the given prefix.
 	//
-	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	// Requires legacy ACLs to be enabled for the prefix and the caller to have
+	// OWNER role for the requested prefix or any of parent prefixes, otherwise
+	// the call fails with PERMISSION_DENIED error.
 	//
 	// This method checks 'fingerprint' field of the PrefixMetadata object. If the
 	// metadata for the given prefix already exists, and the fingerprint in the
@@ -825,8 +826,9 @@ type RepositoryServer interface {
 	GetInheritedPrefixMetadata(context.Context, *PrefixRequest) (*InheritedPrefixMetadata, error)
 	// Updates or creates metadata associated with the given prefix.
 	//
-	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, otherwise the call fails with PERMISSION_DENIED error.
+	// Requires legacy ACLs to be enabled for the prefix and the caller to have
+	// OWNER role for the requested prefix or any of parent prefixes, otherwise
+	// the call fails with PERMISSION_DENIED error.
 	//
 	// This method checks 'fingerprint' field of the PrefixMetadata object. If the
 	// metadata for the given prefix already exists, and the fingerprint in the
