@@ -302,7 +302,9 @@ type RepositoryClient interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks the `cipd.packages.detachRef`
+	//	    permission (which is checked with the attribute
+	//	    `cipd.package.refName`) or legacy WRITER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package doesn't exist.
 	DeleteRef(ctx context.Context, in *DeleteRefRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -994,7 +996,9 @@ type RepositoryServer interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks the `cipd.packages.detachRef`
+	//	    permission (which is checked with the attribute
+	//	    `cipd.package.refName`) or legacy WRITER role for the prefix.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the package doesn't exist.
 	DeleteRef(context.Context, *DeleteRefRequest) (*emptypb.Empty, error)

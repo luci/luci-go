@@ -1888,6 +1888,7 @@ func TestRefs(t *testing.T) {
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext(
 			authtest.MockPermission("user:realm-ref-writer@example.com", "project:realm", perm.WriteRef.Perm(), authtest.RestrictAttribute("cipd.package.refName", "latest")),
+			authtest.MockPermission("user:realm-ref-detacher@example.com", "project:realm", perm.DetachRef.Perm(), authtest.RestrictAttribute("cipd.package.refName", "latest")),
 		)
 		ctx = as("writer@google.com")
 
@@ -1943,6 +1944,34 @@ func TestRefs(t *testing.T) {
 					HashAlgo:  caspb.HashAlgo_SHA1,
 					HexDigest: digest,
 				},
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+		})
+
+		t.Run("DeleteRef via realm permission with attribute", func(t *ftt.Test) {
+			_, err := impl.CreateRef(ctx, &repopb.Ref{
+				Name:    "latest",
+				Package: "a/b/c",
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
+					HexDigest: digest,
+				},
+			})
+			assert.NoErr(t, err)
+
+			_, err = impl.DeleteRef(as("realm-ref-detacher@example.com"), &repopb.DeleteRefRequest{
+				Name:    "latest",
+				Package: "a/b/c",
+			})
+			assert.NoErr(t, err)
+			refs, err := impl.ListRefs(ctx, &repopb.ListRefsRequest{Package: "a/b/c"})
+			assert.NoErr(t, err)
+			assert.Loosely(t, refs.Refs, should.HaveLength(0))
+
+			_, err = impl.DeleteRef(as("realm-ref-detacher@example.com"), &repopb.DeleteRefRequest{
+				Name:    "other",
+				Package: "a/b/c",
 			})
 			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 			assert.ErrIsLike(t, err, "is not allowed to see it")

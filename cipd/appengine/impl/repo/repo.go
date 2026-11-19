@@ -1151,7 +1151,7 @@ func (impl *repoImpl) DeleteRef(ctx context.Context, r *repopb.DeleteRefRequest)
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_WRITER); err != nil {
+	if _, _, err := impl.hasPermission(ctx, r.Package, perm.DetachRef.Bind(r.Name), nil); err != nil {
 		return nil, err
 	}
 
