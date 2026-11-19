@@ -44,12 +44,12 @@ func TestCheckRealms(t *testing.T) {
 	)
 
 	fakeDB := authtest.NewFakeDB(
-		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, testPermRead.Perm()),
+		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, ListInstances.Perm()),
 		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, DiagnoseACL.Perm()),
-		authtest.MockPermission("user:realm-only-reader@admins.example.com", testRealm, testPermRead.Perm()),
+		authtest.MockPermission("user:realm-only-reader@admins.example.com", testRealm, ListInstances.Perm()),
 		authtest.MockPermission("user:realm-diagnose-acl@admins.example.com", testRealm, DiagnoseACL.Perm()),
-		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, testPermRead.Perm()),
-		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, testPermWrite.Perm()),
+		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, ListInstances.Perm()),
+		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, WriteInstance.Perm()),
 	)
 
 	cases := []struct {
@@ -66,19 +66,19 @@ func TestCheckRealms(t *testing.T) {
 		{
 			name:  "realm_reader_allowed",
 			user:  "user:realm-reader@admins.example.com",
-			perm:  testPermRead,
+			perm:  ListInstances,
 			realm: testRealm,
 		},
 		{
 			name:  "realm_writer_allowed",
 			user:  "user:realm-writer@admins.example.com",
-			perm:  testPermWrite,
+			perm:  WriteInstance,
 			realm: testRealm,
 		},
 		{
 			name:        "unmapped_realm_denied",
 			user:        "user:realm-reader@admins.example.com",
-			perm:        testPermRead,
+			perm:        ListInstances,
 			realm:       "",
 			wantCode:    codes.PermissionDenied,
 			wantErrLike: `prefix "a/b" doesn't exist or "user:realm-reader@admins.example.com" is not allowed to see it`,
@@ -86,15 +86,15 @@ func TestCheckRealms(t *testing.T) {
 		{
 			name:        "detailed_error_when_caller_has_diagnose_acl_in_realm",
 			user:        "user:realm-diagnose-acl@admins.example.com",
-			perm:        testPermWrite,
+			perm:        WriteInstance,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
 			name:        "generic_error_when_caller_lacks_diagnose_acl_in_realm",
 			user:        "user:realm-only-reader@admins.example.com",
-			perm:        testPermWrite,
+			perm:        WriteInstance,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
 			wantErrLike: `prefix "a/b" doesn't exist or "user:realm-only-reader@admins.example.com" is not allowed to see it`,
@@ -102,7 +102,7 @@ func TestCheckRealms(t *testing.T) {
 		{
 			name:        "generic_error_for_anonymous_caller",
 			user:        identity.AnonymousIdentity,
-			perm:        testPermRead,
+			perm:        ListInstances,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
 			wantErrLike: `prefix "a/b" doesn't exist or not visible to unauthenticated callers`,
@@ -111,7 +111,7 @@ func TestCheckRealms(t *testing.T) {
 			name:        "authdb_perm_check_error",
 			user:        "user:realm-writer@admins.example.com",
 			dbOverride:  authtest.NewFakeDB(authtest.MockError(errors.New("authdb perm boom"))),
-			perm:        testPermWrite,
+			perm:        WriteInstance,
 			realm:       testRealm,
 			wantErrLike: "authdb perm boom",
 		},
@@ -174,11 +174,11 @@ func TestCheckSetsAndOptional(t *testing.T) {
 	)
 
 	fakeDB := authtest.NewFakeDB(
-		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, testPermRead.Perm()),
+		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, ListInstances.Perm()),
 		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, DiagnoseACL.Perm()),
 		authtest.MockPermission("user:realm-diagnose-acl@admins.example.com", testRealm, DiagnoseACL.Perm()),
-		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, testPermRead.Perm()),
-		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, testPermWrite.Perm()),
+		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, ListInstances.Perm()),
+		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, WriteInstance.Perm()),
 	)
 
 	cases := []struct {
@@ -195,54 +195,54 @@ func TestCheckSetsAndOptional(t *testing.T) {
 		{
 			name:  "multi_perm_all_allowed_in_realm",
 			user:  "user:realm-writer@admins.example.com",
-			perms: SetOf(testPermRead, testPermWrite),
+			perms: SetOf(ListInstances, WriteInstance),
 		},
 		{
 			name:  "multi_perm_ignores_zero_permission",
 			user:  "user:realm-reader@admins.example.com",
-			perms: SetOf(testPermRead, Permission{}),
+			perms: SetOf(ListInstances, Permission{}),
 		},
 		{
 			name:        "multi_perm_partial_missing_reports_only_missing",
 			user:        "user:realm-reader@admins.example.com",
-			perms:       SetOf(testPermRead, testPermWrite),
+			perms:       SetOf(ListInstances, WriteInstance),
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-reader@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:realm-reader@admins.example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
 			name:        "multi_perm_all_missing_reports_plural_sorted",
 			user:        "user:realm-diagnose-acl@admins.example.com",
-			perms:       SetOf(testPermWrite, testPermRead),
+			perms:       SetOf(WriteInstance, ListInstances),
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.testing.read,cipd.testing.write] permissions in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.packages.listInstances,cipd.packages.writeInstance] permissions in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
 			name:         "optional_single_perm_granted_in_realm",
 			user:         "user:realm-reader@admins.example.com",
-			perms:        testPermRead,
+			perms:        ListInstances,
 			optional:     DiagnoseACL,
 			wantOptional: DiagnoseACL,
 		},
 		{
 			name:         "optional_multi_perm_partial_granted_in_realm",
 			user:         "user:realm-writer@admins.example.com",
-			perms:        testPermRead,
-			optional:     SetOf(testPermWrite, testPermExtra, DiagnoseACL),
-			wantOptional: testPermWrite,
+			perms:        ListInstances,
+			optional:     SetOf(WriteInstance, ReadInstanceInfo, HidePackage),
+			wantOptional: WriteInstance,
 		},
 		{
 			name:        "optional_perms_omitted_from_error_when_required_perm_missing",
 			user:        "user:realm-diagnose-acl@admins.example.com",
-			perms:       testPermWrite,
-			optional:    SetOf(testPermRead, testPermExtra),
+			perms:       ReadInstanceData,
+			optional:    SetOf(ReadInstanceInfo, ListRefs, ReadInstanceTags),
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.packages.readInstanceData permission in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
 			name:         "nil_required_with_optional_perms",
 			user:         "user:realm-reader@admins.example.com",
 			perms:        nil,
-			optional:     SetOf(DiagnoseACL, testPermWrite),
+			optional:     SetOf(DiagnoseACL, WriteInstance),
 			wantOptional: DiagnoseACL,
 		},
 		{
@@ -256,7 +256,7 @@ func TestCheckSetsAndOptional(t *testing.T) {
 			user:         "user:realm-reader@admins.example.com",
 			perms:        nil,
 			optional:     AllPermissionsSet(),
-			wantOptional: SetOf(testPermRead, DiagnoseACL),
+			wantOptional: SetOf(ListInstances, DiagnoseACL),
 		},
 	}
 
@@ -324,10 +324,10 @@ func TestCheckAttrsUnconditional(t *testing.T) {
 	fakeDB := authtest.NewFakeDB(
 		authtest.MockPermission("user:cond@admins.example.com", testRealm, DiagnoseACL.Perm()),
 		authtest.MockPermission(
-			"user:cond@admins.example.com", testRealm, testPermAttr.Perm(),
-			authtest.RestrictAttribute("cipd.testing.key", "latest"),
+			"user:cond@admins.example.com", testRealm, WriteRef.Perm(),
+			authtest.RestrictAttribute("cipd.package.refName", "latest"),
 		),
-		authtest.MockPermission("user:uncond@admins.example.com", testRealm, testPermAttr.Perm()),
+		authtest.MockPermission("user:uncond@admins.example.com", testRealm, WriteRef.Perm()),
 	)
 
 	cfg := &prefixcfg.Entry{
@@ -341,10 +341,10 @@ func TestCheckAttrsUnconditional(t *testing.T) {
 		FakeDB:   fakeDB,
 	})
 	pchkCond := NewCache(condCtx, nil).ForPrefix(prefix, cfg)
-	has, err := pchkCond.Check(condCtx, testPermAttr.Unconditional(), nil)
+	has, err := pchkCond.Check(condCtx, WriteRef.Unconditional(), nil)
 	assert.That(t, has, should.Match(Set(nil)))
 	assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
-	assert.ErrIsLike(t, err, `"user:cond@admins.example.com" is missing the cipd.testing.attr permission in prefix "a/b" (realm "proj:realm")`)
+	assert.ErrIsLike(t, err, `"user:cond@admins.example.com" is missing the cipd.packages.writeRef permission in prefix "a/b" (realm "proj:realm")`)
 
 	has, err = pchkCond.Check(condCtx, nil, AllPermissionsSet())
 	assert.NoErr(t, err)
@@ -356,13 +356,13 @@ func TestCheckAttrsUnconditional(t *testing.T) {
 		FakeDB:   fakeDB,
 	})
 	pchkUncond := NewCache(uncondCtx, nil).ForPrefix(prefix, cfg)
-	has, err = pchkUncond.Check(uncondCtx, testPermAttr.Unconditional(), testPermAttr.Bind("any"))
+	has, err = pchkUncond.Check(uncondCtx, WriteRef.Unconditional(), WriteRef.Bind("any"))
 	assert.NoErr(t, err)
-	assert.That(t, has, should.Match(SetOf(testPermAttr.Unconditional(), testPermAttr.Bind("any"))))
+	assert.That(t, has, should.Match(SetOf(WriteRef.Unconditional(), WriteRef.Bind("any"))))
 
 	has, err = pchkUncond.Check(uncondCtx, nil, AllPermissionsSet())
 	assert.NoErr(t, err)
-	assert.That(t, has, should.Match(SetOf(testPermAttr.Unconditional())))
+	assert.That(t, has, should.Match(SetOf(WriteRef.Unconditional())))
 }
 
 func TestCheckAttrs(t *testing.T) {
@@ -376,14 +376,14 @@ func TestCheckAttrs(t *testing.T) {
 	fakeDB := authtest.NewFakeDB(
 		authtest.MockPermission("user:realm-diagnose-acl@admins.example.com", testRealm, DiagnoseACL.Perm()),
 		authtest.MockPermission(
-			"user:realm-attr-writer@admins.example.com", testRealm, testPermAttr.Perm(),
-			authtest.RestrictAttribute("cipd.testing.key", "latest"),
+			"user:realm-ref-writer@admins.example.com", testRealm, WriteRef.Perm(),
+			authtest.RestrictAttribute("cipd.package.refName", "latest"),
 		),
 	)
 
-	attrAlpha := testPermAttr.Bind("alpha")
-	attrLatest := testPermAttr.Bind("latest")
-	attrProd := testPermAttr.Bind("prod")
+	writeAlphaPerm := WriteRef.Bind("alpha")
+	writeLatestPerm := WriteRef.Bind("latest")
+	writeProdPerm := WriteRef.Bind("prod")
 
 	cases := []struct {
 		name string
@@ -398,43 +398,43 @@ func TestCheckAttrs(t *testing.T) {
 	}{
 		{
 			name:  "conditional_attr_allowed",
-			user:  "user:realm-attr-writer@admins.example.com",
-			perms: attrLatest,
+			user:  "user:realm-ref-writer@admins.example.com",
+			perms: writeLatestPerm,
 		},
 		{
 			name:        "conditional_attr_denied",
-			user:        "user:realm-attr-writer@admins.example.com",
-			perms:       attrProd,
+			user:        "user:realm-ref-writer@admins.example.com",
+			perms:       writeProdPerm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `prefix "a/b" doesn't exist or "user:realm-attr-writer@admins.example.com" is not allowed to see it`,
+			wantErrLike: `prefix "a/b" doesn't exist or "user:realm-ref-writer@admins.example.com" is not allowed to see it`,
 		},
 		{
 			name:        "multi_perm_duplicate_bound_attrs_deduplicated",
 			user:        "user:realm-diagnose-acl@admins.example.com",
-			perms:       SetOf(testPermAttr.Bind("alpha"), testPermAttr.Bind("alpha")),
+			perms:       SetOf(WriteRef.Bind("alpha"), WriteRef.Bind("alpha")),
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.testing.attr{cipd.testing.key:"alpha"} permission in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.packages.writeRef{cipd.package.refName:"alpha"} permission in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
 			name:        "multi_perm_same_perm_different_attrs_one_missing",
-			user:        "user:realm-attr-writer@admins.example.com",
-			perms:       SetOf(attrLatest, attrProd),
+			user:        "user:realm-ref-writer@admins.example.com",
+			perms:       SetOf(writeLatestPerm, writeProdPerm),
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `prefix "a/b" doesn't exist or "user:realm-attr-writer@admins.example.com" is not allowed to see it`,
+			wantErrLike: `prefix "a/b" doesn't exist or "user:realm-ref-writer@admins.example.com" is not allowed to see it`,
 		},
 		{
 			name:        "multi_perm_with_attrs_detailed_error_sorted_by_attr",
 			user:        "user:realm-diagnose-acl@admins.example.com",
-			perms:       SetOf(attrProd, attrAlpha),
+			perms:       SetOf(writeProdPerm, writeAlphaPerm),
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.testing.attr{cipd.testing.key:"alpha"},cipd.testing.attr{cipd.testing.key:"prod"}] permissions in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.packages.writeRef{cipd.package.refName:"alpha"},cipd.packages.writeRef{cipd.package.refName:"prod"}] permissions in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
 			name:         "optional_perm_with_bound_attr",
-			user:         "user:realm-attr-writer@admins.example.com",
-			perms:        attrLatest,
-			optional:     SetOf(attrLatest, attrProd),
-			wantOptional: attrLatest,
+			user:         "user:realm-ref-writer@admins.example.com",
+			perms:        writeLatestPerm,
+			optional:     SetOf(writeLatestPerm, writeProdPerm),
+			wantOptional: writeLatestPerm,
 		},
 	}
 
@@ -484,13 +484,13 @@ func TestCheckGroups(t *testing.T) {
 		authtest.MockMembership("user:viewer@admins.example.com", PrefixesViewers),
 		authtest.MockMembership("user:admin@admins.example.com", "administrators"),
 
-		// Even if granted in a realm, a fake permission must not be checked against realms.
-		authtest.MockPermission("user:realm-fake-holder@admins.example.com", testRealm, testPermFake.Perm()),
-		authtest.MockPermission("user:realm-fake-holder@admins.example.com", testRealm, DiagnoseACL.Perm()),
+		// Even if granted in a realm, DeletePackage must not be checked against realms.
+		authtest.MockPermission("user:realm-delete-holder@admins.example.com", testRealm, DeletePackage.Perm()),
+		authtest.MockPermission("user:realm-delete-holder@admins.example.com", testRealm, DiagnoseACL.Perm()),
 
-		// user@ is not an admin, but has testPermGroup.
-		// Conversely, admin@ IS an admin, but doesn't explicitly have testPermGroup.
-		authtest.MockPermission("user:user@example.com", testRealm, testPermGroup.Perm()),
+		// user@ is not in PrefixesViewers, but has ReadLegacyRoles in the realm.
+		// Conversely, viewer@ IS in PrefixesViewers, but doesn't explicitly have ReadLegacyRoles in the realm.
+		authtest.MockPermission("user:user@example.com", testRealm, ReadLegacyRoles.Perm()),
 	)
 
 	cases := []struct {
@@ -507,42 +507,42 @@ func TestCheckGroups(t *testing.T) {
 		{
 			name:  "implied_group_prefixes_viewers_allows_read",
 			user:  "user:viewer@admins.example.com",
-			perms: testPermRead,
+			perms: ListInstances,
 		},
 		{
 			name:        "implied_group_prefixes_viewers_denies_write_with_detailed_error",
 			user:        "user:viewer@admins.example.com",
-			perms:       testPermWrite,
+			perms:       WriteInstance,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:viewer@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:viewer@admins.example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
-			name:        "implied_group_prefixes_viewers_denies_fake_admin_perm",
+			name:        "implied_group_prefixes_viewers_denies_delete",
 			user:        "user:viewer@admins.example.com",
-			perms:       testPermFake,
+			perms:       DeletePackage,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:viewer@admins.example.com" is missing the cipd.testing.fake permission in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:viewer@admins.example.com" is missing the cipd.packages.delete permission in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
-			name:  "implied_group_administrators_allows_fake_admin_perm",
+			name:  "implied_group_administrators_allows_delete",
 			user:  "user:admin@admins.example.com",
-			perms: testPermFake,
+			perms: DeletePackage,
 		},
 		{
-			name:        "fake_perm_does_not_check_realm",
-			user:        "user:realm-fake-holder@admins.example.com",
-			perms:       testPermFake,
+			name:        "delete_package_does_not_check_realm",
+			user:        "user:realm-delete-holder@admins.example.com",
+			perms:       DeletePackage,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-fake-holder@admins.example.com" is missing the cipd.testing.fake permission in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:realm-delete-holder@admins.example.com" is missing the cipd.packages.delete permission in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
 			name:        "authdb_group_check_error",
 			user:        "user:viewer@admins.example.com",
 			dbOverride:  authtest.NewFakeDB(authtest.MockError(errors.New("authdb group boom"))),
-			perms:       testPermRead,
+			perms:       ListInstances,
 			realm:       testRealm,
 			wantErrLike: "authdb group boom",
 		},
@@ -550,13 +550,13 @@ func TestCheckGroups(t *testing.T) {
 			name:  "user_has_permission_without_group",
 			user:  "user:user@example.com",
 			realm: testRealm,
-			perms: testPermGroup,
+			perms: ReadLegacyRoles,
 		},
 		{
-			name:  "admin_has_permission_via_group",
-			user:  "user:admin@admins.example.com",
+			name:  "viewer_has_permission_via_group",
+			user:  "user:viewer@admins.example.com",
 			realm: testRealm,
-			perms: testPermGroup,
+			perms: ReadLegacyRoles,
 		},
 	}
 
@@ -603,12 +603,12 @@ func TestCheckWritePolicy(t *testing.T) {
 		authtest.MockMembership("user:viewer@example.com", PrefixesViewers),
 		authtest.MockMembership("user:admin@example.com", "administrators"),
 
-		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, testPermWrite.Perm()),
-		authtest.MockPermission("user:realm-writer@example.com", testRealm, testPermRead.Perm()),
-		authtest.MockPermission("user:realm-writer@example.com", testRealm, testPermWrite.Perm()),
+		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, WriteInstance.Perm()),
+		authtest.MockPermission("user:realm-writer@example.com", testRealm, ListInstances.Perm()),
+		authtest.MockPermission("user:realm-writer@example.com", testRealm, WriteInstance.Perm()),
 		authtest.MockPermission("user:realm-writer@example.com", testRealm, DiagnoseACL.Perm()),
 		authtest.MockPermission("user:realm-diagnose@example.com", testRealm, DiagnoseACL.Perm()),
-		authtest.MockPermission("user:realm-nonwrite@example.com", testRealm, testPermExtra.Perm()),
+		authtest.MockPermission("user:realm-legacy-roles-reader@example.com", testRealm, ReadLegacyRoles.Perm()),
 	)
 
 	cases := []struct {
@@ -626,63 +626,63 @@ func TestCheckWritePolicy(t *testing.T) {
 		{
 			name:        "writers_regexp_blocks_disallowed_realm_writer",
 			user:        "user:realm-writer@example.com",
-			perms:       testPermWrite,
+			perms:       WriteInstance,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-writer@example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
+			wantErrLike: `"user:realm-writer@example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
 		},
 		{
 			name:  "writers_regexp_allows_matching_writer",
 			user:  "user:realm-writer@admins.example.com",
-			perms: testPermWrite,
+			perms: WriteInstance,
 		},
 		{
 			name:  "writers_regexp_does_not_block_read_permission",
 			user:  "user:realm-writer@example.com",
-			perms: testPermRead,
+			perms: ListInstances,
 		},
 		{
-			name:  "writers_regexp_does_not_block_non_write_perm_via_realm",
-			user:  "user:realm-nonwrite@example.com",
-			perms: testPermExtra,
+			name:  "writers_regexp_does_not_block_read_legacy_roles_via_realm",
+			user:  "user:realm-legacy-roles-reader@example.com",
+			perms: ReadLegacyRoles,
 		},
 		{
-			name:  "writers_regexp_does_not_block_non_write_perm_for_prefixes_viewer",
+			name:  "writers_regexp_does_not_block_read_legacy_roles_for_prefixes_viewer",
 			user:  "user:viewer@example.com",
-			perms: testPermRead,
+			perms: ReadLegacyRoles,
 		},
 		{
-			name:        "writers_regexp_blocks_fake_write_perm",
+			name:        "writers_regexp_blocks_delete_package",
 			user:        "user:admin@example.com",
-			perms:       testPermFake,
+			perms:       DeletePackage,
 			wantCode:    codes.PermissionDenied,
 			wantErrLike: `prefix "a/b" doesn't exist or "user:admin@example.com" is not allowed to see it`,
 		},
 		{
 			name:        "multi_perm_writers_regexp_blocks_only_write_perm",
 			user:        "user:realm-writer@example.com",
-			perms:       SetOf(testPermRead, testPermWrite),
+			perms:       SetOf(ListInstances, WriteInstance),
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-writer@example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
+			wantErrLike: `"user:realm-writer@example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
 		},
 		{
 			name:        "multi_perm_both_read_and_write_missing_reports_policy_rejected_write_perm",
 			user:        "user:realm-diagnose@example.com",
-			perms:       SetOf(testPermRead, testPermWrite),
+			perms:       SetOf(ListInstances, WriteInstance),
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-diagnose@example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
+			wantErrLike: `"user:realm-diagnose@example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
 		},
 		{
 			name:         "nil_required_with_writers_regexp_filters_write_optional_perms",
 			user:         "user:realm-writer@example.com",
 			perms:        nil,
-			optional:     SetOf(testPermRead, DiagnoseACL, testPermWrite),
-			wantOptional: SetOf(testPermRead, DiagnoseACL),
+			optional:     SetOf(ListInstances, DiagnoseACL, WriteInstance),
+			wantOptional: SetOf(ListInstances, DiagnoseACL),
 		},
 		{
 			name:        "can_diagnose_authdb_error_propagated",
 			user:        "user:realm-writer@example.com",
 			dbOverride:  authtest.NewFakeDB(authtest.MockError(errors.New("authdb diagnose boom"))),
-			perms:       testPermWrite,
+			perms:       WriteInstance,
 			wantErrLike: "authdb diagnose boom",
 		},
 	}
@@ -812,9 +812,9 @@ func TestCheckLegacyFallback(t *testing.T) {
 
 	fakeDB := authtest.NewFakeDB(
 		authtest.MockMembership("user:group-legacy-writer@admins.example.com", "legacy-writers"),
-		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, testPermRead.Perm()),
+		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, ListInstances.Perm()),
 		authtest.MockPermission("user:realm-diagnose-acl@admins.example.com", testRealm, DiagnoseACL.Perm()),
-		authtest.MockPermission("user:legacy-root-owner@admins.example.com", testRealm, testPermFake.Perm()),
+		authtest.MockPermission("user:legacy-root-owner@admins.example.com", testRealm, DeletePackage.Perm()),
 		authtest.MockPermission("user:legacy-root-owner@admins.example.com", testRealm, DiagnoseACL.Perm()),
 	)
 
@@ -837,7 +837,7 @@ func TestCheckLegacyFallback(t *testing.T) {
 		{
 			name:            "legacy_role_ignored_when_fallback_disabled",
 			user:            "user:legacy-owner@admins.example.com",
-			perms:           testPermRead,
+			perms:           ListInstances,
 			realm:           testRealm,
 			disableFallback: true,
 			wantCode:        codes.PermissionDenied,
@@ -846,61 +846,61 @@ func TestCheckLegacyFallback(t *testing.T) {
 		{
 			name:  "fallback_to_legacy_reader_with_realm_configured",
 			user:  "user:legacy-reader@admins.example.com",
-			perms: testPermRead,
+			perms: ReadInstanceMetadata,
 			realm: testRealm,
 		},
 		{
 			name:  "fallback_to_inherited_legacy_owner_when_no_realm_mapped",
 			user:  "user:legacy-root-owner@admins.example.com",
-			perms: testPermOwner.Bind("some-key"),
+			perms: DetachInstanceMetadata.Bind("some-key"),
 		},
 		{
 			name:        "fallback_denied_returns_detailed_error_when_caller_has_realm_diagnose_acl",
 			user:        "user:realm-diagnose-acl@admins.example.com",
-			perms:       testPermWrite,
+			perms:       WriteInstance,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
 		},
 		{
 			name:        "fallback_denied_returns_detailed_error_via_legacy_reader_diagnose_acl",
 			user:        "user:legacy-reader@admins.example.com",
-			perms:       testPermWrite,
+			perms:       WriteInstance,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:legacy-reader@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
+			wantErrLike: `"user:legacy-reader@admins.example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
 		},
 		{
 			name:        "fallback_denied_returns_generic_error_for_stranger",
 			user:        "user:stranger@admins.example.com",
-			perms:       testPermWrite,
+			perms:       WriteInstance,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
 			wantErrLike: `prefix "a/b" doesn't exist or "user:stranger@admins.example.com" is not allowed to see it`,
 		},
 		{
-			name:        "fake_perm_does_not_check_realm_or_legacy_fallback",
+			name:        "delete_package_does_not_check_realm_or_legacy_fallback",
 			user:        "user:legacy-root-owner@admins.example.com",
-			perms:       testPermFake,
+			perms:       DeletePackage,
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:legacy-root-owner@admins.example.com" is missing the cipd.testing.fake permission in prefix "a/b" (realm "proj:realm")`,
+			wantErrLike: `"user:legacy-root-owner@admins.example.com" is missing the cipd.packages.delete permission in prefix "a/b" (realm "proj:realm")`,
 		},
 		{
 			name:  "writers_regexp_blocks_disallowed_legacy_writer_but_preserves_legacy_diagnose",
 			user:  "user:legacy-writer@example.com",
-			perms: testPermWrite,
+			perms: WriteInstance,
 			realm: testRealm,
 			ServiceEntry: prefixcfg.ServiceEntry{
 				AllowWritersFromRegexp: adminsOnlyWriters,
 			},
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:legacy-writer@example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
+			wantErrLike: `"user:legacy-writer@example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm"): rejected by global policy`,
 		},
 		{
 			name:  "writers_regexp_does_not_block_read_permission_via_legacy_fallback",
 			user:  "user:legacy-writer@example.com",
-			perms: testPermRead,
+			perms: ListInstances,
 			realm: testRealm,
 			ServiceEntry: prefixcfg.ServiceEntry{
 				AllowWritersFromRegexp: adminsOnlyWriters,
@@ -909,38 +909,38 @@ func TestCheckLegacyFallback(t *testing.T) {
 		{
 			name:  "multi_perm_fallback_allowed",
 			user:  "user:legacy-writer@admins.example.com",
-			perms: SetOf(testPermRead, testPermWrite),
+			perms: SetOf(ListInstances, WriteInstance),
 			realm: testRealm,
 		},
 		{
 			name:        "multi_perm_fallback_partial_satisfied_reports_only_missing_and_max_role",
 			user:        "user:legacy-reader@admins.example.com",
-			perms:       SetOf(testPermRead, testPermWrite),
+			perms:       SetOf(ListInstances, WriteInstance),
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:legacy-reader@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
+			wantErrLike: `"user:legacy-reader@admins.example.com" is missing the cipd.packages.writeInstance permission in prefix "a/b" (realm "proj:realm"), and also does not have role: WRITER`,
 		},
 		{
 			name:        "multi_perm_fallback_all_missing_reports_plural_and_max_role",
 			user:        "user:realm-diagnose-acl@admins.example.com",
-			perms:       SetOf(testPermRead, testPermOwner.Bind("k")),
+			perms:       SetOf(ListInstances, HidePackage),
 			realm:       testRealm,
 			wantCode:    codes.PermissionDenied,
-			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.testing.owner{cipd.testing.key:"k"},cipd.testing.read] permissions in prefix "a/b" (realm "proj:realm"), and also does not have role: OWNER`,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.packages.hide,cipd.packages.listInstances] permissions in prefix "a/b" (realm "proj:realm"), and also does not have role: OWNER`,
 		},
 		{
 			name:         "optional_multi_perm_granted_via_legacy_fallback",
 			user:         "user:legacy-reader@admins.example.com",
-			perms:        testPermRead,
-			optional:     SetOf(testPermExtra, DiagnoseACL, testPermWrite),
-			wantOptional: SetOf(testPermExtra, DiagnoseACL),
+			perms:        ReadInstanceData,
+			optional:     SetOf(ReadInstanceInfo, ListRefs, WriteInstance),
+			wantOptional: SetOf(ReadInstanceInfo, ListRefs),
 			realm:        testRealm,
 		},
 		{
 			name:         "nil_required_with_optional_perms_via_legacy_fallback",
 			user:         "user:legacy-reader@admins.example.com",
 			perms:        nil,
-			optional:     SetOf(DiagnoseACL, testPermWrite),
+			optional:     SetOf(DiagnoseACL, WriteInstance),
 			wantOptional: DiagnoseACL,
 			realm:        testRealm,
 		},
@@ -948,7 +948,7 @@ func TestCheckLegacyFallback(t *testing.T) {
 			name:        "check_role_fallback_error",
 			user:        "user:stranger@admins.example.com",
 			dbOverride:  authtest.NewFakeDB(authtest.MockError(errors.New("authdb role boom"))),
-			perms:       testPermWrite,
+			perms:       WriteInstance,
 			wantErrLike: "authdb role boom",
 		},
 	}
@@ -1011,7 +1011,7 @@ func TestCheckLegacyFallback(t *testing.T) {
 			FakeDB:   fakeDB,
 		})
 		pchk := NewCache(realmCtx, &meta).ForPrefix(prefix, cfg)
-		_, err := pchk.Check(realmCtx, testPermRead, nil)
+		_, err := pchk.Check(realmCtx, ListInstances, nil)
 		assert.NoErr(t, err)
 		assert.That(t, pchk.gotMeta, should.BeFalse)
 
@@ -1027,9 +1027,9 @@ func TestCheckLegacyFallback(t *testing.T) {
 			FakeDB:   fakeDB,
 		})
 		pchk2 := NewCache(legacyCtx, &meta).ForPrefix(prefix, cfg)
-		got, err := pchk2.Check(legacyCtx, testPermWrite, testPermRead)
+		got, err := pchk2.Check(legacyCtx, WriteInstance, ListInstances)
 		assert.NoErr(t, err)
-		assert.That(t, got, should.Match(SetOf(testPermWrite, testPermRead)))
+		assert.That(t, got, should.Match(SetOf(WriteInstance, ListInstances)))
 		assert.That(t, pchk2.gotMeta, should.BeTrue)
 		assert.That(t, pchk2.checkedRoles, should.Match(boolCache[repopb.Role]{repopb.Role_WRITER: true}))
 
@@ -1048,9 +1048,9 @@ func TestCheckLegacyFallback(t *testing.T) {
 			FakeDB:   fakeDB,
 		})
 		pcache := NewCache(scopedCtx, &siblingMeta)
-		_, err = pcache.ForPrefix("a/b", cfgWithFallback).Check(scopedCtx, testPermRead, nil)
+		_, err = pcache.ForPrefix("a/b", cfgWithFallback).Check(scopedCtx, ListInstances, nil)
 		assert.NoErr(t, err)
-		_, err = pcache.ForPrefix("other", cfgWithFallback).Check(scopedCtx, testPermRead, nil)
+		_, err = pcache.ForPrefix("other", cfgWithFallback).Check(scopedCtx, ListInstances, nil)
 		assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 	})
 }

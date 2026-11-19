@@ -24,22 +24,10 @@ import (
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 )
 
-// TODO: Remove temporary test permissions once real CIPD permissions are
-// registered in perms.go.
-var (
-	testPermRead  = definePerm("cipd.testing.read").withRole(repopb.Role_READER).withGroup(PrefixesViewers)
-	testPermWrite = definePerm("cipd.testing.write").asWrite().withRole(repopb.Role_WRITER)
-	testPermExtra = definePerm("cipd.testing.extra").withRole(repopb.Role_READER).withGroup(PrefixesViewers)
-	testPermOwner = definePerm("cipd.testing.owner").asWrite().withRole(repopb.Role_OWNER).withAttr("cipd.testing.key")
-	testPermAttr  = definePerm("cipd.testing.attr").withAttr("cipd.testing.key")
-	testPermGroup = definePerm("cipd.testing.group").withGroup("administrators")
-	testPermFake  = definePerm("cipd.testing.fake").groupOnly("administrators").asWrite()
-)
-
 func TestRegisteredPermissionsInvariants(t *testing.T) {
 	t.Parallel()
 
-	assert.That(t, len(AllPermissions), should.Equal(8))
+	assert.That(t, len(AllPermissions), should.Equal(19))
 	seen := make(map[realms.Permission]struct{}, len(AllPermissions))
 	for g := range AllPermissions {
 		seen[g.Perm()] = struct{}{}
@@ -70,6 +58,6 @@ func TestAllPermissionsCheckable(t *testing.T) {
 			assert.That(t, allCheckable.Has(p), should.BeTrue)
 		}
 	}
-	assert.That(t, allCheckable.Has(testPermAttr.Unconditional()), should.BeTrue)
-	assert.That(t, allCheckable.Has(testPermAttr.Bind("v1")), should.BeFalse)
+	assert.That(t, allCheckable.Has(WriteRef.Unconditional()), should.BeTrue)
+	assert.That(t, allCheckable.Has(WriteRef.Bind("v1")), should.BeFalse)
 }

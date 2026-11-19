@@ -75,7 +75,7 @@ func TestCacheHasPerm(t *testing.T) {
 	assert.That(t, db.groupCalls, should.Equal(1))
 	assert.That(t, db.permCalls, should.Equal(0))
 
-	has, err = cache.HasPerm(ctx, "", testPermWrite)
+	has, err = cache.HasPerm(ctx, "", WriteInstance)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeFalse)
 	assert.That(t, db.groupCalls, should.Equal(1))
@@ -128,10 +128,10 @@ func TestCacheHasPermAttrs(t *testing.T) {
 	db := &countingDB{
 		DB: authtest.NewFakeDB(
 			authtest.MockPermission(
-				condUser, realm, testPermAttr.Perm(),
-				authtest.RestrictAttribute("cipd.testing.key", "latest"),
+				condUser, realm, WriteRef.Perm(),
+				authtest.RestrictAttribute("cipd.package.refName", "latest"),
 			),
-			authtest.MockPermission(uncondUser, realm, testPermAttr.Perm()),
+			authtest.MockPermission(uncondUser, realm, WriteRef.Perm()),
 		),
 	}
 
@@ -141,31 +141,31 @@ func TestCacheHasPermAttrs(t *testing.T) {
 	})
 	condCache := NewCache(condCtx, nil)
 
-	has, err := condCache.HasPerm(condCtx, realm, testPermAttr.Bind("latest"))
+	has, err := condCache.HasPerm(condCtx, realm, WriteRef.Bind("latest"))
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
 	assert.That(t, db.permCalls, should.Equal(1))
 
 	// Repeat call hits cache.
-	has, err = condCache.HasPerm(condCtx, realm, testPermAttr.Bind("latest"))
+	has, err = condCache.HasPerm(condCtx, realm, WriteRef.Bind("latest"))
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
 	assert.That(t, db.permCalls, should.Equal(1))
 
 	// Different bound value uses a distinct cache key.
-	has, err = condCache.HasPerm(condCtx, realm, testPermAttr.Bind("prod"))
+	has, err = condCache.HasPerm(condCtx, realm, WriteRef.Bind("prod"))
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeFalse)
 	assert.That(t, db.permCalls, should.Equal(2))
 
 	// Unconditional uses a distinct cache key and passes nil attrs, so a
 	// conditionally restricted grant does not satisfy it.
-	has, err = condCache.HasPerm(condCtx, realm, testPermAttr.Unconditional())
+	has, err = condCache.HasPerm(condCtx, realm, WriteRef.Unconditional())
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeFalse)
 	assert.That(t, db.permCalls, should.Equal(3))
 
-	has, err = condCache.HasPerm(condCtx, realm, testPermAttr.Unconditional())
+	has, err = condCache.HasPerm(condCtx, realm, WriteRef.Unconditional())
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeFalse)
 	assert.That(t, db.permCalls, should.Equal(3))
@@ -177,12 +177,12 @@ func TestCacheHasPermAttrs(t *testing.T) {
 	})
 	uncondCache := NewCache(uncondCtx, nil)
 
-	has, err = uncondCache.HasPerm(uncondCtx, realm, testPermAttr.Unconditional())
+	has, err = uncondCache.HasPerm(uncondCtx, realm, WriteRef.Unconditional())
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
 	assert.That(t, db.permCalls, should.Equal(4))
 
-	has, err = uncondCache.HasPerm(uncondCtx, realm, testPermAttr.Bind("prod"))
+	has, err = uncondCache.HasPerm(uncondCtx, realm, WriteRef.Bind("prod"))
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
 	assert.That(t, db.permCalls, should.Equal(5))
@@ -244,7 +244,7 @@ func TestCacheHasPermGroups(t *testing.T) {
 		DB: authtest.NewFakeDB(
 			authtest.MockMembership(viewer, PrefixesViewers),
 			authtest.MockMembership(admin, "administrators"),
-			authtest.MockPermission(fakeRealmUsr, realm, testPermFake.Perm()),
+			authtest.MockPermission(fakeRealmUsr, realm, DeletePackage.Perm()),
 		),
 	}
 
@@ -269,7 +269,7 @@ func TestCacheHasPermGroups(t *testing.T) {
 	assert.That(t, db.groupCalls, should.Equal(1))
 	assert.That(t, db.permCalls, should.Equal(0))
 
-	has, err = viewerCache.HasPerm(viewerCtx, realm, testPermRead)
+	has, err = viewerCache.HasPerm(viewerCtx, realm, ListInstances)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
 	assert.That(t, db.groupCalls, should.Equal(1))
@@ -283,13 +283,13 @@ func TestCacheHasPermGroups(t *testing.T) {
 	})
 	adminCache := NewCache(adminCtx, nil)
 
-	has, err = adminCache.HasPerm(adminCtx, "", testPermFake)
+	has, err = adminCache.HasPerm(adminCtx, "", DeletePackage)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
 	assert.That(t, db.groupCalls, should.Equal(2))
 	assert.That(t, db.permCalls, should.Equal(0))
 
-	has, err = adminCache.HasPerm(adminCtx, realm, testPermFake)
+	has, err = adminCache.HasPerm(adminCtx, realm, DeletePackage)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeTrue)
 	assert.That(t, db.groupCalls, should.Equal(2))
@@ -302,13 +302,13 @@ func TestCacheHasPermGroups(t *testing.T) {
 	fakeCache := NewCache(fakeCtx, nil)
 
 	db.groupErr = errors.New("group check boom")
-	_, err = fakeCache.HasPerm(fakeCtx, realm, testPermFake)
+	_, err = fakeCache.HasPerm(fakeCtx, realm, DeletePackage)
 	assert.ErrIsLike(t, err, "group check boom")
 	assert.That(t, db.groupCalls, should.Equal(3))
 	assert.That(t, db.permCalls, should.Equal(0))
 
 	db.groupErr = nil
-	has, err = fakeCache.HasPerm(fakeCtx, realm, testPermFake)
+	has, err = fakeCache.HasPerm(fakeCtx, realm, DeletePackage)
 	assert.NoErr(t, err)
 	assert.That(t, has, should.BeFalse)
 	assert.That(t, db.groupCalls, should.Equal(4))
