@@ -169,6 +169,10 @@ func TestClusters(t *testing.T) {
 					Realm:      "testproject:@project",
 					Permission: perms.PermGetRule,
 				},
+				{
+					Realm:      "testproject:@project",
+					Permission: perms.PermGetRuleDefinition,
+				},
 			}
 
 			request := &pb.ClusterRequest{
@@ -237,6 +241,53 @@ func TestClusters(t *testing.T) {
 				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike("caller does not have permission analysis.rules.get"))
 				assert.Loosely(t, response, should.BeNil)
+			})
+			t.Run("Without permission to get rule definition", func(t *ftt.Test) {
+				authState.IdentityPermissions = removePermission(authState.IdentityPermissions, perms.PermGetRuleDefinition)
+
+				response, err := server.Cluster(ctx, request)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, response, should.Match(&pb.ClusterResponse{
+					ClusteredTestResults: []*pb.ClusterResponse_ClusteredTestResult{
+						{
+							RequestTag: "my tag 1",
+							Clusters: sortClusterEntries([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
+								failureReasonClusterEntry(compiledTestProjectCfg, "my_file.cc(123): Check failed: false."),
+								testNameClusterEntry(compiledTestProjectCfg, "://chrome/test\\:interactive_ui_tests!gtest::TestSuite#TestName"),
+							}),
+						},
+						{
+							RequestTag: "my tag 2",
+							Clusters: sortClusterEntries([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
+								testNameClusterEntry(compiledTestProjectCfg, "Other_test"),
+							}),
+						},
+						{
+							RequestTag: "my tag 3",
+							Clusters: sortClusterEntries([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
+								testNameClusterEntry(compiledTestProjectCfg, "VariantTest"),
+							}),
+						},
+						{
+							RequestTag: "my tag 4",
+							Clusters: sortClusterEntries([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
+								testNameClusterEntry(compiledTestProjectCfg, "VariantTest"),
+							}),
+						},
+						{
+							RequestTag: "my tag 5",
+							Clusters: sortClusterEntries([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
+								failureReasonClusterEntry(compiledTestProjectCfg, "Fatal error occurred."),
+								testNameClusterEntry(compiledTestProjectCfg, "CrashTest"),
+							}),
+						},
+					},
+					ClusteringVersion: &pb.ClusteringVersion{
+						AlgorithmsVersion: algorithms.AlgorithmsVersion,
+						RulesVersion:      timestamppb.New(rulesVersion),
+						ConfigVersion:     timestamppb.New(configVersion),
+					},
+				}))
 			})
 			t.Run("With a valid request", func(t *ftt.Test) {
 				// Run

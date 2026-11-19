@@ -87,6 +87,10 @@ func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb
 	if err := perms.VerifyProjectPermissions(ctx, req.Project, perms.PermGetClustersByFailure, perms.PermGetRule); err != nil {
 		return nil, err
 	}
+	canSeeRuleDefinition, err := perms.HasProjectPermission(ctx, req.Project, perms.PermGetRuleDefinition)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(req.TestResults) > MaxClusterRequestSize {
 		return nil, InvalidArgumentError(fmt.Errorf(
@@ -127,6 +131,15 @@ func (*clustersServer) Cluster(ctx context.Context, req *pb.ClusterRequest) (*pb
 
 		entries := make([]*pb.ClusterResponse_ClusteredTestResult_ClusterEntry, 0, len(r))
 		for _, clusterID := range r {
+			if clusterID.IsBugCluster() && !canSeeRuleDefinition {
+				// Even though Cluster() does not return rule definitions
+				// directly, it evaluates arbitrary caller-supplied test
+				// failures against active rules. Returning bug cluster matches
+				// without PermGetRuleDefinition would act as an oracle to
+				// probe and infer sensitive rule definition predicates (such
+				// as test names, failure reasons, or variant values).
+				continue
+			}
 			entry := &pb.ClusterResponse_ClusteredTestResult_ClusterEntry{
 				ClusterId: createClusterIdPB(clusterID),
 			}
