@@ -959,30 +959,25 @@ func TestDeletePackage(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockMembership("user:root@google.com", "administrators"),
+			authtest.MockPermission("user:non-root-owner@google.com", "project:realm", perm.DiagnoseACL.Perm()),
+		)
 
 		meta := testutil.MetadataStore{}
-		meta.Populate("", &repopb.PrefixMetadata{
-			Acls: []*repopb.PrefixMetadata_ACL{
-				{
-					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:root@google.com"},
-				},
-			},
-		})
-		meta.Populate("a", &repopb.PrefixMetadata{
-			Acls: []*repopb.PrefixMetadata_ACL{
-				{
-					Role:       repopb.Role_OWNER,
-					Principals: []string{"user:non-root-owner@google.com"},
-				},
-			},
-		})
 
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/b"}), should.BeNil)
 		assert.Loosely(t, model.CheckPackageExists(ctx, "a/b"), should.BeNil)
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
 		t.Run("Works", func(t *ftt.Test) {
 			_, err := impl.DeletePackage(as("root@google.com"), &repopb.PackageRequest{
@@ -1008,12 +1003,12 @@ func TestDeletePackage(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
 		})
 
-		t.Run("Only root owner can delete", func(t *ftt.Test) {
+		t.Run("Only admin can delete", func(t *ftt.Test) {
 			_, err := impl.DeletePackage(as("non-root-owner@google.com"), &repopb.PackageRequest{
 				Package: "a/b",
 			})
-			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
-			assert.Loosely(t, err, should.ErrLike("allowed only to service administrators"))
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, `"user:non-root-owner@google.com" is missing the cipd.packages.delete permission in prefix "a/b" (realm "project:realm")`)
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {

@@ -186,11 +186,11 @@ service Repository {
   // ensure files and thus should not be used casually, only in extreme cases.
   // Consider just hiding the package instead of deleting it.
   //
-  // For the reasons above, the operation requires admin access: only owners of
-  // the repository root can delete packages.
+  // For the reasons above, the operation requires service administrator
+  // access (membership in the "administrators" group).
   //
   // Returns:
-  //   PERMISSION_DENIED if the caller is not a root owner.
+  //   PERMISSION_DENIED if the caller is not a service administrator.
   //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if the package doesn't exist.
   rpc DeletePackage(PackageRequest) returns (google.protobuf.Empty);

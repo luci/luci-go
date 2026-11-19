@@ -647,17 +647,8 @@ func (impl *repoImpl) DeletePackage(ctx context.Context, r *repopb.PackageReques
 	}
 
 	// DeletePackage RPC, due to its potential severity, is limited only to
-	// administrators, i.e. OWNERs of the repository root (prefix ""). Before
-	// checking this, make sure the caller can otherwise modify the package at
-	// all, to give a nicer error message if they can't.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_OWNER); err != nil {
-		return nil, err
-	}
-	if _, err := impl.checkRole(ctx, "", repopb.Role_OWNER); err != nil {
-		if status.Code(err) == codes.PermissionDenied {
-			return nil, status.Errorf(codes.PermissionDenied,
-				"package deletion is allowed only to service administrators")
-		}
+	// administrators.
+	if _, _, err := impl.hasPermission(ctx, r.Package, perm.DeletePackage, nil); err != nil {
 		return nil, err
 	}
 
