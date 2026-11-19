@@ -85,7 +85,7 @@ func (r *Cache) HasPerm(ctx context.Context, realm string, perm Permission) (has
 	}
 
 	return r.checkedPerms.getOrCompute(realmPerm{realm, perm}, func() (bool, error) {
-		return r.authdb.HasPermission(ctx, r.ident, perm.perm, realm, nil)
+		return r.authdb.HasPermission(ctx, r.ident, perm.Perm(), realm, nil)
 	})
 }
 

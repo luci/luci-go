@@ -17,6 +17,7 @@ package perm
 import (
 	"cmp"
 	"errors"
+	"maps"
 	"testing"
 
 	"google.golang.org/grpc/codes"
@@ -127,8 +128,9 @@ func TestCheckRealms(t *testing.T) {
 			})
 
 			pchk := NewCache(ctx).ForPrefix(prefix, cfg)
-			err := pchk.Check(ctx, tc.perm)
+			has, err := pchk.Check(ctx, tc.perm, nil)
 			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
+				assert.That(t, has, should.Match(Set(nil)))
 				if tc.wantCode != codes.OK {
 					assert.That(t, err, grpccode.ShouldBe(tc.wantCode))
 				}
@@ -139,6 +141,7 @@ func TestCheckRealms(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.That(t, pchk.Prefix(), should.Equal(prefix))
 			assert.That(t, pchk.Config(), should.Equal(cfg))
+			assert.That(t, has, should.Match(SetOf(tc.perm)))
 		})
 	}
 
@@ -154,7 +157,155 @@ func TestCheckRealms(t *testing.T) {
 			FakeDB:   fakeDB,
 		})
 		assert.That(t, func() {
-			_ = NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, Permission{})
+			_, _ = NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, Permission{}, nil)
+		}, should.Panic)
+	})
+}
+
+func TestCheckSetsAndOptional(t *testing.T) {
+	t.Parallel()
+
+	const (
+		prefix    = "a/b"
+		testRealm = "proj:realm"
+	)
+
+	fakeDB := authtest.NewFakeDB(
+		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, testPermRead.Perm()),
+		authtest.MockPermission("user:realm-reader@admins.example.com", testRealm, DiagnoseACL.Perm()),
+		authtest.MockPermission("user:realm-diagnose-acl@admins.example.com", testRealm, DiagnoseACL.Perm()),
+		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, testPermRead.Perm()),
+		authtest.MockPermission("user:realm-writer@admins.example.com", testRealm, testPermWrite.Perm()),
+	)
+
+	cases := []struct {
+		name string
+
+		user         identity.Identity
+		perms        Checkable
+		optional     Checkable
+		wantOptional Checkable
+
+		wantCode    codes.Code
+		wantErrLike string
+	}{
+		{
+			name:  "multi_perm_all_allowed_in_realm",
+			user:  "user:realm-writer@admins.example.com",
+			perms: SetOf(testPermRead, testPermWrite),
+		},
+		{
+			name:  "multi_perm_ignores_zero_permission",
+			user:  "user:realm-reader@admins.example.com",
+			perms: SetOf(testPermRead, Permission{}),
+		},
+		{
+			name:        "multi_perm_partial_missing_reports_only_missing",
+			user:        "user:realm-reader@admins.example.com",
+			perms:       SetOf(testPermRead, testPermWrite),
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-reader@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:        "multi_perm_all_missing_reports_plural_sorted",
+			user:        "user:realm-diagnose-acl@admins.example.com",
+			perms:       SetOf(testPermWrite, testPermRead),
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.testing.read,cipd.testing.write] permissions in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:         "optional_single_perm_granted_in_realm",
+			user:         "user:realm-reader@admins.example.com",
+			perms:        testPermRead,
+			optional:     DiagnoseACL,
+			wantOptional: DiagnoseACL,
+		},
+		{
+			name:         "optional_multi_perm_partial_granted_in_realm",
+			user:         "user:realm-writer@admins.example.com",
+			perms:        testPermRead,
+			optional:     SetOf(testPermWrite, testPermExtra, DiagnoseACL),
+			wantOptional: testPermWrite,
+		},
+		{
+			name:        "optional_perms_omitted_from_error_when_required_perm_missing",
+			user:        "user:realm-diagnose-acl@admins.example.com",
+			perms:       testPermWrite,
+			optional:    SetOf(testPermRead, testPermExtra),
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.testing.write permission in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:         "nil_required_with_optional_perms",
+			user:         "user:realm-reader@admins.example.com",
+			perms:        nil,
+			optional:     SetOf(DiagnoseACL, testPermWrite),
+			wantOptional: DiagnoseACL,
+		},
+		{
+			name:     "nil_required_with_ungranted_optional_perms_succeeds",
+			user:     identity.AnonymousIdentity,
+			perms:    nil,
+			optional: DiagnoseACL,
+		},
+		{
+			name:         "nil_required_with_all_permissions_checkable",
+			user:         "user:realm-reader@admins.example.com",
+			perms:        nil,
+			optional:     AllPermissionsSet(),
+			wantOptional: SetOf(testPermRead, DiagnoseACL),
+		},
+	}
+
+	cfg := &prefixcfg.Entry{
+		Service: &prefixcfg.ServiceEntry{OwningLuciProject: "proj"},
+		Realm:   testRealm,
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := auth.WithState(t.Context(), &authtest.FakeState{
+				Identity: tc.user,
+				FakeDB:   fakeDB,
+			})
+
+			has, err := NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
+			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
+				assert.That(t, has, should.Match(Set(nil)))
+				assert.That(t, err, grpccode.ShouldBe(tc.wantCode))
+				assert.ErrIsLike(t, err, tc.wantErrLike)
+				return
+			}
+
+			assert.NoErr(t, err)
+			var wantHas Set
+			if tc.perms != nil {
+				wantHas = maps.Clone(tc.perms.Perms())
+			}
+			if tc.wantOptional != nil {
+				for p := range tc.wantOptional.Perms() {
+					wantHas.Add(p)
+				}
+			}
+			assert.That(t, has, should.Match(wantHas))
+		})
+	}
+
+	t.Run("non_nil_empty_set_panics", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := auth.WithState(t.Context(), &authtest.FakeState{
+			Identity: "user:realm-reader@admins.example.com",
+			FakeDB:   fakeDB,
+		})
+		assert.That(t, func() {
+			var empty Set
+			_, _ = NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, empty, nil)
+		}, should.Panic)
+		assert.That(t, func() {
+			_, _ = NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, SetOf(), nil)
 		}, should.Panic)
 	})
 }

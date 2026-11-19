@@ -16,6 +16,7 @@ package perm
 
 import (
 	"context"
+	"maps"
 
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 )
@@ -61,19 +62,57 @@ func (p *PrefixCache) CheckOne(ctx context.Context, perm Permission) (has bool, 
 	return
 }
 
-// Check verifies that the current user has `required` on `p.prefix`.
+// CheckSet checks all permissions in `perms`.
 //
-// TODO: Support Set (multiple permissions) and optional permissions.
-func (p *PrefixCache) Check(ctx context.Context, required Permission) error {
-	if required == (Permission{}) {
-		panic("required permission must not be empty")
+// If any permissions are missing, they are returned in `missing`.
+func (p *PrefixCache) CheckSet(ctx context.Context, perms Set) (*MissingPerms, error) {
+	var missing Set
+	for perm := range perms {
+		has, err := p.CheckOne(ctx, perm)
+		if err != nil {
+			return nil, err
+		}
+		if !has {
+			missing.Add(perm)
+		}
 	}
-	has, err := p.CheckOne(ctx, required)
-	if err != nil {
-		return err
+	return &MissingPerms{pchk: p, permSet: missing}, nil
+}
+
+// Check verifies that the current user has all `required` permissions on
+// `p.prefix`, and evaluates any `optional` permissions if `required` succeeds.
+//
+// Panics if `required` is non-nil but resolves to an empty [Set] (pass untyped
+// `nil` when no required permissions are needed).
+func (p *PrefixCache) Check(ctx context.Context, required, optional Checkable) (has Set, err error) {
+	if required != nil {
+		allRequired := required.Perms()
+		if len(allRequired) == 0 {
+			panic("required Checkable must not resolve to an empty Set (pass untyped nil if no permissions are required)")
+		}
+		var missingRequired *MissingPerms
+		if missingRequired, err = p.CheckSet(ctx, allRequired); err != nil {
+			return nil, err
+		}
+		if err = missingRequired.AsError(ctx); err != nil {
+			return nil, err
+		}
+		has = maps.Clone(allRequired)
 	}
-	if !has {
-		return (&MissingPerms{pchk: p, perm: required}).AsError(ctx)
+
+	if optional != nil {
+		if allOptional := optional.Perms(); len(allOptional) > 0 {
+			var missingOptional *MissingPerms
+			if missingOptional, err = p.CheckSet(ctx, allOptional); err != nil {
+				return nil, err
+			}
+			for perm := range allOptional {
+				if !missingOptional.Has(perm) {
+					has.Add(perm)
+				}
+			}
+		}
 	}
-	return nil
+
+	return has, nil
 }

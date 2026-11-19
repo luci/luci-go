@@ -21,11 +21,49 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 )
 
+func TestSet(t *testing.T) {
+	t.Parallel()
+
+	assert.That(t, DiagnoseACL.Perms(), should.Match(SetOf(DiagnoseACL)))
+	assert.That(t, len((Permission{}).Perms()), should.Equal(0))
+
+	var nilCore *corePermission
+	assert.That(t, nilCore.Perm().Name(), should.Equal(""))
+	assert.That(t, nilCore.String(), should.Equal("<invalid>"))
+	assert.That(t, len(nilCore.Perms()), should.Equal(0))
+
+	var s Set
+	assert.That(t, s.String(), should.Equal("<empty>"))
+	assert.That(t, s.Has(DiagnoseACL), should.BeFalse)
+	assert.That(t, s.Perms(), should.Match(Set(nil)))
+
+	s.Add(Permission{})
+	assert.That(t, s, should.Match(Set(nil)))
+
+	s.Add(DiagnoseACL)
+	assert.That(t, s.Has(DiagnoseACL), should.BeTrue)
+	assert.That(t, s.String(), should.Equal("cipd.packages.diagnoseACL"))
+
+	s.Add(testPermWrite)
+	s.Add(testPermRead)
+	assert.That(t, s.String(), should.Equal("[cipd.packages.diagnoseACL,cipd.testing.read,cipd.testing.write]"))
+
+	var first Permission
+	count := 0
+	for p := range s.Sorted {
+		first = p
+		count++
+		break
+	}
+	assert.That(t, count, should.Equal(1))
+	assert.That(t, first, should.Equal(DiagnoseACL))
+}
+
 func TestPermission(t *testing.T) {
 	t.Parallel()
 
 	assert.That(t, DiagnoseACL.Perm().Name(), should.Equal("cipd.packages.diagnoseACL"))
 	assert.That(t, DiagnoseACL.String(), should.Equal("cipd.packages.diagnoseACL"))
 	assert.That(t, (Permission{}).Perm().Name(), should.Equal(""))
-	assert.That(t, (Permission{}).String(), should.Equal(""))
+	assert.That(t, (Permission{}).String(), should.Equal("<invalid>"))
 }

@@ -14,9 +14,50 @@
 
 package perm
 
+import (
+	"testing"
+
+	"go.chromium.org/luci/common/testing/truth/assert"
+	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/server/auth/realms"
+)
+
 // TODO: Remove temporary test permissions once real CIPD permissions are
 // registered in perms.go.
 var (
 	testPermRead  = definePerm("cipd.testing.read")
 	testPermWrite = definePerm("cipd.testing.write")
+	testPermExtra = definePerm("cipd.testing.extra")
 )
+
+func TestRegisteredPermissionsInvariants(t *testing.T) {
+	t.Parallel()
+
+	assert.That(t, len(AllPermissions), should.Equal(4))
+	seen := make(map[realms.Permission]struct{}, len(AllPermissions))
+	for g := range AllPermissions {
+		seen[g.Perm()] = struct{}{}
+
+		core, ok := g.(*corePermission)
+		if !ok {
+			t.Fatalf("unexpected Grantable type %T", g)
+		}
+		assert.Loosely(t, core, should.NotBeNil)
+	}
+	assert.That(t, len(seen), should.Equal(len(AllPermissions)))
+}
+
+func TestAllPermissionsCheckable(t *testing.T) {
+	t.Parallel()
+
+	allCheckable := AllPermissionsSet()
+	assert.That(t, len(allCheckable), should.Equal(len(AllPermissions)))
+	for g := range AllPermissions {
+		assert.That(t, g.String(), should.Equal(g.Perm().Name()))
+		gPerms := g.Perms()
+		assert.That(t, len(gPerms), should.Equal(1))
+		for p := range gPerms {
+			assert.That(t, allCheckable.Has(p), should.BeTrue)
+		}
+	}
+}

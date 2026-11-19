@@ -18,4 +18,19 @@ package perm
 // mappings.
 var (
 	DiagnoseACL = definePerm("cipd.packages.diagnoseACL")
+
+	// AllPermissions is the set of all Grantables defined in this package.
+	AllPermissions = map[Grantable]struct{}{}
 )
+
+// AllPermissionsSet returns [AllPermissions] as a [Checkable] [Set].
+//
+// Note that for bindable permissions, this contains their unconditional
+// variants.
+func AllPermissionsSet() Set {
+	ret := make(Set, len(AllPermissions))
+	for perm := range AllPermissions {
+		ret.Add(Permission{core: perm.(*corePermission)})
+	}
+	return ret
+}

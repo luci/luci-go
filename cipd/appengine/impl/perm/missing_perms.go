@@ -29,13 +29,17 @@ import (
 type MissingPerms struct {
 	pchk *PrefixCache
 
-	// TODO: Generalize to Set for multi-permission checks.
-	perm Permission
+	permSet Set
 }
 
 // Empty reports whether no permissions were missing.
 func (m *MissingPerms) Empty() bool {
-	return m.perm == (Permission{})
+	return len(m.permSet) == 0
+}
+
+// Has reports whether `c` is in the missing set.
+func (m *MissingPerms) Has(c Permission) bool {
+	return m.permSet.Has(c)
 }
 
 // AsError formats the missing permission(s) as a gRPC PermissionDenied error
@@ -56,7 +60,11 @@ func (m *MissingPerms) AsError(ctx context.Context) error {
 
 	// TODO: Report global write policy rejection and missing legacy role details.
 
+	plural := ""
+	if len(m.permSet) > 1 {
+		plural = "s"
+	}
 	return status.Errorf(
-		codes.PermissionDenied, "%q is missing the %s permission in prefix %q (realm %q)",
-		m.pchk.pcache.ident, m.perm, m.pchk.prefix, m.pchk.cfg.Realm)
+		codes.PermissionDenied, "%q is missing the %s permission%s in prefix %q (realm %q)",
+		m.pchk.pcache.ident, m.permSet, plural, m.pchk.prefix, m.pchk.cfg.Realm)
 }
