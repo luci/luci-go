@@ -116,19 +116,21 @@ const (
 type RepositoryClient interface {
 	// Returns metadata associated with the given prefix.
 	//
-	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
-	// otherwise the call fails with PERMISSION_DENIED error.
+	// Requires the caller to have `cipd.packages.readLegacyRoles` permission for
+	// the requested prefix (or the legacy OWNER role for the requested prefix)
+	// or be in a special global "cipd-prefixes-viewers" group, otherwise the
+	// call fails with PERMISSION_DENIED error.
 	//
-	// If the caller has OWNER permission in any of parent prefixes, but the
+	// If the caller has permission to read the prefix metadata, but the
 	// requested prefix has no metadata associated with it, the call fails with
 	// NOT_FOUND error.
 	GetPrefixMetadata(ctx context.Context, in *PrefixRequest, opts ...grpc.CallOption) (*PrefixMetadata, error)
 	// Returns metadata associated with the given prefix and all parent prefixes.
 	//
-	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
-	// otherwise the call fails with PERMISSION_DENIED error.
+	// Requires the caller to have `cipd.packages.readLegacyRoles` permission for
+	// the requested prefix (or the legacy OWNER role for the requested prefix)
+	// or be in a special global "cipd-prefixes-viewers" group, otherwise the
+	// call fails with PERMISSION_DENIED error.
 	//
 	// Note that if the caller has permission to see the metadata for the
 	// requested prefix, they will also see metadata for all parent prefixes,
@@ -800,19 +802,21 @@ func (c *repositoryClient) DescribeBootstrapBundle(ctx context.Context, in *Desc
 type RepositoryServer interface {
 	// Returns metadata associated with the given prefix.
 	//
-	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
-	// otherwise the call fails with PERMISSION_DENIED error.
+	// Requires the caller to have `cipd.packages.readLegacyRoles` permission for
+	// the requested prefix (or the legacy OWNER role for the requested prefix)
+	// or be in a special global "cipd-prefixes-viewers" group, otherwise the
+	// call fails with PERMISSION_DENIED error.
 	//
-	// If the caller has OWNER permission in any of parent prefixes, but the
+	// If the caller has permission to read the prefix metadata, but the
 	// requested prefix has no metadata associated with it, the call fails with
 	// NOT_FOUND error.
 	GetPrefixMetadata(context.Context, *PrefixRequest) (*PrefixMetadata, error)
 	// Returns metadata associated with the given prefix and all parent prefixes.
 	//
-	// Requires the caller to have OWNER role for the requested prefix or any of
-	// parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
-	// otherwise the call fails with PERMISSION_DENIED error.
+	// Requires the caller to have `cipd.packages.readLegacyRoles` permission for
+	// the requested prefix (or the legacy OWNER role for the requested prefix)
+	// or be in a special global "cipd-prefixes-viewers" group, otherwise the
+	// call fails with PERMISSION_DENIED error.
 	//
 	// Note that if the caller has permission to see the metadata for the
 	// requested prefix, they will also see metadata for all parent prefixes,

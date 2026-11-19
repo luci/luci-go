@@ -191,8 +191,8 @@ func (impl *repoImpl) packageReader(ctx context.Context, ref *caspb.ObjectRef, u
 
 // GetPrefixMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) GetPrefixMetadata(ctx context.Context, r *repopb.PrefixRequest) (resp *repopb.PrefixMetadata, err error) {
-	// It is fine to implement this in terms of GetInheritedPrefixMetadata, since
-	// we need to fetch all inherited metadata anyway to check ACLs.
+	// Implement in terms of GetInheritedPrefixMetadata, which performs the
+	// perm.ReadLegacyRoles check and fetches the metadata chain.
 	inherited, err := impl.GetInheritedPrefixMetadata(ctx, r)
 	if err != nil {
 		return nil, err
@@ -201,23 +201,9 @@ func (impl *repoImpl) GetPrefixMetadata(ctx context.Context, r *repopb.PrefixReq
 	if m := inherited.PerPrefixMetadata; len(m) != 0 && m[len(m)-1].Prefix == r.Prefix {
 		return m[len(m)-1], nil
 	}
-	// Note that GetInheritedPrefixMetadata checked that the caller has permission
-	// to view the requested prefix (via some parent prefix ACL), so sincerely
-	// reply with NotFound.
+	// GetInheritedPrefixMetadata verified that the caller has perm.ReadLegacyRoles
+	// on the requested prefix, so sincerely reply with NotFound.
 	return nil, noMetadataErr(r.Prefix)
-}
-
-func (impl *repoImpl) canGetPrefixMetadata(ctx context.Context, prefix string) (metas []*repopb.PrefixMetadata, err error) {
-	prefixViewer, err := auth.IsMember(ctx, PrefixesViewers)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to check group membership")
-	}
-	if !prefixViewer {
-		// Check if have OWNER access in the prefix, this also fetches metadata as
-		// a side effect (it is needed to check ACLs too).
-		metas, err = impl.checkRole(ctx, prefix, repopb.Role_OWNER)
-	}
-	return
 }
 
 // GetInheritedPrefixMetadata implements the corresponding RPC method, see the
@@ -232,12 +218,19 @@ func (impl *repoImpl) GetInheritedPrefixMetadata(ctx context.Context, r *repopb.
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
 	}
 
-	metas, err := impl.canGetPrefixMetadata(ctx, r.Prefix)
+	// We manually construct prefixPermChecker here because we also want to get
+	// the metadata, in case it was loaded as a side-effect of checking the
+	// permissions.
+	checker, err := impl.prefixPermChecker(ctx, r.Prefix)
 	if err != nil {
 		return nil, err
 	}
-	if metas == nil {
-		metas, err = impl.meta.GetMetadata(ctx, r.Prefix)
+	if _, err := checker.Check(ctx, perm.ReadLegacyRoles, nil); err != nil {
+		return nil, err
+	}
+	metas, err := checker.GetMetadata(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return &repopb.InheritedPrefixMetadata{PerPrefixMetadata: metas}, nil
@@ -303,16 +296,37 @@ func (impl *repoImpl) UpdatePrefixMetadata(ctx context.Context, r *repopb.Prefix
 // GetRolesInPrefix implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) GetRolesInPrefix(ctx context.Context, r *repopb.PrefixRequest) (resp *repopb.RolesInPrefixResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
-
-	return impl.getRolesInPrefixImpl(ctx, auth.CurrentIdentity(ctx), nil, r)
+	checker, err := impl.prefixPermChecker(ctx, r.Prefix)
+	if err != nil {
+		return nil, err
+	}
+	return impl.getRolesInPrefixImpl(ctx, auth.CurrentIdentity(ctx), checker, r)
 }
 
 // GetRolesInPrefixOnBehalfOf implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) GetRolesInPrefixOnBehalfOf(ctx context.Context, r *repopb.PrefixRequestOnBehalfOf) (resp *repopb.RolesInPrefixResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(ctx, err) }()
 
-	metas, err := impl.canGetPrefixMetadata(ctx, r.PrefixRequest.Prefix)
+	if r.PrefixRequest == nil {
+		r.PrefixRequest = &repopb.PrefixRequest{}
+	}
+	r.PrefixRequest.Prefix, err = common.ValidatePackagePrefix(r.PrefixRequest.Prefix)
 	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
+	}
+
+	// We manually construct prefixPermChecker here because we also want to get
+	// the metadata, in case it was loaded as a side-effect of checking the
+	// permissions.
+	//
+	// NOTE: GetRolesInPrefixOnBehalfOf *only* reveals legacy roles, it does not
+	// reveal the realm for the prefix. Once legacy roles are gone, this RPC can
+	// be removed as well.
+	checker, err := impl.prefixPermChecker(ctx, r.PrefixRequest.Prefix)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := checker.Check(ctx, perm.ReadLegacyRoles, nil); err != nil {
 		return nil, err
 	}
 
@@ -326,16 +340,17 @@ func (impl *repoImpl) GetRolesInPrefixOnBehalfOf(ctx context.Context, r *repopb.
 	default:
 		return nil, status.Errorf(codes.InvalidArgument, "identity must be of kind Anonymous or User.")
 	}
-	return impl.getRolesInPrefixImpl(ctx, ident, metas, r.PrefixRequest)
+	return impl.getRolesInPrefixImpl(ctx, ident, checker, r.PrefixRequest)
 }
 
 // Implements both GetRolesInPrefixOnBehalfOf and GetRolesInPrefix.
 //
 // `ident` must always be supplied - this function will validate it.
-// `metas` is optional - in the case of GetRolesInPrefixOnBehalfOf, it may be
-// fetched as a side-effect of checking permissions. In other cases, this
-// function will fetch it directly without additional permission checks.
-func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.Identity, metas []*repopb.PrefixMetadata, r *repopb.PrefixRequest) (resp *repopb.RolesInPrefixResponse, err error) {
+// `getMeta` and `cfg` are optional - in the case of GetRolesInPrefixOnBehalfOf,
+// they may be provided as a side-effect of checking permissions. In other
+// cases, this function will fetch them directly without additional permission
+// checks.
+func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.Identity, checker *perm.PrefixCache, r *repopb.PrefixRequest) (resp *repopb.RolesInPrefixResponse, err error) {
 	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix': %s", err)
@@ -344,18 +359,12 @@ func (impl *repoImpl) getRolesInPrefixImpl(ctx context.Context, ident identity.I
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'identity': %s", err)
 	}
 
-	if metas == nil {
-		metas, err = impl.meta.GetMetadata(ctx, r.Prefix)
-		if err != nil {
-			return nil, err
-		}
-	}
-	cfg, err := impl.lookupPrefixCfg(ctx, r.Prefix)
+	metas, err := checker.GetMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	roles, err := perm.RolesInPrefix(ctx, ident, cfg, metas)
+	roles, err := perm.RolesInPrefix(ctx, ident, checker.Config(), metas)
 	if err != nil {
 		return nil, err
 	}

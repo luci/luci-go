@@ -52,6 +52,7 @@ import (
 	repopb "go.chromium.org/luci/cipd/api/cipd/v1/repopb"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/perm"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
@@ -115,6 +116,7 @@ func TestMetadataFetching(t *testing.T) {
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		_, _, as := testutil.TestingContext(
 			authtest.MockMembership("user:prefixes-viewer@google.com", PrefixesViewers),
+			authtest.MockPermission("user:realm-viewer@example.com", "project:realm", perm.ReadLegacyRoles.Perm()),
 		)
 
 		meta := testutil.MetadataStore{}
@@ -143,6 +145,14 @@ func TestMetadataFetching(t *testing.T) {
 		})
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
 		callGet := func(prefix string, user identity.Identity) (*repopb.PrefixMetadata, error) {
 			return impl.GetPrefixMetadata(as(user.Email()), &repopb.PrefixRequest{Prefix: prefix})
@@ -168,6 +178,12 @@ func TestMetadataFetching(t *testing.T) {
 			assert.Loosely(t, resp, should.Match(leafMeta))
 		})
 
+		t.Run("GetPrefixMetadata happy path via realm permission", func(t *ftt.Test) {
+			resp, err := callGet("a/b/c/d", "user:realm-viewer@example.com")
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp, should.Match(leafMeta))
+		})
+
 		t.Run("GetInheritedPrefixMetadata happy path", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b/c/d", "user:top-owner@google.com")
 			assert.Loosely(t, err, should.BeNil)
@@ -177,6 +193,12 @@ func TestMetadataFetching(t *testing.T) {
 		t.Run("GetInheritedPrefixMetadata happy path via global group", func(t *ftt.Test) {
 			resp, err := callGetInherited("a/b/c/d", "user:prefixes-viewer@google.com")
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Match([]*repopb.PrefixMetadata{rootMeta, topMeta, leafMeta}))
+		})
+
+		t.Run("GetInheritedPrefixMetadata happy path via realm permission", func(t *ftt.Test) {
+			resp, err := callGetInherited("a/b/c/d", "user:realm-viewer@example.com")
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.Match([]*repopb.PrefixMetadata{rootMeta, topMeta, leafMeta}))
 		})
 
@@ -437,10 +459,17 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 		})
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
-		call := func(prefix string, user identity.Identity, callerIsPrefixViewer bool) (*repopb.RolesInPrefixResponse, error) {
+		call := func(prefix string, user identity.Identity, callerIsPrefixViewer bool, mocks ...authtest.MockedDatum) (*repopb.RolesInPrefixResponse, error) {
 			caller := identity.Identity("user:roles-caller@google.com")
-			mocks := []authtest.MockedDatum{}
 			if callerIsPrefixViewer {
 				mocks = append(mocks, authtest.MockMembership(caller, PrefixesViewers))
 			}
@@ -453,6 +482,20 @@ func TestGetRolesInPrefixOnBehalfOf(t *testing.T) {
 		t.Run("Happy path", func(t *ftt.Test) {
 			resp, err := call("a/b/c/d", "user:writer@google.com", true)
 			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
+				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
+					{Role: repopb.Role_READER},
+					{Role: repopb.Role_WRITER},
+				},
+			}))
+		})
+
+		t.Run("Happy path via realm permission", func(t *ftt.Test) {
+			resp, err := call(
+				"a/b/c/d", "user:writer@google.com", false,
+				authtest.MockPermission("user:roles-caller@google.com", "project:realm", perm.ReadLegacyRoles.Perm()),
+			)
+			assert.NoErr(t, err)
 			assert.Loosely(t, resp, should.Match(&repopb.RolesInPrefixResponse{
 				Roles: []*repopb.RolesInPrefixResponse_RoleInPrefix{
 					{Role: repopb.Role_READER},

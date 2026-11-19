@@ -2711,7 +2711,7 @@ var File_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto protoreflect.FileDescr
 
 const file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDesc = "" +
 	"\n" +
-	"0go.chromium.org/luci/cipd/api/cipd/v1/repo.proto\x12\x04cipd\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17google/rpc/status.proto\x1a/go.chromium.org/luci/cipd/api/cipd/v1/cas.proto\"'\n" +
+	"0go.chromium.org/luci/cipd/api/cipd/v1/repo.proto\x12\x04cipd\x1a/go.chromium.org/luci/cipd/api/cipd/v1/cas.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17google/rpc/status.proto\"'\n" +
 	"\rPrefixRequest\x12\x16\n" +
 	"\x06prefix\x18\x01 \x01(\tR\x06prefix\"q\n" +
 	"\x17PrefixRequestOnBehalfOf\x12\x1a\n" +

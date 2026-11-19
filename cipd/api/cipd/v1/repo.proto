@@ -16,14 +16,13 @@ syntax = "proto3";
 
 package cipd;
 
-option go_package = "go.chromium.org/luci/cipd/api/cipd/v1/repopb";
-
+import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/rpc/status.proto";
-import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 
+option go_package = "go.chromium.org/luci/cipd/api/cipd/v1/repopb";
 
 // Manages CIPD packages and their associated metadata.
 //
@@ -73,20 +72,22 @@ import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 service Repository {
   // Returns metadata associated with the given prefix.
   //
-  // Requires the caller to have OWNER role for the requested prefix or any of
-  // parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
-  // otherwise the call fails with PERMISSION_DENIED error.
+  // Requires the caller to have `cipd.packages.readLegacyRoles` permission for
+  // the requested prefix (or the legacy OWNER role for the requested prefix)
+  // or be in a special global "cipd-prefixes-viewers" group, otherwise the
+  // call fails with PERMISSION_DENIED error.
   //
-  // If the caller has OWNER permission in any of parent prefixes, but the
+  // If the caller has permission to read the prefix metadata, but the
   // requested prefix has no metadata associated with it, the call fails with
   // NOT_FOUND error.
   rpc GetPrefixMetadata(PrefixRequest) returns (PrefixMetadata);
 
   // Returns metadata associated with the given prefix and all parent prefixes.
   //
-  // Requires the caller to have OWNER role for the requested prefix or any of
-  // parent prefixes, or be in a special global "cipd-prefixes-viewers" group,
-  // otherwise the call fails with PERMISSION_DENIED error.
+  // Requires the caller to have `cipd.packages.readLegacyRoles` permission for
+  // the requested prefix (or the legacy OWNER role for the requested prefix)
+  // or be in a special global "cipd-prefixes-viewers" group, otherwise the
+  // call fails with PERMISSION_DENIED error.
   //
   // Note that if the caller has permission to see the metadata for the
   // requested prefix, they will also see metadata for all parent prefixes,
@@ -456,9 +457,7 @@ service Repository {
   rpc DescribeBootstrapBundle(DescribeBootstrapBundleRequest) returns (DescribeBootstrapBundleResponse);
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 // Roles used in package prefix ACLs.
 //
@@ -480,7 +479,6 @@ enum Role {
   // all subprefixes.
   OWNER = 3;
 }
-
 
 message PrefixRequest {
   // A prefix within the repository, e.g. "a/b/c".
@@ -538,7 +536,6 @@ message PrefixMetadata {
   repeated ACL acls = 5;
 }
 
-
 message InheritedPrefixMetadata {
   // Per-prefix metadata that applies to a prefix, ordered by prefix length.
   //
@@ -547,7 +544,6 @@ message InheritedPrefixMetadata {
   // skipped in this example as not having any metadata attached).
   repeated PrefixMetadata per_prefix_metadata = 1;
 }
-
 
 message RolesInPrefixResponse {
   message RoleInPrefix {
@@ -558,9 +554,7 @@ message RolesInPrefixResponse {
   repeated RoleInPrefix roles = 1;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 message ListPrefixRequest {
   // A prefix within the repository to list, e.g. "a/b/c". Empty prefix is also
@@ -572,7 +566,6 @@ message ListPrefixRequest {
   bool include_hidden = 3;
 }
 
-
 message ListPrefixResponse {
   // Lexicographically sorted list of full packages names.
   repeated string packages = 1;
@@ -580,28 +573,23 @@ message ListPrefixResponse {
   repeated string prefixes = 2;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 // PackageRequest names a package and nothing else.
 message PackageRequest {
   string package = 1;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 // RegistrationStatus is part of RegisterInstance RPC response.
 enum RegistrationStatus {
   REGISTRATION_STATUS_UNSPECIFIED = 0;
 
-  REGISTERED         = 1;  // the instance was successfully registered just now
-  ALREADY_REGISTERED = 2;  // the instance already exists, this is OK
-  NOT_UPLOADED       = 3;  // the instance should be uploaded to Storage first
+  REGISTERED = 1; // the instance was successfully registered just now
+  ALREADY_REGISTERED = 2; // the instance already exists, this is OK
+  NOT_UPLOADED = 3; // the instance should be uploaded to Storage first
 }
-
 
 // Instance is a pointer to an instance of some package.
 message Instance {
@@ -619,7 +607,6 @@ message Instance {
   google.protobuf.Timestamp registered_ts = 4;
 }
 
-
 message RegisterInstanceResponse {
   // Outcome of the operation, see the enum for possibilities.
   //
@@ -636,9 +623,7 @@ message RegisterInstanceResponse {
   UploadOperation upload_op = 3;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 message ListInstancesRequest {
   // Name of a package to list instances of.
@@ -653,7 +638,6 @@ message ListInstancesRequest {
   string page_token = 21;
 }
 
-
 message ListInstancesResponse {
   // Package instances, sorted by registration time, most recent first.
   repeated Instance instances = 1;
@@ -663,9 +647,7 @@ message ListInstancesResponse {
   string next_page_token = 20;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 message SearchInstancesRequest {
   // Name of a package to query instances of (required).
@@ -688,7 +670,6 @@ message SearchInstancesRequest {
   string page_token = 21;
 }
 
-
 message SearchInstancesResponse {
   // Package instances, sorted by registration time, most recent first.
   repeated Instance instances = 1;
@@ -698,9 +679,7 @@ message SearchInstancesResponse {
   string next_page_token = 20;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 // Ref is a mutable named pointer to some package instance that can be used
 // as a version identifier.
@@ -718,7 +697,6 @@ message Ref {
   google.protobuf.Timestamp modified_ts = 5;
 }
 
-
 message DeleteRefRequest {
   // Name of the ref, e.g. "latest".
   string name = 1;
@@ -726,21 +704,17 @@ message DeleteRefRequest {
   string package = 2;
 }
 
-
 message ListRefsRequest {
   // Name of a package to list refs of.
   string package = 1;
 }
-
 
 message ListRefsResponse {
   // Package refs, sorted by modification time, most recently touched first.
   repeated Ref refs = 1;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 // Tag is a key:value pair attached to some instance.
 //
@@ -762,7 +736,6 @@ message Tag {
   google.protobuf.Timestamp attached_ts = 4;
 }
 
-
 message AttachTagsRequest {
   // The package that holds the instance we attach tags to.
   string package = 1;
@@ -771,7 +744,6 @@ message AttachTagsRequest {
   // One or more tags to attach (order doesn't matter).
   repeated Tag tags = 3;
 }
-
 
 message DetachTagsRequest {
   // The package that holds the instance we detach tags from.
@@ -782,9 +754,7 @@ message DetachTagsRequest {
   repeated Tag tags = 3;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 message InstanceMetadata {
   // Key is a lowercase string matching [a-z0-9_\-]{1,400}.
@@ -809,7 +779,6 @@ message InstanceMetadata {
   google.protobuf.Timestamp attached_ts = 6;
 }
 
-
 message AttachMetadataRequest {
   // The package that holds the instance we attach metadata to.
   string package = 1;
@@ -819,7 +788,6 @@ message AttachMetadataRequest {
   repeated InstanceMetadata metadata = 3;
 }
 
-
 message DetachMetadataRequest {
   // The package that holds the instance we detach metadata from.
   string package = 1;
@@ -828,7 +796,6 @@ message DetachMetadataRequest {
   // Entries to detach: only 'fingerprint' or 'key'+'value' are used.
   repeated InstanceMetadata metadata = 3;
 }
-
 
 message ListMetadataRequest {
   // The package that holds the instance we list metadata of.
@@ -844,7 +811,6 @@ message ListMetadataRequest {
   string page_token = 21;
 }
 
-
 message ListMetadataResponse {
   // Discovered metadata ordered by 'attached_ts' (the most recent first).
   repeated InstanceMetadata metadata = 1;
@@ -853,9 +819,7 @@ message ListMetadataResponse {
   string next_page_token = 20;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 message ResolveVersionRequest {
   // The package that contains the instance we are resolving version of.
@@ -864,9 +828,7 @@ message ResolveVersionRequest {
   string version = 2;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 message GetInstanceURLRequest {
   // The package that holds the instance we want to get URL of.
@@ -875,18 +837,16 @@ message GetInstanceURLRequest {
   ObjectRef instance = 2;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 // Processor describes a state of some post-registration processing step
 // performed on an instance.
 message Processor {
   enum State {
     STATE_UNSPECIFIED = 0;
-    PENDING           = 1;
-    SUCCEEDED         = 2;
-    FAILED            = 3;
+    PENDING = 1;
+    SUCCEEDED = 2;
+    FAILED = 3;
   }
 
   // Internal identifier of the processor, e.g. "cipd_client_binary:v1"
@@ -900,7 +860,6 @@ message Processor {
   // For FAILED state, the error message.
   string error = 5;
 }
-
 
 message DescribeInstanceRequest {
   // The package that holds the instance we want to get the info for.
@@ -917,7 +876,6 @@ message DescribeInstanceRequest {
   // Whether the response should include "metadata" field.
   bool describe_metadata = 6;
 }
-
 
 message DescribeInstanceResponse {
   // The instance with all output fields filled in.
@@ -947,9 +905,7 @@ message DescribeInstanceResponse {
   repeated InstanceMetadata metadata = 5;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 message DescribeClientRequest {
   // The CIPD client package we want to get info about.
@@ -960,7 +916,6 @@ message DescribeClientRequest {
   // The client instance we want to get the info about.
   ObjectRef instance = 2;
 }
-
 
 message DescribeClientResponse {
   // The instance with all output fields filled in.
@@ -1003,9 +958,7 @@ message DescribeClientResponse {
   repeated ObjectRef client_ref_aliases = 6;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
-
 
 message DescribeBootstrapBundleRequest {
   // The package prefix that contains the bootstrap packages being described.
@@ -1035,15 +988,14 @@ message DescribeBootstrapBundleRequest {
   string version = 3;
 }
 
-
 message DescribeBootstrapBundleResponse {
   message BootstrapFile {
-    string package = 1;           // the package the file was extracted from
+    string package = 1; // the package the file was extracted from
     google.rpc.Status status = 2; // not OK on errors related to this package
-    ObjectRef instance = 3;       // the resolved package instance
-    ObjectRef file = 4;           // the extracted file in the CAS
-    string name = 5;              // the name of the extracted file
-    int64 size = 6;               // its size in bytes
+    ObjectRef instance = 3; // the resolved package instance
+    ObjectRef file = 4; // the extracted file in the CAS
+    string name = 5; // the name of the extracted file
+    int64 size = 6; // its size in bytes
   }
   repeated BootstrapFile files = 1;
 }
