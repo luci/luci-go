@@ -309,3 +309,162 @@ func TestCheckSetsAndOptional(t *testing.T) {
 		}, should.Panic)
 	})
 }
+
+func TestCheckAttrsUnconditional(t *testing.T) {
+	t.Parallel()
+
+	const (
+		prefix    = "a/b"
+		testRealm = "proj:realm"
+	)
+
+	fakeDB := authtest.NewFakeDB(
+		authtest.MockPermission("user:cond@admins.example.com", testRealm, DiagnoseACL.Perm()),
+		authtest.MockPermission(
+			"user:cond@admins.example.com", testRealm, testPermAttr.Perm(),
+			authtest.RestrictAttribute("cipd.testing.key", "latest"),
+		),
+		authtest.MockPermission("user:uncond@admins.example.com", testRealm, testPermAttr.Perm()),
+	)
+
+	cfg := &prefixcfg.Entry{
+		Service: &prefixcfg.ServiceEntry{OwningLuciProject: "proj"},
+		Realm:   testRealm,
+	}
+
+	// Conditional grant denies Unconditional() check and omits it from AllPermissionsSet().
+	condCtx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: "user:cond@admins.example.com",
+		FakeDB:   fakeDB,
+	})
+	pchkCond := NewCache(condCtx).ForPrefix(prefix, cfg)
+	has, err := pchkCond.Check(condCtx, testPermAttr.Unconditional(), nil)
+	assert.That(t, has, should.Match(Set(nil)))
+	assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+	assert.ErrIsLike(t, err, `"user:cond@admins.example.com" is missing the cipd.testing.attr permission in prefix "a/b" (realm "proj:realm")`)
+
+	has, err = pchkCond.Check(condCtx, nil, AllPermissionsSet())
+	assert.NoErr(t, err)
+	assert.That(t, has, should.Match(SetOf(DiagnoseACL)))
+
+	// Unconditional grant allows both Unconditional() and Bind(...) and appears in AllPermissionsSet().
+	uncondCtx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: "user:uncond@admins.example.com",
+		FakeDB:   fakeDB,
+	})
+	pchkUncond := NewCache(uncondCtx).ForPrefix(prefix, cfg)
+	has, err = pchkUncond.Check(uncondCtx, testPermAttr.Unconditional(), testPermAttr.Bind("any"))
+	assert.NoErr(t, err)
+	assert.That(t, has, should.Match(SetOf(testPermAttr.Unconditional(), testPermAttr.Bind("any"))))
+
+	has, err = pchkUncond.Check(uncondCtx, nil, AllPermissionsSet())
+	assert.NoErr(t, err)
+	assert.That(t, has, should.Match(SetOf(testPermAttr.Unconditional())))
+}
+
+func TestCheckAttrs(t *testing.T) {
+	t.Parallel()
+
+	const (
+		prefix    = "a/b"
+		testRealm = "proj:realm"
+	)
+
+	fakeDB := authtest.NewFakeDB(
+		authtest.MockPermission("user:realm-diagnose-acl@admins.example.com", testRealm, DiagnoseACL.Perm()),
+		authtest.MockPermission(
+			"user:realm-attr-writer@admins.example.com", testRealm, testPermAttr.Perm(),
+			authtest.RestrictAttribute("cipd.testing.key", "latest"),
+		),
+	)
+
+	attrAlpha := testPermAttr.Bind("alpha")
+	attrLatest := testPermAttr.Bind("latest")
+	attrProd := testPermAttr.Bind("prod")
+
+	cases := []struct {
+		name string
+
+		user         identity.Identity
+		perms        Checkable
+		optional     Checkable
+		wantOptional Checkable
+
+		wantCode    codes.Code
+		wantErrLike string
+	}{
+		{
+			name:  "conditional_attr_allowed",
+			user:  "user:realm-attr-writer@admins.example.com",
+			perms: attrLatest,
+		},
+		{
+			name:        "conditional_attr_denied",
+			user:        "user:realm-attr-writer@admins.example.com",
+			perms:       attrProd,
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `prefix "a/b" doesn't exist or "user:realm-attr-writer@admins.example.com" is not allowed to see it`,
+		},
+		{
+			name:        "multi_perm_duplicate_bound_attrs_deduplicated",
+			user:        "user:realm-diagnose-acl@admins.example.com",
+			perms:       SetOf(testPermAttr.Bind("alpha"), testPermAttr.Bind("alpha")),
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the cipd.testing.attr{cipd.testing.key:"alpha"} permission in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:        "multi_perm_same_perm_different_attrs_one_missing",
+			user:        "user:realm-attr-writer@admins.example.com",
+			perms:       SetOf(attrLatest, attrProd),
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `prefix "a/b" doesn't exist or "user:realm-attr-writer@admins.example.com" is not allowed to see it`,
+		},
+		{
+			name:        "multi_perm_with_attrs_detailed_error_sorted_by_attr",
+			user:        "user:realm-diagnose-acl@admins.example.com",
+			perms:       SetOf(attrProd, attrAlpha),
+			wantCode:    codes.PermissionDenied,
+			wantErrLike: `"user:realm-diagnose-acl@admins.example.com" is missing the [cipd.testing.attr{cipd.testing.key:"alpha"},cipd.testing.attr{cipd.testing.key:"prod"}] permissions in prefix "a/b" (realm "proj:realm")`,
+		},
+		{
+			name:         "optional_perm_with_bound_attr",
+			user:         "user:realm-attr-writer@admins.example.com",
+			perms:        attrLatest,
+			optional:     SetOf(attrLatest, attrProd),
+			wantOptional: attrLatest,
+		},
+	}
+
+	cfg := &prefixcfg.Entry{
+		Service: &prefixcfg.ServiceEntry{OwningLuciProject: "proj"},
+		Realm:   testRealm,
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := auth.WithState(t.Context(), &authtest.FakeState{
+				Identity: tc.user,
+				FakeDB:   fakeDB,
+			})
+
+			has, err := NewCache(ctx).ForPrefix(prefix, cfg).Check(ctx, tc.perms, tc.optional)
+			if tc.wantCode != codes.OK || tc.wantErrLike != "" {
+				assert.That(t, has, should.Match(Set(nil)))
+				assert.That(t, err, grpccode.ShouldBe(tc.wantCode))
+				assert.ErrIsLike(t, err, tc.wantErrLike)
+				return
+			}
+
+			assert.NoErr(t, err)
+			wantHas := maps.Clone(tc.perms.Perms())
+			if tc.wantOptional != nil {
+				for p := range tc.wantOptional.Perms() {
+					wantHas.Add(p)
+				}
+			}
+			assert.That(t, has, should.Match(wantHas))
+		})
+	}
+}

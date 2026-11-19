@@ -79,13 +79,13 @@ func NewCache(ctx context.Context) *Cache {
 
 // HasPerm checks the realm permission in `realm`.
 func (r *Cache) HasPerm(ctx context.Context, realm string, perm Permission) (has bool, err error) {
-	// TODO: Skip fake (non-realm) permissions and pass bound attributes.
+	// TODO: Skip fake (non-realm) permissions.
 	if realm == "" {
 		return false, nil
 	}
 
 	return r.checkedPerms.getOrCompute(realmPerm{realm, perm}, func() (bool, error) {
-		return r.authdb.HasPermission(ctx, r.ident, perm.Perm(), realm, nil)
+		return r.authdb.HasPermission(ctx, r.ident, perm.Perm(), realm, perm.attrs())
 	})
 }
 

@@ -59,6 +59,24 @@ func TestSet(t *testing.T) {
 	assert.That(t, first, should.Equal(DiagnoseACL))
 }
 
+func TestBindableUnconditional(t *testing.T) {
+	t.Parallel()
+
+	u := testPermAttr.Unconditional()
+	assert.That(t, u.Perm(), should.Equal(testPermAttr.Perm()))
+	assert.That(t, u.String(), should.Equal("cipd.testing.attr"))
+	assert.Loosely(t, u.attrs(), should.BeNil)
+	assert.Loosely(t, DiagnoseACL.attrs(), should.BeNil)
+
+	bound := testPermAttr.Bind("v1")
+	attrs := bound.attrs()
+	assert.That(t, len(attrs), should.Equal(1))
+	assert.That(t, attrs["cipd.testing.key"], should.Equal("v1"))
+
+	s := SetOf(testPermAttr.Bind("v2"), u, bound)
+	assert.That(t, s.String(), should.Equal(`[cipd.testing.attr,cipd.testing.attr{cipd.testing.key:"v1"},cipd.testing.attr{cipd.testing.key:"v2"}]`))
+}
+
 func TestPermission(t *testing.T) {
 	t.Parallel()
 
@@ -66,4 +84,24 @@ func TestPermission(t *testing.T) {
 	assert.That(t, DiagnoseACL.String(), should.Equal("cipd.packages.diagnoseACL"))
 	assert.That(t, (Permission{}).Perm().Name(), should.Equal(""))
 	assert.That(t, (Permission{}).String(), should.Equal("<invalid>"))
+	assert.That(t, (Bindable{}).Perm().Name(), should.Equal(""))
+
+	t.Run("modifiers_and_binding", func(t *testing.T) {
+		t.Parallel()
+
+		assert.That(t, testPermAttr.Perm().Name(), should.Equal("cipd.testing.attr"))
+
+		p1 := testPermAttr.Bind("v1")
+		p2 := testPermAttr.Bind("v2")
+		assert.That(t, p1.String(), should.Equal(`cipd.testing.attr{cipd.testing.key:"v1"}`))
+		assert.That(t, p2.String(), should.Equal(`cipd.testing.attr{cipd.testing.key:"v2"}`))
+	})
+
+	t.Run("duplicate_modifiers_panic", func(t *testing.T) {
+		t.Parallel()
+
+		assert.That(t, func() {
+			testPermAttr.Bind("v").withAttr("k2")
+		}, should.Panic)
+	})
 }

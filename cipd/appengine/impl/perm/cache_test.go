@@ -92,3 +92,74 @@ func TestCacheHasPerm(t *testing.T) {
 	assert.That(t, has, should.BeFalse)
 	assert.That(t, db.permCalls, should.Equal(3))
 }
+
+func TestCacheHasPermAttrs(t *testing.T) {
+	t.Parallel()
+
+	const (
+		condUser   = identity.Identity("user:cond@example.com")
+		uncondUser = identity.Identity("user:uncond@example.com")
+		realm      = "proj:realm"
+	)
+	db := &countingDB{
+		DB: authtest.NewFakeDB(
+			authtest.MockPermission(
+				condUser, realm, testPermAttr.Perm(),
+				authtest.RestrictAttribute("cipd.testing.key", "latest"),
+			),
+			authtest.MockPermission(uncondUser, realm, testPermAttr.Perm()),
+		),
+	}
+
+	condCtx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: condUser,
+		FakeDB:   db,
+	})
+	condCache := NewCache(condCtx)
+
+	has, err := condCache.HasPerm(condCtx, realm, testPermAttr.Bind("latest"))
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.permCalls, should.Equal(1))
+
+	// Repeat call hits cache.
+	has, err = condCache.HasPerm(condCtx, realm, testPermAttr.Bind("latest"))
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.permCalls, should.Equal(1))
+
+	// Different bound value uses a distinct cache key.
+	has, err = condCache.HasPerm(condCtx, realm, testPermAttr.Bind("prod"))
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.permCalls, should.Equal(2))
+
+	// Unconditional uses a distinct cache key and passes nil attrs, so a
+	// conditionally restricted grant does not satisfy it.
+	has, err = condCache.HasPerm(condCtx, realm, testPermAttr.Unconditional())
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.permCalls, should.Equal(3))
+
+	has, err = condCache.HasPerm(condCtx, realm, testPermAttr.Unconditional())
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeFalse)
+	assert.That(t, db.permCalls, should.Equal(3))
+
+	// Unconditionally granted user satisfies both Unconditional and Bind.
+	uncondCtx := auth.WithState(t.Context(), &authtest.FakeState{
+		Identity: uncondUser,
+		FakeDB:   db,
+	})
+	uncondCache := NewCache(uncondCtx)
+
+	has, err = uncondCache.HasPerm(uncondCtx, realm, testPermAttr.Unconditional())
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.permCalls, should.Equal(4))
+
+	has, err = uncondCache.HasPerm(uncondCtx, realm, testPermAttr.Bind("prod"))
+	assert.NoErr(t, err)
+	assert.That(t, has, should.BeTrue)
+	assert.That(t, db.permCalls, should.Equal(5))
+}

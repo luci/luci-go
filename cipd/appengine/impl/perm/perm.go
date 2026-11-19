@@ -39,6 +39,14 @@ type Checkable interface {
 type corePermission struct {
 	// perm is the realms permission for this Permission.
 	perm realms.Permission
+
+	// attrKey is the attribute key of this corePermission (if any).
+	//
+	// Attrs in use by CIPD are:
+	//   * `cipd.instance.metadataKey`
+	//   * `cipd.instance.tagKey`
+	//   * `cipd.package.refName`
+	attrKey string
 }
 
 // Grantable is the common interface between [Permission] and [Bindable].
@@ -74,12 +82,15 @@ func (c *corePermission) Perm() realms.Permission {
 //
 // If the underlying permission requires binding, this Permission includes
 // the bound key+value as well.
-//
-// TODO: Support conditional attribute bindings, implied groups, fake
-// permissions, global write policy, and legacy roles.
 type Permission struct {
 	// core is the immutable parts of this Permission.
 	core *corePermission
+
+	// attrVal is the bound value for this Permission.
+	//
+	// If this is empty, it means that there are no attributes for the permission
+	// check, and the permission must be granted unconditionally.
+	attrVal string
 }
 
 // Perm returns the underlying [realms.Permission].
@@ -94,7 +105,29 @@ func (c Permission) String() string {
 	if c.core == nil {
 		return "<invalid>"
 	}
-	return c.core.perm.Name()
+	if c.attrVal == "" || c.core.attrKey == "" {
+		return c.core.perm.Name()
+	}
+	return fmt.Sprintf("%s{%s:%q}", c.core.perm.Name(), c.core.attrKey, c.attrVal)
+}
+
+func (c Permission) attrs() realms.Attrs {
+	if c.attrVal == "" || c.core.attrKey == "" {
+		return nil
+	}
+	return realms.Attrs{c.core.attrKey: c.attrVal}
+}
+
+// withAttr modifies c.core.attrKey, and returns a [Bindable] which can be
+// bound to produce a [Permission].
+//
+// Panics if used twice with the same [corePermission].
+func (c Permission) withAttr(attrKey string) Bindable {
+	if c.core.attrKey != "" {
+		panic("impossible: cannot use `withAttr` twice on the same Permission")
+	}
+	c.core.attrKey = attrKey
+	return Bindable{c.core}
 }
 
 // definePerm registers `permission` as a realms permission, and returns a new
@@ -103,9 +136,39 @@ func definePerm(permission string) Permission {
 	// NOTE: We have a test which asserts that no duplicates appear in
 	// AllPermissions. Since `definePerm` is private, this should guarantee that
 	// all *corePermission in the process are also unique.
-	core := &corePermission{realms.RegisterPermission(permission)}
+	core := &corePermission{perm: realms.RegisterPermission(permission)}
 	AllPermissions[core] = struct{}{}
 	return Permission{core: core}
+}
+
+// Bindable is a 'half bound' permission which knows the attribute key, but not
+// the attribute value.
+//
+// They are used as the base permission definitions for permissions which
+// require an attribute.
+//
+// This intentionally does *not* implement [Checkable] in order to have the
+// compiler reject accidental attempts to use such half bound permissions with
+// [PrefixCache.Check].
+type Bindable struct {
+	core *corePermission
+}
+
+// Perm returns the underlying [realms.Permission].
+func (b Bindable) Perm() realms.Permission { return b.core.Perm() }
+
+// Bind returns a new [Permission], binding the internally saved attrKey to
+// the given attrValue.
+//
+// Does not modify `b`.
+func (b Bindable) Bind(attrValue string) Permission {
+	return Permission{b.core, attrValue}
+}
+
+// Unconditional returns a new [Permission] which has NO bound value, and which
+// will be checked as an unconditionally granted permission.
+func (b Bindable) Unconditional() Permission {
+	return Permission{b.core, ""}
 }
 
 // Set is a set of [Permission]s and implements [Checkable].
@@ -145,7 +208,10 @@ func (p Set) Has(c Permission) bool {
 // Sorted yields all permissions in this Set in sorted order.
 func (p Set) Sorted(yield func(Permission) bool) {
 	slices.Values(slices.SortedFunc(maps.Keys(p), func(a, b Permission) int {
-		return cmp.Compare(a.core.perm.Name(), b.core.perm.Name())
+		return cmp.Or(
+			cmp.Compare(a.core.perm.Name(), b.core.perm.Name()),
+			cmp.Compare(a.attrVal, b.attrVal),
+		)
 	}))(yield)
 }
 

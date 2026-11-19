@@ -28,12 +28,13 @@ var (
 	testPermRead  = definePerm("cipd.testing.read")
 	testPermWrite = definePerm("cipd.testing.write")
 	testPermExtra = definePerm("cipd.testing.extra")
+	testPermAttr  = definePerm("cipd.testing.attr").withAttr("cipd.testing.key")
 )
 
 func TestRegisteredPermissionsInvariants(t *testing.T) {
 	t.Parallel()
 
-	assert.That(t, len(AllPermissions), should.Equal(4))
+	assert.That(t, len(AllPermissions), should.Equal(5))
 	seen := make(map[realms.Permission]struct{}, len(AllPermissions))
 	for g := range AllPermissions {
 		seen[g.Perm()] = struct{}{}
@@ -60,4 +61,6 @@ func TestAllPermissionsCheckable(t *testing.T) {
 			assert.That(t, allCheckable.Has(p), should.BeTrue)
 		}
 	}
+	assert.That(t, allCheckable.Has(testPermAttr.Unconditional()), should.BeTrue)
+	assert.That(t, allCheckable.Has(testPermAttr.Bind("v1")), should.BeFalse)
 }
