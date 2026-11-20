@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"iter"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -67,9 +68,10 @@ func PackageKey(ctx context.Context, pkg string) *datastore.Key {
 // NOT included in the result. Only packaged under the prefix are included.
 //
 // The result is sorted by the package name. Returns only transient errors.
-func ListPackages(ctx context.Context, prefix string, includeHidden bool) (out []string, err error) {
-	if prefix, err = common.ValidatePackagePrefix(prefix); err != nil {
-		return nil, err
+func ListPackages(ctx context.Context, prefix string, includeHidden bool) iter.Seq2[string, error] {
+	prefix, err := common.ValidatePackagePrefix(prefix)
+	if err != nil {
+		return func(yield func(string, error) bool) { yield("", err) }
 	}
 
 	// Note: __key__ queries are already ordered by key.
@@ -79,18 +81,24 @@ func ListPackages(ctx context.Context, prefix string, includeHidden bool) (out [
 		q = q.Lt("__key__", PackageKey(ctx, prefix+"/~"))
 	}
 
-	for p, qErr := range datastore.RunQuery[*Package](ctx, q).Results {
-		if qErr != nil {
-			return nil, transient.Tag.Apply(errors.Fmt("failed to query the list of packages: %w", qErr))
-		}
-		// We filter by Hidden manually since not all entities in the datastore have
-		// it set, so filtering using Eq("Hidden", false) actually skips all
-		// entities that don't have Hidden field at all.
-		if !p.Hidden || includeHidden {
-			out = append(out, p.Name)
+	return func(yield func(string, error) bool) {
+		for p, qErr := range datastore.RunQuery[*Package](ctx, q).Results {
+			if qErr != nil {
+				yield("", transient.Tag.Apply(errors.Fmt("failed to query the list of packages: %w", qErr)))
+				return
+			}
+			// We filter by Hidden manually since not all entities in the datastore
+			// have it set, so filtering using Eq("Hidden", false) actually skips all
+			// entities that don't have Hidden field at all.
+			//
+			// TODO: We could probably dsmapper to fix this.
+			if !p.Hidden || includeHidden {
+				if !yield(p.Name, nil) {
+					return
+				}
+			}
 		}
 	}
-	return out, nil
 }
 
 // CheckPackages given a list of package names returns packages that exist, in

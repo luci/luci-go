@@ -532,13 +532,17 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *repopb.ListPrefixReques
 				//     entity writes in a single transaction, which is acceptable.
 				//  4. In non-recursive listing just look at Children of corresponding
 				//     entity.
-				listing, err := model.ListPackages(ctx, pfx, r.IncludeHidden)
-				if err == nil {
-					mu.Lock()
-					perVisibleRoot[pfx] = append(perVisibleRoot[pfx], listing...)
-					mu.Unlock()
+				var listing []string
+				for prefix, err := range model.ListPackages(ctx, pfx, r.IncludeHidden) {
+					if err != nil {
+						return err
+					}
+					listing = append(listing, prefix)
 				}
-				return err
+				mu.Lock()
+				perVisibleRoot[pfx] = append(perVisibleRoot[pfx], listing...)
+				mu.Unlock()
+				return nil
 			}
 		}
 	})
@@ -1845,11 +1849,10 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *repopb.Des
 	// Auto-discover all available packages if necessary.
 	if len(r.Variants) == 0 {
 		// Note: ListPackages does recursive prefix listing.
-		listing, err := model.ListPackages(ctx, r.Prefix, false)
-		if err != nil {
-			return nil, err
-		}
-		for _, pkg := range listing {
+		for pkg, err := range model.ListPackages(ctx, r.Prefix, false) {
+			if err != nil {
+				return nil, err
+			}
 			if !strings.HasPrefix(pkg, r.Prefix+"/") {
 				panic(fmt.Sprintf("ListPackages %q unexpected returned package %q", r.Prefix, pkg))
 			}

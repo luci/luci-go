@@ -45,8 +45,11 @@ func TestListPackages(t *testing.T) {
 		}
 
 		list := func(prefix string, includeHidden bool) []string {
-			p, err := ListPackages(ctx, prefix, includeHidden)
-			assert.Loosely(t, err, should.BeNil)
+			var p []string
+			for prefix, err := range ListPackages(ctx, prefix, includeHidden) {
+				assert.NoErr(t, err)
+				p = append(p, prefix)
+			}
 			return p
 		}
 
