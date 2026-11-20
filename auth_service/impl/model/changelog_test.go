@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"sort"
 	"testing"
@@ -550,30 +551,44 @@ func TestGenerateChanges(t *testing.T) {
 			})
 
 			t.Run("oversized AuthGroup add/remove Members", func(t *ftt.Test) {
+				assertValidShardIDs := func(shardIDs []string, rev int64, changeType ChangeType) {
+					t.Helper()
+					assert.Loosely(t, shardIDs, should.NotBeEmpty)
+					pattern := fmt.Sprintf(`^%d:AuthGroup\$oversized-test-group:%s:[0-9a-f]{64}$`, rev, changeType.ToString())
+					for _, shardID := range shardIDs {
+						assert.Loosely(t, shardID, should.MatchRegexp(pattern))
+					}
+				}
+				assertMembersEqual := func(actual, expected []string) {
+					t.Helper()
+					actualSet := stringset.NewFromSlice(actual...)
+					expectedSet := stringset.NewFromSlice(expected...)
+					assert.Loosely(t, actualSet.Contains(expectedSet), should.BeTrue)
+					assert.Loosely(t, expectedSet.Contains(actualSet), should.BeTrue)
+				}
+
 				// Add members in Create
 				group := oversizedAuthGroup(ctx, "oversized-test-group")
+				initialMembers := slices.Clone(group.Members)
 				_, err := CreateAuthGroup(ctx, group, "Go pRPC API")
 				assert.NoErr(t, err)
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(2))
 				actualChanges, err := generateChanges(ctx, 1)
 				assert.NoErr(t, err)
+				assert.Loosely(t, actualChanges, should.HaveLength(2))
+				assertValidShardIDs(actualChanges[1].ShardIDs, 1, ChangeGroupMembersAdded)
 				validateChanges(ctx, "create group +mems", 1, actualChanges, []*AuthDBChange{{
 					ChangeType:  ChangeGroupCreated,
 					Owners:      group.Owners,
 					Description: group.Description,
 				}, {
 					ChangeType: ChangeGroupMembersAdded,
-					ShardIDs: []string{
-						"1:AuthGroup$oversized-test-group:GROUP_MEMBERS_ADDED:0d11f48e8328136d51720ff89edcff1265ac2169f772b47e4fbca8f67ae4a6c5",
-					},
+					ShardIDs:   slices.Clone(actualChanges[1].ShardIDs),
 				}})
 				// Check that the members added were actually stored.
 				membersAddedChange := actualChanges[1]
 				assert.Loosely(t, membersAddedChange.restoreMembers(ctx), should.BeNil)
-				added := stringset.NewFromSlice(membersAddedChange.Members...)
-				expected := stringset.NewFromSlice(group.Members...)
-				assert.Loosely(t, added.Contains(expected), should.BeTrue)
-				assert.Loosely(t, expected.Contains(added), should.BeTrue)
+				assertMembersEqual(membersAddedChange.Members, initialMembers)
 
 				// Add a member to an already existing group.
 				// Sharding should not be required, as there is only one member in this
@@ -597,10 +612,16 @@ func TestGenerateChanges(t *testing.T) {
 				assert.Loosely(t, taskScheduler.Tasks(), should.HaveLength(6))
 				actualChanges, err = generateChanges(ctx, 3)
 				assert.NoErr(t, err)
+				assert.Loosely(t, actualChanges, should.HaveLength(1))
+				assertValidShardIDs(actualChanges[0].ShardIDs, 3, ChangeGroupMembersRemoved)
 				validateChanges(ctx, "update group -mems", 3, actualChanges, []*AuthDBChange{{
 					ChangeType: ChangeGroupMembersRemoved,
-					ShardIDs:   []string{"3:AuthGroup$oversized-test-group:GROUP_MEMBERS_REMOVED:0d11f48e8328136d51720ff89edcff1265ac2169f772b47e4fbca8f67ae4a6c5"},
+					ShardIDs:   slices.Clone(actualChanges[0].ShardIDs),
 				}})
+				// Check that the members removed were actually stored.
+				membersRemovedChange := actualChanges[0]
+				assert.Loosely(t, membersRemovedChange.restoreMembers(ctx), should.BeNil)
+				assertMembersEqual(membersRemovedChange.Members, initialMembers)
 
 				// Remove members when deleting group
 				assert.Loosely(t, DeleteAuthGroup(ctx, group.ID, "", "Go pRPC API"), should.BeNil)
