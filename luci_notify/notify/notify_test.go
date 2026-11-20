@@ -887,6 +887,7 @@ func TestIsRecipientAllowed(t *testing.T) {
 		allowedCases := []string{
 			"user@chromium.org",
 			"user@google.com",
+			"user@GOOGLE.COM",
 			"user+tag@google.com",
 			"first.last-1@chromium.org",
 			"sheriff@grotations.appspotmail.com",
@@ -903,7 +904,6 @@ func TestIsRecipientAllowed(t *testing.T) {
 			"user@example.com",
 			"user@sub.google.com",
 			"user@othergoogle.com",
-			"user@GOOGLE.COM",
 			"other@example.com, x@google.com",
 			"x@google.com, other@example.com",
 			"a@google.com, b@chromium.org",
@@ -924,6 +924,7 @@ func TestIsRecipientAllowed(t *testing.T) {
 		for _, recipient := range rejectedCases {
 			assert.Loosely(t, isRecipientAllowed(ctx, recipient, build), should.BeFalse, truth.Explain("expected %q to be rejected", recipient))
 		}
+		assert.Loosely(t, isRecipientAllowed(ctx, "user@example.com", nil), should.BeFalse)
 	})
 
 	ftt.Run("Notify filters invalid recipient formats", t, func(t *ftt.Test) {
@@ -977,5 +978,41 @@ func TestIsRecipientAllowed(t *testing.T) {
 			"valid@chromium.org",
 			"valid@google.com",
 		}))
+	})
+}
+
+func TestIsAllowedRecipientAddress(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("IsAllowedRecipientAddress", t, func(t *ftt.Test) {
+		allowed := []string{
+			"alice@google.com",
+			"alice@GOOGLE.COM",
+			"alice@chromium.org",
+			"alice@grotations.appspotmail.com",
+			"alice@rotations.google.com",
+		}
+		for _, recipient := range allowed {
+			assert.Loosely(t, IsAllowedRecipientAddress(recipient), should.BeTrue, truth.Explain("expected %q to be allowed", recipient))
+		}
+
+		disallowed := []string{
+			"",
+			"alice@example.com",
+			"Alice <alice@google.com>",
+			`"victim@evil.com" <alice@google.com>`,
+			"alice@google.com (victim@evil.com)",
+			"<alice@google.com>",
+			"alice@google.com\r",
+			"alice@google.com\n",
+			"alice\r\n@google.com",
+			"alice@evilgoogle.com",
+			"alice@google.com.evil.example",
+			"a@google.com, b@example.com",
+			"not-an-email",
+		}
+		for _, recipient := range disallowed {
+			assert.Loosely(t, IsAllowedRecipientAddress(recipient), should.BeFalse, truth.Explain("expected %q to be disallowed", recipient))
+		}
 	})
 }

@@ -199,7 +199,7 @@ func formatBuildersToHTML(builders []BuilderInfo) string {
 
 // shouldIgnoreRecipient returns true if the given email recipient is not safe to send to.
 func shouldIgnoreRecipient(c context.Context, email string) bool {
-	if isAllowedRecipientAddress(email) {
+	if IsAllowedRecipientAddress(email) {
 		return false
 	}
 	logging.Warningf(c, "Email %q is not allowed to be notified", email)
