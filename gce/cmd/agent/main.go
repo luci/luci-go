@@ -46,7 +46,7 @@ func substitute(c context.Context, s string, subs any) (string, error) {
 	}
 	buf := bytes.Buffer{}
 	if err = t.Execute(&buf, subs); err != nil {
-		return "", nil
+		return "", err
 	}
 	return buf.String(), nil
 }

@@ -51,5 +51,11 @@ func TestSubstitute(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, s, should.Equal("Test Value1 Value2 Value3"))
 		})
+
+		t.Run("exec err", func(t *ftt.Test) {
+			s, err := substitute(c, "Test {{.Missing}}", struct{}{})
+			assert.Loosely(t, err, should.ErrLike("can't evaluate field Missing"))
+			assert.Loosely(t, s, should.BeEmpty)
+		})
 	})
 }
