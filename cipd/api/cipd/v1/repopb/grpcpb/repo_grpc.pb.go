@@ -438,6 +438,10 @@ type RepositoryClient interface {
 	//   - A ref name, e.g. "latest".
 	//   - A tag, e.g. "version:1.10.3".
 	//
+	// In the returned Instance, `registered_by` and `registered_ts` are populated
+	// only if the caller has `cipd.packages.readInstanceInfo` permission (or
+	// legacy READER role).
+	//
 	// Returns:
 	//
 	//	PERMISSION_DENIED if the caller lacks `cipd.packages.resolveVersion`
@@ -1148,6 +1152,10 @@ type RepositoryServer interface {
 	//   - A string-encoded instance ID, e.g. "abcdef....".
 	//   - A ref name, e.g. "latest".
 	//   - A tag, e.g. "version:1.10.3".
+	//
+	// In the returned Instance, `registered_by` and `registered_ts` are populated
+	// only if the caller has `cipd.packages.readInstanceInfo` permission (or
+	// legacy READER role).
 	//
 	// Returns:
 	//

@@ -57,7 +57,7 @@ func TestRegisterInstance(t *testing.T) {
 		}
 
 		t.Run("To proto", func(t *ftt.Test) {
-			assert.Loosely(t, inst.Proto(), should.Resemble(&repopb.Instance{
+			assert.Loosely(t, inst.Proto(true), should.Resemble(&repopb.Instance{
 				Package: "a/b/c",
 				Instance: &caspb.ObjectRef{
 					HashAlgo:  caspb.HashAlgo_SHA1,
@@ -65,6 +65,13 @@ func TestRegisterInstance(t *testing.T) {
 				},
 				RegisteredBy: "user:a@example.com",
 				RegisteredTs: timestamppb.New(testutil.TestTime),
+			}))
+			assert.Loosely(t, inst.Proto(false), should.Resemble(&repopb.Instance{
+				Package: "a/b/c",
+				Instance: &caspb.ObjectRef{
+					HashAlgo:  caspb.HashAlgo_SHA1,
+					HexDigest: inst.InstanceID,
+				},
 			}))
 		})
 

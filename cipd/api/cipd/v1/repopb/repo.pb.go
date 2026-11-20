@@ -754,6 +754,9 @@ type RegisterInstanceResponse struct {
 	Status RegistrationStatus `protobuf:"varint,1,opt,name=status,proto3,enum=cipd.RegistrationStatus" json:"status,omitempty"`
 	// For statuses REGISTERED and ALREADY_REGISTERED contains details about the
 	// instance. Not set for NOT_UPLOADED status.
+	//
+	// `registered_by` and `registered_ts` are populated only if the caller has
+	// `cipd.packages.readInstanceInfo` permission (or legacy READER role).
 	Instance *Instance `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// For status NOT_UPLOADED contains a new upload operation that can be used
 	// together with Storage service to upload the instance file. Not set for
@@ -882,6 +885,9 @@ func (x *ListInstancesRequest) GetPageToken() string {
 type ListInstancesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Package instances, sorted by registration time, most recent first.
+	//
+	// `registered_by` and `registered_ts` are populated only if the caller has
+	// `cipd.packages.readInstanceInfo` permission (or legacy READER role).
 	Instances []*Instance `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
 	// Value to pass as 'page_token' in ListInstancesRequest to resume fetching or
 	// empty string if there's no more results.
@@ -1016,6 +1022,9 @@ func (x *SearchInstancesRequest) GetPageToken() string {
 type SearchInstancesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Package instances, sorted by registration time, most recent first.
+	//
+	// `registered_by` and `registered_ts` are populated only if the caller has
+	// `cipd.packages.readInstanceInfo` permission (or legacy READER role).
 	Instances []*Instance `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
 	// Value to pass as 'page_token' in SearchInstancesRequest to resume fetching
 	// or empty string if there's no more results.

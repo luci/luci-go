@@ -670,7 +670,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 	}
 
 	// Check ACLs.
-	prefix, _, err := impl.hasPermission(ctx, r.Package, perm.WriteInstance, nil)
+	prefix, gotPerms, err := impl.hasPermission(ctx, r.Package, perm.WriteInstance, perm.ReadInstanceInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -704,7 +704,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 
 		return &repopb.RegisterInstanceResponse{
 			Status:   repopb.RegistrationStatus_ALREADY_REGISTERED,
-			Instance: instance.Proto(),
+			Instance: instance.Proto(gotPerms.Has(perm.ReadInstanceInfo)),
 		}, nil
 	case err != datastore.ErrNoSuchEntity:
 		return nil, errors.Fmt("failed to fetch the instance entity: %w", err)
@@ -759,7 +759,7 @@ func (impl *repoImpl) RegisterInstance(ctx context.Context, r *repopb.Instance) 
 		return nil, errors.Fmt("failed to register the instance: %w", err)
 	}
 
-	resp = &repopb.RegisterInstanceResponse{Instance: instance.Proto()}
+	resp = &repopb.RegisterInstanceResponse{Instance: instance.Proto(gotPerms.Has(perm.ReadInstanceInfo))}
 	if registered {
 		resp.Status = repopb.RegistrationStatus_REGISTERED
 	} else {
@@ -826,7 +826,7 @@ func (impl *repoImpl) onInstanceRegistration(ctx context.Context, inst *model.In
 	// Launch the TQ task that does the processing (see runProcessorsTask below).
 	return impl.tq.AddTask(ctx, &tq.Task{
 		Title:   inst.InstanceID,
-		Payload: &tasks.RunProcessors{Instance: inst.Proto()},
+		Payload: &tasks.RunProcessors{Instance: inst.Proto(true)},
 	})
 }
 
@@ -1025,7 +1025,7 @@ func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpt
 	}
 
 	// Check ACLs.
-	_, _, err = impl.hasPermission(ctx, opts.Package, perm.SetOf(perm.ListInstances, opts.ExtraPerm), nil)
+	_, gotPerms, err := impl.hasPermission(ctx, opts.Package, perm.SetOf(perm.ListInstances, opts.ExtraPerm), perm.ReadInstanceInfo)
 	if err != nil {
 		return nil, "", err
 	}
@@ -1044,7 +1044,7 @@ func (impl *repoImpl) paginatedQuery(ctx context.Context, opts paginatedQueryOpt
 	// Convert results to proto.
 	out = make([]*repopb.Instance, len(inst))
 	for i, ent := range inst {
-		out[i] = ent.Proto()
+		out[i] = ent.Proto(gotPerms.Has(perm.ReadInstanceInfo))
 	}
 	if cursor != nil {
 		nextTok = cursor.String()
@@ -1531,7 +1531,8 @@ func (impl *repoImpl) ResolveVersion(ctx context.Context, r *repopb.ResolveVersi
 	}
 
 	// Check ACLs.
-	if _, _, err := impl.hasPermission(ctx, r.Package, perm.ResolveVersion, nil); err != nil {
+	_, gotPerms, err := impl.hasPermission(ctx, r.Package, perm.ResolveVersion, perm.ReadInstanceInfo)
+	if err != nil {
 		return nil, err
 	}
 
@@ -1541,7 +1542,7 @@ func (impl *repoImpl) ResolveVersion(ctx context.Context, r *repopb.ResolveVersi
 	if err != nil {
 		return nil, err
 	}
-	return inst.Proto(), nil
+	return inst.Proto(gotPerms.Has(perm.ReadInstanceInfo)), nil
 }
 
 // GetInstanceURL implements the corresponding RPC method, see the proto doc.
@@ -1570,7 +1571,9 @@ func (impl *repoImpl) GetInstanceURL(ctx context.Context, r *repopb.GetInstanceU
 	if err := model.CheckInstanceExists(ctx, inst); err != nil {
 		return nil, err
 	}
-	return impl.GetSignedURL(ctx, inst.Proto(), "")
+	// NOTE: GetSignedURL only includes inst.Instance in the response, so no need
+	// to include RegisteredTs/By here.
+	return impl.GetSignedURL(ctx, inst.Proto(false), "")
 }
 
 // GetSignedURL returns a signed URL for a CAS object.
@@ -1653,7 +1656,9 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *repopb.DescribeIn
 
 	// Assemble the resulting proto. Apparently nil and empty slices are treated
 	// differently by jsonpb, so make sure to keep empty fields as nils.
-	resp = &repopb.DescribeInstanceResponse{Instance: inst.Proto()}
+	//
+	// TODO: Update this to hasReadInstanceInfo.
+	resp = &repopb.DescribeInstanceResponse{Instance: inst.Proto(true)}
 	if len(refs) != 0 {
 		resp.Refs = make([]*repopb.Ref, len(refs))
 		for i, r := range refs {
@@ -1712,7 +1717,9 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClie
 	// This must succeed, since CheckInstanceReady above verified processors have
 	// finished. Thus treat any error here as internal, as it will require an
 	// investigation.
-	proc, err := processing.GetClientExtractorResult(ctx, inst.Proto())
+	//
+	// TODO: Update this to hasReadInstanceInfo.
+	proc, err := processing.GetClientExtractorResult(ctx, inst.Proto(true))
 	if err != nil {
 		return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to get client extractor results: %w", err))
 	}
@@ -1751,7 +1758,8 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClie
 	}
 
 	return &repopb.DescribeClientResponse{
-		Instance:         inst.Proto(),
+		// TODO: Update this to hasReadInstanceInfo.
+		Instance:         inst.Proto(true),
 		ClientRef:        ref,
 		ClientBinary:     signedURL,
 		ClientSize:       proc.ClientBinary.Size,

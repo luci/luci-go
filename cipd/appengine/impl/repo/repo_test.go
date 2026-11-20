@@ -1167,7 +1167,13 @@ func TestRegisterInstance(t *testing.T) {
 
 			resp, err = impl.RegisterInstance(as("realm-writer@google.com"), inst)
 			assert.NoErr(t, err)
-			assert.Loosely(t, resp.Status, should.Equal(repopb.RegistrationStatus_ALREADY_REGISTERED))
+			assert.Loosely(t, resp, should.Match(&repopb.RegisterInstanceResponse{
+				Status: repopb.RegistrationStatus_ALREADY_REGISTERED,
+				Instance: &repopb.Instance{
+					Package:  inst.Package,
+					Instance: inst.Instance,
+				},
+			}))
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
@@ -1406,7 +1412,7 @@ func TestProcessors(t *testing.T) {
 		t.Run("runProcessorsTask happy path", func(t *ftt.Test) {
 			// Setup two pending processors that read 'file2'.
 			runCB := func(i *model.Instance, r *processing.PackageReader) (processing.Result, error) {
-				assert.Loosely(t, i.Proto(), should.Match(inst))
+				assert.Loosely(t, i.Proto(true), should.Match(inst))
 
 				rd, _, err := r.Open("file2")
 				assert.Loosely(t, err, should.BeNil)
@@ -1555,6 +1561,8 @@ func TestListInstances(t *testing.T) {
 		ts := time.Unix(1525136124, 0).UTC()
 		ctx, _, as := testutil.TestingContext(
 			authtest.MockPermission("user:realm-lister@example.com", "project:realm", perm.ListInstances.Perm()),
+			authtest.MockPermission("user:realm-lister@example.com", "project:realm", perm.ReadInstanceInfo.Perm()),
+			authtest.MockPermission("user:realm-lister-no-info@example.com", "project:realm", perm.ListInstances.Perm()),
 		)
 		ctx = as("reader@example.com")
 
@@ -1663,6 +1671,19 @@ func TestListInstances(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.Loosely(t, res, should.Match(&repopb.ListInstancesResponse{
 				Instances: []*repopb.Instance{inst(3), inst(2), inst(1), inst(0)},
+			}))
+
+			instNoInfo := func(i int) *repopb.Instance {
+				p := inst(i)
+				p.RegisteredTs = nil
+				return p
+			}
+			res, err = impl.ListInstances(as("realm-lister-no-info@example.com"), &repopb.ListInstancesRequest{
+				Package: "a/b",
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, res, should.Match(&repopb.ListInstancesResponse{
+				Instances: []*repopb.Instance{instNoInfo(3), instNoInfo(2), instNoInfo(1), instNoInfo(0)},
 			}))
 		})
 
@@ -2986,6 +3007,8 @@ func TestResolveVersion(t *testing.T) {
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
 		ctx, _, as := testutil.TestingContext(
 			authtest.MockPermission("user:realm-resolver@example.com", "project:realm", perm.ResolveVersion.Perm()),
+			authtest.MockPermission("user:realm-resolver-info@example.com", "project:realm", perm.ResolveVersion.Perm()),
+			authtest.MockPermission("user:realm-resolver-info@example.com", "project:realm", perm.ReadInstanceInfo.Perm()),
 		)
 		ctx = as("reader@example.com")
 
@@ -3037,14 +3060,22 @@ func TestResolveVersion(t *testing.T) {
 				Version: "latest",
 			})
 			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inst, should.Match(inst2.Proto()))
+			assert.Loosely(t, inst, should.Match(inst2.Proto(true)))
 
 			inst, err = impl.ResolveVersion(as("realm-resolver@example.com"), &repopb.ResolveVersionRequest{
 				Package: "a/pkg",
 				Version: "latest",
 			})
-			assert.Loosely(t, err, should.BeNil)
-			assert.Loosely(t, inst, should.Match(inst2.Proto()))
+			assert.NoErr(t, err)
+			// false because realm-resolver does not have permReadInstanceInfo.
+			assert.Loosely(t, inst, should.Match(inst2.Proto(false)))
+
+			inst, err = impl.ResolveVersion(as("realm-resolver-info@example.com"), &repopb.ResolveVersionRequest{
+				Package: "a/pkg",
+				Version: "ver:2",
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, inst, should.Match(inst2.Proto(true)))
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {
@@ -3183,7 +3214,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			t.Run("Happy path", func(t *ftt.Test) {
 				resp, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
+					Instance: inst.Proto(true).Instance,
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
@@ -3192,7 +3223,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 
 				resp, err = impl.GetInstanceURL(as("realm-data-reader@example.com"), &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
+					Instance: inst.Proto(true).Instance,
 				})
 				assert.NoErr(t, err)
 				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
@@ -3204,7 +3235,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 				prefixCfgPb.OwningLuciProject = "luci-proj"
 				resp, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  inst.Package.StringID(),
-					Instance: inst.Proto().Instance,
+					Instance: inst.Proto(true).Instance,
 				})
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, resp, should.Match(&caspb.ObjectURL{
@@ -3215,7 +3246,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			t.Run("Bad package name", func(t *ftt.Test) {
 				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  "///",
-					Instance: inst.Proto().Instance,
+					Instance: inst.Proto(true).Instance,
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 				assert.Loosely(t, err, should.ErrLike("bad 'package'"))
@@ -3236,7 +3267,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			t.Run("No access", func(t *ftt.Test) {
 				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  "b",
-					Instance: inst.Proto().Instance,
+					Instance: inst.Proto(true).Instance,
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
@@ -3245,7 +3276,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			t.Run("Missing package", func(t *ftt.Test) {
 				_, err := impl.GetInstanceURL(ctx, &repopb.GetInstanceURLRequest{
 					Package:  "a/missing",
-					Instance: inst.Proto().Instance,
+					Instance: inst.Proto(true).Instance,
 				})
 				assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 				assert.Loosely(t, err, should.ErrLike("no such package"))
@@ -3352,11 +3383,11 @@ func TestDescribeInstance(t *testing.T) {
 		t.Run("Happy path, basic info", func(t *ftt.Test) {
 			resp, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:  "a/pkg",
-				Instance: inst.Proto().Instance,
+				Instance: inst.Proto(true).Instance,
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
-				Instance: inst.Proto(),
+				Instance: inst.Proto(true),
 			}))
 		})
 
@@ -3392,7 +3423,7 @@ func TestDescribeInstance(t *testing.T) {
 
 			resp, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:            "a/pkg",
-				Instance:           inst.Proto().Instance,
+				Instance:           inst.Proto(true).Instance,
 				DescribeTags:       true,
 				DescribeRefs:       true,
 				DescribeProcessors: true,
@@ -3400,7 +3431,7 @@ func TestDescribeInstance(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
-				Instance: inst.Proto(),
+				Instance: inst.Proto(true),
 				Tags: []*repopb.Tag{
 					{
 						Key:        "a",
@@ -3419,14 +3450,14 @@ func TestDescribeInstance(t *testing.T) {
 					{
 						Name:       "ref_a",
 						Package:    "a/pkg",
-						Instance:   inst.Proto().Instance,
+						Instance:   inst.Proto(true).Instance,
 						ModifiedBy: "user:ref@google.com",
 						ModifiedTs: timestamppb.New(testutil.TestTime),
 					},
 					{
 						Name:       "ref_b",
 						Package:    "a/pkg",
-						Instance:   inst.Proto().Instance,
+						Instance:   inst.Proto(true).Instance,
 						ModifiedBy: "user:ref@google.com",
 						ModifiedTs: timestamppb.New(testutil.TestTime),
 					},
@@ -3463,7 +3494,7 @@ func TestDescribeInstance(t *testing.T) {
 		t.Run("Bad package name", func(t *ftt.Test) {
 			_, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:  "///",
-				Instance: inst.Proto().Instance,
+				Instance: inst.Proto(true).Instance,
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
 			assert.Loosely(t, err, should.ErrLike("bad 'package'"))
@@ -3484,7 +3515,7 @@ func TestDescribeInstance(t *testing.T) {
 		t.Run("No access", func(t *ftt.Test) {
 			_, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:  "b",
-				Instance: inst.Proto().Instance,
+				Instance: inst.Proto(true).Instance,
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
 			assert.Loosely(t, err, should.ErrLike("is not allowed to see it"))
@@ -3493,7 +3524,7 @@ func TestDescribeInstance(t *testing.T) {
 		t.Run("Missing package", func(t *ftt.Test) {
 			_, err := impl.DescribeInstance(ctx, &repopb.DescribeInstanceRequest{
 				Package:  "a/missing",
-				Instance: inst.Proto().Instance,
+				Instance: inst.Proto(true).Instance,
 			})
 			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
 			assert.Loosely(t, err, should.ErrLike("no such package"))
@@ -4403,13 +4434,13 @@ func TestVSA(t *testing.T) {
 				// Register it first without VSA.
 				instance := (&model.Instance{
 					RegisteredBy: "user:someone@google.com",
-				}).FromProto(ctx, inst.Proto())
+				}).FromProto(ctx, inst.Proto(true))
 				_, _, err := model.RegisterInstance(ctx, instance, nil, nil)
 				assert.NoErr(t, err)
 
 				resp, err := impl.RegisterInstance(ctx, &repopb.Instance{
 					Package:      "a/pkg",
-					Instance:     inst.Proto().Instance,
+					Instance:     inst.Proto(true).Instance,
 					Attestations: "attestation bundle",
 				})
 				assert.NoErr(t, err)
@@ -4431,7 +4462,7 @@ func TestVSA(t *testing.T) {
 
 				_, err := impl.RegisterInstance(ctx, &repopb.Instance{
 					Package:      "a/pkg/new",
-					Instance:     inst.Proto().Instance,
+					Instance:     inst.Proto(true).Instance,
 					Attestations: "bad bundle",
 				})
 				assert.ErrIsLike(t, err, "attestations verification rejected: rejected")
@@ -4443,7 +4474,7 @@ func TestVSA(t *testing.T) {
 				mvsa.err = fmt.Errorf("something wrong")
 				_, err := impl.RegisterInstance(ctx, &repopb.Instance{
 					Package:      "a/pkg/new",
-					Instance:     inst.Proto().Instance,
+					Instance:     inst.Proto(true).Instance,
 					Attestations: "attestation bundle",
 				})
 				assert.ErrIsLike(t, err, "something wrong")

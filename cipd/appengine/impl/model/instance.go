@@ -59,17 +59,22 @@ type Instance struct {
 }
 
 // Proto returns cipd.Instance proto with information from this entity.
-func (e *Instance) Proto() *repopb.Instance {
-	var t *timestamppb.Timestamp
-	if !e.RegisteredTs.IsZero() {
-		t = timestamppb.New(e.RegisteredTs)
+//
+// If hasReadInfoPermission is false, RegisteredBy and RegisteredTs are omitted.
+func (e *Instance) Proto(hasReadInfoPermission bool) *repopb.Instance {
+	ret := &repopb.Instance{
+		Package:  e.Package.StringID(),
+		Instance: common.InstanceIDToObjectRef(e.InstanceID),
 	}
-	return &repopb.Instance{
-		Package:      e.Package.StringID(),
-		Instance:     common.InstanceIDToObjectRef(e.InstanceID),
-		RegisteredBy: e.RegisteredBy,
-		RegisteredTs: t,
+	if hasReadInfoPermission {
+		var t *timestamppb.Timestamp
+		if !e.RegisteredTs.IsZero() {
+			t = timestamppb.New(e.RegisteredTs)
+		}
+		ret.RegisteredBy = e.RegisteredBy
+		ret.RegisteredTs = t
 	}
+	return ret
 }
 
 // FromProto fills in the entity based on the proto message.

@@ -405,6 +405,10 @@ service Repository {
   //   * A ref name, e.g. "latest".
   //   * A tag, e.g. "version:1.10.3".
   //
+  // In the returned Instance, `registered_by` and `registered_ts` are populated
+  // only if the caller has `cipd.packages.readInstanceInfo` permission (or
+  // legacy READER role).
+  //
   // Returns:
   //   PERMISSION_DENIED if the caller lacks `cipd.packages.resolveVersion`
   //       permission or legacy READER role for the prefix.
@@ -640,6 +644,9 @@ message RegisterInstanceResponse {
 
   // For statuses REGISTERED and ALREADY_REGISTERED contains details about the
   // instance. Not set for NOT_UPLOADED status.
+  //
+  // `registered_by` and `registered_ts` are populated only if the caller has
+  // `cipd.packages.readInstanceInfo` permission (or legacy READER role).
   Instance instance = 2;
 
   // For status NOT_UPLOADED contains a new upload operation that can be used
@@ -665,6 +672,9 @@ message ListInstancesRequest {
 
 message ListInstancesResponse {
   // Package instances, sorted by registration time, most recent first.
+  //
+  // `registered_by` and `registered_ts` are populated only if the caller has
+  // `cipd.packages.readInstanceInfo` permission (or legacy READER role).
   repeated Instance instances = 1;
 
   // Value to pass as 'page_token' in ListInstancesRequest to resume fetching or
@@ -697,6 +707,9 @@ message SearchInstancesRequest {
 
 message SearchInstancesResponse {
   // Package instances, sorted by registration time, most recent first.
+  //
+  // `registered_by` and `registered_ts` are populated only if the caller has
+  // `cipd.packages.readInstanceInfo` permission (or legacy READER role).
   repeated Instance instances = 1;
 
   // Value to pass as 'page_token' in SearchInstancesRequest to resume fetching
