@@ -19,73 +19,59 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/rpcacl"
 )
 
+var (
+	readerPermOpts = permOpts{
+		role:  repopb.Role_READER,
+		group: PrefixesViewers,
+	}
+	writerPermOpts = permOpts{
+		role:    repopb.Role_WRITER,
+		isWrite: true,
+	}
+	ownerPermOpts = permOpts{
+		role:    repopb.Role_OWNER,
+		isWrite: true,
+	}
+)
+
 // Realm permissions that CIPD will check.
 var (
 	// READER permissions
-	ListInstances = definePerm("cipd.packages.listInstances").
-			withRole(repopb.Role_READER).
-			withGroup(PrefixesViewers)
-	ListRefs = definePerm("cipd.packages.listRefs").
-			withRole(repopb.Role_READER).
-			withGroup(PrefixesViewers)
-	DiagnoseACL = definePerm("cipd.packages.diagnoseACL").
-			withRole(repopb.Role_READER).
-			withGroup(PrefixesViewers)
-	ReadInstanceData = definePerm("cipd.packages.readInstanceData").
-				withRole(repopb.Role_READER).
-				withGroup(PrefixesViewers)
-	ReadInstanceInfo = definePerm("cipd.packages.readInstanceInfo").
-				withRole(repopb.Role_READER).
-				withGroup(PrefixesViewers)
-	ReadInstanceProcessors = definePerm("cipd.packages.readInstanceProcessors").
-				withRole(repopb.Role_READER).
-				withGroup(PrefixesViewers)
-	ReadInstanceTags = definePerm("cipd.packages.readInstanceTags").
-				withRole(repopb.Role_READER).
-				withGroup(PrefixesViewers)
-	ResolveVersion = definePerm("cipd.packages.resolveVersion").
-			withRole(repopb.Role_READER).
-			withGroup(PrefixesViewers)
-	ReadInstanceMetadata = definePerm("cipd.packages.readInstanceMetadata").
-				withRole(repopb.Role_READER).
-				withGroup(PrefixesViewers)
+	ListInstances          = definePerm("cipd.packages.listInstances", readerPermOpts)
+	ListRefs               = definePerm("cipd.packages.listRefs", readerPermOpts)
+	DiagnoseACL            = definePerm("cipd.packages.diagnoseACL", readerPermOpts)
+	ReadInstanceData       = definePerm("cipd.packages.readInstanceData", readerPermOpts)
+	ReadInstanceInfo       = definePerm("cipd.packages.readInstanceInfo", readerPermOpts)
+	ReadInstanceProcessors = definePerm("cipd.packages.readInstanceProcessors", readerPermOpts)
+	ReadInstanceTags       = definePerm("cipd.packages.readInstanceTags", readerPermOpts)
+	ResolveVersion         = definePerm("cipd.packages.resolveVersion", readerPermOpts)
+	ReadInstanceMetadata   = definePerm("cipd.packages.readInstanceMetadata", readerPermOpts)
 
 	// WRITER permissions
-	DetachRef = definePerm("cipd.packages.detachRef").asWrite().
-			withRole(repopb.Role_WRITER).
-			withAttr("cipd.package.refName")
-	WriteInstance = definePerm("cipd.packages.writeInstance").asWrite().
-			withRole(repopb.Role_WRITER)
-	WriteInstanceMetadata = definePerm("cipd.packages.writeInstanceMetadata").asWrite().
-				withRole(repopb.Role_WRITER).
-				withAttr("cipd.instance.metadataKey")
-	WriteInstanceTag = definePerm("cipd.packages.writeInstanceTag").asWrite().
-				withRole(repopb.Role_WRITER).
-				withAttr("cipd.instance.tagKey")
-	WriteRef = definePerm("cipd.packages.writeRef").asWrite().
-			withRole(repopb.Role_WRITER).
-			withAttr("cipd.package.refName")
+	DetachRef             = defineBindable("cipd.packages.detachRef", attrRefNameKey, writerPermOpts)
+	WriteInstance         = definePerm("cipd.packages.writeInstance", writerPermOpts)
+	WriteInstanceMetadata = defineBindable("cipd.packages.writeInstanceMetadata", attrMetadataKey, writerPermOpts)
+	WriteInstanceTag      = defineBindable("cipd.packages.writeInstanceTag", attrTagKey, writerPermOpts)
+	WriteRef              = defineBindable("cipd.packages.writeRef", attrRefNameKey, writerPermOpts)
 
 	// OWNER permissions
-	DetachInstanceMetadata = definePerm("cipd.packages.detachInstanceMetadata").asWrite().
-				withRole(repopb.Role_OWNER).
-				withAttr("cipd.instance.metadataKey")
-	DetachInstanceTag = definePerm("cipd.packages.detachInstanceTag").asWrite().
-				withRole(repopb.Role_OWNER).
-				withAttr("cipd.instance.tagKey")
-	HidePackage = definePerm("cipd.packages.hide").asWrite().
-			withRole(repopb.Role_OWNER)
+	DetachInstanceMetadata = defineBindable("cipd.packages.detachInstanceMetadata", attrMetadataKey, ownerPermOpts)
+	DetachInstanceTag      = defineBindable("cipd.packages.detachInstanceTag", attrTagKey, ownerPermOpts)
+	HidePackage            = definePerm("cipd.packages.hide", ownerPermOpts)
 
 	// NOTE: This permission is implied by OWNER, but the PrefixesViewers group
 	// (typically associated with READER) is granted this.
-	ReadLegacyRoles = definePerm("cipd.packages.readLegacyRoles").
-			withRole(repopb.Role_OWNER).
-			withGroup(PrefixesViewers)
+	ReadLegacyRoles = definePerm("cipd.packages.readLegacyRoles", permOpts{
+		role:  repopb.Role_OWNER,
+		group: PrefixesViewers,
+	})
 
 	// DeletePackage is not a real realm permission, but is here for API uniformity.
-	DeletePackage = definePerm("cipd.packages.delete").
-			groupOnly(rpcacl.AdminGroup).
-			asWrite()
+	DeletePackage = definePerm("cipd.packages.delete", permOpts{
+		isWrite:   true,
+		group:     rpcacl.AdminGroup,
+		groupOnly: true,
+	})
 
 	// AllPermissions is the set of all Grantables defined in this package.
 	AllPermissions = map[Grantable]struct{}{}

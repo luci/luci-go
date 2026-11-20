@@ -67,10 +67,7 @@ type corePermission struct {
 	// attrKey is the attribute key of this corePermission (if any).
 	//
 	// Attrs in use by CIPD are:
-	//   * `cipd.instance.metadataKey`
-	//   * `cipd.instance.tagKey`
-	//   * `cipd.package.refName`
-	attrKey string
+	attrKey attrKey
 }
 
 // Grantable is the common interface between [Permission] and [Bindable].
@@ -154,75 +151,7 @@ func (c Permission) attrs() realms.Attrs {
 	if c.attrVal == "" || c.core.attrKey == "" {
 		return nil
 	}
-	return realms.Attrs{c.core.attrKey: c.attrVal}
-}
-
-// withAttr modifies c.core.attrKey, and returns a [Bindable] which can be
-// bound to produce a [Permission].
-//
-// Panics if used twice with the same [corePermission].
-func (c Permission) withAttr(attrKey string) Bindable {
-	if c.core.attrKey != "" {
-		panic("impossible: cannot use `withAttr` twice on the same Permission")
-	}
-	c.core.attrKey = attrKey
-	return Bindable{c.core}
-}
-
-// withRole modifies c.core.role, and returns c.
-//
-// Panics if used twice with the same [corePermission].
-func (c Permission) withRole(role repopb.Role) Permission {
-	if c.core.role != 0 {
-		panic("impossible: cannot use `withRole` twice on the same Permission")
-	}
-	c.core.role = role
-	return c
-}
-
-// withGroup modifies c.core.group, and returns c.
-//
-// Panics if used twice with the same [corePermission].
-func (c Permission) withGroup(group string) Permission {
-	if c.core.group != "" {
-		panic("impossible: cannot use `withGroup` twice on the same Permission")
-	}
-	c.core.group = group
-	return c
-}
-
-// groupOnly modifies c.core.groupOnly and c.core.group, and returns c.
-//
-// Panics if used twice with the same [corePermission].
-func (c Permission) groupOnly(group string) Permission {
-	if c.core.groupOnly {
-		panic("impossible: cannot use `groupOnly` twice on the same Permission")
-	}
-	c = c.withGroup(group)
-	c.core.groupOnly = true
-	return c
-}
-
-// asWrite modifies c.core.isWrite, and returns c.
-//
-// Panics if used twice with the same [corePermission].
-func (c Permission) asWrite() Permission {
-	if c.core.isWrite {
-		panic("impossible: cannot use `asWrite` twice on the same Permission")
-	}
-	c.core.isWrite = true
-	return c
-}
-
-// definePerm registers `permission` as a realms permission, and returns a new
-// [Permission].
-func definePerm(permission string) Permission {
-	// NOTE: We have a test which asserts that no duplicates appear in
-	// AllPermissions. Since `definePerm` is private, this should guarantee that
-	// all *corePermission in the process are also unique.
-	core := &corePermission{perm: realms.RegisterPermission(permission)}
-	AllPermissions[core] = struct{}{}
-	return Permission{core: core}
+	return realms.Attrs{string(c.core.attrKey): c.attrVal}
 }
 
 // Bindable is a 'half bound' permission which knows the attribute key, but not

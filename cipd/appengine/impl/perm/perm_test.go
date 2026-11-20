@@ -124,36 +124,4 @@ func TestPermission(t *testing.T) {
 		assert.That(t, DeletePackage.IsGroupOnly(), should.BeTrue)
 		assert.That(t, DeletePackage.Group(), should.Equal("administrators"))
 	})
-
-	t.Run("duplicate_modifiers_panic", func(t *testing.T) {
-		t.Parallel()
-
-		assert.That(t, func() {
-			WriteInstance.asWrite()
-		}, should.Panic)
-
-		assert.That(t, func() {
-			DiagnoseACL.withRole(repopb.Role_WRITER)
-		}, should.Panic)
-
-		assert.That(t, func() {
-			DiagnoseACL.withGroup("b")
-		}, should.Panic)
-
-		assert.That(t, func() {
-			DiagnoseACL.groupOnly("b")
-		}, should.Panic)
-
-		assert.That(t, func() {
-			DeletePackage.groupOnly("b")
-		}, should.Panic)
-
-		assert.That(t, func() {
-			DeletePackage.withGroup("b")
-		}, should.Panic)
-
-		assert.That(t, func() {
-			WriteRef.Bind("v").withAttr("k2")
-		}, should.Panic)
-	})
 }
