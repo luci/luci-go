@@ -429,16 +429,20 @@ service Repository {
 
   // Returns information about a package instance.
   //
-  // Depending on fields set in the request, returns details such as when the
-  // instance was registered and by whom, refs pointing to it, tags attached to
-  // it, state of all processors that handled it (if any).
+  // Depending on fields set in the request (and the caller's permissions),
+  // returns details such as when the instance was registered and by whom, refs
+  // pointing to it, tags attached to it, state of all processors that handled
+  // it (if any), and instance metadata.
   //
   // May also be used as a simple instance presence check, if all describe_*
   // fields in the request are false. If the request succeeds, then the
   // instance exists.
   //
   // Returns:
-  //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   PERMISSION_DENIED if the caller lacks `cipd.packages.readInstanceData`
+  //       permission or legacy READER role for the prefix. Additionally,
+  //       see DescribeInstanceRequest for further permissions necessary for
+  //       each requestable detail.
   //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if the instance doesn't exist.
   rpc DescribeInstance(DescribeInstanceRequest) returns (DescribeInstanceResponse);
@@ -631,8 +635,14 @@ message Instance {
   // https://github.com/in-toto/attestation/blob/main/spec/v1/bundle.md.
   string attestations = 5;
   // User who registered the instance (output only).
+  //
+  // Populated only if the caller has `cipd.packages.readInstanceInfo`
+  // permission (or legacy READER role).
   string registered_by = 3;
   // When the instance was registered (output only).
+  //
+  // Populated only if the caller has `cipd.packages.readInstanceInfo`
+  // permission (or legacy READER role).
   google.protobuf.Timestamp registered_ts = 4;
 }
 
@@ -902,45 +912,119 @@ message Processor {
 message DescribeInstanceRequest {
   // The package that holds the instance we want to get the info for.
   string package = 1;
+
   // The instance we want to get the info for.
+  //
+  // NOTE: If you lack the `cipd.packages.readInstanceInfo` permission (and
+  // `require_info` is false), `registered_by` and `registered_ts` will be unset
+  // in the response, and `omitted.info` will be `true`.
   ObjectRef instance = 2;
 
+  // Whether the response MUST include "info" (`registered_by`/`registered_ts`).
+  //
+  // Requires the `cipd.packages.readInstanceInfo` permission (or legacy READER
+  // role).
+  //
+  // This is inverted from the other details (describe_xxx) for historical
+  // compatibility. Unlike the describe_xxx fields, this is not affected by
+  // `omit_unpermitted_details`: if `require_info` is true, lacking
+  // `cipd.packages.readInstanceInfo` always results in PERMISSION_DENIED.
+  bool require_info = 7;
+
   // Whether the response should include "refs" field.
+  //
+  // Requires the `cipd.packages.listRefs` permission (or legacy READER role).
   bool describe_refs = 3;
+
   // Whether the response should include "tags" field.
+  //
+  // Requires the `cipd.packages.readInstanceTags` permission (or legacy READER
+  // role).
   bool describe_tags = 4;
+
   // Whether the response should include "processors" field.
+  //
+  // Requires the `cipd.packages.readInstanceProcessors` permission (or legacy
+  // READER role).
   bool describe_processors = 5;
+
   // Whether the response should include "metadata" field.
+  //
+  // Requires the `cipd.packages.readInstanceMetadata` permission (or legacy
+  // READER role).
   bool describe_metadata = 6;
+
+  // If set, will treat describe_xxx as unset instead of failing with a
+  // permission error, should the permission be missing.
+  //
+  // For example, if describe_metadata and describe_processors were `true`, and
+  // you had `cipd.packages.readInstanceData` and
+  // `cipd.packages.readInstanceMetadata` (but not
+  // `cipd.packages.readInstanceProcessors`), this RPC would normally fail with
+  // PERMISSION_DENIED. However, if this field was also true, then the RPC
+  // would behave as if it had `describe_processors=false`.
+  //
+  // In addition, if any details were omitted, the response will have the
+  // `omitted` field populated.
+  bool omit_unpermitted_details = 8;
 }
 
 message DescribeInstanceResponse {
-  // The instance with all output fields filled in.
+  // The instance with output fields filled in.
+  //
+  // `registered_by` and `registered_ts` are populated only if the caller has
+  // `cipd.packages.readInstanceInfo` permission (or legacy READER role).
   Instance instance = 1;
 
   // Refs pointing to the instance, sorted by modification time, most recent
   // first.
   //
-  // Present only if the request has describe_refs = true.
+  // Present only if the request has describe_refs = true and the caller has
+  // `cipd.packages.listRefs` permission (or legacy READER role).
   repeated Ref refs = 2;
 
   // Tags attached to the instance, sorted by the tag key first, and then
   // by the timestamp (most recent first).
   //
-  // Present only if the request has describe_tags = true.
+  // Present only if the request has describe_tags = true and the caller has
+  // `cipd.packages.readInstanceTags` permission (or legacy READER role).
   repeated Tag tags = 3;
 
   // State of the processors that handled the instance (if any), sorted by their
   // ID.
   //
-  // Present only if the request has describe_processors = true.
+  // Present only if the request has describe_processors = true and the caller
+  // has `cipd.packages.readInstanceProcessors` permission (or legacy READER
+  // role).
   repeated Processor processors = 4;
 
   // Metadata attached to the instance.
   //
-  // Present only if the request has describe_metadata = true.
+  // Present only if the request has describe_metadata = true and the caller has
+  // `cipd.packages.readInstanceMetadata` permission (or legacy READER role).
   repeated InstanceMetadata metadata = 5;
+
+  message Omitted {
+    // `registered_by` and `registered_ts` were omitted from `instance`.
+    bool info = 1;
+
+    // `refs` was requested, but omitted.
+    bool refs = 2;
+
+    // `tags` was requested, but omitted.
+    bool tags = 3;
+
+    // `processors` was requested, but omitted.
+    bool processors = 4;
+
+    // `metadata` was requested, but omitted.
+    bool metadata = 5;
+  }
+  // If `omit_unpermitted_details` was true, or if `require_info` was false,
+  // and any requested data was omitted from the response, this will be
+  // populated to indicate which fields were omitted (e.g. to allow a tool or
+  // the UI to distinguish between omitted and empty).
+  Omitted omitted = 6;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

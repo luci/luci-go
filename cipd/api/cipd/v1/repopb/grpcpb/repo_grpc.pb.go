@@ -462,9 +462,10 @@ type RepositoryClient interface {
 	GetInstanceURL(ctx context.Context, in *GetInstanceURLRequest, opts ...grpc.CallOption) (*caspb.ObjectURL, error)
 	// Returns information about a package instance.
 	//
-	// Depending on fields set in the request, returns details such as when the
-	// instance was registered and by whom, refs pointing to it, tags attached to
-	// it, state of all processors that handled it (if any).
+	// Depending on fields set in the request (and the caller's permissions),
+	// returns details such as when the instance was registered and by whom, refs
+	// pointing to it, tags attached to it, state of all processors that handled
+	// it (if any), and instance metadata.
 	//
 	// May also be used as a simple instance presence check, if all describe_*
 	// fields in the request are false. If the request succeeds, then the
@@ -472,7 +473,10 @@ type RepositoryClient interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks `cipd.packages.readInstanceData`
+	//	    permission or legacy READER role for the prefix. Additionally,
+	//	    see DescribeInstanceRequest for further permissions necessary for
+	//	    each requestable detail.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the instance doesn't exist.
 	DescribeInstance(ctx context.Context, in *DescribeInstanceRequest, opts ...grpc.CallOption) (*DescribeInstanceResponse, error)
@@ -1177,9 +1181,10 @@ type RepositoryServer interface {
 	GetInstanceURL(context.Context, *GetInstanceURLRequest) (*caspb.ObjectURL, error)
 	// Returns information about a package instance.
 	//
-	// Depending on fields set in the request, returns details such as when the
-	// instance was registered and by whom, refs pointing to it, tags attached to
-	// it, state of all processors that handled it (if any).
+	// Depending on fields set in the request (and the caller's permissions),
+	// returns details such as when the instance was registered and by whom, refs
+	// pointing to it, tags attached to it, state of all processors that handled
+	// it (if any), and instance metadata.
 	//
 	// May also be used as a simple instance presence check, if all describe_*
 	// fields in the request are false. If the request succeeds, then the
@@ -1187,7 +1192,10 @@ type RepositoryServer interface {
 	//
 	// Returns:
 	//
-	//	PERMISSION_DENIED if the caller is not a READER for the prefix.
+	//	PERMISSION_DENIED if the caller lacks `cipd.packages.readInstanceData`
+	//	    permission or legacy READER role for the prefix. Additionally,
+	//	    see DescribeInstanceRequest for further permissions necessary for
+	//	    each requestable detail.
 	//	INVALID_ARGUMENT if the request is malformed.
 	//	NOT_FOUND if the instance doesn't exist.
 	DescribeInstance(context.Context, *DescribeInstanceRequest) (*DescribeInstanceResponse, error)

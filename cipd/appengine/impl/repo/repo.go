@@ -1602,8 +1602,54 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *repopb.DescribeIn
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
+	reqPerms := perm.SetOf(perm.ReadInstanceData)
+	var detailPerms, optPerms perm.Set
+
+	if r.RequireInfo {
+		reqPerms.Add(perm.ReadInstanceInfo)
+	} else {
+		optPerms.Add(perm.ReadInstanceInfo)
+	}
+
+	if r.DescribeRefs {
+		detailPerms.Add(perm.ListRefs)
+	}
+	if r.DescribeTags {
+		detailPerms.Add(perm.ReadInstanceTags)
+	}
+	if r.DescribeProcessors {
+		detailPerms.Add(perm.ReadInstanceProcessors)
+	}
+	if r.DescribeMetadata {
+		detailPerms.Add(perm.ReadInstanceMetadata)
+	}
+
+	if r.OmitUnpermittedDetails {
+		optPerms.Update(detailPerms)
+	} else {
+		reqPerms.Update(detailPerms)
+	}
+
+	_, gotPerms, err := impl.hasPermission(ctx, r.Package, reqPerms, optPerms)
+	if err != nil {
 		return nil, err
+	}
+	redactInfo := !gotPerms.Has(perm.ReadInstanceInfo)
+
+	var omitted *repopb.DescribeInstanceResponse_Omitted
+	if r.OmitUnpermittedDetails || redactInfo {
+		omitted = &repopb.DescribeInstanceResponse_Omitted{
+			Info:       redactInfo,
+			Refs:       r.DescribeRefs && !gotPerms.Has(perm.ListRefs),
+			Tags:       r.DescribeTags && !gotPerms.Has(perm.ReadInstanceTags),
+			Processors: r.DescribeProcessors && !gotPerms.Has(perm.ReadInstanceProcessors),
+			Metadata:   r.DescribeMetadata && !gotPerms.Has(perm.ReadInstanceMetadata),
+		}
+		// it's possible that we actually had everything... if we did, then nil
+		// out the `omitted` message.
+		if proto.Size(omitted) == 0 {
+			omitted = nil
+		}
 	}
 
 	// Make sure this instance exists and fetch basic details about it.
@@ -1621,28 +1667,28 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *repopb.DescribeIn
 	var proc []*repopb.Processor
 	var mds []*model.InstanceMetadata
 	err = parallel.FanOutIn(func(tasks chan<- func() error) {
-		if r.DescribeRefs {
+		if r.DescribeRefs && gotPerms.Has(perm.ListRefs) {
 			tasks <- func() error {
 				var err error
 				refs, err = model.ListInstanceRefs(ctx, inst)
 				return errors.WrapIf(err, "failed to fetch refs")
 			}
 		}
-		if r.DescribeTags {
+		if r.DescribeTags && gotPerms.Has(perm.ReadInstanceTags) {
 			tasks <- func() error {
 				var err error
 				tags, err = model.ListInstanceTags(ctx, inst)
 				return errors.WrapIf(err, "failed to fetch tags")
 			}
 		}
-		if r.DescribeProcessors {
+		if r.DescribeProcessors && gotPerms.Has(perm.ReadInstanceProcessors) {
 			tasks <- func() error {
 				var err error
 				proc, err = model.FetchProcessors(ctx, inst)
 				return errors.WrapIf(err, "failed to fetch processors")
 			}
 		}
-		if r.DescribeMetadata {
+		if r.DescribeMetadata && gotPerms.Has(perm.ReadInstanceMetadata) {
 			tasks <- func() error {
 				var err error
 				mds, err = listMetadata(ctx, inst)
@@ -1656,9 +1702,10 @@ func (impl *repoImpl) DescribeInstance(ctx context.Context, r *repopb.DescribeIn
 
 	// Assemble the resulting proto. Apparently nil and empty slices are treated
 	// differently by jsonpb, so make sure to keep empty fields as nils.
-	//
-	// TODO: Update this to hasReadInstanceInfo.
-	resp = &repopb.DescribeInstanceResponse{Instance: inst.Proto(true)}
+	resp = &repopb.DescribeInstanceResponse{
+		Instance: inst.Proto(gotPerms.Has(perm.ReadInstanceInfo)),
+		Omitted:  omitted,
+	}
 	if len(refs) != 0 {
 		resp.Refs = make([]*repopb.Ref, len(refs))
 		for i, r := range refs {

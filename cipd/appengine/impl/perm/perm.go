@@ -273,6 +273,22 @@ func SetOf(permissions ...Permission) Set {
 // Perms implements [Checkable].
 func (p Set) Perms() Set { return p }
 
+// Update incorporates `other` into `p`.
+//
+// If `p` is nil, this makes a copy of `other`.
+func (p *Set) Update(other Set) {
+	if *p == nil {
+		*p = maps.Clone(other)
+	} else {
+		maps.Copy(*p, other)
+	}
+}
+
+// Add inserts the given permission into `p`.
+//
+// Ignores invalid permissions.
+//
+// If `p` is nil, this allocates a new map.
 func (p *Set) Add(c Permission) {
 	if c.core == nil {
 		return
@@ -284,6 +300,7 @@ func (p *Set) Add(c Permission) {
 	}
 }
 
+// Has returns `true` iff `c` is in this Set.
 func (p Set) Has(c Permission) bool {
 	_, ret := p[c]
 	return ret

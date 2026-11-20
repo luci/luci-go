@@ -3358,7 +3358,12 @@ func TestDescribeInstance(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:partial-reader@example.com", "project:realm", perm.ReadInstanceData.Perm()),
+			authtest.MockPermission("user:partial-reader@example.com", "project:realm", perm.ReadInstanceInfo.Perm()),
+			authtest.MockPermission("user:partial-reader@example.com", "project:realm", perm.ReadInstanceTags.Perm()),
+			authtest.MockPermission("user:data-only@example.com", "project:realm", perm.ReadInstanceData.Perm()),
+		)
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
@@ -3372,11 +3377,20 @@ func TestDescribeInstance(t *testing.T) {
 		})
 
 		impl := newMockImpl(&meta, nil)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
 		inst := &model.Instance{
 			InstanceID:   strings.Repeat("1", 40),
 			Package:      model.PackageKey(ctx, "a/pkg"),
 			RegisteredBy: "user:1@google.com",
+			RegisteredTs: testutil.TestTime,
 		}
 		assert.Loosely(t, datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), should.BeNil)
 
@@ -3489,6 +3503,137 @@ func TestDescribeInstance(t *testing.T) {
 					},
 				},
 			}))
+
+			// Partial response when caller only has permReadInstanceData, permReadInstanceInfo, and permReadInstanceTags.
+			resp, err = impl.DescribeInstance(as("partial-reader@example.com"), &repopb.DescribeInstanceRequest{
+				Package:                "a/pkg",
+				Instance:               inst.Proto(true).Instance,
+				DescribeTags:           true,
+				DescribeRefs:           true,
+				DescribeProcessors:     true,
+				DescribeMetadata:       true,
+				OmitUnpermittedDetails: true,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
+				Instance: inst.Proto(true),
+				Tags: []*repopb.Tag{
+					{
+						Key:        "a",
+						Value:      "0",
+						AttachedBy: "user:tag@google.com",
+						AttachedTs: timestamppb.New(testutil.TestTime),
+					},
+					{
+						Key:        "a",
+						Value:      "1",
+						AttachedBy: "user:tag@google.com",
+						AttachedTs: timestamppb.New(testutil.TestTime),
+					},
+				},
+				Omitted: &repopb.DescribeInstanceResponse_Omitted{
+					Refs:       true,
+					Processors: true,
+					Metadata:   true,
+				},
+			}))
+		})
+
+		t.Run("RequireInfo and OmitUnpermittedDetails combinations", func(t *ftt.Test) {
+			// Default (require_info=false, omit_unpermitted_details=false):
+			// missing permReadInstanceInfo still succeeds with redacted info and Omitted.Info=true.
+			resp, err := impl.DescribeInstance(as("data-only@example.com"), &repopb.DescribeInstanceRequest{
+				Package:  "a/pkg",
+				Instance: inst.Proto(true).Instance,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
+				Instance: inst.Proto(false),
+				Omitted: &repopb.DescribeInstanceResponse_Omitted{
+					Info: true,
+				},
+			}))
+
+			// omit_unpermitted_details=true when nothing is omitted leaves Omitted nil.
+			resp, err = impl.DescribeInstance(as("partial-reader@example.com"), &repopb.DescribeInstanceRequest{
+				Package:                "a/pkg",
+				Instance:               inst.Proto(true).Instance,
+				DescribeTags:           true,
+				OmitUnpermittedDetails: true,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
+				Instance: inst.Proto(true),
+			}))
+
+			// require_info=true, omit_unpermitted_details=false:
+			// fails with PermissionDenied when caller lacks permReadInstanceInfo.
+			_, err = impl.DescribeInstance(as("data-only@example.com"), &repopb.DescribeInstanceRequest{
+				Package:     "a/pkg",
+				Instance:    inst.Proto(true).Instance,
+				RequireInfo: true,
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+
+			// require_info=true, omit_unpermitted_details=false:
+			// succeeds when caller has permReadInstanceInfo.
+			resp, err = impl.DescribeInstance(as("partial-reader@example.com"), &repopb.DescribeInstanceRequest{
+				Package:     "a/pkg",
+				Instance:    inst.Proto(true).Instance,
+				RequireInfo: true,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
+				Instance: inst.Proto(true),
+			}))
+
+			// require_info=true, omit_unpermitted_details=true:
+			// require_info is orthogonal to omit_unpermitted_details; missing
+			// permReadInstanceInfo still fails with PermissionDenied.
+			_, err = impl.DescribeInstance(as("data-only@example.com"), &repopb.DescribeInstanceRequest{
+				Package:                "a/pkg",
+				Instance:               inst.Proto(true).Instance,
+				RequireInfo:            true,
+				OmitUnpermittedDetails: true,
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+
+			// require_info=true, omit_unpermitted_details=true with unpermitted
+			// describe_* field succeeds when caller has permReadInstanceInfo.
+			resp, err = impl.DescribeInstance(as("partial-reader@example.com"), &repopb.DescribeInstanceRequest{
+				Package:                "a/pkg",
+				Instance:               inst.Proto(true).Instance,
+				RequireInfo:            true,
+				DescribeRefs:           true,
+				OmitUnpermittedDetails: true,
+			})
+			assert.NoErr(t, err)
+			assert.Loosely(t, resp, should.Match(&repopb.DescribeInstanceResponse{
+				Instance: inst.Proto(true),
+				Omitted: &repopb.DescribeInstanceResponse_Omitted{
+					Refs: true,
+				},
+			}))
+
+			// omit_unpermitted_details=false with unpermitted describe_* field fails with PermissionDenied.
+			_, err = impl.DescribeInstance(as("partial-reader@example.com"), &repopb.DescribeInstanceRequest{
+				Package:      "a/pkg",
+				Instance:     inst.Proto(true).Instance,
+				DescribeRefs: true,
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
+
+			// Missing permReadInstanceData always fails even with omit_unpermitted_details=true.
+			_, err = impl.DescribeInstance(as("stranger@example.com"), &repopb.DescribeInstanceRequest{
+				Package:                "a/pkg",
+				Instance:               inst.Proto(true).Instance,
+				OmitUnpermittedDetails: true,
+			})
+			assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+			assert.ErrIsLike(t, err, "is not allowed to see it")
 		})
 
 		t.Run("Bad package name", func(t *ftt.Test) {

@@ -674,8 +674,14 @@ type Instance struct {
 	// https://github.com/in-toto/attestation/blob/main/spec/v1/bundle.md.
 	Attestations string `protobuf:"bytes,5,opt,name=attestations,proto3" json:"attestations,omitempty"`
 	// User who registered the instance (output only).
+	//
+	// Populated only if the caller has `cipd.packages.readInstanceInfo`
+	// permission (or legacy READER role).
 	RegisteredBy string `protobuf:"bytes,3,opt,name=registered_by,json=registeredBy,proto3" json:"registered_by,omitempty"`
 	// When the instance was registered (output only).
+	//
+	// Populated only if the caller has `cipd.packages.readInstanceInfo`
+	// permission (or legacy READER role).
 	RegisteredTs  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=registered_ts,json=registeredTs,proto3" json:"registered_ts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2064,17 +2070,55 @@ type DescribeInstanceRequest struct {
 	// The package that holds the instance we want to get the info for.
 	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we want to get the info for.
+	//
+	// NOTE: If you lack the `cipd.packages.readInstanceInfo` permission (and
+	// `require_info` is false), `registered_by` and `registered_ts` will be unset
+	// in the response, and `omitted.info` will be `true`.
 	Instance *caspb.ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
+	// Whether the response MUST include "info" (`registered_by`/`registered_ts`).
+	//
+	// Requires the `cipd.packages.readInstanceInfo` permission (or legacy READER
+	// role).
+	//
+	// This is inverted from the other details (describe_xxx) for historical
+	// compatibility. Unlike the describe_xxx fields, this is not affected by
+	// `omit_unpermitted_details`: if `require_info` is true, lacking
+	// `cipd.packages.readInstanceInfo` always results in PERMISSION_DENIED.
+	RequireInfo bool `protobuf:"varint,7,opt,name=require_info,json=requireInfo,proto3" json:"require_info,omitempty"`
 	// Whether the response should include "refs" field.
+	//
+	// Requires the `cipd.packages.listRefs` permission (or legacy READER role).
 	DescribeRefs bool `protobuf:"varint,3,opt,name=describe_refs,json=describeRefs,proto3" json:"describe_refs,omitempty"`
 	// Whether the response should include "tags" field.
+	//
+	// Requires the `cipd.packages.readInstanceTags` permission (or legacy READER
+	// role).
 	DescribeTags bool `protobuf:"varint,4,opt,name=describe_tags,json=describeTags,proto3" json:"describe_tags,omitempty"`
 	// Whether the response should include "processors" field.
+	//
+	// Requires the `cipd.packages.readInstanceProcessors` permission (or legacy
+	// READER role).
 	DescribeProcessors bool `protobuf:"varint,5,opt,name=describe_processors,json=describeProcessors,proto3" json:"describe_processors,omitempty"`
 	// Whether the response should include "metadata" field.
+	//
+	// Requires the `cipd.packages.readInstanceMetadata` permission (or legacy
+	// READER role).
 	DescribeMetadata bool `protobuf:"varint,6,opt,name=describe_metadata,json=describeMetadata,proto3" json:"describe_metadata,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// If set, will treat describe_xxx as unset instead of failing with a
+	// permission error, should the permission be missing.
+	//
+	// For example, if describe_metadata and describe_processors were `true`, and
+	// you had `cipd.packages.readInstanceData` and
+	// `cipd.packages.readInstanceMetadata` (but not
+	// `cipd.packages.readInstanceProcessors`), this RPC would normally fail with
+	// PERMISSION_DENIED. However, if this field was also true, then the RPC
+	// would behave as if it had `describe_processors=false`.
+	//
+	// In addition, if any details were omitted, the response will have the
+	// `omitted` field populated.
+	OmitUnpermittedDetails bool `protobuf:"varint,8,opt,name=omit_unpermitted_details,json=omitUnpermittedDetails,proto3" json:"omit_unpermitted_details,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *DescribeInstanceRequest) Reset() {
@@ -2121,6 +2165,13 @@ func (x *DescribeInstanceRequest) GetInstance() *caspb.ObjectRef {
 	return nil
 }
 
+func (x *DescribeInstanceRequest) GetRequireInfo() bool {
+	if x != nil {
+		return x.RequireInfo
+	}
+	return false
+}
+
 func (x *DescribeInstanceRequest) GetDescribeRefs() bool {
 	if x != nil {
 		return x.DescribeRefs
@@ -2149,29 +2200,49 @@ func (x *DescribeInstanceRequest) GetDescribeMetadata() bool {
 	return false
 }
 
+func (x *DescribeInstanceRequest) GetOmitUnpermittedDetails() bool {
+	if x != nil {
+		return x.OmitUnpermittedDetails
+	}
+	return false
+}
+
 type DescribeInstanceResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The instance with all output fields filled in.
+	// The instance with output fields filled in.
+	//
+	// `registered_by` and `registered_ts` are populated only if the caller has
+	// `cipd.packages.readInstanceInfo` permission (or legacy READER role).
 	Instance *Instance `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Refs pointing to the instance, sorted by modification time, most recent
 	// first.
 	//
-	// Present only if the request has describe_refs = true.
+	// Present only if the request has describe_refs = true and the caller has
+	// `cipd.packages.listRefs` permission (or legacy READER role).
 	Refs []*Ref `protobuf:"bytes,2,rep,name=refs,proto3" json:"refs,omitempty"`
 	// Tags attached to the instance, sorted by the tag key first, and then
 	// by the timestamp (most recent first).
 	//
-	// Present only if the request has describe_tags = true.
+	// Present only if the request has describe_tags = true and the caller has
+	// `cipd.packages.readInstanceTags` permission (or legacy READER role).
 	Tags []*Tag `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
 	// State of the processors that handled the instance (if any), sorted by their
 	// ID.
 	//
-	// Present only if the request has describe_processors = true.
+	// Present only if the request has describe_processors = true and the caller
+	// has `cipd.packages.readInstanceProcessors` permission (or legacy READER
+	// role).
 	Processors []*Processor `protobuf:"bytes,4,rep,name=processors,proto3" json:"processors,omitempty"`
 	// Metadata attached to the instance.
 	//
-	// Present only if the request has describe_metadata = true.
-	Metadata      []*InstanceMetadata `protobuf:"bytes,5,rep,name=metadata,proto3" json:"metadata,omitempty"`
+	// Present only if the request has describe_metadata = true and the caller has
+	// `cipd.packages.readInstanceMetadata` permission (or legacy READER role).
+	Metadata []*InstanceMetadata `protobuf:"bytes,5,rep,name=metadata,proto3" json:"metadata,omitempty"`
+	// If `omit_unpermitted_details` was true, or if `require_info` was false,
+	// and any requested data was omitted from the response, this will be
+	// populated to indicate which fields were omitted (e.g. to allow a tool or
+	// the UI to distinguish between omitted and empty).
+	Omitted       *DescribeInstanceResponse_Omitted `protobuf:"bytes,6,opt,name=omitted,proto3" json:"omitted,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2237,6 +2308,13 @@ func (x *DescribeInstanceResponse) GetProcessors() []*Processor {
 func (x *DescribeInstanceResponse) GetMetadata() []*InstanceMetadata {
 	if x != nil {
 		return x.Metadata
+	}
+	return nil
+}
+
+func (x *DescribeInstanceResponse) GetOmitted() *DescribeInstanceResponse_Omitted {
+	if x != nil {
+		return x.Omitted
 	}
 	return nil
 }
@@ -2632,6 +2710,87 @@ func (x *RolesInPrefixResponse_RoleInPrefix) GetRole() Role {
 	return Role_ROLE_UNSPECIFIED
 }
 
+type DescribeInstanceResponse_Omitted struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// `registered_by` and `registered_ts` were omitted from `instance`.
+	Info bool `protobuf:"varint,1,opt,name=info,proto3" json:"info,omitempty"`
+	// `refs` was requested, but omitted.
+	Refs bool `protobuf:"varint,2,opt,name=refs,proto3" json:"refs,omitempty"`
+	// `tags` was requested, but omitted.
+	Tags bool `protobuf:"varint,3,opt,name=tags,proto3" json:"tags,omitempty"`
+	// `processors` was requested, but omitted.
+	Processors bool `protobuf:"varint,4,opt,name=processors,proto3" json:"processors,omitempty"`
+	// `metadata` was requested, but omitted.
+	Metadata      bool `protobuf:"varint,5,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DescribeInstanceResponse_Omitted) Reset() {
+	*x = DescribeInstanceResponse_Omitted{}
+	mi := &file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DescribeInstanceResponse_Omitted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DescribeInstanceResponse_Omitted) ProtoMessage() {}
+
+func (x *DescribeInstanceResponse_Omitted) ProtoReflect() protoreflect.Message {
+	mi := &file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DescribeInstanceResponse_Omitted.ProtoReflect.Descriptor instead.
+func (*DescribeInstanceResponse_Omitted) Descriptor() ([]byte, []int) {
+	return file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDescGZIP(), []int{30, 0}
+}
+
+func (x *DescribeInstanceResponse_Omitted) GetInfo() bool {
+	if x != nil {
+		return x.Info
+	}
+	return false
+}
+
+func (x *DescribeInstanceResponse_Omitted) GetRefs() bool {
+	if x != nil {
+		return x.Refs
+	}
+	return false
+}
+
+func (x *DescribeInstanceResponse_Omitted) GetTags() bool {
+	if x != nil {
+		return x.Tags
+	}
+	return false
+}
+
+func (x *DescribeInstanceResponse_Omitted) GetProcessors() bool {
+	if x != nil {
+		return x.Processors
+	}
+	return false
+}
+
+func (x *DescribeInstanceResponse_Omitted) GetMetadata() bool {
+	if x != nil {
+		return x.Metadata
+	}
+	return false
+}
+
 type DescribeBootstrapBundleResponse_BootstrapFile struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Package       string                 `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`   // the package the file was extracted from
@@ -2646,7 +2805,7 @@ type DescribeBootstrapBundleResponse_BootstrapFile struct {
 
 func (x *DescribeBootstrapBundleResponse_BootstrapFile) Reset() {
 	*x = DescribeBootstrapBundleResponse_BootstrapFile{}
-	mi := &file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_msgTypes[37]
+	mi := &file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2658,7 +2817,7 @@ func (x *DescribeBootstrapBundleResponse_BootstrapFile) String() string {
 func (*DescribeBootstrapBundleResponse_BootstrapFile) ProtoMessage() {}
 
 func (x *DescribeBootstrapBundleResponse_BootstrapFile) ProtoReflect() protoreflect.Message {
-	mi := &file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_msgTypes[37]
+	mi := &file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2858,14 +3017,16 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDesc = "" +
 	"\aPENDING\x10\x01\x12\r\n" +
 	"\tSUCCEEDED\x10\x02\x12\n" +
 	"\n" +
-	"\x06FAILED\x10\x03\"\x88\x02\n" +
+	"\x06FAILED\x10\x03\"\xe5\x02\n" +
 	"\x17DescribeInstanceRequest\x12\x18\n" +
 	"\apackage\x18\x01 \x01(\tR\apackage\x12+\n" +
-	"\binstance\x18\x02 \x01(\v2\x0f.cipd.ObjectRefR\binstance\x12#\n" +
+	"\binstance\x18\x02 \x01(\v2\x0f.cipd.ObjectRefR\binstance\x12!\n" +
+	"\frequire_info\x18\a \x01(\bR\vrequireInfo\x12#\n" +
 	"\rdescribe_refs\x18\x03 \x01(\bR\fdescribeRefs\x12#\n" +
 	"\rdescribe_tags\x18\x04 \x01(\bR\fdescribeTags\x12/\n" +
 	"\x13describe_processors\x18\x05 \x01(\bR\x12describeProcessors\x12+\n" +
-	"\x11describe_metadata\x18\x06 \x01(\bR\x10describeMetadata\"\xe9\x01\n" +
+	"\x11describe_metadata\x18\x06 \x01(\bR\x10describeMetadata\x128\n" +
+	"\x18omit_unpermitted_details\x18\b \x01(\bR\x16omitUnpermittedDetails\"\xaf\x03\n" +
 	"\x18DescribeInstanceResponse\x12*\n" +
 	"\binstance\x18\x01 \x01(\v2\x0e.cipd.InstanceR\binstance\x12\x1d\n" +
 	"\x04refs\x18\x02 \x03(\v2\t.cipd.RefR\x04refs\x12\x1d\n" +
@@ -2873,7 +3034,16 @@ const file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDesc = "" +
 	"\n" +
 	"processors\x18\x04 \x03(\v2\x0f.cipd.ProcessorR\n" +
 	"processors\x122\n" +
-	"\bmetadata\x18\x05 \x03(\v2\x16.cipd.InstanceMetadataR\bmetadata\"^\n" +
+	"\bmetadata\x18\x05 \x03(\v2\x16.cipd.InstanceMetadataR\bmetadata\x12@\n" +
+	"\aomitted\x18\x06 \x01(\v2&.cipd.DescribeInstanceResponse.OmittedR\aomitted\x1a\x81\x01\n" +
+	"\aOmitted\x12\x12\n" +
+	"\x04info\x18\x01 \x01(\bR\x04info\x12\x12\n" +
+	"\x04refs\x18\x02 \x01(\bR\x04refs\x12\x12\n" +
+	"\x04tags\x18\x03 \x01(\bR\x04tags\x12\x1e\n" +
+	"\n" +
+	"processors\x18\x04 \x01(\bR\n" +
+	"processors\x12\x1a\n" +
+	"\bmetadata\x18\x05 \x01(\bR\bmetadata\"^\n" +
 	"\x15DescribeClientRequest\x12\x18\n" +
 	"\apackage\x18\x01 \x01(\tR\apackage\x12+\n" +
 	"\binstance\x18\x02 \x01(\v2\x0f.cipd.ObjectRefR\binstance\"\xab\x02\n" +
@@ -2957,7 +3127,7 @@ func file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDescGZIP() []byte 
 }
 
 var file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
+var file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_goTypes = []any{
 	(Role)(0),                                             // 0: cipd.Role
 	(RegistrationStatus)(0),                               // 1: cipd.RegistrationStatus
@@ -2999,120 +3169,122 @@ var file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_goTypes = []any{
 	(*DescribeBootstrapBundleResponse)(nil),               // 37: cipd.DescribeBootstrapBundleResponse
 	(*PrefixMetadata_ACL)(nil),                            // 38: cipd.PrefixMetadata.ACL
 	(*RolesInPrefixResponse_RoleInPrefix)(nil),            // 39: cipd.RolesInPrefixResponse.RoleInPrefix
-	(*DescribeBootstrapBundleResponse_BootstrapFile)(nil), // 40: cipd.DescribeBootstrapBundleResponse.BootstrapFile
-	(*timestamppb.Timestamp)(nil),                         // 41: google.protobuf.Timestamp
-	(*caspb.ObjectRef)(nil),                               // 42: cipd.ObjectRef
-	(*caspb.UploadOperation)(nil),                         // 43: cipd.UploadOperation
-	(*structpb.Struct)(nil),                               // 44: google.protobuf.Struct
-	(*caspb.ObjectURL)(nil),                               // 45: cipd.ObjectURL
-	(*status.Status)(nil),                                 // 46: google.rpc.Status
-	(*emptypb.Empty)(nil),                                 // 47: google.protobuf.Empty
+	(*DescribeInstanceResponse_Omitted)(nil),              // 40: cipd.DescribeInstanceResponse.Omitted
+	(*DescribeBootstrapBundleResponse_BootstrapFile)(nil), // 41: cipd.DescribeBootstrapBundleResponse.BootstrapFile
+	(*timestamppb.Timestamp)(nil),                         // 42: google.protobuf.Timestamp
+	(*caspb.ObjectRef)(nil),                               // 43: cipd.ObjectRef
+	(*caspb.UploadOperation)(nil),                         // 44: cipd.UploadOperation
+	(*structpb.Struct)(nil),                               // 45: google.protobuf.Struct
+	(*caspb.ObjectURL)(nil),                               // 46: cipd.ObjectURL
+	(*status.Status)(nil),                                 // 47: google.rpc.Status
+	(*emptypb.Empty)(nil),                                 // 48: google.protobuf.Empty
 }
 var file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_depIdxs = []int32{
 	3,  // 0: cipd.PrefixRequestOnBehalfOf.prefix_request:type_name -> cipd.PrefixRequest
-	41, // 1: cipd.PrefixMetadata.update_time:type_name -> google.protobuf.Timestamp
+	42, // 1: cipd.PrefixMetadata.update_time:type_name -> google.protobuf.Timestamp
 	38, // 2: cipd.PrefixMetadata.acls:type_name -> cipd.PrefixMetadata.ACL
 	5,  // 3: cipd.InheritedPrefixMetadata.per_prefix_metadata:type_name -> cipd.PrefixMetadata
 	39, // 4: cipd.RolesInPrefixResponse.roles:type_name -> cipd.RolesInPrefixResponse.RoleInPrefix
-	42, // 5: cipd.Instance.instance:type_name -> cipd.ObjectRef
-	41, // 6: cipd.Instance.registered_ts:type_name -> google.protobuf.Timestamp
+	43, // 5: cipd.Instance.instance:type_name -> cipd.ObjectRef
+	42, // 6: cipd.Instance.registered_ts:type_name -> google.protobuf.Timestamp
 	1,  // 7: cipd.RegisterInstanceResponse.status:type_name -> cipd.RegistrationStatus
 	11, // 8: cipd.RegisterInstanceResponse.instance:type_name -> cipd.Instance
-	43, // 9: cipd.RegisterInstanceResponse.upload_op:type_name -> cipd.UploadOperation
+	44, // 9: cipd.RegisterInstanceResponse.upload_op:type_name -> cipd.UploadOperation
 	11, // 10: cipd.ListInstancesResponse.instances:type_name -> cipd.Instance
 	21, // 11: cipd.SearchInstancesRequest.tags:type_name -> cipd.Tag
 	11, // 12: cipd.SearchInstancesResponse.instances:type_name -> cipd.Instance
-	42, // 13: cipd.Ref.instance:type_name -> cipd.ObjectRef
-	41, // 14: cipd.Ref.modified_ts:type_name -> google.protobuf.Timestamp
+	43, // 13: cipd.Ref.instance:type_name -> cipd.ObjectRef
+	42, // 14: cipd.Ref.modified_ts:type_name -> google.protobuf.Timestamp
 	17, // 15: cipd.ListRefsResponse.refs:type_name -> cipd.Ref
-	41, // 16: cipd.Tag.attached_ts:type_name -> google.protobuf.Timestamp
-	42, // 17: cipd.AttachTagsRequest.instance:type_name -> cipd.ObjectRef
+	42, // 16: cipd.Tag.attached_ts:type_name -> google.protobuf.Timestamp
+	43, // 17: cipd.AttachTagsRequest.instance:type_name -> cipd.ObjectRef
 	21, // 18: cipd.AttachTagsRequest.tags:type_name -> cipd.Tag
-	42, // 19: cipd.DetachTagsRequest.instance:type_name -> cipd.ObjectRef
+	43, // 19: cipd.DetachTagsRequest.instance:type_name -> cipd.ObjectRef
 	21, // 20: cipd.DetachTagsRequest.tags:type_name -> cipd.Tag
-	41, // 21: cipd.InstanceMetadata.attached_ts:type_name -> google.protobuf.Timestamp
-	42, // 22: cipd.AttachMetadataRequest.instance:type_name -> cipd.ObjectRef
+	42, // 21: cipd.InstanceMetadata.attached_ts:type_name -> google.protobuf.Timestamp
+	43, // 22: cipd.AttachMetadataRequest.instance:type_name -> cipd.ObjectRef
 	24, // 23: cipd.AttachMetadataRequest.metadata:type_name -> cipd.InstanceMetadata
-	42, // 24: cipd.DetachMetadataRequest.instance:type_name -> cipd.ObjectRef
+	43, // 24: cipd.DetachMetadataRequest.instance:type_name -> cipd.ObjectRef
 	24, // 25: cipd.DetachMetadataRequest.metadata:type_name -> cipd.InstanceMetadata
-	42, // 26: cipd.ListMetadataRequest.instance:type_name -> cipd.ObjectRef
+	43, // 26: cipd.ListMetadataRequest.instance:type_name -> cipd.ObjectRef
 	24, // 27: cipd.ListMetadataResponse.metadata:type_name -> cipd.InstanceMetadata
-	42, // 28: cipd.GetInstanceURLRequest.instance:type_name -> cipd.ObjectRef
+	43, // 28: cipd.GetInstanceURLRequest.instance:type_name -> cipd.ObjectRef
 	2,  // 29: cipd.Processor.state:type_name -> cipd.Processor.State
-	41, // 30: cipd.Processor.finished_ts:type_name -> google.protobuf.Timestamp
-	44, // 31: cipd.Processor.result:type_name -> google.protobuf.Struct
-	42, // 32: cipd.DescribeInstanceRequest.instance:type_name -> cipd.ObjectRef
+	42, // 30: cipd.Processor.finished_ts:type_name -> google.protobuf.Timestamp
+	45, // 31: cipd.Processor.result:type_name -> google.protobuf.Struct
+	43, // 32: cipd.DescribeInstanceRequest.instance:type_name -> cipd.ObjectRef
 	11, // 33: cipd.DescribeInstanceResponse.instance:type_name -> cipd.Instance
 	17, // 34: cipd.DescribeInstanceResponse.refs:type_name -> cipd.Ref
 	21, // 35: cipd.DescribeInstanceResponse.tags:type_name -> cipd.Tag
 	31, // 36: cipd.DescribeInstanceResponse.processors:type_name -> cipd.Processor
 	24, // 37: cipd.DescribeInstanceResponse.metadata:type_name -> cipd.InstanceMetadata
-	42, // 38: cipd.DescribeClientRequest.instance:type_name -> cipd.ObjectRef
-	11, // 39: cipd.DescribeClientResponse.instance:type_name -> cipd.Instance
-	42, // 40: cipd.DescribeClientResponse.client_ref:type_name -> cipd.ObjectRef
-	45, // 41: cipd.DescribeClientResponse.client_binary:type_name -> cipd.ObjectURL
-	42, // 42: cipd.DescribeClientResponse.client_ref_aliases:type_name -> cipd.ObjectRef
-	40, // 43: cipd.DescribeBootstrapBundleResponse.files:type_name -> cipd.DescribeBootstrapBundleResponse.BootstrapFile
-	0,  // 44: cipd.PrefixMetadata.ACL.role:type_name -> cipd.Role
-	0,  // 45: cipd.RolesInPrefixResponse.RoleInPrefix.role:type_name -> cipd.Role
-	46, // 46: cipd.DescribeBootstrapBundleResponse.BootstrapFile.status:type_name -> google.rpc.Status
-	42, // 47: cipd.DescribeBootstrapBundleResponse.BootstrapFile.instance:type_name -> cipd.ObjectRef
-	42, // 48: cipd.DescribeBootstrapBundleResponse.BootstrapFile.file:type_name -> cipd.ObjectRef
-	3,  // 49: cipd.Repository.GetPrefixMetadata:input_type -> cipd.PrefixRequest
-	3,  // 50: cipd.Repository.GetInheritedPrefixMetadata:input_type -> cipd.PrefixRequest
-	5,  // 51: cipd.Repository.UpdatePrefixMetadata:input_type -> cipd.PrefixMetadata
-	3,  // 52: cipd.Repository.GetRolesInPrefix:input_type -> cipd.PrefixRequest
-	4,  // 53: cipd.Repository.GetRolesInPrefixOnBehalfOf:input_type -> cipd.PrefixRequestOnBehalfOf
-	8,  // 54: cipd.Repository.ListPrefix:input_type -> cipd.ListPrefixRequest
-	10, // 55: cipd.Repository.HidePackage:input_type -> cipd.PackageRequest
-	10, // 56: cipd.Repository.UnhidePackage:input_type -> cipd.PackageRequest
-	10, // 57: cipd.Repository.DeletePackage:input_type -> cipd.PackageRequest
-	11, // 58: cipd.Repository.RegisterInstance:input_type -> cipd.Instance
-	13, // 59: cipd.Repository.ListInstances:input_type -> cipd.ListInstancesRequest
-	15, // 60: cipd.Repository.SearchInstances:input_type -> cipd.SearchInstancesRequest
-	17, // 61: cipd.Repository.CreateRef:input_type -> cipd.Ref
-	18, // 62: cipd.Repository.DeleteRef:input_type -> cipd.DeleteRefRequest
-	19, // 63: cipd.Repository.ListRefs:input_type -> cipd.ListRefsRequest
-	22, // 64: cipd.Repository.AttachTags:input_type -> cipd.AttachTagsRequest
-	23, // 65: cipd.Repository.DetachTags:input_type -> cipd.DetachTagsRequest
-	25, // 66: cipd.Repository.AttachMetadata:input_type -> cipd.AttachMetadataRequest
-	26, // 67: cipd.Repository.DetachMetadata:input_type -> cipd.DetachMetadataRequest
-	27, // 68: cipd.Repository.ListMetadata:input_type -> cipd.ListMetadataRequest
-	29, // 69: cipd.Repository.ResolveVersion:input_type -> cipd.ResolveVersionRequest
-	30, // 70: cipd.Repository.GetInstanceURL:input_type -> cipd.GetInstanceURLRequest
-	32, // 71: cipd.Repository.DescribeInstance:input_type -> cipd.DescribeInstanceRequest
-	34, // 72: cipd.Repository.DescribeClient:input_type -> cipd.DescribeClientRequest
-	36, // 73: cipd.Repository.DescribeBootstrapBundle:input_type -> cipd.DescribeBootstrapBundleRequest
-	5,  // 74: cipd.Repository.GetPrefixMetadata:output_type -> cipd.PrefixMetadata
-	6,  // 75: cipd.Repository.GetInheritedPrefixMetadata:output_type -> cipd.InheritedPrefixMetadata
-	5,  // 76: cipd.Repository.UpdatePrefixMetadata:output_type -> cipd.PrefixMetadata
-	7,  // 77: cipd.Repository.GetRolesInPrefix:output_type -> cipd.RolesInPrefixResponse
-	7,  // 78: cipd.Repository.GetRolesInPrefixOnBehalfOf:output_type -> cipd.RolesInPrefixResponse
-	9,  // 79: cipd.Repository.ListPrefix:output_type -> cipd.ListPrefixResponse
-	47, // 80: cipd.Repository.HidePackage:output_type -> google.protobuf.Empty
-	47, // 81: cipd.Repository.UnhidePackage:output_type -> google.protobuf.Empty
-	47, // 82: cipd.Repository.DeletePackage:output_type -> google.protobuf.Empty
-	12, // 83: cipd.Repository.RegisterInstance:output_type -> cipd.RegisterInstanceResponse
-	14, // 84: cipd.Repository.ListInstances:output_type -> cipd.ListInstancesResponse
-	16, // 85: cipd.Repository.SearchInstances:output_type -> cipd.SearchInstancesResponse
-	47, // 86: cipd.Repository.CreateRef:output_type -> google.protobuf.Empty
-	47, // 87: cipd.Repository.DeleteRef:output_type -> google.protobuf.Empty
-	20, // 88: cipd.Repository.ListRefs:output_type -> cipd.ListRefsResponse
-	47, // 89: cipd.Repository.AttachTags:output_type -> google.protobuf.Empty
-	47, // 90: cipd.Repository.DetachTags:output_type -> google.protobuf.Empty
-	47, // 91: cipd.Repository.AttachMetadata:output_type -> google.protobuf.Empty
-	47, // 92: cipd.Repository.DetachMetadata:output_type -> google.protobuf.Empty
-	28, // 93: cipd.Repository.ListMetadata:output_type -> cipd.ListMetadataResponse
-	11, // 94: cipd.Repository.ResolveVersion:output_type -> cipd.Instance
-	45, // 95: cipd.Repository.GetInstanceURL:output_type -> cipd.ObjectURL
-	33, // 96: cipd.Repository.DescribeInstance:output_type -> cipd.DescribeInstanceResponse
-	35, // 97: cipd.Repository.DescribeClient:output_type -> cipd.DescribeClientResponse
-	37, // 98: cipd.Repository.DescribeBootstrapBundle:output_type -> cipd.DescribeBootstrapBundleResponse
-	74, // [74:99] is the sub-list for method output_type
-	49, // [49:74] is the sub-list for method input_type
-	49, // [49:49] is the sub-list for extension type_name
-	49, // [49:49] is the sub-list for extension extendee
-	0,  // [0:49] is the sub-list for field type_name
+	40, // 38: cipd.DescribeInstanceResponse.omitted:type_name -> cipd.DescribeInstanceResponse.Omitted
+	43, // 39: cipd.DescribeClientRequest.instance:type_name -> cipd.ObjectRef
+	11, // 40: cipd.DescribeClientResponse.instance:type_name -> cipd.Instance
+	43, // 41: cipd.DescribeClientResponse.client_ref:type_name -> cipd.ObjectRef
+	46, // 42: cipd.DescribeClientResponse.client_binary:type_name -> cipd.ObjectURL
+	43, // 43: cipd.DescribeClientResponse.client_ref_aliases:type_name -> cipd.ObjectRef
+	41, // 44: cipd.DescribeBootstrapBundleResponse.files:type_name -> cipd.DescribeBootstrapBundleResponse.BootstrapFile
+	0,  // 45: cipd.PrefixMetadata.ACL.role:type_name -> cipd.Role
+	0,  // 46: cipd.RolesInPrefixResponse.RoleInPrefix.role:type_name -> cipd.Role
+	47, // 47: cipd.DescribeBootstrapBundleResponse.BootstrapFile.status:type_name -> google.rpc.Status
+	43, // 48: cipd.DescribeBootstrapBundleResponse.BootstrapFile.instance:type_name -> cipd.ObjectRef
+	43, // 49: cipd.DescribeBootstrapBundleResponse.BootstrapFile.file:type_name -> cipd.ObjectRef
+	3,  // 50: cipd.Repository.GetPrefixMetadata:input_type -> cipd.PrefixRequest
+	3,  // 51: cipd.Repository.GetInheritedPrefixMetadata:input_type -> cipd.PrefixRequest
+	5,  // 52: cipd.Repository.UpdatePrefixMetadata:input_type -> cipd.PrefixMetadata
+	3,  // 53: cipd.Repository.GetRolesInPrefix:input_type -> cipd.PrefixRequest
+	4,  // 54: cipd.Repository.GetRolesInPrefixOnBehalfOf:input_type -> cipd.PrefixRequestOnBehalfOf
+	8,  // 55: cipd.Repository.ListPrefix:input_type -> cipd.ListPrefixRequest
+	10, // 56: cipd.Repository.HidePackage:input_type -> cipd.PackageRequest
+	10, // 57: cipd.Repository.UnhidePackage:input_type -> cipd.PackageRequest
+	10, // 58: cipd.Repository.DeletePackage:input_type -> cipd.PackageRequest
+	11, // 59: cipd.Repository.RegisterInstance:input_type -> cipd.Instance
+	13, // 60: cipd.Repository.ListInstances:input_type -> cipd.ListInstancesRequest
+	15, // 61: cipd.Repository.SearchInstances:input_type -> cipd.SearchInstancesRequest
+	17, // 62: cipd.Repository.CreateRef:input_type -> cipd.Ref
+	18, // 63: cipd.Repository.DeleteRef:input_type -> cipd.DeleteRefRequest
+	19, // 64: cipd.Repository.ListRefs:input_type -> cipd.ListRefsRequest
+	22, // 65: cipd.Repository.AttachTags:input_type -> cipd.AttachTagsRequest
+	23, // 66: cipd.Repository.DetachTags:input_type -> cipd.DetachTagsRequest
+	25, // 67: cipd.Repository.AttachMetadata:input_type -> cipd.AttachMetadataRequest
+	26, // 68: cipd.Repository.DetachMetadata:input_type -> cipd.DetachMetadataRequest
+	27, // 69: cipd.Repository.ListMetadata:input_type -> cipd.ListMetadataRequest
+	29, // 70: cipd.Repository.ResolveVersion:input_type -> cipd.ResolveVersionRequest
+	30, // 71: cipd.Repository.GetInstanceURL:input_type -> cipd.GetInstanceURLRequest
+	32, // 72: cipd.Repository.DescribeInstance:input_type -> cipd.DescribeInstanceRequest
+	34, // 73: cipd.Repository.DescribeClient:input_type -> cipd.DescribeClientRequest
+	36, // 74: cipd.Repository.DescribeBootstrapBundle:input_type -> cipd.DescribeBootstrapBundleRequest
+	5,  // 75: cipd.Repository.GetPrefixMetadata:output_type -> cipd.PrefixMetadata
+	6,  // 76: cipd.Repository.GetInheritedPrefixMetadata:output_type -> cipd.InheritedPrefixMetadata
+	5,  // 77: cipd.Repository.UpdatePrefixMetadata:output_type -> cipd.PrefixMetadata
+	7,  // 78: cipd.Repository.GetRolesInPrefix:output_type -> cipd.RolesInPrefixResponse
+	7,  // 79: cipd.Repository.GetRolesInPrefixOnBehalfOf:output_type -> cipd.RolesInPrefixResponse
+	9,  // 80: cipd.Repository.ListPrefix:output_type -> cipd.ListPrefixResponse
+	48, // 81: cipd.Repository.HidePackage:output_type -> google.protobuf.Empty
+	48, // 82: cipd.Repository.UnhidePackage:output_type -> google.protobuf.Empty
+	48, // 83: cipd.Repository.DeletePackage:output_type -> google.protobuf.Empty
+	12, // 84: cipd.Repository.RegisterInstance:output_type -> cipd.RegisterInstanceResponse
+	14, // 85: cipd.Repository.ListInstances:output_type -> cipd.ListInstancesResponse
+	16, // 86: cipd.Repository.SearchInstances:output_type -> cipd.SearchInstancesResponse
+	48, // 87: cipd.Repository.CreateRef:output_type -> google.protobuf.Empty
+	48, // 88: cipd.Repository.DeleteRef:output_type -> google.protobuf.Empty
+	20, // 89: cipd.Repository.ListRefs:output_type -> cipd.ListRefsResponse
+	48, // 90: cipd.Repository.AttachTags:output_type -> google.protobuf.Empty
+	48, // 91: cipd.Repository.DetachTags:output_type -> google.protobuf.Empty
+	48, // 92: cipd.Repository.AttachMetadata:output_type -> google.protobuf.Empty
+	48, // 93: cipd.Repository.DetachMetadata:output_type -> google.protobuf.Empty
+	28, // 94: cipd.Repository.ListMetadata:output_type -> cipd.ListMetadataResponse
+	11, // 95: cipd.Repository.ResolveVersion:output_type -> cipd.Instance
+	46, // 96: cipd.Repository.GetInstanceURL:output_type -> cipd.ObjectURL
+	33, // 97: cipd.Repository.DescribeInstance:output_type -> cipd.DescribeInstanceResponse
+	35, // 98: cipd.Repository.DescribeClient:output_type -> cipd.DescribeClientResponse
+	37, // 99: cipd.Repository.DescribeBootstrapBundle:output_type -> cipd.DescribeBootstrapBundleResponse
+	75, // [75:100] is the sub-list for method output_type
+	50, // [50:75] is the sub-list for method input_type
+	50, // [50:50] is the sub-list for extension type_name
+	50, // [50:50] is the sub-list for extension extendee
+	0,  // [0:50] is the sub-list for field type_name
 }
 
 func init() { file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_init() }
@@ -3126,7 +3298,7 @@ func file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDesc), len(file_go_chromium_org_luci_cipd_api_cipd_v1_repo_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   38,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
