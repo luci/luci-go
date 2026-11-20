@@ -45,6 +45,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		LongDesc: "Manage ResultDB work units. Work units represent modular execution units and test suites within an invocation.\n\n" +
 			"Available subcommands:\n" +
 			"  get       Get details of a work unit\n" +
+			"  list      List work units in a root invocation\n" +
 			"  artifact  Manage work unit artifacts",
 		CommandRun: func() subcommands.CommandRun {
 			return &workUnitRun{af: af}
@@ -60,6 +61,7 @@ type workUnitRun struct {
 func (r *workUnitRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	return base.RunSubcommandApp(a, "luci work-unit", "Work units management", []*subcommands.Command{
 		GetCmd(r.af),
+		ListCmd(r.af),
 		artifact.WorkUnitArtifactCmd(r.af),
 		subcommands.CmdHelp,
 	}, args)
@@ -174,30 +176,11 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	}
 
 	normWUID := base.NormalizeWorkUnit(r.workUnitID)
-	clean := base.FormatWorkUnitResourceName(invID, normWUID)
 	rpcCtx := logging.SetLevel(ctx, logging.Error)
 
-	wu, err := client.GetWorkUnit(rpcCtx, &pb.GetWorkUnitRequest{Name: clean})
-	if err != nil {
-		// In AnTS/TradeFed, leaf module and test-run work units are stored in ResultDB
-		// under composite IDs (<task_work_unit_id>:u-<uuid>) rather than their own
-		// AnTS serial WU<digits> ID. If direct GetWorkUnit returns NotFound for a bare
-		// AnTS work unit ID, query the AnTS v4 API and ResultDB hierarchy to resolve
-		// the composite work unit ID and retry GetWorkUnit.
-		if status.Code(err) == codes.NotFound && base.IsAntsWorkUnitID(normWUID) && !strings.Contains(normWUID, ":u-") {
-			if info, antsErr := base.ResolveAntsWorkUnit(ctx, normWUID); antsErr == nil && info != nil {
-				resolvedWUID := base.ResolveResultDBAntsWorkUnit(ctx, client, invID, normWUID, info)
-				if resolvedWUID != "" && resolvedWUID != normWUID {
-					resolvedClean := base.FormatWorkUnitResourceName(invID, resolvedWUID)
-					if resolvedWU, retryErr := client.GetWorkUnit(rpcCtx, &pb.GetWorkUnitRequest{Name: resolvedClean}); retryErr == nil && resolvedWU != nil {
-						fmt.Fprintf(os.Stderr, "Note: resolved AnTS work unit %q to ResultDB work unit %q\n", r.workUnitID, resolvedWUID)
-						wu = resolvedWU
-						clean = resolvedClean
-						err = nil
-					}
-				}
-			}
-		}
+	wu, resolvedWUID, clean, resolvedFromAnts, err := fetchWorkUnitWithAntsFallback(rpcCtx, ctx, client, invID, normWUID, pb.WorkUnitView_WORK_UNIT_VIEW_UNSPECIFIED)
+	if resolvedFromAnts {
+		fmt.Fprintf(os.Stderr, "Note: resolved AnTS work unit %q to ResultDB work unit %q\n", r.workUnitID, resolvedWUID)
 	}
 	if err != nil {
 		if base.IsPermissionDenied(err) {
@@ -260,7 +243,8 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 		const maxChildrenShown = 10
 		for i, child := range wu.ChildWorkUnits {
 			if i >= maxChildrenShown {
-				fmt.Fprintf(&buf, "  ... and %d more child work units\n", len(wu.ChildWorkUnits)-maxChildrenShown)
+				fmt.Fprintf(&buf, "  ... and %d more child work units (run 'luci work-unit list -invocationid=%s -parent=%s' to list all)\n",
+					len(wu.ChildWorkUnits)-maxChildrenShown, base.ShellQuoteIfNeeded(invID), base.ShellQuoteIfNeeded(wu.WorkUnitId))
 				break
 			}
 			_, childWUID := base.ExtractWorkUnitComponents(child)
@@ -371,4 +355,27 @@ func fprintRootInvocationMetadata(out io.Writer, rootInv *pb.RootInvocation) {
 		fmt.Fprintf(out, "Scheduler:    %s\n", sys)
 	}
 	format.FprintRootInvocationExternalMetadata(out, rootInv, 14)
+}
+
+func fetchWorkUnitWithAntsFallback(rpcCtx, fullCtx context.Context, client pb.ResultDBClient, invID, normWUID string, view pb.WorkUnitView) (wu *pb.WorkUnit, resolvedWUID, clean string, resolvedFromAnts bool, err error) {
+	clean = base.FormatWorkUnitResourceName(invID, normWUID)
+	wu, err = client.GetWorkUnit(rpcCtx, &pb.GetWorkUnitRequest{Name: clean, View: view})
+	if err == nil {
+		return wu, normWUID, clean, false, nil
+	}
+	// In AnTS/TradeFed, leaf module and test-run work units are stored in ResultDB
+	// under composite IDs (<task_work_unit_id>:u-<uuid>) rather than their own
+	// AnTS serial WU<digits> ID.
+	if status.Code(err) == codes.NotFound && base.IsAntsWorkUnitID(normWUID) && !strings.Contains(normWUID, ":u-") {
+		if info, antsErr := base.ResolveAntsWorkUnit(fullCtx, normWUID); antsErr == nil && info != nil {
+			cand := base.ResolveResultDBAntsWorkUnit(fullCtx, client, invID, normWUID, info)
+			if cand != "" && cand != normWUID {
+				resolvedClean := base.FormatWorkUnitResourceName(invID, cand)
+				if resolvedWU, retryErr := client.GetWorkUnit(rpcCtx, &pb.GetWorkUnitRequest{Name: resolvedClean, View: view}); retryErr == nil && resolvedWU != nil {
+					return resolvedWU, cand, resolvedClean, true, nil
+				}
+			}
+		}
+	}
+	return nil, normWUID, clean, false, err
 }

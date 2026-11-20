@@ -206,7 +206,7 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Child Work Units (12):"))
 			assert.Loosely(t, out, should.ContainSubstring("  - step-1\n"))
 			assert.Loosely(t, out, should.ContainSubstring("  - step-10\n"))
-			assert.Loosely(t, out, should.ContainSubstring("  ... and 2 more child work units"))
+			assert.Loosely(t, out, should.ContainSubstring("  ... and 2 more child work units (run 'luci work-unit list -invocationid=build-123 -parent=build-root' to list all)"))
 		})
 
 		t.Run(`gates RootInvocation and work unit metadata behind -show-metadata`, func(t *ftt.Test) {
@@ -1198,6 +1198,351 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("Finalize Start: 2026-10-06T10:05:00Z\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Finalized:    2026-10-06T10:05:12Z\n"))
 			assert.Loosely(t, out, should.ContainSubstring("Duration:     3h 05m 00s\n"))
+		})
+	})
+}
+
+func TestWorkUnitList(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`work-unit list`, t, func(t *ftt.Test) {
+		baseTime := time.Date(2026, 10, 6, 7, 0, 0, 0, time.UTC)
+
+		t.Run(`lists work units across invocation with pagination and state-priority sorting`, func(t *ftt.Test) {
+			var pageTokens []string
+			client := &mockWorkUnitResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					pageTokens = append(pageTokens, in.PageToken)
+					if in.PageToken == "" {
+						return &pb.QueryWorkUnitsResponse{
+							WorkUnits: []*pb.WorkUnit{
+								{
+									WorkUnitId:   "root",
+									Kind:         "ATP_INVOCATION",
+									State:        pb.WorkUnit_SUCCEEDED,
+									CreateTime:   timestamppb.New(baseTime),
+									FinalizeTime: timestamppb.New(baseTime.Add(10 * time.Minute)),
+								},
+							},
+							NextPageToken: "page-2",
+						}, nil
+					}
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{
+								WorkUnitId:     "wu-mod-failed",
+								Kind:           "TF_MODULE",
+								State:          pb.WorkUnit_FAILED,
+								ModuleId:       &pb.ModuleIdentifier{ModuleName: "CtsCameraTestCases"},
+								ModuleShardKey: "0",
+								CreateTime:     timestamppb.New(baseTime),
+								FinalizeTime:   timestamppb.New(baseTime.Add(3 * time.Minute)),
+							},
+							{
+								WorkUnitId: "wu-running",
+								Kind:       "TFC_COMMAND_TASK",
+								State:      pb.WorkUnit_RUNNING,
+								CreateTime: timestamppb.New(baseTime),
+							},
+						},
+					}, nil
+				},
+			}
+
+			r := &workUnitListRun{
+				client:       client,
+				invocationID: "ants-i123",
+				limit:        defaultListLimit,
+				sortBy:       "state",
+				now:          baseTime.Add(5 * time.Minute),
+			}
+			var buf strings.Builder
+			r.out = &buf
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, pageTokens, should.Match([]string{"", "page-2"}))
+			assert.Loosely(t, out, should.ContainSubstring("Work Units in rootInvocations/ants-i123 (3):"))
+			assert.Loosely(t, out, should.ContainSubstring("wu-mod-failed"))
+			assert.Loosely(t, out, should.ContainSubstring("CtsCameraTestCases [shard:0]"))
+			assert.Loosely(t, out, should.ContainSubstring("5m 00s"))
+			assert.Loosely(t, out, should.NotContainSubstring("running 5m 00s"))
+			assert.Loosely(t, out, should.ContainSubstring("Next step: luci work-unit get -invocationid=ants-i123 -workunitid=wu-mod-failed\n"))
+			// FAILED must appear before RUNNING, which must appear before SUCCEEDED.
+			assert.Loosely(t, strings.Index(out, "wu-mod-failed"), should.BeLessThan(strings.Index(out, "wu-running")))
+			assert.Loosely(t, strings.Index(out, "wu-running"), should.BeLessThan(strings.Index(out, "\nroot ")))
+		})
+
+		t.Run(`lists direct child work units via -parent using BatchGetWorkUnits`, func(t *ftt.Test) {
+			var queriedAll bool
+			client := &mockWorkUnitResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					assert.Loosely(t, in.Name, should.Equal("rootInvocations/ants-i123/workUnits/root"))
+					return &pb.WorkUnit{
+						Name:       in.Name,
+						WorkUnitId: "root",
+						ChildWorkUnits: []string{
+							"rootInvocations/ants-i123/workUnits/ants-wu1",
+							"rootInvocations/ants-i123/workUnits/ants-wu2",
+						},
+					}, nil
+				},
+				batchGetWorkUnits: func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error) {
+					return &pb.BatchGetWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{
+								WorkUnitId:   "ants-wu1",
+								Kind:         "TFC_COMMAND",
+								State:        pb.WorkUnit_SUCCEEDED,
+								CreateTime:   timestamppb.New(baseTime),
+								FinalizeTime: timestamppb.New(baseTime.Add(2 * time.Minute)),
+							},
+							{
+								WorkUnitId:   "ants-wu2",
+								Kind:         "TFC_COMMAND",
+								State:        pb.WorkUnit_FAILED,
+								CreateTime:   timestamppb.New(baseTime),
+								FinalizeTime: timestamppb.New(baseTime.Add(1 * time.Minute)),
+							},
+						},
+					}, nil
+				},
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					queriedAll = true
+					return &pb.QueryWorkUnitsResponse{}, nil
+				},
+			}
+
+			r := &workUnitListRun{
+				client:       client,
+				invocationID: "ants-i123",
+				parentID:     "root",
+				limit:        defaultListLimit,
+				sortBy:       "state",
+			}
+			var buf strings.Builder
+			r.out = &buf
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, queriedAll, should.BeFalse)
+			assert.Loosely(t, out, should.ContainSubstring("Child Work Units of root in rootInvocations/ants-i123 (2):"))
+			assert.Loosely(t, out, should.ContainSubstring("ants-wu1"))
+			assert.Loosely(t, out, should.ContainSubstring("ants-wu2"))
+		})
+
+		t.Run(`supports -state, -kind, -modulename, -sort duration, and -limit`, func(t *ftt.Test) {
+			client := &mockWorkUnitResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					return &pb.QueryWorkUnitsResponse{
+						WorkUnits: []*pb.WorkUnit{
+							{
+								WorkUnitId:   "wu-short",
+								Kind:         "TF_MODULE",
+								State:        pb.WorkUnit_SUCCEEDED,
+								ModuleId:     &pb.ModuleIdentifier{ModuleName: "ModA"},
+								CreateTime:   timestamppb.New(baseTime),
+								FinalizeTime: timestamppb.New(baseTime.Add(1 * time.Minute)),
+							},
+							{
+								WorkUnitId:   "wu-long",
+								Kind:         "TF_MODULE",
+								State:        pb.WorkUnit_SUCCEEDED,
+								ModuleId:     &pb.ModuleIdentifier{ModuleName: "ModA"},
+								CreateTime:   timestamppb.New(baseTime),
+								FinalizeTime: timestamppb.New(baseTime.Add(9 * time.Hour)),
+							},
+							{
+								WorkUnitId: "wu-other-kind",
+								Kind:       "TFC_COMMAND",
+								State:      pb.WorkUnit_SUCCEEDED,
+							},
+						},
+					}, nil
+				},
+			}
+
+			r := &workUnitListRun{
+				client:       client,
+				invocationID: "ants-i123",
+				stateFilter:  "succeeded",
+				kindFilter:   "tf_module",
+				moduleFilter: "moda",
+				sortBy:       "duration",
+				limit:        1,
+			}
+			var buf strings.Builder
+			r.out = &buf
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Work Units in rootInvocations/ants-i123 (2 matching, 3 total):"))
+			assert.Loosely(t, out, should.ContainSubstring("wu-long"))
+			assert.Loosely(t, out, should.NotContainSubstring("wu-short"))
+			assert.Loosely(t, out, should.NotContainSubstring("wu-other-kind"))
+			assert.Loosely(t, out, should.ContainSubstring("... and 1 more (use -limit=0, -all, or -state/-kind/-modulename)"))
+		})
+
+		t.Run(`omits trailing colon and (none) when 0 work units match`, func(t *ftt.Test) {
+			client := &mockWorkUnitResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{Name: in.Name, WorkUnitId: "wu-empty"}, nil
+				},
+			}
+			r := &workUnitListRun{client: client, invocationID: "ants-i123", parentID: "wu-empty", limit: defaultListLimit, sortBy: "state"}
+			var buf strings.Builder
+			r.out = &buf
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.Equal("Child Work Units of wu-empty in rootInvocations/ants-i123 (0)\n"))
+		})
+
+		t.Run(`caps default output at format.DefaultMaxOutputBytes and allows -all or explicit -limit to bypass`, func(t *ftt.Test) {
+			wus := make([]*pb.WorkUnit, 100)
+			for i := range wus {
+				wus[i] = &pb.WorkUnit{
+					WorkUnitId: fmt.Sprintf("ants-wu06900268298775285:u-00000000-0000-0000-0000-%012d", i),
+					Kind:       "TF_MODULE",
+					State:      pb.WorkUnit_FAILED,
+					ModuleId:   &pb.ModuleIdentifier{ModuleName: "CtsNotificationTestCases_notification_long_module_name"},
+					CreateTime: timestamppb.New(baseTime),
+				}
+			}
+			client := &mockWorkUnitResultDBClient{
+				queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+					return &pb.QueryWorkUnitsResponse{WorkUnits: wus}, nil
+				},
+			}
+
+			r := &workUnitListRun{
+				client:       client,
+				invocationID: "ants-i123",
+				limit:        defaultListLimit,
+				sortBy:       "state",
+				now:          baseTime.Add(5 * time.Minute),
+			}
+			var buf strings.Builder
+			r.out = &buf
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, len(out), should.BeLessThanOrEqual(format.DefaultMaxOutputBytes))
+			assert.Loosely(t, out, should.ContainSubstring("... and "))
+
+			// Explicit -limit=100 via flag parsing bypasses the 9.5 KB byte cap.
+			buf.Reset()
+			r.Flags.IntVar(&r.limit, "limit", defaultListLimit, "")
+			assert.Loosely(t, r.Flags.Parse([]string{"-limit", "100"}), should.BeNil)
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, buf.Len(), should.BeGreaterThan(format.DefaultMaxOutputBytes))
+			assert.Loosely(t, buf.String(), should.NotContainSubstring("... and "))
+
+			// -all also bypasses the 9.5 KB byte cap.
+			buf.Reset()
+			r2 := &workUnitListRun{
+				client:       client,
+				invocationID: "ants-i123",
+				limit:        defaultListLimit,
+				all:          true,
+				sortBy:       "state",
+				now:          baseTime.Add(5 * time.Minute),
+				out:          &buf,
+			}
+			assert.Loosely(t, r2.Run(nil, nil, nil), should.Equal(0))
+			assert.Loosely(t, buf.Len(), should.BeGreaterThan(format.DefaultMaxOutputBytes))
+			assert.Loosely(t, buf.String(), should.NotContainSubstring("... and "))
+		})
+
+		t.Run(`rejects legacy invocations and invalid flags`, func(t *ftt.Test) {
+			legacyClient := &mockWorkUnitResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					return &pb.Invocation{Name: in.Name}, nil
+				},
+			}
+
+			r := &workUnitListRun{client: legacyClient, invocationID: "build-123", sortBy: "state"}
+			assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(1))
+
+			rBadState := &workUnitListRun{client: legacyClient, invocationID: "ants-i123", stateFilter: "bogus", sortBy: "state"}
+			assert.Loosely(t, rBadState.Run(nil, nil, nil), should.Equal(1))
+
+			rBadSort := &workUnitListRun{client: legacyClient, invocationID: "ants-i123", sortBy: "bogus"}
+			assert.Loosely(t, rBadSort.Run(nil, nil, nil), should.Equal(1))
+
+			rNegLimit := &workUnitListRun{client: legacyClient, invocationID: "ants-i123", limit: -1, sortBy: "state"}
+			assert.Loosely(t, rNegLimit.Run(nil, nil, nil), should.Equal(1))
+		})
+
+		t.Run(`handles truncatedScan, positional target with RPC failure, BatchGetWorkUnits errors/batching, and canceled alias`, func(t *ftt.Test) {
+			t.Run(`truncatedScan`, func(t *ftt.Test) {
+				calls := 0
+				client := &mockWorkUnitResultDBClient{
+					queryWorkUnits: func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error) {
+						calls++
+						return &pb.QueryWorkUnitsResponse{
+							WorkUnits:     []*pb.WorkUnit{{WorkUnitId: fmt.Sprintf("wu-%d", calls), State: pb.WorkUnit_SUCCEEDED}},
+							NextPageToken: fmt.Sprintf("tok-%d", calls),
+						}, nil
+					},
+				}
+				var buf strings.Builder
+				r := &workUnitListRun{client: client, invocationID: "ants-i123", limit: defaultListLimit, sortBy: "state", out: &buf}
+				assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+				assert.Loosely(t, calls, should.Equal(maxQueryPages))
+				assert.Loosely(t, buf.String(), should.ContainSubstring(fmt.Sprintf("Work Units in rootInvocations/ants-i123 (%d+ scanned):", maxQueryPages)))
+				assert.Loosely(t, buf.String(), should.ContainSubstring(fmt.Sprintf("stopped after scanning %d pages", maxQueryPages)))
+			})
+
+			t.Run(`positional target writes nothing to stdout on RPC failure`, func(t *ftt.Test) {
+				client := &mockWorkUnitResultDBClient{
+					getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+						return nil, status.Error(codes.PermissionDenied, "denied")
+					},
+				}
+				var buf strings.Builder
+				r := &workUnitListRun{client: client, limit: defaultListLimit, sortBy: "state", out: &buf}
+				assert.Loosely(t, r.Run(nil, []string{"rootInvocations/ants-i123/workUnits/root"}, nil), should.Equal(1))
+				assert.Loosely(t, buf.Len(), should.Equal(0))
+			})
+
+			t.Run(`BatchGetWorkUnits error returns directly and batches past maxBatchWorkUnits`, func(t *ftt.Test) {
+				getCalls := 0
+				batchCalls := 0
+				children := make([]string, maxBatchWorkUnits+1)
+				for i := range children {
+					children[i] = fmt.Sprintf("rootInvocations/ants-i123/workUnits/c-%d", i)
+				}
+				errClient := &mockWorkUnitResultDBClient{
+					getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+						getCalls++
+						return &pb.WorkUnit{Name: in.Name, WorkUnitId: "root", ChildWorkUnits: children}, nil
+					},
+					batchGetWorkUnits: func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error) {
+						return nil, status.Error(codes.Unavailable, "backend down")
+					},
+				}
+				rErr := &workUnitListRun{client: errClient, invocationID: "ants-i123", parentID: "root", limit: defaultListLimit, sortBy: "state"}
+				assert.Loosely(t, rErr.Run(nil, nil, nil), should.Equal(1))
+				assert.Loosely(t, getCalls, should.Equal(1))
+
+				batchClient := &mockWorkUnitResultDBClient{
+					getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+						return &pb.WorkUnit{Name: in.Name, WorkUnitId: "root", ChildWorkUnits: children}, nil
+					},
+					batchGetWorkUnits: func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error) {
+						batchCalls++
+						wus := make([]*pb.WorkUnit, len(in.Names))
+						for i := range in.Names {
+							wus[i] = &pb.WorkUnit{WorkUnitId: fmt.Sprintf("c-%d-%d", batchCalls, i), State: pb.WorkUnit_CANCELLED}
+						}
+						return &pb.BatchGetWorkUnitsResponse{WorkUnits: wus}, nil
+					},
+				}
+				var buf strings.Builder
+				rBatch := &workUnitListRun{client: batchClient, invocationID: "ants-i123", parentID: "root", stateFilter: "canceled", limit: defaultListLimit, sortBy: "state", out: &buf}
+				assert.Loosely(t, rBatch.Run(nil, nil, nil), should.Equal(0))
+				assert.Loosely(t, batchCalls, should.Equal(2))
+				assert.Loosely(t, buf.String(), should.ContainSubstring("Child Work Units of root in rootInvocations/ants-i123 (501):"))
+			})
 		})
 	})
 }
