@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"iter"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -53,6 +54,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/perm"
+	"go.chromium.org/luci/cipd/appengine/impl/prefix"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
@@ -69,20 +71,38 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // Prefix metadata RPC methods + related helpers including ACL checks.
 
+func mockWalkPrefixCfg(cfgTree *prefix.Tree[*prefixcfg.Entry]) func(ctx context.Context, pfx string, extraTrackers ...prefix.GenericTrack) (iter.Seq2[string, *prefixcfg.Entry], error) {
+	return func(ctx context.Context, pfx string, extraTrackers ...prefix.GenericTrack) (iter.Seq2[string, *prefixcfg.Entry], error) {
+		return func(yield func(string, *prefixcfg.Entry) bool) {
+			cfgTrack := cfgTree.Track()
+			trackers := append([]prefix.GenericTrack{cfgTrack}, extraTrackers...)
+			for path := range prefix.Walk(pfx, trackers...) {
+				if !yield(path, cfgTrack.Value()) {
+					return
+				}
+			}
+		}, nil
+	}
+}
+
 // newMockImpl will create an mock repoImpl with default value for most fields.
 func newMockImpl(meta *testutil.MetadataStore, cas *testutil.MockCAS) *repoImpl {
+	baseEntry := &prefixcfg.Entry{
+		Service: &prefixcfg.ServiceEntry{
+			EnableLegacyAclFallback: true,
+		},
+	}
+	baseTree := prefix.New(baseEntry, 0, func(func(string, *prefixcfg.Entry) bool) {}, nil)
+
 	return &repoImpl{
 		tq:   &tq.Dispatcher{},
 		meta: meta,
 		cas:  cas,
 		vsa:  vsa.NewClient(),
 		lookupPrefixCfg: func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
-			return &prefixcfg.Entry{
-				Service: &prefixcfg.ServiceEntry{
-					EnableLegacyAclFallback: true,
-				},
-			}, nil
+			return baseEntry, nil
 		},
+		walkPrefixCfg: mockWalkPrefixCfg(baseTree),
 	}
 }
 

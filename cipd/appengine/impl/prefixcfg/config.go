@@ -17,6 +17,7 @@ package prefixcfg
 import (
 	"cmp"
 	"context"
+	"iter"
 	"regexp"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -173,6 +174,75 @@ func (c *Config) Lookup(ctx context.Context, path string) (*Entry, error) {
 	}
 
 	return &Entry{service, realm}, nil
+}
+
+// Walk returns an iterator which walks over the combined Service and Project
+// configs.
+//
+// Any `extraTrackers` are incorporated into the Walk as well, and will yield
+// values accordingly during iteration.
+//
+// Note that all yielded [*Entry] are the same pointer - if you need to retain
+// the entry between iterations, make a shallow clone of it.
+func (c *Config) Walk(ctx context.Context, path string, extraTrackers ...prefix.GenericTrack) (iter.Seq2[string, *Entry], error) {
+	// Create a snapshot of the service config tree and all relevant project
+	// config trees.
+	svcTree, err := c.svcHandle.GetData(ctx)
+	if err != nil {
+		return nil, err
+	}
+	seenProjects := stringset.New(10)
+	svcTrack := svcTree.Track()
+	for range prefix.Walk(path, svcTrack) {
+		if proj := svcTrack.Value().OwningLuciProject; proj != "" {
+			seenProjects.Add(proj)
+		}
+	}
+	// projTrees is map[string]*prefix.Tree[string], i.e.
+	//
+	//   project -> <prefix> -> global scope realm (as configured by `project`)
+	//
+	// NOTE: GetAllData returns the default value for ALL projects in
+	// seenProjects, which means that even if `project` does not have `cipd.cfg`
+	// *at all*, this will give back a tree with 'project:@root' as the root
+	// node.
+	projTrees, err := c.prjHandle.GetAllData(ctx, seenProjects.ToSlice())
+	if err != nil {
+		return nil, err
+	}
+
+	return func(yield func(string, *Entry) bool) {
+		// We set up 2 tracks (service + project configs) plus whatever extra
+		// trackers needed (usually `Tracker[bool]` if legacy ACL fallback is
+		// potentially enabled).
+		svcTrack := svcTree.Track()
+		projTrack := prefix.NewTrack[string](nil)
+		trackers := append([]prefix.GenericTrack{svcTrack, projTrack}, extraTrackers...)
+
+		// We really don't need more than one of these, so just reuse the same one.
+		var entry Entry
+
+		for path := range prefix.Walk(path, trackers...) {
+			entry.Service = svcTrack.Value()
+			// Always set the tree:
+			//   * If `OwningLuciProject` is non-empty, this gets one of the trees
+			//     from our GetAllData call above. In the event that this project had
+			//     an empty/missing config file, this tree always returns the Value
+			//     `{OwningLuciProject}:@root`.
+			//   * If `OwningLuciProject` is empty, this sets the tree to `nil` which
+			//     has the behavior of always returning the zero Value (i.e. "").
+			//
+			// [prefix.Track.SetTree] makes re-assignment of the same tree a fast
+			// no-op, so this is very cheap in the case where OwningLuciProject did
+			// not change when walking down the stack.
+			projTrack.SetTree(projTrees[entry.Service.OwningLuciProject])
+			entry.Realm = projTrack.Value()
+
+			if !yield(path, &entry) {
+				return
+			}
+		}
+	}, nil
 }
 
 // validateServiceConfig validates correctness of the service config.

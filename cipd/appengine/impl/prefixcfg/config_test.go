@@ -16,6 +16,7 @@ package prefixcfg
 
 import (
 	"context"
+	"maps"
 	"regexp"
 	"testing"
 
@@ -226,6 +227,143 @@ func TestLookup(t *testing.T) {
 		assert.That(t, entry.Service.OwningLuciProject, should.Equal(tc.wantProj), truth.Explain("path %q", tc.path))
 		assert.That(t, entry.Realm, should.Equal(tc.wantRealm), truth.Explain("path %q", tc.path))
 	}
+}
+
+func TestWalk(t *testing.T) {
+	t.Parallel()
+
+	ctx, cfgstate := cfgcache.TestingContext(memory.Use(t.Context()))
+	datastore.GetTestable(ctx).Consistent(true)
+	cfgstate.Vars.Register("cipdCfgFileName", func(context.Context) (string, error) {
+		return "cipd", nil
+	})
+	cfg := RegisterConfig(cfgstate.Registry)
+	assert.NoErr(t, cfgstate.Initialize(ctx))
+
+	cfgstate.SetConfig(
+		"services/my-app", "prefixes.cfg",
+		&configpb.PrefixesConfigFile{
+			Prefix: []*configpb.Prefix{
+				{Path: "a", OwningLuciProject: "proj-a"},
+				{Path: "a/b/sub", OwningLuciProject: "proj-b"},
+				{Path: "no_proj_cfg", OwningLuciProject: "missing-proj"},
+				{Path: "unowned"},
+			},
+		},
+	)
+	cfgstate.SetConfig(
+		"projects/proj-a", "cipd.cfg",
+		&configpb.ProjectConfigFile{
+			Prefixes: []*configpb.PrefixSettings{
+				{Path: "a/b", Realm: "realm-ab"},
+				{Path: "a/b/sub", Realm: "wrong-project"},
+				{Path: "a/b/z", Realm: "realm-z"},
+				{Path: "unowned/ignored", Realm: "should-not-appear"},
+			},
+		},
+	)
+	cfgstate.SetConfig(
+		"projects/proj-b", "cipd.cfg",
+		&configpb.ProjectConfigFile{
+			Prefixes: []*configpb.PrefixSettings{
+				{Path: "a/b/sub/deep", Realm: "realm-deep"},
+			},
+		},
+	)
+	assert.NoErr(t, cfgstate.IngestToStorage(ctx))
+	assert.NoErr(t, cfgstate.RefreshInMemory(ctx))
+
+	type item struct {
+		Path  string
+		Proj  string
+		Realm string
+		Extra bool
+	}
+
+	collect := func(t *testing.T, root string, extra *prefix.Track[bool]) []item {
+		t.Helper()
+		var trackers []prefix.GenericTrack
+		if extra != nil {
+			trackers = append(trackers, extra)
+		}
+		walker, err := cfg.Walk(ctx, root, trackers...)
+		assert.NoErr(t, err)
+
+		var out []item
+		for p, e := range walker {
+			var extraVal bool
+			if extra != nil {
+				extraVal = extra.Value()
+			}
+			out = append(out, item{
+				Path:  p,
+				Proj:  e.Service.OwningLuciProject,
+				Realm: e.Realm,
+				Extra: extraVal,
+			})
+		}
+		return out
+	}
+
+	t.Run("root_walk_including_missing_project_cfg", func(t *testing.T) {
+		assert.That(t, collect(t, "", nil), should.Match([]item{
+			{Path: "", Proj: "", Realm: ""},
+			{Path: "a", Proj: "proj-a", Realm: "proj-a:@root"},
+			{Path: "a/b", Proj: "proj-a", Realm: "proj-a:realm-ab"},
+			{Path: "a/b/sub", Proj: "proj-b", Realm: "proj-b:@root"},
+			{Path: "a/b/sub/deep", Proj: "proj-b", Realm: "proj-b:realm-deep"},
+			{Path: "a/b/z", Proj: "proj-a", Realm: "proj-a:realm-z"},
+			{Path: "no_proj_cfg", Proj: "missing-proj", Realm: "missing-proj:@root"},
+			{Path: "unowned", Proj: "", Realm: ""},
+		}))
+	})
+
+	t.Run("subprefix_walk_under_configured_project", func(t *testing.T) {
+		assert.That(t, collect(t, "a/b", nil), should.Match([]item{
+			{Path: "a/b", Proj: "proj-a", Realm: "proj-a:realm-ab"},
+			{Path: "a/b/sub", Proj: "proj-b", Realm: "proj-b:@root"},
+			{Path: "a/b/sub/deep", Proj: "proj-b", Realm: "proj-b:realm-deep"},
+			{Path: "a/b/z", Proj: "proj-a", Realm: "proj-a:realm-z"},
+		}))
+	})
+
+	t.Run("subprefix_walk_under_missing_project_cfg", func(t *testing.T) {
+		assert.That(t, collect(t, "no_proj_cfg/sub", nil), should.Match([]item{
+			{Path: "no_proj_cfg/sub", Proj: "missing-proj", Realm: "missing-proj:@root"},
+		}))
+	})
+
+	t.Run("with_extra_tracker", func(t *testing.T) {
+		extraTree := prefix.New(false, 2, maps.All(map[string]bool{
+			"a/extra":           true,
+			"no_proj_cfg/extra": true,
+		}), nil)
+		extraTrack := extraTree.Track()
+
+		assert.That(t, collect(t, "", extraTrack), should.Match([]item{
+			{Path: "", Proj: "", Realm: "", Extra: false},
+			{Path: "a", Proj: "proj-a", Realm: "proj-a:@root", Extra: false},
+			{Path: "a/b", Proj: "proj-a", Realm: "proj-a:realm-ab", Extra: false},
+			{Path: "a/b/sub", Proj: "proj-b", Realm: "proj-b:@root", Extra: false},
+			{Path: "a/b/sub/deep", Proj: "proj-b", Realm: "proj-b:realm-deep", Extra: false},
+			{Path: "a/b/z", Proj: "proj-a", Realm: "proj-a:realm-z", Extra: false},
+			{Path: "a/extra", Proj: "proj-a", Realm: "proj-a:@root", Extra: true},
+			{Path: "no_proj_cfg", Proj: "missing-proj", Realm: "missing-proj:@root", Extra: false},
+			{Path: "no_proj_cfg/extra", Proj: "missing-proj", Realm: "missing-proj:@root", Extra: true},
+			{Path: "unowned", Proj: "", Realm: "", Extra: false},
+		}))
+	})
+
+	t.Run("early_break", func(t *testing.T) {
+		walker, err := cfg.Walk(ctx, "")
+		assert.NoErr(t, err)
+		count := 0
+		for range walker {
+			count++
+			break
+		}
+		assert.That(t, count, should.Equal(1))
+	})
 }
 
 func TestValidate(t *testing.T) {

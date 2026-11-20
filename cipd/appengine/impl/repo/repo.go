@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net/http"
 	"sort"
 	"strings"
@@ -53,6 +54,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/perm"
+	"go.chromium.org/luci/cipd/appengine/impl/prefix"
 	"go.chromium.org/luci/cipd/appengine/impl/prefixcfg"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
@@ -77,6 +79,7 @@ func Public(internalCAS cas.StorageServer, pcfg *prefixcfg.Config, bcfg *bootstr
 		vsa:                  c,
 		lookupPrefixCfg:      pcfg.Lookup,
 		lookupBillingProject: lookupBillingProject,
+		walkPrefixCfg:        pcfg.Walk,
 	}
 	impl.registerTasks()
 	impl.registerProcessor(&processing.ClientExtractor{CAS: internalCAS})
@@ -125,6 +128,9 @@ type repoImpl struct {
 	lookupPrefixCfg func(ctx context.Context, pkg string) (*prefixcfg.Entry, error)
 	// Mapping `(LUCI project, prefix) => custom billing project for GCS`.
 	lookupBillingProject func(ctx context.Context, luciProject, pkg string) (string, error)
+	// walkPrefixCfg returns an iterator which will walk over the combined configs
+	// (and any additional extraTrackers).
+	walkPrefixCfg func(ctx context.Context, prefix string, extraTrackers ...prefix.GenericTrack) (iter.Seq2[string, *prefixcfg.Entry], error)
 
 	procs    []processing.Processor          // in order of registerProcessor calls
 	procsMap map[string]processing.Processor // ID => processing.Processor
