@@ -38,25 +38,39 @@ func TestListPackages(t *testing.T) {
 		ctx, _, _ := testutil.TestingContext()
 
 		mk := func(name string, hidden bool) {
-			assert.Loosely(t, datastore.Put(ctx, &Package{
+			assert.NoErr(t, datastore.Put(ctx, &Package{
 				Name:   name,
 				Hidden: hidden,
-			}), should.BeNil)
+			}))
 		}
 
-		list := func(prefix string, includeHidden bool) []string {
+		list := func(prefix string, includeHidden bool, exclude ...string) []string {
 			var p []string
-			for prefix, err := range ListPackages(ctx, prefix, includeHidden) {
+			for pkg, err := range ListPackages(ctx, prefix, includeHidden, exclude) {
 				assert.NoErr(t, err)
-				p = append(p, prefix)
+				p = append(p, pkg)
 			}
 			return p
 		}
 
+		listErr := func(prefix string, exclude ...string) error {
+			for _, err := range ListPackages(ctx, prefix, true, exclude) {
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
 		mk("a", Visible)
+		mk("c/a", Visible)
+		mk("c/a-b", Visible)
+		mk("c/a-b/pkg", Visible)
 		mk("c/a/b", Visible)
+		mk("c/a/b/sub", Visible)
 		mk("c/a/d", Visible)
 		mk("c/a/h", Hidden)
+		mk("c/z", Visible)
 		mk("ca", Visible)
 		mk("d", Visible)
 		mk("d/a", Visible)
@@ -66,26 +80,26 @@ func TestListPackages(t *testing.T) {
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		t.Run("Root listing, including hidden", func(t *ftt.Test) {
-			assert.Loosely(t, list("", true), should.Match([]string{
-				"a", "c/a/b", "c/a/d", "c/a/h", "ca", "d", "d/a", "h1", "h2/a", "h2/b",
+			assert.That(t, list("", true), should.Match([]string{
+				"a", "c/a", "c/a-b", "c/a-b/pkg", "c/a/b", "c/a/b/sub", "c/a/d", "c/a/h", "c/z", "ca", "d", "d/a", "h1", "h2/a", "h2/b",
 			}))
 		})
 
 		t.Run("Root listing, skipping hidden", func(t *ftt.Test) {
-			assert.Loosely(t, list("", false), should.Match([]string{
-				"a", "c/a/b", "c/a/d", "ca", "d", "d/a",
+			assert.That(t, list("", false), should.Match([]string{
+				"a", "c/a", "c/a-b", "c/a-b/pkg", "c/a/b", "c/a/b/sub", "c/a/d", "c/z", "ca", "d", "d/a",
 			}))
 		})
 
 		t.Run("Subprefix listing, including hidden", func(t *ftt.Test) {
-			assert.Loosely(t, list("c", true), should.Match([]string{
-				"c/a/b", "c/a/d", "c/a/h",
+			assert.That(t, list("c", true), should.Match([]string{
+				"c/a", "c/a-b", "c/a-b/pkg", "c/a/b", "c/a/b/sub", "c/a/d", "c/a/h", "c/z",
 			}))
 		})
 
 		t.Run("Subprefix listing, skipping hidden", func(t *ftt.Test) {
-			assert.Loosely(t, list("c", false), should.Match([]string{
-				"c/a/b", "c/a/d",
+			assert.That(t, list("c", false), should.Match([]string{
+				"c/a", "c/a-b", "c/a-b/pkg", "c/a/b", "c/a/b/sub", "c/a/d", "c/z",
 			}))
 		})
 
@@ -95,6 +109,66 @@ func TestListPackages(t *testing.T) {
 
 		t.Run("Completely hidden prefix is not listed", func(t *ftt.Test) {
 			assert.Loosely(t, list("h2", false), should.HaveLength(0))
+		})
+
+		t.Run("Exclusions from root", func(t *ftt.Test) {
+			// Excludes exact package "d" and child "d/a", plus subtree "c/a".
+			assert.That(t, list("", false, "d", "c/a"), should.Match([]string{
+				"a", "c/a-b", "c/a-b/pkg", "c/z", "ca",
+			}))
+		})
+
+		t.Run("Exclusions from subprefix", func(t *ftt.Test) {
+			// Excludes exact package "c/a" and its children, keeping "c/a-b", "c/a-b/pkg", and "c/z".
+			assert.That(t, list("c", false, "c/a"), should.Match([]string{
+				"c/a-b", "c/a-b/pkg", "c/z",
+			}))
+
+			// Excludes "c/a-b" and its children, keeping "c/a" and its children.
+			assert.That(t, list("c", false, "c/a-b"), should.Match([]string{
+				"c/a", "c/a/b", "c/a/b/sub", "c/a/d", "c/z",
+			}))
+		})
+
+		t.Run("Exclusions with '-' vs '/' sort order and duplicates", func(t *ftt.Test) {
+			// "c/a" < "c/a-b" as raw strings, but "c/a-b/" < "c/a/" in key order.
+			assert.That(t, list("c", false, "c/a", "c/a-b", "c/a/"), should.Match([]string{
+				"c/z",
+			}))
+			assert.That(t, list("c", false, "c/a-b", "c/a"), should.Match([]string{
+				"c/z",
+			}))
+		})
+
+		t.Run("Nested exclusions", func(t *ftt.Test) {
+			// "c/a" already implies "c/a/b" and "c/a/d"; ensure nested siblings do
+			// not cause ErrNullQuery or rewind lowKey.
+			assert.That(t, list("c", false, "c/a/b", "c/a/d", "c/a"), should.Match([]string{
+				"c/a-b", "c/a-b/pkg", "c/z",
+			}))
+		})
+
+		t.Run("Early break", func(t *ftt.Test) {
+			var got []string
+			for pkg, err := range ListPackages(ctx, "c", false, []string{"c/a-b"}) {
+				assert.NoErr(t, err)
+				got = append(got, pkg)
+				if len(got) == 2 {
+					break
+				}
+			}
+			assert.That(t, got, should.Match([]string{"c/a", "c/a/b"}))
+		})
+
+		t.Run("Validation errors", func(t *ftt.Test) {
+			assert.ErrIsLike(t, listErr("BAD"), "invalid package prefix")
+			assert.ErrIsLike(t, listErr("c", "c/BAD"), "invalid package prefix")
+			assert.ErrIsLike(t, listErr("", ""), `excludeSubprefixes: "" does not have "" as a prefix`)
+			assert.ErrIsLike(t, listErr("c", ""), `excludeSubprefixes: "" does not have "c/" as a prefix`)
+			assert.ErrIsLike(t, listErr("c", "c"), `excludeSubprefixes: "c" does not have "c/" as a prefix`)
+			assert.ErrIsLike(t, listErr("c", "c/"), `excludeSubprefixes: "c" does not have "c/" as a prefix`)
+			assert.ErrIsLike(t, listErr("c", "ca"), `excludeSubprefixes: "ca" does not have "c/" as a prefix`)
+			assert.ErrIsLike(t, listErr("c", "d/a"), `excludeSubprefixes: "d/a" does not have "c/" as a prefix`)
 		})
 	})
 }
@@ -106,15 +180,15 @@ func TestCheckPackages(t *testing.T) {
 		ctx, _, _ := testutil.TestingContext()
 
 		mk := func(name string, hidden bool) {
-			assert.Loosely(t, datastore.Put(ctx, &Package{
+			assert.NoErr(t, datastore.Put(ctx, &Package{
 				Name:   name,
 				Hidden: hidden,
-			}), should.BeNil)
+			}))
 		}
 
 		check := func(names []string, includeHidden bool) []string {
 			p, err := CheckPackages(ctx, names, includeHidden)
-			assert.Loosely(t, err, should.BeNil)
+			assert.NoErr(t, err)
 			return p
 		}
 
@@ -127,37 +201,37 @@ func TestCheckPackages(t *testing.T) {
 		})
 
 		t.Run("One visible package", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"a"}, true), should.Match([]string{"a"}))
+			assert.That(t, check([]string{"a"}, true), should.Match([]string{"a"}))
 		})
 
 		t.Run("One hidden package", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"b"}, true), should.Match([]string{"b"}))
-			assert.Loosely(t, check([]string{"b"}, false), should.Match([]string{}))
+			assert.That(t, check([]string{"b"}, true), should.Match([]string{"b"}))
+			assert.That(t, check([]string{"b"}, false), should.Match([]string{}))
 		})
 
 		t.Run("One missing package", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"zzz"}, true), should.Match([]string{}))
+			assert.That(t, check([]string{"zzz"}, true), should.Match([]string{}))
 		})
 
 		t.Run("Skips missing", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"zzz", "a", "c", "b"}, true), should.Match([]string{"a", "c", "b"}))
+			assert.That(t, check([]string{"zzz", "a", "c", "b"}, true), should.Match([]string{"a", "c", "b"}))
 		})
 
 		t.Run("Skips hidden", func(t *ftt.Test) {
-			assert.Loosely(t, check([]string{"a", "b", "c"}, false), should.Match([]string{"a", "c"}))
+			assert.That(t, check([]string{"a", "b", "c"}, false), should.Match([]string{"a", "c"}))
 		})
 
 		t.Run("CheckPackageExists also works", func(t *ftt.Test) {
 			t.Run("Visible pkg", func(t *ftt.Test) {
-				assert.Loosely(t, CheckPackageExists(ctx, "a"), should.BeNil)
+				assert.NoErr(t, CheckPackageExists(ctx, "a"))
 			})
 			t.Run("Hidden pkg", func(t *ftt.Test) {
-				assert.Loosely(t, CheckPackageExists(ctx, "b"), should.BeNil)
+				assert.NoErr(t, CheckPackageExists(ctx, "b"))
 			})
 			t.Run("Missing pkg", func(t *ftt.Test) {
 				err := CheckPackageExists(ctx, "zzz")
-				assert.Loosely(t, grpcutil.Code(err), should.Equal(codes.NotFound))
-				assert.Loosely(t, err, should.ErrLike("no such package"))
+				assert.That(t, grpcutil.Code(err), should.Equal(codes.NotFound))
+				assert.ErrIsLike(t, err, "no such package")
 			})
 		})
 	})
@@ -171,29 +245,29 @@ func TestSetPackageHidden(t *testing.T) {
 
 		isHidden := func(p string) bool {
 			pkg := Package{Name: p}
-			assert.Loosely(t, datastore.Get(ctx, &pkg), should.BeNil)
+			assert.NoErr(t, datastore.Get(ctx, &pkg))
 			return pkg.Hidden
 		}
 		hide := func(p string) error { return SetPackageHidden(ctx, p, Hidden) }
 		show := func(p string) error { return SetPackageHidden(ctx, p, Visible) }
 
-		assert.Loosely(t, hide("a"), should.Equal(datastore.ErrNoSuchEntity))
+		assert.That(t, hide("a"), should.Equal(datastore.ErrNoSuchEntity))
 
 		datastore.Put(ctx, &Package{Name: "a"})
-		assert.Loosely(t, isHidden("a"), should.BeFalse)
+		assert.That(t, isHidden("a"), should.BeFalse)
 
-		assert.Loosely(t, hide("a"), should.BeNil)
-		assert.Loosely(t, isHidden("a"), should.BeTrue)
+		assert.NoErr(t, hide("a"))
+		assert.That(t, isHidden("a"), should.BeTrue)
 
 		tc.Add(time.Second)
-		assert.Loosely(t, show("a"), should.BeNil)
-		assert.Loosely(t, isHidden("a"), should.BeFalse)
+		assert.NoErr(t, show("a"))
+		assert.That(t, isHidden("a"), should.BeFalse)
 
 		// To test pre-txn check.
-		assert.Loosely(t, show("a"), should.BeNil)
-		assert.Loosely(t, isHidden("a"), should.BeFalse)
+		assert.NoErr(t, show("a"))
+		assert.That(t, isHidden("a"), should.BeFalse)
 
-		assert.Loosely(t, GetEvents(ctx), should.Match([]*repopb.Event{
+		assert.That(t, GetEvents(ctx), should.Match([]*repopb.Event{
 			{
 				Kind:    repopb.EventKind_PACKAGE_UNHIDDEN,
 				Package: "a",

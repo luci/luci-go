@@ -533,7 +533,7 @@ func (impl *repoImpl) ListPrefix(ctx context.Context, r *repopb.ListPrefixReques
 				//  4. In non-recursive listing just look at Children of corresponding
 				//     entity.
 				var listing []string
-				for prefix, err := range model.ListPackages(ctx, pfx, r.IncludeHidden) {
+				for prefix, err := range model.ListPackages(ctx, pfx, r.IncludeHidden, nil) {
 					if err != nil {
 						return err
 					}
@@ -1849,7 +1849,7 @@ func (impl *repoImpl) DescribeBootstrapBundle(ctx context.Context, r *repopb.Des
 	// Auto-discover all available packages if necessary.
 	if len(r.Variants) == 0 {
 		// Note: ListPackages does recursive prefix listing.
-		for pkg, err := range model.ListPackages(ctx, r.Prefix, false) {
+		for pkg, err := range model.ListPackages(ctx, r.Prefix, false, nil) {
 			if err != nil {
 				return nil, err
 			}
