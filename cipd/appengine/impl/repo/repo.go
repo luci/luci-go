@@ -1746,7 +1746,8 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClie
 	}
 
 	// Check ACLs.
-	if _, err := impl.checkRole(ctx, r.Package, repopb.Role_READER); err != nil {
+	_, gotPerms, err := impl.hasPermission(ctx, r.Package, perm.ReadInstanceData, perm.ReadInstanceInfo)
+	if err != nil {
 		return nil, err
 	}
 
@@ -1764,9 +1765,7 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClie
 	// This must succeed, since CheckInstanceReady above verified processors have
 	// finished. Thus treat any error here as internal, as it will require an
 	// investigation.
-	//
-	// TODO: Update this to hasReadInstanceInfo.
-	proc, err := processing.GetClientExtractorResult(ctx, inst.Proto(true))
+	proc, err := processing.GetClientExtractorResult(ctx, inst.Proto(gotPerms.Has(perm.ReadInstanceInfo)))
 	if err != nil {
 		return nil, grpcutil.InternalTag.Apply(errors.Fmt("failed to get client extractor results: %w", err))
 	}
@@ -1805,8 +1804,7 @@ func (impl *repoImpl) DescribeClient(ctx context.Context, r *repopb.DescribeClie
 	}
 
 	return &repopb.DescribeClientResponse{
-		// TODO: Update this to hasReadInstanceInfo.
-		Instance:         inst.Proto(true),
+		Instance:         inst.Proto(gotPerms.Has(perm.ReadInstanceInfo)),
 		ClientRef:        ref,
 		ClientBinary:     signedURL,
 		ClientSize:       proc.ClientBinary.Size,

@@ -2377,7 +2377,10 @@ func (x *DescribeClientRequest) GetInstance() *caspb.ObjectRef {
 
 type DescribeClientResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The instance with all output fields filled in.
+	// The instance with output fields filled in.
+	//
+	// `registered_by` and `registered_ts` are populated only if the caller has
+	// `cipd.packages.readInstanceInfo` permission (or legacy READER role).
 	Instance *Instance `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Reference to the extracted client binary in the storage.
 	//

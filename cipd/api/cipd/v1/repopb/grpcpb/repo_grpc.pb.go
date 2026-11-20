@@ -486,11 +486,13 @@ type RepositoryClient interface {
 	//
 	// Returns:
 	//
+	//	PERMISSION_DENIED if the caller lacks `cipd.packages.readInstanceData`
+	//	    permission or legacy READER role for the prefix.
+	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	//	NOT_FOUND if the package or the instance doesn't exist.
 	//	FAILED_PRECONDITION if the instance is still being processed.
 	//	ABORTED if the instance has some failed processors associated with it,
 	//	    such instance is effectively broken and should not be used.
-	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	DescribeClient(ctx context.Context, in *DescribeClientRequest, opts ...grpc.CallOption) (*DescribeClientResponse, error)
 	// Returns information about binaries extracted from bootstrap packages under
 	// some prefix.
@@ -1205,11 +1207,13 @@ type RepositoryServer interface {
 	//
 	// Returns:
 	//
+	//	PERMISSION_DENIED if the caller lacks `cipd.packages.readInstanceData`
+	//	    permission or legacy READER role for the prefix.
+	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	//	NOT_FOUND if the package or the instance doesn't exist.
 	//	FAILED_PRECONDITION if the instance is still being processed.
 	//	ABORTED if the instance has some failed processors associated with it,
 	//	    such instance is effectively broken and should not be used.
-	//	PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
 	DescribeClient(context.Context, *DescribeClientRequest) (*DescribeClientResponse, error)
 	// Returns information about binaries extracted from bootstrap packages under
 	// some prefix.

@@ -3941,7 +3941,11 @@ func TestClientBootstrap(t *testing.T) {
 	t.Parallel()
 
 	ftt.Run("With fakes", t, func(t *ftt.Test) {
-		ctx, _, as := testutil.TestingContext()
+		ctx, _, as := testutil.TestingContext(
+			authtest.MockPermission("user:realm-client-data-only@example.com", "project:realm", perm.ReadInstanceData.Perm()),
+			authtest.MockPermission("user:realm-client-reader@example.com", "project:realm", perm.ReadInstanceData.Perm()),
+			authtest.MockPermission("user:realm-client-reader@example.com", "project:realm", perm.ReadInstanceInfo.Perm()),
+		)
 		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
@@ -3963,6 +3967,14 @@ func TestClientBootstrap(t *testing.T) {
 		}
 
 		impl := newMockImpl(&meta, &cas)
+		impl.lookupPrefixCfg = func(ctx context.Context, pkg string) (*prefixcfg.Entry, error) {
+			return &prefixcfg.Entry{
+				Service: &prefixcfg.ServiceEntry{
+					EnableLegacyAclFallback: true,
+				},
+				Realm: "project:realm",
+			}, nil
+		}
 
 		goodPlat := "linux-amd64"
 		goodDigest := strings.Repeat("f", 64)
@@ -4092,6 +4104,10 @@ func TestClientBootstrap(t *testing.T) {
 		})
 
 		t.Run("DescribeClient RPC", func(t *ftt.Test) {
+			inst.RegisteredBy = "user:registrar@example.com"
+			inst.RegisteredTs = testutil.TestTime
+			assert.NoErr(t, datastore.Put(ctx, inst))
+
 			call := func(pkg, sha256Digest string) (*repopb.DescribeClientResponse, error) {
 				return impl.DescribeClient(ctx, &repopb.DescribeClientRequest{
 					Package: pkg,
@@ -4112,6 +4128,8 @@ func TestClientBootstrap(t *testing.T) {
 							HashAlgo:  caspb.HashAlgo_SHA256,
 							HexDigest: goodDigest,
 						},
+						RegisteredBy: "user:registrar@example.com",
+						RegisteredTs: timestamppb.New(testutil.TestTime),
 					},
 					ClientRef: &caspb.ObjectRef{
 						HashAlgo:  caspb.HashAlgo_SHA256,
@@ -4133,6 +4151,18 @@ func TestClientBootstrap(t *testing.T) {
 						},
 					},
 				}))
+
+				ctx = as("realm-client-reader@example.com")
+				resp2, err := call(goodPkg, goodDigest)
+				assert.NoErr(t, err)
+				assert.Loosely(t, resp2, should.Match(resp))
+
+				// Missing permReadInstanceInfo can still see it, with info redacted.
+				ctx = as("realm-client-data-only@example.com")
+				resp3, err := call(goodPkg, goodDigest)
+				assert.NoErr(t, err)
+				assert.That(t, resp3.Instance.RegisteredBy, should.Equal(""))
+				assert.Loosely(t, resp3.Instance.RegisteredTs, should.BeNil)
 			})
 
 			t.Run("Bad package name", func(t *ftt.Test) {
@@ -4356,6 +4386,17 @@ func TestLegacyHandlers(t *testing.T) {
     "instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "registered_by": "user:reg@google.com",
     "registered_ts": "1454472306000000"
+  },
+  "status": "SUCCESS"
+}`))
+
+				code, body = callInstance("a/b", strings.Repeat("b", 40), "json")
+				assert.Loosely(t, code, should.Equal(http.StatusOK))
+				assert.Loosely(t, body, should.Equal(`{
+  "fetch_url": "http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "instance": {
+    "package_name": "a/b",
+    "instance_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
   },
   "status": "SUCCESS"
 }`))

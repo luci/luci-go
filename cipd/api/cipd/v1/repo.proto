@@ -452,11 +452,13 @@ service Repository {
   // Used by the client self-update procedure.
   //
   // Returns:
+  //   PERMISSION_DENIED if the caller lacks `cipd.packages.readInstanceData`
+  //       permission or legacy READER role for the prefix.
+  //   PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
   //   NOT_FOUND if the package or the instance doesn't exist.
   //   FAILED_PRECONDITION if the instance is still being processed.
   //   ABORTED if the instance has some failed processors associated with it,
   //       such instance is effectively broken and should not be used.
-  //   PERMISSION_DENIED if the CIPD backend can't use prefix's billing account.
   rpc DescribeClient(DescribeClientRequest) returns (DescribeClientResponse);
 
   // Returns information about binaries extracted from bootstrap packages under
@@ -1040,7 +1042,10 @@ message DescribeClientRequest {
 }
 
 message DescribeClientResponse {
-  // The instance with all output fields filled in.
+  // The instance with output fields filled in.
+  //
+  // `registered_by` and `registered_ts` are populated only if the caller has
+  // `cipd.packages.readInstanceInfo` permission (or legacy READER role).
   Instance instance = 1;
 
   // Reference to the extracted client binary in the storage.
