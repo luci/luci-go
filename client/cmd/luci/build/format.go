@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/client/cmd/luci/format"
 )
 
 // FormatOptions controls how a build is formatted for terminal display.
@@ -352,24 +353,5 @@ func formatSteps(w io.Writer, steps []*pb.Step, opts FormatOptions) bool {
 }
 
 func formatDuration(d time.Duration) string {
-	if d < 0 {
-		d = 0
-	}
-	if d < time.Second {
-		return d.Round(time.Millisecond).String()
-	}
-	d = d.Round(time.Second)
-	h := d / time.Hour
-	d -= h * time.Hour
-	m := d / time.Minute
-	d -= m * time.Minute
-	s := d / time.Second
-
-	if h > 0 {
-		return fmt.Sprintf("%dh %02dm %02ds", h, m, s)
-	}
-	if m > 0 {
-		return fmt.Sprintf("%dm %02ds", m, s)
-	}
-	return fmt.Sprintf("%ds", s)
+	return format.FormatTimeDuration(d)
 }

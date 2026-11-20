@@ -23,10 +23,12 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
@@ -1167,6 +1169,35 @@ func TestCmdWorkUnit(t *testing.T) {
 			assert.Loosely(t, out, should.ContainSubstring("bytes truncated; pass -show-metadata to view full output"))
 			assert.Loosely(t, out, should.ContainSubstring("Work Unit Artifacts:\n"))
 			assert.Loosely(t, out, should.ContainSubstring("host_log_flash.txt"))
+		})
+
+		t.Run(`prints work unit timestamps and computed duration`, func(t *ftt.Test) {
+			created := time.Date(2026, 10, 6, 7, 0, 0, 0, time.UTC)
+			finalizeStart := created.Add(3*time.Hour + 5*time.Minute)
+			finalized := created.Add(3*time.Hour + 5*time.Minute + 12*time.Second)
+
+			client := &mockWorkUnitResultDBClient{
+				getWorkUnit: func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error) {
+					return &pb.WorkUnit{
+						Name:              in.Name,
+						WorkUnitId:        "wu-timed",
+						State:             pb.WorkUnit_SUCCEEDED,
+						FinalizationState: pb.WorkUnit_FINALIZED,
+						CreateTime:        timestamppb.New(created),
+						FinalizeStartTime: timestamppb.New(finalizeStart),
+						FinalizeTime:      timestamppb.New(finalized),
+					}, nil
+				},
+			}
+
+			r := &workUnitGetRun{client: client, invocationID: "build-123", workUnitID: "wu-timed"}
+			out := testutil.CaptureStdout(func() {
+				assert.Loosely(t, r.Run(nil, nil, nil), should.Equal(0))
+			})
+			assert.Loosely(t, out, should.ContainSubstring("Created:      2026-10-06T07:00:00Z\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Finalize Start: 2026-10-06T10:05:00Z\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Finalized:    2026-10-06T10:05:12Z\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Duration:     3h 05m 00s\n"))
 		})
 	})
 }

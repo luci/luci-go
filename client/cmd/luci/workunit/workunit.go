@@ -253,6 +253,7 @@ func (r *workUnitGetRun) Run(a subcommands.Application, args []string, env subco
 	if wu.FinalizationState != pb.WorkUnit_FINALIZATION_STATE_UNSPECIFIED {
 		fmt.Fprintf(&buf, "Finalization: %s\n", wu.FinalizationState)
 	}
+	format.FprintWorkUnitTiming(&buf, wu, "")
 	format.FprintRootInvocationAggregationSummary(&buf, rootAgg)
 	if len(wu.ChildWorkUnits) > 0 {
 		fmt.Fprintf(&buf, "Child Work Units (%d):\n", len(wu.ChildWorkUnits))

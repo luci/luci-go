@@ -21,10 +21,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 	"unicode/utf8"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -1182,6 +1184,113 @@ func TestPrintFailureReason(t *testing.T) {
 			assert.Loosely(t, indentedOut, should.ContainSubstring("    Variant:      abi=x86_64 (hash: abcd1234)\n"))
 			assert.Loosely(t, indentedOut, should.ContainSubstring("    Tags:\n      module_tag: val1\n"))
 			assert.Loosely(t, indentedOut, should.ContainSubstring("    Properties:\n      {"))
+		})
+	})
+}
+
+func TestWorkUnitTiming(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`WorkUnitTiming`, t, func(t *ftt.Test) {
+		baseTime := time.Date(2026, 10, 6, 7, 0, 0, 0, time.UTC)
+
+		t.Run(`FormatTimeDuration`, func(t *ftt.Test) {
+			assert.Loosely(t, FormatTimeDuration(-5*time.Second), should.Equal("0s"))
+			assert.Loosely(t, FormatTimeDuration(250*time.Millisecond), should.Equal("250ms"))
+			assert.Loosely(t, FormatTimeDuration(8*time.Second), should.Equal("8s"))
+			assert.Loosely(t, FormatTimeDuration(12*time.Minute+5*time.Second), should.Equal("12m 05s"))
+			assert.Loosely(t, FormatTimeDuration(9*time.Hour+42*time.Minute), should.Equal("9h 42m 00s"))
+		})
+
+		t.Run(`finalized work unit`, func(t *ftt.Test) {
+			wu := &rdbpb.WorkUnit{
+				CreateTime:        timestamppb.New(baseTime),
+				FinalizeStartTime: timestamppb.New(baseTime.Add(9*time.Hour + 41*time.Minute + 50*time.Second)),
+				FinalizeTime:      timestamppb.New(baseTime.Add(9*time.Hour + 42*time.Minute)),
+				Deadline:          timestamppb.New(baseTime.Add(24 * time.Hour)),
+			}
+			var buf bytes.Buffer
+			FprintWorkUnitTimingWithNow(&buf, wu, "", baseTime.Add(10*time.Hour))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Created:      2026-10-06T07:00:00Z\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Finalize Start: 2026-10-06T16:41:50Z\n"))
+			assert.Loosely(t, out, should.ContainSubstring("Finalized:    2026-10-06T16:42:00Z\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Deadline:"))
+			assert.Loosely(t, out, should.ContainSubstring("Duration:     9h 41m 50s\n"))
+		})
+
+		t.Run(`finalizing work unit with deadline`, func(t *ftt.Test) {
+			wu := &rdbpb.WorkUnit{
+				State:             rdbpb.WorkUnit_SUCCEEDED,
+				FinalizationState: rdbpb.WorkUnit_FINALIZING,
+				CreateTime:        timestamppb.New(baseTime),
+				FinalizeStartTime: timestamppb.New(baseTime.Add(5 * time.Minute)),
+				Deadline:          timestamppb.New(baseTime.Add(24 * time.Hour)),
+			}
+			var buf bytes.Buffer
+			FprintWorkUnitTimingWithNow(&buf, wu, "", baseTime.Add(1*time.Hour))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Finalize Start: 2026-10-06T07:05:00Z\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("Finalized:"))
+			assert.Loosely(t, out, should.NotContainSubstring("Deadline:"))
+			assert.Loosely(t, out, should.ContainSubstring("Duration:     5m 00s\n"))
+		})
+
+		t.Run(`same-second FinalizeStartTime and FinalizeTime omits Finalize Start`, func(t *ftt.Test) {
+			fin := baseTime.Add(10 * time.Second)
+			wu := &rdbpb.WorkUnit{
+				CreateTime:        timestamppb.New(baseTime),
+				FinalizeStartTime: timestamppb.New(fin),
+				FinalizeTime:      timestamppb.New(fin.Add(250 * time.Millisecond)),
+			}
+			var buf bytes.Buffer
+			FprintWorkUnitTimingWithNow(&buf, wu, "", baseTime.Add(1*time.Minute))
+			out := buf.String()
+			assert.Loosely(t, out, should.NotContainSubstring("Finalize Start:"))
+			assert.Loosely(t, out, should.ContainSubstring("Finalized:    2026-10-06T07:00:10Z\n"))
+		})
+
+		t.Run(`terminal work unit without finalize timestamps`, func(t *ftt.Test) {
+			wu := &rdbpb.WorkUnit{
+				State:      rdbpb.WorkUnit_SUCCEEDED,
+				CreateTime: timestamppb.New(baseTime),
+				Deadline:   timestamppb.New(baseTime.Add(2 * time.Hour)),
+			}
+			dur, running, ok := WorkUnitDuration(wu, baseTime.Add(1*time.Hour))
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, running, should.BeFalse)
+			assert.Loosely(t, dur, should.Equal(time.Duration(0)))
+
+			var buf bytes.Buffer
+			FprintWorkUnitTimingWithNow(&buf, wu, "", baseTime.Add(1*time.Hour))
+			assert.Loosely(t, buf.String(), should.NotContainSubstring("Deadline:"))
+			assert.Loosely(t, buf.String(), should.NotContainSubstring("Duration:"))
+		})
+
+		t.Run(`active work unit with deadline`, func(t *ftt.Test) {
+			wu := &rdbpb.WorkUnit{
+				State:      rdbpb.WorkUnit_RUNNING,
+				CreateTime: timestamppb.New(baseTime),
+				Deadline:   timestamppb.New(baseTime.Add(2 * time.Hour)),
+			}
+			var buf bytes.Buffer
+			FprintWorkUnitTimingWithNow(&buf, wu, "  ", baseTime.Add(15*time.Minute+30*time.Second))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("  Created:      2026-10-06T07:00:00Z\n"))
+			assert.Loosely(t, out, should.ContainSubstring("  Deadline:     2026-10-06T09:00:00Z\n"))
+			assert.Loosely(t, out, should.ContainSubstring("  Duration:     15m 30s (running)\n"))
+
+			buf.Reset()
+			wu.State = rdbpb.WorkUnit_PENDING
+			FprintWorkUnitTimingWithNow(&buf, wu, "", baseTime.Add(45*time.Second))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Duration:     45s (pending)\n"))
+		})
+
+		t.Run(`missing create time`, func(t *ftt.Test) {
+			dur, running, ok := WorkUnitDuration(&rdbpb.WorkUnit{}, baseTime)
+			assert.Loosely(t, ok, should.BeFalse)
+			assert.Loosely(t, running, should.BeFalse)
+			assert.Loosely(t, dur, should.Equal(time.Duration(0)))
 		})
 	})
 }

@@ -27,6 +27,7 @@ import (
 	"sort"
 	"strings"
 	"text/tabwriter"
+	"time"
 	"unicode/utf8"
 
 	"golang.org/x/net/html"
@@ -1740,6 +1741,118 @@ func FprintWorkUnitMetadata(out io.Writer, wu *rdbpb.WorkUnit, indent string, in
 				s = propIndent + strings.ReplaceAll(s, "\n", "\n"+propIndent)
 			}
 			fmt.Fprintf(out, "%sProperties:\n%s\n", indent, s)
+		}
+	}
+}
+
+// FormatTimeDuration formats a time.Duration into a compact human-readable
+// string (e.g. "9h 42m 00s", "12m 05s", "8s", or "250ms").
+func FormatTimeDuration(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	if d < time.Second {
+		return d.Round(time.Millisecond).String()
+	}
+	d = d.Round(time.Second)
+	h := d / time.Hour
+	d -= h * time.Hour
+	m := d / time.Minute
+	d -= m * time.Minute
+	s := d / time.Second
+
+	if h > 0 {
+		return fmt.Sprintf("%dh %02dm %02ds", h, m, s)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%dm %02ds", m, s)
+	}
+	return fmt.Sprintf("%ds", s)
+}
+
+func isWorkUnitTerminal(wu *rdbpb.WorkUnit) bool {
+	if wu == nil {
+		return false
+	}
+	if (wu.GetState() & rdbpb.WorkUnit_FINAL_STATE_MASK) != 0 {
+		return true
+	}
+	fs := wu.GetFinalizationState()
+	return fs == rdbpb.WorkUnit_FINALIZING || fs == rdbpb.WorkUnit_FINALIZED
+}
+
+// WorkUnitDuration computes the elapsed duration of wu relative to now.
+// When FinalizeStartTime (or FinalizeTime as fallback) is set, it returns the
+// elapsed duration until finalization started and running=false. Terminal work
+// units missing finalize timestamps return ok=false. When still active and
+// CreateTime is set, it returns now.Sub(CreateTime) and running=true. Returns
+// (0, false, false) if CreateTime is missing.
+func WorkUnitDuration(wu *rdbpb.WorkUnit, now time.Time) (dur time.Duration, running bool, ok bool) {
+	if wu == nil || wu.GetCreateTime() == nil {
+		return 0, false, false
+	}
+	created := wu.GetCreateTime().AsTime()
+	switch {
+	case wu.GetFinalizeStartTime() != nil:
+		dur = wu.GetFinalizeStartTime().AsTime().Sub(created)
+	case wu.GetFinalizeTime() != nil:
+		dur = wu.GetFinalizeTime().AsTime().Sub(created)
+	case isWorkUnitTerminal(wu):
+		return 0, false, false
+	default:
+		dur = now.Sub(created)
+		running = true
+	}
+	if dur < 0 {
+		dur = 0
+	}
+	return dur, running, true
+}
+
+// FprintWorkUnitTiming prints creation, finalization, deadline (when active),
+// and computed duration for wu to out with the given line prefix indent.
+func FprintWorkUnitTiming(out io.Writer, wu *rdbpb.WorkUnit, indent string) {
+	FprintWorkUnitTimingWithNow(out, wu, indent, time.Now())
+}
+
+// FprintWorkUnitTimingWithNow is like FprintWorkUnitTiming but uses the
+// supplied current time for active work units (for deterministic testing).
+func FprintWorkUnitTimingWithNow(out io.Writer, wu *rdbpb.WorkUnit, indent string, now time.Time) {
+	if out == nil || wu == nil {
+		return
+	}
+	if wu.GetCreateTime() != nil {
+		fmt.Fprintf(out, "%sCreated:      %s\n", indent, wu.GetCreateTime().AsTime().UTC().Format(time.RFC3339))
+	}
+	var finStr string
+	if wu.GetFinalizeTime() != nil {
+		finStr = wu.GetFinalizeTime().AsTime().UTC().Format(time.RFC3339)
+	}
+	if wu.GetFinalizeStartTime() != nil {
+		startStr := wu.GetFinalizeStartTime().AsTime().UTC().Format(time.RFC3339)
+		if startStr != finStr {
+			fmt.Fprintf(out, "%sFinalize Start: %s\n", indent, startStr)
+		}
+	}
+	if finStr != "" {
+		fmt.Fprintf(out, "%sFinalized:    %s\n", indent, finStr)
+	} else if wu.GetFinalizeStartTime() == nil && !isWorkUnitTerminal(wu) && wu.GetDeadline() != nil {
+		fmt.Fprintf(out, "%sDeadline:     %s\n", indent, wu.GetDeadline().AsTime().UTC().Format(time.RFC3339))
+	}
+	if dur, running, ok := WorkUnitDuration(wu, now); ok {
+		if running {
+			var suffix string
+			switch wu.GetState() {
+			case rdbpb.WorkUnit_PENDING:
+				suffix = "pending"
+			case rdbpb.WorkUnit_RUNNING, rdbpb.WorkUnit_STATE_UNSPECIFIED:
+				suffix = "running"
+			default:
+				suffix = "elapsed"
+			}
+			fmt.Fprintf(out, "%sDuration:     %s (%s)\n", indent, FormatTimeDuration(dur), suffix)
+		} else {
+			fmt.Fprintf(out, "%sDuration:     %s\n", indent, FormatTimeDuration(dur))
 		}
 	}
 }
