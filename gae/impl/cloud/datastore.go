@@ -92,7 +92,7 @@ func (bds *boundDatastore) RunInTransaction(fn func(context.Context) error, opts
 		innerErr = fn(withDatastoreTransaction(bds, tx, opts))
 		return innerErr
 	}, txOpts...)
-	if err == innerErr {
+	if innerErr != nil {
 		return innerErr
 	}
 	return normalizeError(err)
