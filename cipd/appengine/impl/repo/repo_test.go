@@ -2925,6 +2925,34 @@ func TestInstanceMetadata(t *testing.T) {
 			assert.Loosely(t, err, should.ErrLike(`bad metadata fingerprint "bad"`))
 		})
 
+		t.Run("Reserved luci- metadata key in DetachMetadata", func(t *ftt.Test) {
+			t.Run("By key", func(t *ftt.Test) {
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Metadata: md("luci-foo:bar"),
+				})
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.ErrIsLike(t, err, "`luci-` prefix is reserved for internal use")
+			})
+
+			t.Run("By fingerprint", func(t *ftt.Test) {
+				assert.NoErr(t, model.AttachMetadata(as("owner@google.com"), inst, md("luci-foo:bar")))
+				fp := common.InstanceMetadataFingerprint("luci-foo", []byte("bar"))
+
+				_, err := impl.DetachMetadata(as("owner@google.com"), &repopb.DetachMetadataRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Metadata: []*repopb.InstanceMetadata{
+						{Fingerprint: fp},
+					},
+				})
+				assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.ErrIsLike(t, err, "`luci-` prefix is reserved for internal use")
+				assert.Loosely(t, getMD(inst, "luci-foo:bar"), should.NotBeNil)
+			})
+		})
+
 		t.Run("No access", func(t *ftt.Test) {
 			t.Run("AttachMetadata", func(t *ftt.Test) {
 				_, err := impl.AttachMetadata(as("reader@example.com"), &repopb.AttachMetadataRequest{

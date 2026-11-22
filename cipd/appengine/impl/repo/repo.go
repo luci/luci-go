@@ -1389,6 +1389,9 @@ func (impl *repoImpl) DetachMetadata(ctx context.Context, r *repopb.DetachMetada
 				return nil, status.Errorf(codes.InvalidArgument, "bad metadata: %s", err)
 			}
 		} else {
+			if strings.HasPrefix(m.Key, "luci-") {
+				return nil, status.Errorf(codes.InvalidArgument, "bad 'metadata' key %q: `luci-` prefix is reserved for internal use", m.Key)
+			}
 			if err := common.ValidateInstanceMetadataKey(m.Key); err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "bad metadata key: %s", err)
 			}
@@ -1439,6 +1442,9 @@ func (impl *repoImpl) DetachMetadata(ctx context.Context, r *repopb.DetachMetada
 	if err := model.DetachMetadata(ctx, inst, r.Metadata, func(keys []string) error {
 		var toCheck perm.Set
 		for _, key := range keys {
+			if strings.HasPrefix(key, "luci-") {
+				return status.Errorf(codes.InvalidArgument, "bad 'metadata' key %q: `luci-` prefix is reserved for internal use", key)
+			}
 			toCheck.Add(perm.DetachInstanceMetadata.Bind(key))
 		}
 		missing, err := pchk.CheckSet(ctx, toCheck)
