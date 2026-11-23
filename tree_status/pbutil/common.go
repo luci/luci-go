@@ -94,16 +94,28 @@ func ValidateMessage(message string) error {
 	return nil
 }
 
+var builderNameRE = regexp.MustCompile(`^` + BuilderNameExpression + `$`)
+
 func ValidateClosingBuilderName(name string) error {
 	// We allow closing without specifying builder name.
 	if name == "" {
 		return nil
 	}
-	var builderNameRE = regexp.MustCompile(`^` + BuilderNameExpression + `$`)
-	if !builderNameRE.MatchString(name) {
-		return errors.Fmt("expected format: %s", builderNameRE)
+	_, _, _, err := ParseClosingBuilderName(name)
+	return err
+}
+
+// ParseClosingBuilderName parses a closing builder resource name into its
+// constituent project, bucket, and builder parts.
+func ParseClosingBuilderName(name string) (project, bucket, builder string, err error) {
+	if name == "" {
+		return "", "", "", errors.New("must be specified")
 	}
-	return nil
+	match := builderNameRE.FindStringSubmatch(name)
+	if match == nil {
+		return "", "", "", errors.Fmt("expected format: %s", builderNameRE)
+	}
+	return match[1], match[2], match[3], nil
 }
 
 func ValidateProject(project string) error {

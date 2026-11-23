@@ -23,6 +23,8 @@ import (
 	"time"
 
 	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -41,11 +43,42 @@ import (
 	"go.chromium.org/luci/luci_notify/config"
 )
 
+var defaultTestTreeProjects = map[string][]string{
+	"chromium": {"chromium"},
+	"v8":       {"v8", "v8-internal"},
+	"infra":    {"infra", "infra-internal"},
+}
+
 // fakeTreeStatusClient simulates the behaviour of a real tree status instance,
 // but locally, in-memory.
 type fakeTreeStatusClient struct {
 	statusForHosts map[string]treeStatus
+	treesForHosts  map[string]*tspb.Tree
+	getTreeErr     map[string]error
+	postCalls      int
 	mu             sync.Mutex
+}
+
+func (ts *fakeTreeStatusClient) getTree(c context.Context, treeName string) (*tspb.Tree, error) {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
+	if err, ok := ts.getTreeErr[treeName]; ok {
+		return nil, err
+	}
+	if ts.treesForHosts != nil {
+		if tree, ok := ts.treesForHosts[treeName]; ok {
+			return tree, nil
+		}
+		return nil, grpcstatus.Errorf(codes.NotFound, "tree %q not found", treeName)
+	}
+	if projects, ok := defaultTestTreeProjects[treeName]; ok {
+		return &tspb.Tree{
+			Name:     fmt.Sprintf("trees/%s", treeName),
+			Projects: projects,
+		}, nil
+	}
+	return nil, grpcstatus.Errorf(codes.NotFound, "tree %q not found", treeName)
 }
 
 func (ts *fakeTreeStatusClient) getStatus(c context.Context, treeName string) (*treeStatus, error) {
@@ -73,6 +106,7 @@ func (ts *fakeTreeStatusClient) postStatus(c context.Context, message string, tr
 		return errors.New("message status does not match provided status")
 	}
 
+	ts.postCalls++
 	ts.statusForHosts[treeName] = treeStatus{
 		username:           "buildbot@chromium.org",
 		message:            message,
@@ -337,6 +371,13 @@ func TestUpdateTrees(t *testing.T) {
 		})
 
 		t.Run("Multiple trees", func(t *ftt.Test) {
+			v8Project := &config.Project{Name: "v8", TreeClosingEnabled: true}
+			v8ProjectKey := datastore.KeyForObj(c, v8Project)
+			v8Builder1 := &config.Builder{ProjectKey: v8ProjectKey, ID: "ci/builder1"}
+			v8Builder2 := &config.Builder{ProjectKey: v8ProjectKey, ID: "ci/builder2"}
+			v8Builder3 := &config.Builder{ProjectKey: v8ProjectKey, ID: "ci/builder3"}
+			assert.Loosely(t, datastore.Put(c, v8Project, v8Builder1, v8Builder2, v8Builder3), should.BeNil)
+
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -377,21 +418,21 @@ func TestUpdateTrees(t *testing.T) {
 			}), should.BeNil)
 
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder2),
+				BuilderKey: datastore.KeyForObj(c, v8Builder1),
 				TreeName:   "v8",
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
-				BuilderKey: datastore.KeyForObj(c, builder3),
+				BuilderKey: datastore.KeyForObj(c, v8Builder2),
 				TreeName:   "v8",
 				TreeCloser: notifypb.TreeCloser{},
 				Status:     config.Open,
 				Timestamp:  time.Now().UTC(),
 			}), should.BeNil)
 			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
-				BuilderKey:      datastore.KeyForObj(c, builder4),
+				BuilderKey:      datastore.KeyForObj(c, v8Builder3),
 				TreeName:        "v8",
 				TreeCloser:      notifypb.TreeCloser{},
 				Status:          config.Closed,
@@ -413,7 +454,7 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, status.status, should.Equal(config.Closed))
 			assert.Loosely(t, status.message, should.Equal("Tree is closed (Automatic: Correct message)"))
-			assert.Loosely(t, status.closingBuilderName, should.Equal("projects/chromium/buckets/ci/builders/builder4"))
+			assert.Loosely(t, status.closingBuilderName, should.Equal("projects/v8/buckets/ci/builders/builder3"))
 		})
 
 		t.Run("Doesn't open when build is older than last status update", func(t *ftt.Test) {
@@ -557,6 +598,9 @@ func TestUpdateTrees(t *testing.T) {
 		})
 
 		t.Run("Multiple projects, overlapping tree status hosts", func(t *ftt.Test) {
+			// Both projects are explicitly authorized on both trees here to test the
+			// shared-tree case where one authorized project has tree_closing_enabled=true
+			// and another authorized project has tree_closing_enabled=false.
 			ts := fakeTreeStatusClient{
 				statusForHosts: map[string]treeStatus{
 					"chromium": {
@@ -570,6 +614,16 @@ func TestUpdateTrees(t *testing.T) {
 						message:   "Tree is closed (Automatic: Some builder failed)",
 						status:    config.Closed,
 						timestamp: earlierTime,
+					},
+				},
+				treesForHosts: map[string]*tspb.Tree{
+					"chromium": {
+						Name:     "trees/chromium",
+						Projects: []string{"chromium", "infra"},
+					},
+					"infra": {
+						Name:     "trees/infra",
+						Projects: []string{"infra", "chromium"},
 					},
 				},
 			}
@@ -956,6 +1010,289 @@ func TestUpdateTrees(t *testing.T) {
 			assert.Loosely(t, datastore.Get(c, event), should.BeNil)
 			assert.Loosely(t, event.RevertLandTime.Unix(), should.Equal(revertTime.Unix()))
 		})
+
+		t.Run("Cross-project tree closer is ignored and cannot close victim tree", func(t *ftt.Test) {
+			hostileProject := &config.Project{Name: "hostile-x", TreeClosingEnabled: true}
+			hostileBuilder := &config.Builder{ProjectKey: datastore.KeyForObj(c, hostileProject), ID: "ci/always-fail"}
+			assert.Loosely(t, datastore.Put(c, hostileProject, hostileBuilder), should.BeNil)
+
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  "gardener@chromium.org",
+						message:   "Manually reopened by sheriff",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Open,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+			}, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, hostileBuilder),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+				Message:         "Hostile closure attempt",
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.Equal("Manually reopened by sheriff"))
+			assert.Loosely(t, ts.postCalls, should.Equal(0))
+		})
+
+		t.Run("Cross-project tree closer targeting tree with no authorized closers makes no updates", func(t *ftt.Test) {
+			hostileProject := &config.Project{Name: "hostile-x", TreeClosingEnabled: true}
+			hostileBuilder := &config.Builder{ProjectKey: datastore.KeyForObj(c, hostileProject), ID: "ci/always-fail"}
+			assert.Loosely(t, datastore.Put(c, hostileProject, hostileBuilder), should.BeNil)
+
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"fuchsia-stem": {
+						username:  botUsernames[0],
+						message:   "Tree is open",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+				treesForHosts: map[string]*tspb.Tree{
+					"fuchsia-stem": {
+						Name:     "trees/fuchsia-stem",
+						Projects: []string{"fuchsia", "turquoise"},
+					},
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, hostileBuilder),
+				TreeName:        "fuchsia-stem",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+				Message:         "Hostile closure attempt",
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			status, err := ts.getStatus(c, "fuchsia-stem")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, ts.postCalls, should.Equal(0))
+		})
+
+		t.Run("Cross-project failing tree closer cannot block automatic reopen", func(t *ftt.Test) {
+			hostileProject := &config.Project{Name: "hostile-x", TreeClosingEnabled: true}
+			hostileBuilder := &config.Builder{ProjectKey: datastore.KeyForObj(c, hostileProject), ID: "ci/always-fail"}
+			assert.Loosely(t, datastore.Put(c, hostileProject, hostileBuilder), should.BeNil)
+
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is closed (Automatic: builder1 failed)",
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Open,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+			}, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, hostileBuilder),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+				Message:         "Hostile sticky closure attempt",
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Open))
+			assert.Loosely(t, status.message, should.Equal("Tree is open (Automatic: All tree-closer builders are passing)"))
+		})
+
+		t.Run("Cross-project enabled project cannot hijack dry-run victim tree", func(t *ftt.Test) {
+			hostileProject := &config.Project{Name: "hostile-x", TreeClosingEnabled: true}
+			hostileBuilder := &config.Builder{ProjectKey: datastore.KeyForObj(c, hostileProject), ID: "ci/always-pass"}
+			assert.Loosely(t, datastore.Put(c, hostileProject, hostileBuilder), should.BeNil)
+
+			// project2 ("infra") has TreeClosingEnabled: false (dry-run).
+			// hostile-x has TreeClosingEnabled: true and a passing builder targeting "infra".
+			// Because hostile-x is filtered out before computing anyEnabled, it must NOT
+			// flip anyEnabled to true or force-open "infra".
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"infra": {
+						username:  botUsernames[0],
+						message:   "Tree is closed (Automatic: Some builder failed)",
+						status:    config.Closed,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, hostileBuilder),
+				TreeName:        "infra",
+				Status:          config.Open,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+			}, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder6),
+				TreeName:        "infra",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+				Message:         "infra builder6 failed",
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			status, err := ts.getStatus(c, "infra")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+			assert.Loosely(t, status.message, should.Equal("Tree is closed (Automatic: Some builder failed)"))
+			assert.Loosely(t, ts.postCalls, should.Equal(0))
+		})
+
+		t.Run("Authorized secondary project can close shared multi-project tree", func(t *ftt.Test) {
+			infraInternal := &config.Project{Name: "infra-internal", TreeClosingEnabled: true}
+			infraInternalBuilder := &config.Builder{ProjectKey: datastore.KeyForObj(c, infraInternal), ID: "ci/builder1"}
+			assert.Loosely(t, datastore.Put(c, infraInternal, infraInternalBuilder), should.BeNil)
+
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"infra": {
+						username:  botUsernames[0],
+						message:   "Tree is open",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, infraInternalBuilder),
+				TreeName:        "infra",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+				Message:         "infra-internal failure",
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			status, err := ts.getStatus(c, "infra")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+			assert.Loosely(t, status.closingBuilderName, should.Equal("projects/infra-internal/buckets/ci/builders/builder1"))
+		})
+
+		t.Run("getTree NotFound or PermissionDenied skips tree without failing other trees", func(t *ftt.Test) {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is open",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+				getTreeErr: map[string]error{
+					"missing-tree": grpcstatus.Errorf(codes.NotFound, "not found"),
+					"denied-tree":  grpcstatus.Errorf(codes.PermissionDenied, "denied"),
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+				Message:         "chromium failure",
+			}, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder2),
+				TreeName:        "missing-tree",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+			}, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder3),
+				TreeName:        "denied-tree",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+			}), should.BeNil)
+			defer cleanup()
+
+			assert.Loosely(t, updateTrees(c, &ts), should.BeNil)
+
+			status, err := ts.getStatus(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, status.status, should.Equal(config.Closed))
+			assert.Loosely(t, ts.postCalls, should.Equal(1))
+
+			assert.Loosely(t, log.HasFunc(func(e *memlogger.LogEntry) bool {
+				return e.Level == logging.Warning && strings.Contains(e.Msg, `Skipping tree "missing-tree": cannot fetch tree config`)
+			}), should.BeTrue)
+			assert.Loosely(t, log.HasFunc(func(e *memlogger.LogEntry) bool {
+				return e.Level == logging.Error && strings.Contains(e.Msg, `Skipping tree "denied-tree": permission denied fetching tree config`)
+			}), should.BeTrue)
+		})
+
+		t.Run("getTree transient failure fails closed", func(t *ftt.Test) {
+			ts := fakeTreeStatusClient{
+				statusForHosts: map[string]treeStatus{
+					"chromium": {
+						username:  botUsernames[0],
+						message:   "Tree is open",
+						status:    config.Open,
+						timestamp: earlierTime,
+					},
+				},
+				getTreeErr: map[string]error{
+					"chromium": grpcstatus.Errorf(codes.Unavailable, "backend unavailable"),
+				},
+			}
+
+			assert.Loosely(t, datastore.Put(c, &config.TreeCloser{
+				BuilderKey:      datastore.KeyForObj(c, builder1),
+				TreeName:        "chromium",
+				Status:          config.Closed,
+				Timestamp:       time.Now().UTC(),
+				BuildCreateTime: time.Now().UTC(),
+				Message:         "chromium failure",
+			}), should.BeNil)
+			defer cleanup()
+
+			err := updateTrees(c, &ts)
+			assert.Loosely(t, err, should.ErrLike(`getting tree "chromium"`))
+			assert.Loosely(t, ts.postCalls, should.Equal(0))
+		})
 	})
 }
 
@@ -965,7 +1302,20 @@ func TestHttpTreeStatusClient(t *testing.T) {
 		c = common.SetAppIDForTest(c, "luci-notify-test")
 
 		fakePrpcClient := &fakePRPCTreeStatusClient{}
-		ts := httpTreeStatusClient{fakePrpcClient}
+		fakeTreesClient := &fakePRPCTreesClient{}
+		ts := httpTreeStatusClient{
+			statusClient: fakePrpcClient,
+			treesClient:  fakeTreesClient,
+		}
+
+		t.Run("getTree", func(t *ftt.Test) {
+			tree, err := ts.getTree(c, "chromium")
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, tree, should.Match(&tspb.Tree{
+				Name:     "trees/chromium",
+				Projects: []string{"chromium"},
+			}))
+		})
 
 		t.Run("getStatus, open tree", func(t *ftt.Test) {
 			status, err := ts.getStatus(c, "chromium")
@@ -1044,5 +1394,21 @@ func (c *fakePRPCTreeStatusClient) CreateStatus(ctx context.Context, in *tspb.Cr
 }
 
 func (c *fakePRPCTreeStatusClient) DeleteStatus(ctx context.Context, in *tspb.DeleteStatusRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return nil, errors.New("Not implemented")
+}
+
+type fakePRPCTreesClient struct{}
+
+func (c *fakePRPCTreesClient) GetTree(ctx context.Context, in *tspb.GetTreeRequest, opts ...grpc.CallOption) (*tspb.Tree, error) {
+	if in.GetName() == "trees/chromium" {
+		return &tspb.Tree{
+			Name:     "trees/chromium",
+			Projects: []string{"chromium"},
+		}, nil
+	}
+	return nil, grpcstatus.Errorf(codes.NotFound, "tree %q not found", in.GetName())
+}
+
+func (c *fakePRPCTreesClient) QueryTrees(ctx context.Context, in *tspb.QueryTreesRequest, opts ...grpc.CallOption) (*tspb.QueryTreesResponse, error) {
 	return nil, errors.New("Not implemented")
 }

@@ -377,7 +377,13 @@ func updateProjects(c context.Context) error {
 
 				ctx := &validation.Context{Context: c}
 				ctx.SetFile(cfgName)
-				validateProjectConfig(ctx, project)
+				// Perform syntactic validation only during Datastore sync. Tree ownership
+				// is enforced at luci-config validation time (validateProjectConfigFile)
+				// and at runtime in updateTree, so a decommissioned tree in LUCI Tree
+				// Status cannot stall project config or email template updates.
+				if err := validateProjectConfig(ctx, projectID, project, nil); err != nil {
+					return errors.Fmt("validating project config: %w", err)
+				}
 				if err := ctx.Finalize(); err != nil {
 					return errors.Fmt("validating project config: %w", err)
 				}
@@ -421,11 +427,11 @@ func UpdateHandler(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	if err := updateProjects(ctx); err != nil {
+	if err := updateSettings(ctx); err != nil {
 		return transient.Tag.Apply(err)
 	}
 
-	return transient.Tag.Apply(updateSettings(ctx))
+	return transient.Tag.Apply(updateProjects(ctx))
 }
 
 // removeDescedants deletes all entities of a given kind under the ancestor.

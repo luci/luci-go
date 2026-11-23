@@ -365,4 +365,62 @@ func TestConfigIngestion(t *testing.T) {
 			assert.That(t, emailTemplates[1].Name, should.Equal("c"))
 		})
 	})
+
+	ftt.Run(`UpdateHandler`, t, func(t *ftt.Test) {
+		c := mem_ds.Use(context.Background())
+		c = common.SetAppIDForTest(c, "luci-notify")
+
+		t.Run("ingests settings and project configs without outbound tree lookups", func(t *ftt.Test) {
+			cfg := map[config.Set]memory.Files{
+				"services/${appid}": {
+					"settings.cfg": `luci_tree_status_host: "treestatus.api.luci.app"`,
+				},
+				"projects/chromium": {
+					"luci-notify.cfg": `
+						notifiers {
+							name: "decommissioned-tree-closer"
+							tree_closers {
+								tree_name: "retired-tree"
+							}
+							builders {
+								bucket: "ci"
+								name: "linux"
+							}
+						}`,
+				},
+			}
+			c = cfgclient.Use(c, memory.New(cfg))
+
+			assert.Loosely(t, UpdateHandler(c), should.BeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			settings, err := FetchSettings(c)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, settings.LuciTreeStatusHost, should.Equal("treestatus.api.luci.app"))
+
+			treeClosers, err := datastore.RunQuery[*TreeCloser](c, datastore.NewQuery("TreeCloser")).AsSlice()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, treeClosers, should.HaveLength(1))
+			assert.That(t, treeClosers[0].TreeName, should.Equal("retired-tree"))
+		})
+
+		t.Run("updates settings before project configs", func(t *ftt.Test) {
+			cfg := map[config.Set]memory.Files{
+				"services/${appid}": {
+					"settings.cfg": `luci_tree_status_host: "treestatus.api.luci.app"`,
+				},
+				"projects/broken": {
+					"luci-notify.cfg": `invalid proto`,
+				},
+			}
+			c = cfgclient.Use(c, memory.New(cfg))
+
+			err := UpdateHandler(c)
+			assert.Loosely(t, err, should.ErrLike("unmarshalling project config"))
+
+			settings, err := FetchSettings(c)
+			assert.Loosely(t, err, should.BeNil)
+			assert.That(t, settings.LuciTreeStatusHost, should.Equal("treestatus.api.luci.app"))
+		})
+	})
 }

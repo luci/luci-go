@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/span"
 
+	"go.chromium.org/luci/tree_status/internal/config"
 	"go.chromium.org/luci/tree_status/internal/status"
 	"go.chromium.org/luci/tree_status/pbutil"
 	"go.chromium.org/luci/tree_status/perms"
@@ -194,20 +196,38 @@ func (*treeStatusServer) CreateStatus(ctx context.Context, request *pb.CreateSta
 
 	// Ignore the closing builder name if the status is not closed.
 	closingBuilderName := ""
-	if request.Status.GeneralState == pb.GeneralState_CLOSED {
-		closingBuilderName = request.Status.ClosingBuilderName
+	if request.GetStatus().GetGeneralState() == pb.GeneralState_CLOSED {
+		closingBuilderName = request.GetStatus().GetClosingBuilderName()
 	}
 	s := &status.Status{
 		TreeName:           tree,
 		StatusID:           id,
-		GeneralStatus:      request.Status.GeneralState,
-		Message:            request.Status.Message,
+		GeneralStatus:      request.GetStatus().GetGeneralState(),
+		Message:            request.GetStatus().GetMessage(),
 		ClosingBuilderName: closingBuilderName,
 	}
 	user := auth.CurrentIdentity(ctx).Value()
 	m, err := status.Create(s, user)
 	if err != nil {
 		return nil, invalidArgumentError(errors.Fmt("create status: %w", err))
+	}
+	if closingBuilderName != "" {
+		// status.Create above already validated closingBuilderName; keep the error
+		// check defensive in case status.Validate changes.
+		builderProject, _, _, err := pbutil.ParseClosingBuilderName(closingBuilderName)
+		if err != nil {
+			return nil, invalidArgumentError(errors.Fmt("closing_builder_name: %w", err))
+		}
+		treeCfg, err := config.GetTreeConfig(ctx, tree)
+		if err != nil {
+			if errors.Is(err, config.ErrNotFoundTreeConfig) {
+				return nil, notFoundError(err)
+			}
+			return nil, errors.Fmt("getting tree config: %w", err)
+		}
+		if !slices.Contains(treeCfg.GetProjects(), builderProject) {
+			return nil, permissionDeniedError(errors.Fmt("closing_builder_name: project %q is not authorized to close tree %q", builderProject, tree))
+		}
 	}
 	ts, err := span.Apply(ctx, []*spanner.Mutation{m})
 	if err != nil {

@@ -422,7 +422,7 @@ func TestStatus(t *testing.T) {
 					Status: &pb.Status{
 						GeneralState:       pb.GeneralState_CLOSED,
 						Message:            "closed",
-						ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+						ClosingBuilderName: "projects/chromium/buckets/ci.shadow/builders/Linux 123",
 					},
 				}
 				actual, err := server.CreateStatus(ctx, request)
@@ -434,7 +434,7 @@ func TestStatus(t *testing.T) {
 					Message:            "closed",
 					CreateUser:         "someone@example.com",
 					CreateTime:         actual.CreateTime,
-					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+					ClosingBuilderName: "projects/chromium/buckets/ci.shadow/builders/Linux 123",
 				}))
 				assert.Loosely(t, actual.Name, should.ContainSubstring("trees/chromium/status/"))
 				assert.Loosely(t, time.Since(actual.CreateTime.AsTime()), should.BeLessThan(time.Minute))
@@ -449,7 +449,7 @@ func TestStatus(t *testing.T) {
 					Message:            "closed",
 					CreateUser:         "someone@example.com",
 					CreateTime:         actual.CreateTime.AsTime(),
-					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+					ClosingBuilderName: "projects/chromium/buckets/ci.shadow/builders/Linux 123",
 				}))
 			})
 
@@ -465,7 +465,7 @@ func TestStatus(t *testing.T) {
 					Status: &pb.Status{
 						GeneralState:       pb.GeneralState_CLOSED,
 						Message:            "closed",
-						ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+						ClosingBuilderName: "projects/chromium/buckets/ci.shadow/builders/Linux 123",
 					},
 				}
 				actual, err := server.CreateStatus(ctx, request)
@@ -477,7 +477,7 @@ func TestStatus(t *testing.T) {
 					Message:            "closed",
 					CreateUser:         "someone@example.com",
 					CreateTime:         actual.CreateTime,
-					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+					ClosingBuilderName: "projects/chromium/buckets/ci.shadow/builders/Linux 123",
 				}))
 				assert.Loosely(t, actual.Name, should.ContainSubstring("trees/chromium/status/"))
 				assert.Loosely(t, time.Since(actual.CreateTime.AsTime()), should.BeLessThan(time.Minute))
@@ -492,8 +492,72 @@ func TestStatus(t *testing.T) {
 					Message:            "closed",
 					CreateUser:         "someone@example.com",
 					CreateTime:         actual.CreateTime.AsTime(),
-					ClosingBuilderName: "projects/chromium-m100/buckets/ci.shadow/builders/Linux 123",
+					ClosingBuilderName: "projects/chromium/buckets/ci.shadow/builders/Linux 123",
 				}))
+			})
+
+			t.Run("Cross-project closing builder name rejected", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
+
+				request := &pb.CreateStatusRequest{
+					Parent: "trees/chromium/status",
+					Status: &pb.Status{
+						GeneralState:       pb.GeneralState_CLOSED,
+						Message:            "closed by hostile project",
+						ClosingBuilderName: "projects/hostile-x/buckets/ci/builders/always-fail",
+					},
+				}
+				actual, err := server.CreateStatus(ctx, request)
+
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`closing_builder_name: project "hostile-x" is not authorized to close tree "chromium"`))
+				assert.Loosely(t, actual, should.BeNil)
+
+				_, err = status.ReadLatest(span.Single(ctx), "chromium")
+				assert.Loosely(t, err, should.ErrLike(status.NotExistsErr))
+			})
+
+			t.Run("Authorized secondary project closing builder name accepted", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
+
+				request := &pb.CreateStatusRequest{
+					Parent: "trees/v8/status",
+					Status: &pb.Status{
+						GeneralState:       pb.GeneralState_CLOSED,
+						Message:            "closed by v8-internal",
+						ClosingBuilderName: "projects/v8-internal/buckets/ci/builders/linux",
+					},
+				}
+				actual, err := server.CreateStatus(ctx, request)
+
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, actual.ClosingBuilderName, should.Equal("projects/v8-internal/buckets/ci/builders/linux"))
+			})
+
+			t.Run("Default ACLs tree with empty projects list rejects closing builder name", func(t *ftt.Test) {
+				testConfig.Trees[0].UseDefaultAcls = true
+				testConfig.Trees[0].Projects = nil
+				err := config.SetConfig(ctx, testConfig)
+				assert.Loosely(t, err, should.BeNil)
+
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
+
+				request := &pb.CreateStatusRequest{
+					Parent: "trees/chromium/status",
+					Status: &pb.Status{
+						GeneralState:       pb.GeneralState_CLOSED,
+						Message:            "closed on projectless default-ACL tree",
+						ClosingBuilderName: "projects/chromium/buckets/ci/builders/linux",
+					},
+				}
+				actual, err := server.CreateStatus(ctx, request)
+
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`closing_builder_name: project "chromium" is not authorized to close tree "chromium"`))
+				assert.Loosely(t, actual, should.BeNil)
+
+				_, err = status.ReadLatest(span.Single(ctx), "chromium")
+				assert.Loosely(t, err, should.ErrLike(status.NotExistsErr))
 			})
 
 			t.Run("Closing builder name ignored if status is not closed", func(t *ftt.Test) {
@@ -562,6 +626,17 @@ func TestStatus(t *testing.T) {
 
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, actual.Name, should.ContainSubstring("trees/chromium/status/"))
+			})
+			t.Run("Empty status", func(t *ftt.Test) {
+				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)
+
+				request := &pb.CreateStatusRequest{
+					Parent: "trees/chromium/status",
+				}
+				_, err := server.CreateStatus(ctx, request)
+
+				assert.Loosely(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike("general_state: must be specified"))
 			})
 			t.Run("Empty general_state", func(t *ftt.Test) {
 				ctx = perms.FakeAuth().WithReadAccess().WithWriteAccess().SetInContext(ctx)

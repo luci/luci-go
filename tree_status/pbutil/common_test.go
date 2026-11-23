@@ -114,6 +114,24 @@ func TestValidation(t *testing.T) {
 			})
 		})
 
+		t.Run("parse closing builder name", func(t *ftt.Test) {
+			t.Run("valid", func(t *ftt.Test) {
+				project, bucket, builder, err := ParseClosingBuilderName("projects/chromium-m100/buckets/ci.shadow/builders/Linux 123")
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, project, should.Equal("chromium-m100"))
+				assert.Loosely(t, bucket, should.Equal("ci.shadow"))
+				assert.Loosely(t, builder, should.Equal("Linux 123"))
+			})
+			t.Run("must be specified", func(t *ftt.Test) {
+				_, _, _, err := ParseClosingBuilderName("")
+				assert.Loosely(t, err, should.ErrLike("must be specified"))
+			})
+			t.Run("must match format", func(t *ftt.Test) {
+				_, _, _, err := ParseClosingBuilderName("some name")
+				assert.Loosely(t, err, should.ErrLike("expected format"))
+			})
+		})
+
 		t.Run("project", func(t *ftt.Test) {
 			t.Run("valid", func(t *ftt.Test) {
 				err := ValidateProject("chromium-m100")

@@ -19,10 +19,11 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"sync"
 	"time"
 
-	"golang.org/x/exp/slices"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
@@ -31,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	tspb "go.chromium.org/luci/tree_status/proto/v1"
@@ -57,12 +59,14 @@ type treeStatus struct {
 }
 
 type treeStatusClient interface {
+	getTree(c context.Context, treeName string) (*tspb.Tree, error)
 	getStatus(c context.Context, treeName string) (*treeStatus, error)
 	postStatus(c context.Context, message string, treeName string, status config.TreeCloserStatus, closingBuilderName string) error
 }
 
 type httpTreeStatusClient struct {
-	client tspb.TreeStatusClient
+	statusClient tspb.TreeStatusClient
+	treesClient  tspb.TreesClient
 }
 
 func NewHTTPTreeStatusClient(ctx context.Context, luciTreeStatusHost string) (*httpTreeStatusClient, error) {
@@ -80,15 +84,22 @@ func NewHTTPTreeStatusClient(ctx context.Context, luciTreeStatusHost string) (*h
 	}
 
 	return &httpTreeStatusClient{
-		client: tspb.NewTreeStatusPRPCClient(prpcClient),
+		statusClient: tspb.NewTreeStatusPRPCClient(prpcClient),
+		treesClient:  tspb.NewTreesPRPCClient(prpcClient),
 	}, nil
+}
+
+func (ts *httpTreeStatusClient) getTree(ctx context.Context, treeName string) (*tspb.Tree, error) {
+	return ts.treesClient.GetTree(ctx, &tspb.GetTreeRequest{
+		Name: fmt.Sprintf("trees/%s", treeName),
+	}, prpc.ExpectedCode(codes.NotFound, codes.PermissionDenied))
 }
 
 func (ts *httpTreeStatusClient) getStatus(ctx context.Context, treeName string) (*treeStatus, error) {
 	request := &tspb.GetStatusRequest{
 		Name: fmt.Sprintf("trees/%s/status/latest", treeName),
 	}
-	response, err := ts.client.GetStatus(ctx, request)
+	response, err := ts.statusClient.GetStatus(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +135,7 @@ func (ts *httpTreeStatusClient) postStatus(ctx context.Context, message string, 
 			ClosingBuilderName: closingBuilderName,
 		},
 	}
-	_, err := ts.client.CreateStatus(ctx, request)
+	_, err := ts.statusClient.CreateStatus(ctx, request)
 	return err
 }
 
@@ -239,10 +250,45 @@ func groupTreeClosersByTree(treeClosers []*config.TreeCloser) map[string][]*conf
 }
 
 func tcProject(tc *config.TreeCloser) string {
+	if tc == nil || tc.BuilderKey == nil || tc.BuilderKey.Parent() == nil {
+		return ""
+	}
 	return tc.BuilderKey.Parent().StringID()
 }
 
 func updateTree(c context.Context, ts treeStatusClient, treeClosers []*config.TreeCloser, closingEnabledProjects stringset.Set, treeName string) error {
+	tree, err := ts.getTree(c, treeName)
+	if err != nil {
+		switch grpcutil.Code(err) {
+		case codes.NotFound:
+			logging.Warningf(c, "Skipping tree %q: cannot fetch tree config: %v", treeName, err)
+			return nil
+		case codes.PermissionDenied:
+			// Log at Errorf so an accidental realms.cfg ACL regression on an active
+			// tree is observable without failing the cron on stale or unauthorized
+			// Datastore entries.
+			logging.Errorf(c, "Skipping tree %q: permission denied fetching tree config: %v", treeName, err)
+			return nil
+		default:
+			return errors.Fmt("getting tree %q: %w", treeName, err)
+		}
+	}
+
+	allowedProjects := stringset.NewFromSlice(tree.GetProjects()...)
+	authorizedClosers := make([]*config.TreeCloser, 0, len(treeClosers))
+	for _, tc := range treeClosers {
+		proj := tcProject(tc)
+		if !allowedProjects.Has(proj) {
+			logging.Warningf(c, "Ignoring unauthorized tree closer in project %q targeting tree %q (allowed projects: %v)", proj, treeName, tree.GetProjects())
+			continue
+		}
+		authorizedClosers = append(authorizedClosers, tc)
+	}
+	if len(authorizedClosers) == 0 {
+		return nil
+	}
+	treeClosers = authorizedClosers
+
 	treeStatus, err := ts.getStatus(c, treeName)
 	if err != nil {
 		return err
