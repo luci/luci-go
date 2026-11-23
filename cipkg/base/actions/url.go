@@ -24,9 +24,11 @@ import (
 	"hash"
 	"io"
 	"io/fs"
+	"maps"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"go.chromium.org/luci/cipkg/core"
 )
@@ -42,6 +44,9 @@ func ActionURLFetchExecutor(ctx context.Context, a *core.ActionURLFetch, out str
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, a.Url, nil)
 	if err != nil {
 		return
+	}
+	for _, k := range slices.Sorted(maps.Keys(a.GetHeaders())) {
+		req.Header.Set(k, a.Headers[k])
 	}
 
 	joinErr := func(f func() error) { err = errors.Join(err, f()) }

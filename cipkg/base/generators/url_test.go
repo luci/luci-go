@@ -104,6 +104,55 @@ func TestFetchURLs(t *testing.T) {
 			}
 		})
 
+		t.Run("headers", func(t *ftt.Test) {
+			headers := map[string]string{
+				"Referer":    "https://www.amd.com/",
+				"User-Agent": "curl/8.5.0",
+			}
+			gs, err := FetchURLs("urls", []*FetchURL{
+				{
+					URL:      "https://host/path1",
+					Filename: "something1",
+					Mode:     0o777,
+					Headers:  headers,
+				},
+			})
+			assert.NoErr(t, err)
+
+			a, err := gs[0].Generate(ctx, plats)
+			assert.NoErr(t, err)
+			headers["Extra"] = "mutated"
+			// Headers influence the generated stable ID compared to headerless "urls_9k6l6isoio".
+			assert.That(t, a.Name, should.NotEqual("urls_9k6l6isoio"))
+			assert.Loosely(t, testutils.Assert[*core.Action_Url](t, a.Spec).Url, should.Match(&core.ActionURLFetch{
+				Name: "something1",
+				Url:  "https://host/path1",
+				Mode: 0o777,
+				Headers: map[string]string{
+					"Referer":    "https://www.amd.com/",
+					"User-Agent": "curl/8.5.0",
+				},
+			}))
+
+			for range 10 {
+				gs2, err := FetchURLs("urls", []*FetchURL{
+					{
+						URL:      "https://host/path1",
+						Filename: "something1",
+						Mode:     0o777,
+						Headers: map[string]string{
+							"User-Agent": "curl/8.5.0",
+							"Referer":    "https://www.amd.com/",
+						},
+					},
+				})
+				assert.NoErr(t, err)
+				a2, err := gs2[0].Generate(ctx, plats)
+				assert.NoErr(t, err)
+				assert.That(t, a2.Name, should.Equal(a.Name))
+			}
+		})
+
 		t.Run("HashFromString", func(t *ftt.Test) {
 			for name, want := range map[string]core.HashAlgorithm{
 				"md5":    core.HashAlgorithm_HASH_MD5,

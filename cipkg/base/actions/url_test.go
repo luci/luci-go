@@ -55,6 +55,52 @@ func TestProcessURL(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		checkReexecArg(t, pkg.Derivation.Args, url)
+
+		t.Run("headers influence derivation output", func(t *ftt.Test) {
+			emptyHdrPkg, err := ap.Process("", pm, &core.Action{
+				Name: "url",
+				Spec: &core.Action_Url{Url: &core.ActionURLFetch{
+					Url:           "https://host.not.exist/123",
+					HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
+					HashValue:     "abcdef",
+					Headers:       map[string]string{},
+				}},
+			})
+			assert.NoErr(t, err)
+			assert.That(t, emptyHdrPkg.DerivationID, should.Equal(pkg.DerivationID))
+
+			withHdrPkg, err := ap.Process("", pm, &core.Action{
+				Name: "url",
+				Spec: &core.Action_Url{Url: &core.ActionURLFetch{
+					Url:           "https://host.not.exist/123",
+					HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
+					HashValue:     "abcdef",
+					Headers: map[string]string{
+						"User-Agent": "curl/8.5.0",
+						"Referer":    "https://www.amd.com/",
+					},
+				}},
+			})
+			assert.NoErr(t, err)
+			assert.That(t, withHdrPkg.DerivationID, should.NotEqual(pkg.DerivationID))
+
+			for range 10 {
+				sameHdrPkg, err := ap.Process("", pm, &core.Action{
+					Name: "url",
+					Spec: &core.Action_Url{Url: &core.ActionURLFetch{
+						Url:           "https://host.not.exist/123",
+						HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
+						HashValue:     "abcdef",
+						Headers: map[string]string{
+							"Referer":    "https://www.amd.com/",
+							"User-Agent": "curl/8.5.0",
+						},
+					}},
+				})
+				assert.NoErr(t, err)
+				assert.That(t, sameHdrPkg.DerivationID, should.Equal(withHdrPkg.DerivationID))
+			}
+		})
 	})
 }
 
@@ -179,6 +225,31 @@ func TestExecuteURL(t *testing.T) {
 			assert.Loosely(t, err, should.NotBeNil)
 			assert.Loosely(t, err.Error(), should.ContainSubstring("hash mismatch"))
 		})
+
+		t.Run("Test download file with custom headers", func(t *ftt.Test) {
+			var gotHeader http.Header
+			hdrSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotHeader = r.Header.Clone()
+				fmt.Fprint(w, "something")
+			}))
+			defer hdrSrv.Close()
+
+			a := &core.ActionURLFetch{
+				Url: hdrSrv.URL,
+				Headers: map[string]string{
+					"user-agent": "curl/8.5.0",
+					"Referer":    "https://first.example/",
+					"referer":    "https://www.amd.com/",
+					"Accept":     "application/octet-stream",
+				},
+			}
+
+			err := ActionURLFetchExecutor(ctx, a, out)
+			assert.NoErr(t, err)
+			assert.That(t, gotHeader.Values("User-Agent"), should.Match([]string{"curl/8.5.0"}))
+			assert.That(t, gotHeader.Values("Referer"), should.Match([]string{"https://www.amd.com/"}))
+			assert.That(t, gotHeader.Values("Accept"), should.Match([]string{"application/octet-stream"}))
+		})
 	})
 }
 
@@ -189,7 +260,9 @@ func TestReexecURL(t *testing.T) {
 		ctx := context.Background()
 		out := t.TempDir()
 
+		var gotUA string
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotUA = r.Header.Get("User-Agent")
 			fmt.Fprint(w, "something")
 		}))
 		defer s.Close()
@@ -200,11 +273,15 @@ func TestReexecURL(t *testing.T) {
 				Url:           s.URL,
 				HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
 				HashValue:     "3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb",
+				Headers: map[string]string{
+					"User-Agent": "crowbar-test/1.0",
+				},
 			}},
 		})
 		assert.Loosely(t, err, should.BeNil)
 
 		runWithDrv(t, ctx, pkg.Derivation, out)
+		assert.That(t, gotUA, should.Equal("crowbar-test/1.0"))
 
 		{
 			f, err := os.Open(filepath.Join(out, "file"))

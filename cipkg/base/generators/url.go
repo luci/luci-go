@@ -21,6 +21,7 @@ import (
 	"encoding/base32"
 	"fmt"
 	"io/fs"
+	"maps"
 	"slices"
 	"strings"
 
@@ -40,6 +41,7 @@ type FetchURL struct {
 	HashValue     string
 	Filename      string
 	Mode          fs.FileMode
+	Headers       map[string]string
 }
 
 func (f *FetchURL) Generate(ctx context.Context, plats Platforms) (*core.Action, error) {
@@ -53,6 +55,7 @@ func (f *FetchURL) Generate(ctx context.Context, plats Platforms) (*core.Action,
 				HashValue:     f.HashValue,
 				Name:          f.Filename,
 				Mode:          uint32(f.Mode),
+				Headers:       maps.Clone(f.Headers),
 			},
 		},
 	}, nil
@@ -71,6 +74,7 @@ func FetchURLs(prefix string, urls []*FetchURL) ([]Generator, error) {
 			HashValue:     u.HashValue,
 			Name:          u.Filename,
 			Mode:          uint32(u.Mode),
+			Headers:       maps.Clone(u.Headers),
 		}, 6)
 		if err != nil {
 			return nil, err

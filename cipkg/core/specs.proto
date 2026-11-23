@@ -50,6 +50,8 @@ message ActionURLFetch {
   string Name = 4;
   // File mode for the downloaded resource. If empty, 0666 will be used.
   uint32 mode = 5;
+  // HTTP request headers sent when downloading the remote resource.
+  map<string, string> headers = 6;
 }
 
 // ActionGitFetch fetches git repo into output directory.
