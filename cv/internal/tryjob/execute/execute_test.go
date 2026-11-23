@@ -85,6 +85,42 @@ func TestPrepExecutionPlan(t *testing.T) {
 						appendAttempt(builderFoo, makeAttempt(curTryjobID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
 						build()))
 				})
+				t.Run("Populates ExternalId on previous attempts", func(t *ftt.Test) {
+					execState.Executions[0].Attempts[0] = &tryjob.ExecutionState_Execution_Attempt{
+						TryjobId: prevTryjobID,
+						Status:   tryjob.Status_PENDING,
+						Reused:   true,
+					}
+					ensureTryjob(t, ctx, prevTryjobID, builderFooDef, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
+					plan := prepPlan(execState, prevTryjobID)
+					assert.Loosely(t, plan.isEmpty(), should.BeTrue)
+					expectedPrev := makeAttempt(prevTryjobID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
+					expectedPrev.Reused = true
+					assert.That(t, execState, should.Match(newExecStateBuilder().
+						appendDefinition(builderFooDef).
+						appendAttempt(builderFoo, expectedPrev).
+						appendAttempt(builderFoo, makeAttempt(curTryjobID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)).
+						build()))
+				})
+				t.Run("Populates ExternalId when pending attempt becomes triggered", func(t *ftt.Test) {
+					execState := newExecStateBuilder().
+						appendDefinition(builderFooDef).
+						appendAttempt(builderFoo, &tryjob.ExecutionState_Execution_Attempt{
+							TryjobId: curTryjobID,
+							Status:   tryjob.Status_PENDING,
+							Reused:   true,
+						}).
+						build()
+					ensureTryjob(t, ctx, curTryjobID, builderFooDef, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
+					plan := prepPlan(execState, curTryjobID)
+					assert.Loosely(t, plan.isEmpty(), should.BeTrue)
+					expected := makeAttempt(curTryjobID, tryjob.Status_TRIGGERED, tryjob.Result_UNKNOWN)
+					expected.Reused = true
+					assert.That(t, execState, should.Match(newExecStateBuilder().
+						appendDefinition(builderFooDef).
+						appendAttempt(builderFoo, expected).
+						build()))
+				})
 				t.Run("Ignore For not relevant Tryjob", func(t *ftt.Test) {
 					original := proto.Clone(execState).(*tryjob.ExecutionState)
 					const randomTryjob int64 = 567

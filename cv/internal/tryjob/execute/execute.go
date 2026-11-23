@@ -380,8 +380,8 @@ func (e *Executor) handleUpdatedTryjobs(ctx context.Context, tryjobs []int64, ex
 	return execState, &p, nil
 }
 
-// updateAttempts sets the attempts Status and Result from the corresponding
-// Tryjobs.
+// updateAttempts sets the attempts ExternalId, Status, and Result from the
+// corresponding Tryjobs.
 //
 // Return true if the latest attempt gets updated.
 // Return false if the execution has no attempt.
@@ -396,12 +396,14 @@ func updateAttempts(exec *tryjob.ExecutionState_Execution, tryjobsByIDs map[comm
 		case !ok:
 			continue
 		case i == latestAttemptIdx:
-			if attempt.Status != tj.Status || !proto.Equal(attempt.Result, tj.Result) {
+			if attempt.ExternalId != string(tj.ExternalID) || attempt.Status != tj.Status || !proto.Equal(attempt.Result, tj.Result) {
+				attempt.ExternalId = string(tj.ExternalID)
 				attempt.Status = tj.Status
 				attempt.Result = tj.Result
 				latestAttemptUpdated = true
 			}
 		default: // blindly updates the attempt
+			attempt.ExternalId = string(tj.ExternalID)
 			attempt.Status = tj.Status
 			attempt.Result = tj.Result
 		}
