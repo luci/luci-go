@@ -156,6 +156,8 @@ describe('RepairListPage', () => {
       const logicalLabs = [
         'acs-1265',
         'bcpc-perf-lab',
+        'em53-acs',
+        'em53-atc',
         'gtw-phone-cuj',
         'ntc-tpke',
         'pte-us-mtv',
@@ -168,8 +170,6 @@ describe('RepairListPage', () => {
       const locationLabs = [
         'atc',
         'acs',
-        'em53-acs',
-        'em53-atc',
         'mtv',
         'ntc-tpkd',
         'sjc',

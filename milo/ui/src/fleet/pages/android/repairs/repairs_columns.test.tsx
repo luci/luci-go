@@ -197,4 +197,53 @@ describe('repairs_columns explore devices link', () => {
       expect(filters).toContain('NOT "lab_name":*');
     });
   });
+
+  describe('explore in arsenal link', () => {
+    const getArsenalTo = (row: Partial<Row>): string => {
+      const columns = getRepairsColumns('Android');
+      const omnilabCol = columns['static-omnilab_link'];
+      const cellContext = {
+        row: {
+          original: {
+            id: 'test-id',
+            priority: 0,
+            lab_name: '',
+            host_group: '',
+            run_target: '',
+            minimum_repairs: 0,
+            devices_offline_ratio: '0 / 0',
+            devices_offline_percentage: '0%',
+            peak_usage: 0,
+            total_devices: 0,
+            ...row,
+          } as Row,
+        },
+      } as Parameters<NonNullable<MRT_ColumnDef<Row>['Cell']>>[0];
+
+      const element = omnilabCol.Cell?.(cellContext);
+      if (!isValidElement<{ to: string }>(element)) {
+        throw new Error('ExploreInArsenalLink element not returned');
+      }
+      return element.props.to;
+    };
+
+    it('uses lab filter key for em53-atc and em53-acs logical labs', () => {
+      expect(
+        getArsenalTo({
+          lab_name: 'em53-atc',
+          host_group: 'group1',
+        }),
+      ).toBe(
+        'https://omnilab.corp.google.com/recovery?host=lab%3Ainclude%3Aem53-atc&host=host_group%3Ainclude%3Agroup1',
+      );
+      expect(
+        getArsenalTo({
+          lab_name: 'em53-acs',
+          host_group: 'group1',
+        }),
+      ).toBe(
+        'https://omnilab.corp.google.com/recovery?host=lab%3Ainclude%3Aem53-acs&host=host_group%3Ainclude%3Agroup1',
+      );
+    });
+  });
 });

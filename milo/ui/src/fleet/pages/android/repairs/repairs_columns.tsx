@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/* eslint-disable react-refresh/only-export-components */
+
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Divider, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
@@ -31,14 +33,14 @@ import {
 
 import { getPriorityIcon, type Row } from './repairs_columns.utils';
 
-// Labs where lab_name is populated from the MobileHarness "lab" host property
-// rather than the DNS-derived "lab_location" property (see b/540374614, b/567925704).
-// Arsenal's /recovery page requires matching the exact HostProperty key.
-// NOTE: Keep this set in sync with MobileHarness host configs ingested by
-// AllDevicesFilter (filters.go) when new logical "lab" host properties are added.
+// Labs where lab_name comes from the MobileHarness "lab" host property
+// rather than "lab_location" (b/540374614, b/567925704, b/575888424).
+// Keep in sync with AllDevicesFilter (filters.go) for Arsenal /recovery.
 const LAB_PROPERTY_LAB_NAMES = new Set([
   'acs-1265',
   'bcpc-perf-lab',
+  'em53-acs',
+  'em53-atc',
   'gtw-phone-cuj',
   'ntc-tpke',
   'pte-us-mtv',
