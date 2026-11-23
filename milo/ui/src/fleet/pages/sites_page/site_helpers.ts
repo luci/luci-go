@@ -183,6 +183,9 @@ const SNIPIT_SHORTLINK_RE =
   /^(?:https?:\/\/)?(?:screen|screenshot|screenshot-v2)\/([A-Za-z0-9_-]+)\/?$/i;
 const SNIPIT_GOOGLEPLEX_RE =
   /^https?:\/\/screenshot\.googleplex\.com\/([A-Za-z0-9_-]+?)(?:\.(?:png|jpe?g|webp|gif))?(?:[?#].*)?$/i;
+const INLINE_SVG_DATA_URI_RE = /^data:image\/svg\+xml;charset=utf-8,\S+$/i;
+const UNSAFE_SVG_URI_RE =
+  /(?:%3c|<)\s*\/?\s*(?:script|foreignobject|iframe)\b|javascript:|on[a-z]+\s*(?:=|%3d)/i;
 
 export function normalizeSiteImageUrl(input: string): string | null {
   const trimmed = input.trim();
@@ -194,6 +197,12 @@ export function normalizeSiteImageUrl(input: string): string | null {
   const gplexMatch = SNIPIT_GOOGLEPLEX_RE.exec(trimmed);
   if (gplexMatch) {
     return `https://screenshot.googleplex.com/${gplexMatch[1]}.png`;
+  }
+  if (
+    INLINE_SVG_DATA_URI_RE.test(trimmed) &&
+    !UNSAFE_SVG_URI_RE.test(trimmed)
+  ) {
+    return trimmed;
   }
   return /^https?:\/\/\S+$/i.test(trimmed) ? trimmed : null;
 }
@@ -212,8 +221,15 @@ export function parseSiteImageUrlsInput(rawInput: string): string[] {
 }
 
 export function getSnipItShortlinkLabel(url: string): string {
-  const m = SNIPIT_GOOGLEPLEX_RE.exec(url.trim());
-  return m ? `screen/${m[1]}` : url.trim();
+  const trimmed = url.trim();
+  const m = SNIPIT_GOOGLEPLEX_RE.exec(trimmed);
+  if (m) return `screen/${m[1]}`;
+  if (INLINE_SVG_DATA_URI_RE.test(trimmed)) {
+    const hashIdx = trimmed.lastIndexOf('#');
+    const slug = hashIdx >= 0 ? trimmed.slice(hashIdx + 1).trim() : '';
+    return slug || 'Inline facility photo';
+  }
+  return trimmed;
 }
 
 /**

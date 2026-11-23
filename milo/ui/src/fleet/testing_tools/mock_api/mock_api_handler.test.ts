@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { normalizeSiteImageUrl } from '@/fleet/pages/sites_page/site_helpers';
 import {
   IrmIncident,
   PriorityRule,
@@ -49,6 +50,19 @@ describe('FleetConsoleMockAPI', () => {
     };
     expect(listFixture).toBeDefined();
     expect(Array.isArray(listFixture.devices)).toBe(true);
+
+    const sitesFixture = FleetConsoleMockAPI.getFixture(
+      'ListPhysicalSites',
+    ) as {
+      physicalSites: Array<{ id: string; imageUrls?: string[] }>;
+    };
+    expect(sitesFixture.physicalSites.length).toBeGreaterThan(0);
+    for (const site of sitesFixture.physicalSites) {
+      expect(site.imageUrls?.length).toBeGreaterThan(0);
+      for (const url of site.imageUrls ?? []) {
+        expect(normalizeSiteImageUrl(url)).toBe(url);
+      }
+    }
   });
 
   it('allows setting and resetting custom fixtures for integration tests', () => {

@@ -267,5 +267,23 @@ describe('site_helpers', () => {
     expect(
       getSnipItShortlinkLabel('https://screenshot.googleplex.com/imgOne.png'),
     ).toBe('screen/imgOne');
+
+    const safeSvg =
+      'data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%2F%3E#mock-aisle.svg';
+    expect(normalizeSiteImageUrl(safeSvg)).toBe(safeSvg);
+    expect(getSnipItShortlinkLabel(safeSvg)).toBe('mock-aisle.svg');
+    expect(
+      getSnipItShortlinkLabel('data:image/svg+xml;charset=utf-8,%3Csvg%2F%3E'),
+    ).toBe('Inline facility photo');
+    expect(
+      normalizeSiteImageUrl(
+        'data:image/svg+xml;charset=utf-8,%3Csvg%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E%3C%2Fsvg%3E',
+      ),
+    ).toBeNull();
+    expect(
+      normalizeSiteImageUrl(
+        'data:image/svg+xml;charset=utf-8,%3Csvg%20onload%3Dalert(1)%2F%3E',
+      ),
+    ).toBeNull();
   });
 });

@@ -17,6 +17,8 @@
  * MachineLSE fixtures and dynamic request handlers for FleetConsoleMockAPI.
  */
 
+import { MOCK_SITE_PHOTOS } from './mock_site_photos';
+
 export interface MockHealthSlice {
   id: string;
   name: string;
@@ -630,6 +632,7 @@ const INITIAL_PHYSICAL_SITES: MockPhysicalSite[] = [
   {
     id: 'LAB1',
     name: 'Central Lab 1',
+    imageUrls: [MOCK_SITE_PHOTOS.deviceBay],
     platformFilters: [
       { platform: 'CHROMEOS', filter: 'labels."label-pool" = "mock-pool-dev"' },
     ],
@@ -638,6 +641,7 @@ const INITIAL_PHYSICAL_SITES: MockPhysicalSite[] = [
   {
     id: 'MTV',
     name: 'Mountain View MTV',
+    imageUrls: [MOCK_SITE_PHOTOS.hardwareBench, MOCK_SITE_PHOTOS.labWing],
     platformFilters: [
       { platform: 'CHROMEOS', filter: 'labels."label-pool" = "mock-pool-dev"' },
       { platform: 'ANDROID', filter: '"lab_name" = "mtv"' },
@@ -647,6 +651,11 @@ const INITIAL_PHYSICAL_SITES: MockPhysicalSite[] = [
   {
     id: 'EM25',
     name: 'Palo Alto EM25',
+    imageUrls: [
+      MOCK_SITE_PHOTOS.rackAisle,
+      MOCK_SITE_PHOTOS.campusExterior,
+      MOCK_SITE_PHOTOS.deviceBay,
+    ],
     platformFilters: [
       { platform: 'CHROMEOS', filter: 'labels."label-pool" = "mock-pool-dev"' },
       { platform: 'CHROMIUM', filter: 'ufs."zone" = "SFO36_BROWSER"' },
