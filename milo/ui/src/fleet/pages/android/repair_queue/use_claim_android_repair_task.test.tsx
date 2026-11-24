@@ -246,5 +246,78 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
         queryKey: ANDROID_REPAIR_QUEUE_QUERY_KEY,
       });
     });
+
+    it('writes fresh etag back on claim success so immediate unclaim before refetch sends the updated etag', async () => {
+      const initialData: ListAndroidRepairQueueResponse = {
+        repairQueueItems: [...MOCK_ITEMS],
+        nextPageToken: '',
+        totalSize: 2,
+        inProgressCount: 1,
+      };
+
+      const queryKey = [...ANDROID_REPAIR_QUEUE_QUERY_KEY, { pageSize: 100 }];
+      queryClient.setQueryData(queryKey, initialData);
+
+      mockClaimAndroidRepairTask.mockResolvedValue({
+        repairQueueItem: {
+          ...MOCK_ITEMS[0],
+          claimedBy: 'user@example.com',
+          claimedAt: '2026-11-23T13:10:00Z',
+          etag: 'etag-101-claimed',
+          // Backend Claim response omits query-time rank & priorityScore:
+          rank: 0,
+          priorityScore: '0',
+        },
+      });
+      mockUnclaimAndroidRepairTask.mockResolvedValue({
+        repairQueueItem: {
+          ...MOCK_ITEMS[0],
+          claimedBy: '',
+          claimedAt: undefined,
+          etag: 'etag-101-unclaimed',
+          rank: 0,
+          priorityScore: '0',
+        },
+      });
+
+      const wrapper = createWrapper();
+      const { result: hooks } = renderHook(
+        () => ({
+          claim: useClaimAndroidRepairTask(),
+          unclaim: useUnclaimAndroidRepairTask(),
+        }),
+        { wrapper },
+      );
+
+      act(() => {
+        hooks.current.claim.mutate({ taskId: '101', etag: 'etag-101' });
+      });
+
+      await waitFor(() => expect(hooks.current.claim.isSuccess).toBe(true));
+
+      const afterClaim =
+        queryClient.getQueryData<ListAndroidRepairQueueResponse>(queryKey);
+      expect(afterClaim?.repairQueueItems[0].etag).toBe('etag-101-claimed');
+      expect(afterClaim?.repairQueueItems[0].rank).toBe(1);
+      expect(afterClaim?.repairQueueItems[0].priorityScore).toBe('100');
+
+      // Immediately unclaim using the cached item's etag before any List refetch resolves.
+      act(() => {
+        hooks.current.unclaim.mutate({
+          taskId: '101',
+          etag: afterClaim?.repairQueueItems[0].etag ?? '',
+        });
+      });
+
+      await waitFor(() => expect(hooks.current.unclaim.isSuccess).toBe(true));
+      expect(mockUnclaimAndroidRepairTask).toHaveBeenCalledWith({
+        taskId: '101',
+        etag: 'etag-101-claimed',
+      });
+      const afterUnclaim =
+        queryClient.getQueryData<ListAndroidRepairQueueResponse>(queryKey);
+      expect(afterUnclaim?.repairQueueItems[0].etag).toBe('etag-101-unclaimed');
+      expect(afterUnclaim?.repairQueueItems[0].claimedBy).toBe('');
+    });
   });
 });

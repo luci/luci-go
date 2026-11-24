@@ -170,7 +170,8 @@ describe('<AndroidRepairDashboard />', () => {
     expect(screen.getByText(/My tasks \(\d+\):/)).toBeInTheDocument();
     expect(screen.getByText('Show devices')).toBeInTheDocument();
     expect(screen.getByText('Rank')).toBeInTheDocument();
-    expect(screen.getByText('Id')).toBeInTheDocument();
+    expect(screen.getByText('ID')).toBeInTheDocument();
+    expect(screen.queryByText('Id')).not.toBeInTheDocument();
     expect(screen.getByText('Machine Type')).toBeInTheDocument();
     expect(screen.getByText('Lab')).toBeInTheDocument();
     expect(screen.getByText('Host Group')).toBeInTheDocument();
@@ -194,7 +195,8 @@ describe('<AndroidRepairDashboard />', () => {
       screen.getByText('Pixel Manual Repair Dashboard'),
     ).toBeInTheDocument();
     expect(screen.getByText('Rank')).toBeInTheDocument();
-    expect(screen.getByText('Id')).toBeInTheDocument();
+    expect(screen.getByText('ID')).toBeInTheDocument();
+    expect(screen.queryByText('Id')).not.toBeInTheDocument();
     expect(screen.getByText('Machine Type')).toBeInTheDocument();
     expect(screen.getByText('Lab')).toBeInTheDocument();
     expect(screen.queryByText('Host Group')).not.toBeInTheDocument();
@@ -394,6 +396,53 @@ describe('<AndroidRepairDashboard />', () => {
     expect(
       screen.queryByLabelText('Rank 1, pinned to top'),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders "-" placeholders when host Run Target, Lab, or Host Group are empty', () => {
+    const hostWithEmptyFields: readonly AndroidRepairQueueItem[] = [
+      {
+        ...MOCK_QUEUE_ITEMS[0],
+        deviceId: 'android-host-1.example.com',
+        fcMachineType: AndroidMachineType.ANDROID_MACHINE_TYPE_HOST,
+        labName: '',
+        hostGroups: [],
+        runTarget: '',
+        hostGroupHealthPct: 0.72,
+        runTargetHealthPct: undefined,
+      },
+    ];
+
+    jest
+      .spyOn(UseAndroidRepairQueueModule, 'useAndroidRepairQueue')
+      .mockReturnValue({
+        data: {
+          repairQueueItems: hostWithEmptyFields,
+          totalSize: 1,
+          nextPageToken: '',
+        },
+        inProgressCount: 0,
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<
+        typeof UseAndroidRepairQueueModule.useAndroidRepairQueue
+      >);
+
+    renderDashboard('Android');
+
+    const row = screen.getByText('android-host-1.example.com').closest('tr');
+    expect(row).not.toBeNull();
+    const cells = Array.from(row!.querySelectorAll('td')).map((td) =>
+      td.textContent?.trim(),
+    );
+    // Columns: Rank(0), ID(1), Machine Type(2), Lab(3), Host Group(4), Run Target(5), State(6), Assignee(7), Health(8), Score(9)
+    expect(cells[2]).toBe('host');
+    expect(cells[3]).toBe('-');
+    expect(cells[4]).toBe('-');
+    expect(cells[5]).toBe('-');
+    expect(cells[8]).toBe('72% / -');
   });
 
   describe('RepairsPage feature flag routing', () => {

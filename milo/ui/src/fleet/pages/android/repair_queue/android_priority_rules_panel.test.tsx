@@ -401,6 +401,81 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
     expect(weightInput).toBeDisabled();
   });
 
+  it('shows loading skeleton while CheckPermission is pending instead of flashing read-only controls', () => {
+    const mockPermission = jest
+      .spyOn(UseAdminTaskPermissionModule, 'usePriorityRulesPermission')
+      .mockReturnValue({
+        hasPermission: null,
+        fetchPermissions: jest.fn(),
+        isError: false,
+        error: null,
+      });
+
+    jest
+      .spyOn(UseAndroidPriorityRulesModule, 'useAndroidPriorityRules')
+      .mockReturnValue({
+        rules: [
+          {
+            id: 'rule-1',
+            expressionAip160: 'run_target = "seahawk"',
+            weight: '10',
+            workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
+            siteId: '',
+          },
+        ],
+        isLoading: false,
+        isError: false,
+        error: null,
+        refetch: jest.fn(),
+        createRule: jest.fn(),
+        isCreating: false,
+        createError: null,
+        updateRule: jest.fn(),
+        isUpdating: false,
+        updateError: null,
+        deleteRule: jest.fn(),
+        isDeleting: false,
+        deleteError: null,
+      });
+
+    const renderPanel = () => (
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider>
+          <SettingsProvider>
+            <ShortcutProvider>
+              <AndroidPriorityRulesPanel workspace="Android" />
+            </ShortcutProvider>
+          </SettingsProvider>
+        </FakeContextProvider>
+      </QueryClientProvider>
+    );
+    const { rerender } = render(renderPanel());
+
+    expect(
+      screen.getByTestId('priority-rules-loading-skeleton'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('priority-rule-row-rule-1'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('add-priority-rule-button'),
+    ).not.toBeInTheDocument();
+
+    mockPermission.mockReturnValue({
+      hasPermission: true,
+      fetchPermissions: jest.fn(),
+      isError: false,
+      error: null,
+    });
+    rerender(renderPanel());
+
+    expect(
+      screen.queryByTestId('priority-rules-loading-skeleton'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('rule-delete-button-rule-1')).toBeInTheDocument();
+    expect(screen.getByTestId('add-priority-rule-button')).toBeInTheDocument();
+  });
+
   it('wires workspace-scoped filter builders and the Android filter placeholder', () => {
     const mockUseFilterBuilders = jest
       .spyOn(

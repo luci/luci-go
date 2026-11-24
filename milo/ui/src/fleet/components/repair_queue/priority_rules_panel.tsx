@@ -60,6 +60,7 @@ export interface PriorityRulesPanelProps {
   >;
   readonly isBuildersLoading: boolean;
   readonly canEdit: boolean;
+  readonly isPermissionLoading?: boolean;
   /** Placeholder shown in the rule filter input while editing. */
   readonly searchPlaceholder?: string;
 }
@@ -78,6 +79,7 @@ export const PriorityRulesPanel = ({
   filterBuilders,
   isBuildersLoading,
   canEdit,
+  isPermissionLoading = false,
   searchPlaceholder,
 }: PriorityRulesPanelProps) => {
   const [rows, setRows] = useEditableRuleRows(rules);
@@ -260,8 +262,12 @@ export const PriorityRulesPanel = ({
         </Alert>
       )}
 
-      {isRulesLoading ? (
-        <Stack spacing={1.5} sx={{ mt: 1 }}>
+      {isRulesLoading || (!isError && isPermissionLoading) ? (
+        <Stack
+          spacing={1.5}
+          sx={{ mt: 1 }}
+          data-testid="priority-rules-loading-skeleton"
+        >
           {[...Array(DEFAULT_VISIBLE_RULES)].map((_, i) => (
             <Skeleton
               key={i}

@@ -15,11 +15,16 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
-import { useRepairQueueOptimisticMutation } from './use_repair_queue_optimistic_mutation';
+import {
+  OptimisticRepairQueueMutationResponse,
+  useRepairQueueOptimisticMutation,
+} from './use_repair_queue_optimistic_mutation';
 
 interface TestItem {
   readonly taskId: string;
   readonly claimedBy?: string;
+  readonly claimedAt?: string;
+  readonly etag?: string;
   readonly label: string;
 }
 
@@ -58,18 +63,22 @@ describe('useRepairQueueOptimisticMutation', () => {
   );
 
   const renderMutation = (
-    mutationFn: (req: { taskId: string }) => Promise<unknown>,
+    mutationFn: (req: {
+      taskId: string;
+    }) => Promise<OptimisticRepairQueueMutationResponse<TestItem> | void>,
     claimedBy: string,
   ) =>
     renderHook(
       () =>
-        useRepairQueueOptimisticMutation<unknown, { taskId: string }, TestItem>(
-          {
-            queryKey: TEST_QUERY_KEY,
-            mutationFn,
-            updateItem: (item) => ({ ...item, claimedBy }),
-          },
-        ),
+        useRepairQueueOptimisticMutation<
+          OptimisticRepairQueueMutationResponse<TestItem> | void,
+          { taskId: string },
+          TestItem
+        >({
+          queryKey: TEST_QUERY_KEY,
+          mutationFn,
+          updateItem: (item) => ({ ...item, claimedBy }),
+        }),
       { wrapper },
     );
 
@@ -198,19 +207,60 @@ describe('useRepairQueueOptimisticMutation', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: TEST_QUERY_KEY });
   });
 
+  it('writes returned repairQueueItem with fresh etag into cache on success while preserving computed fields', async () => {
+    const queryKey = [...TEST_QUERY_KEY, { pageSize: 100 }];
+    queryClient.setQueryData<TestResponse>(queryKey, {
+      repairQueueItems: [
+        { taskId: '1', claimedBy: '', etag: 'etag-v1', label: 'preserved' },
+      ],
+      inProgressCount: 0,
+      totalSize: 1,
+    });
+
+    const { result } = renderMutation(
+      () =>
+        Promise.resolve({
+          repairQueueItem: {
+            taskId: '1',
+            claimedBy: 'me@google.com',
+            claimedAt: '2026-11-23T13:00:00Z',
+            etag: 'etag-v2',
+            label: 'ignored-computed',
+          },
+        }),
+      'me@google.com',
+    );
+
+    act(() => {
+      result.current.mutate({ taskId: '1' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    const cached = queryClient.getQueryData<TestResponse>(queryKey);
+    expect(cached?.repairQueueItems[0]).toEqual({
+      taskId: '1',
+      claimedBy: 'me@google.com',
+      claimedAt: '2026-11-23T13:00:00Z',
+      etag: 'etag-v2',
+      label: 'preserved',
+    });
+  });
+
   it('calls onError callback when mutation fails', async () => {
     const onError = jest.fn();
     const error = new Error('RPC Failed');
     const { result } = renderHook(
       () =>
-        useRepairQueueOptimisticMutation<unknown, { taskId: string }, TestItem>(
-          {
-            queryKey: TEST_QUERY_KEY,
-            mutationFn: () => Promise.reject(error),
-            updateItem: (item) => ({ ...item, claimedBy: 'me@google.com' }),
-            onError,
-          },
-        ),
+        useRepairQueueOptimisticMutation<
+          OptimisticRepairQueueMutationResponse<TestItem>,
+          { taskId: string },
+          TestItem
+        >({
+          queryKey: TEST_QUERY_KEY,
+          mutationFn: () => Promise.reject(error),
+          updateItem: (item) => ({ ...item, claimedBy: 'me@google.com' }),
+          onError,
+        }),
       { wrapper },
     );
 

@@ -18,7 +18,15 @@ import { QueryKey, useMutation, useQueryClient } from '@tanstack/react-query';
 export interface OptimisticRepairQueueItem {
   readonly taskId: string;
   readonly claimedBy?: string;
+  readonly claimedAt?: string;
   readonly etag?: string;
+}
+
+/** Mutation response shape carrying the updated repair queue item and fresh ETag. */
+export interface OptimisticRepairQueueMutationResponse<
+  TItem extends OptimisticRepairQueueItem,
+> {
+  readonly repairQueueItem?: TItem;
 }
 
 /** The fields of a list repair queue response that the optimistic update reads. */
@@ -30,7 +38,7 @@ export interface OptimisticRepairQueueResponse<
 }
 
 interface UseRepairQueueOptimisticMutationOptions<
-  TData,
+  TData extends OptimisticRepairQueueMutationResponse<TItem> | void,
   TVariables extends { taskId: string },
   TItem extends OptimisticRepairQueueItem,
 > {
@@ -42,7 +50,7 @@ interface UseRepairQueueOptimisticMutationOptions<
 }
 
 export const useRepairQueueOptimisticMutation = <
-  TData,
+  TData extends OptimisticRepairQueueMutationResponse<TItem> | void,
   TVariables extends { taskId: string },
   TItem extends OptimisticRepairQueueItem,
 >({
@@ -106,6 +114,49 @@ export const useRepairQueueOptimisticMutation = <
       );
 
       return { previousQueries };
+    },
+    onSuccess: (data, variables) => {
+      const returnedItem = data ? data.repairQueueItem : undefined;
+      if (!returnedItem) {
+        return;
+      }
+      const targetTaskId = returnedItem.taskId || variables.taskId;
+      queryClient.setQueriesData<OptimisticRepairQueueResponse<TItem>>(
+        { queryKey },
+        (oldData) => {
+          if (!oldData || !oldData.repairQueueItems) {
+            return oldData;
+          }
+          let matched = false;
+          const updatedItems = oldData.repairQueueItems.map((item) => {
+            if (item.taskId !== targetTaskId) {
+              return item;
+            }
+            matched = true;
+            const nextClaimedBy =
+              returnedItem.claimedBy !== undefined
+                ? returnedItem.claimedBy
+                : item.claimedBy;
+            const isClaimed = Boolean(nextClaimedBy?.trim());
+            return {
+              ...item,
+              claimedBy: nextClaimedBy,
+              claimedAt: isClaimed
+                ? (returnedItem.claimedAt ?? item.claimedAt)
+                : undefined,
+              ...(returnedItem.etag !== undefined
+                ? { etag: returnedItem.etag }
+                : {}),
+            };
+          });
+          return matched
+            ? {
+                ...oldData,
+                repairQueueItems: updatedItems,
+              }
+            : oldData;
+        },
+      );
     },
     onError: (err, variables, context) => {
       if (context?.previousQueries) {

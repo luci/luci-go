@@ -56,6 +56,7 @@ export const PriorityRulesPanel = ({ lab }: PriorityRulesPanelProps = {}) => {
       filterBuilders={filterBuilders}
       isBuildersLoading={isBuildersLoading}
       canEdit={canEdit}
+      isPermissionLoading={hasPermission === null}
       searchPlaceholder="Add rule filter (e.g. pool, model, pool health)..."
     />
   );

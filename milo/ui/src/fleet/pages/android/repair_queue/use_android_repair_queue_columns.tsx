@@ -104,9 +104,10 @@ export const useAndroidRepairQueueColumns = (
       {
         id: 'rank',
         header: 'Rank',
-        size: 56,
-        minSize: 52,
+        size: 38,
+        minSize: 38,
         maxSize: 76,
+        grow: false,
         enableSorting: false,
         Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => (
           <RepairQueueRankCell
@@ -122,10 +123,10 @@ export const useAndroidRepairQueueColumns = (
       },
       {
         id: 'device_id',
-        header: 'Id',
+        header: 'ID',
         accessorKey: 'deviceId',
-        size: 100,
-        minSize: 70,
+        size: 102,
+        minSize: 88,
         maxSize: 700,
         enableSorting: false,
         Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => (
@@ -146,9 +147,10 @@ export const useAndroidRepairQueueColumns = (
         id: FC_MACHINE_TYPE_FILTER_KEY,
         header: 'Machine Type',
         accessorFn: (row) => androidMachineTypeLabel(row.fcMachineType),
-        size: 70,
-        minSize: 60,
+        size: 62,
+        minSize: 58,
         maxSize: 200,
+        grow: false,
         enableSorting: false,
         Cell: ({ cell }: FC_CellProps<AndroidRepairQueueRow>) => (
           <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
@@ -158,45 +160,52 @@ export const useAndroidRepairQueueColumns = (
         id: 'lab_name',
         header: 'Lab',
         accessorKey: 'labName',
-        size: 90,
-        minSize: 70,
+        size: 34,
+        minSize: 34,
         maxSize: 700,
         enableSorting: false,
         Cell: ({ cell }: FC_CellProps<AndroidRepairQueueRow>) => (
-          <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
+          <EllipsisTooltip>
+            {cell.getValue<string>()?.trim() || '-'}
+          </EllipsisTooltip>
         ),
       },
       {
         id: 'host_group',
         header: 'Host Group',
         accessorFn: (row) => labelValuesToString(row.hostGroups || []),
-        size: 90,
-        minSize: 70,
+        size: 42,
+        minSize: 40,
         maxSize: 700,
         enableSorting: false,
         Cell: ({ cell }: FC_CellProps<AndroidRepairQueueRow>) => (
-          <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
+          <EllipsisTooltip>
+            {cell.getValue<string>()?.trim() || '-'}
+          </EllipsisTooltip>
         ),
       },
       {
         id: 'run_target',
         header: 'Run Target',
         accessorKey: 'runTarget',
-        size: 85,
-        minSize: 70,
+        size: 42,
+        minSize: 40,
         maxSize: 700,
         enableSorting: false,
         Cell: ({ cell }: FC_CellProps<AndroidRepairQueueRow>) => (
-          <EllipsisTooltip>{cell.getValue<string>()}</EllipsisTooltip>
+          <EllipsisTooltip>
+            {cell.getValue<string>()?.trim() || '-'}
+          </EllipsisTooltip>
         ),
       },
       {
         id: 'state',
         header: 'State',
         accessorKey: 'state',
-        size: 80,
-        minSize: 70,
+        size: 91,
+        minSize: 90,
         maxSize: 700,
+        grow: false,
         enableSorting: false,
         Cell: renderChipCell<AndroidRepairQueueRow>({
           getValueOrUrl: () => workspaces[workspace].docsUrl,
@@ -210,9 +219,10 @@ export const useAndroidRepairQueueColumns = (
       {
         id: 'assignee',
         header: 'Assignee',
-        size: 70,
-        minSize: 60,
+        size: 66,
+        minSize: 64,
         maxSize: 700,
+        grow: false,
         enableSorting: false,
         muiTableHeadCellProps: {
           align: 'center',
@@ -236,8 +246,8 @@ export const useAndroidRepairQueueColumns = (
       {
         id: 'host_group_run_target_health',
         header: 'Host Group / Run Target Health',
-        size: 85,
-        minSize: 70,
+        size: 58,
+        minSize: 56,
         maxSize: 700,
         enableSorting: false,
         meta: {
@@ -269,9 +279,10 @@ export const useAndroidRepairQueueColumns = (
       {
         id: 'priority_score',
         header: 'Priority Score',
-        size: 65,
-        minSize: 60,
+        size: 90,
+        minSize: 84,
         maxSize: 180,
+        grow: false,
         enableSorting: false,
         meta: {
           infoTooltip:

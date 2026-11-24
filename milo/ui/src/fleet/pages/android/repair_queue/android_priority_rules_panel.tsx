@@ -62,6 +62,7 @@ export const AndroidPriorityRulesPanel = ({
       filterBuilders={filterBuilders}
       isBuildersLoading={isBuildersLoading}
       canEdit={canEdit}
+      isPermissionLoading={hasPermission === null}
       searchPlaceholder='Add rule filter (e.g. state = "DYING" AND run_target = "seahawk")...'
     />
   );
