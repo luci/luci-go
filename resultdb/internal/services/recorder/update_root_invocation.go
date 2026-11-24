@@ -404,8 +404,8 @@ func verifyUpdateRootInvocationPermissions(ctx context.Context, req *pb.UpdateRo
 	for path := range updateMask.Children() {
 		switch path {
 		case "baseline_id":
-			if err := validateUpdateBaselinePermissions(ctx, realm); err != nil {
-				return err // PermissionDenied appstatus error.
+			if err := validateUpdateBaselinePermissions(ctx, realm, req.RootInvocation.BaselineId); err != nil {
+				return err // PermissionDenied or InvalidArgument appstatus error.
 			}
 		}
 	}

@@ -276,8 +276,9 @@ type Invocation struct {
 	// test variants for a baseline in the Baselines table and test variants from
 	// a given invocation determines whether a test is new.
 	//
-	// The caller must have `resultdb.baselines.put` to be able to
-	// modify this field.
+	// The caller must have `resultdb.baselines.put` in the `<project>:@project`
+	// realm to be able to modify this field. When non-empty, the subrealm prefix
+	// (before `:`) must match the subrealm of the invocation's `realm`.
 	BaselineId string `protobuf:"bytes,16,opt,name=baseline_id,json=baselineId,proto3" json:"baseline_id,omitempty"`
 	// Instructions for the steps and test results in this invocation.
 	// It may also contain instructions for test results in included invocations.

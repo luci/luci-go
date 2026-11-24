@@ -408,6 +408,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 
 			t.Run("baseline_id permission", func(t *ftt.Test) {
 				req.UpdateMask.Paths = []string{"baseline_id"}
+				req.RootInvocation.BaselineId = "testrealm:new-baseline"
 				t.Run("denied", func(t *ftt.Test) {
 					ctx := auth.WithState(ctx, &authtest.FakeState{
 						Identity: "user:user@example.com",
@@ -415,6 +416,32 @@ func TestUpdateRootInvocation(t *testing.T) {
 					_, err := recorder.UpdateRootInvocation(ctx, req)
 					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
 					assert.Loosely(t, err, should.ErrLike(`caller does not have permission to write to test baseline in realm testproject:@project`))
+				})
+
+				t.Run("mismatched realm", func(t *ftt.Test) {
+					req.RootInvocation.BaselineId = "try:new-baseline"
+					ctx := auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:baseliner@example.com",
+						IdentityPermissions: []authtest.RealmPermission{
+							{Realm: "testproject:@project", Permission: permPutBaseline},
+						},
+					})
+					_, err := recorder.UpdateRootInvocation(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.PermissionDenied))
+					assert.Loosely(t, err, should.ErrLike(`baseline_id "try:new-baseline" does not match invocation realm "testproject:testrealm"`))
+				})
+
+				t.Run("invalid format", func(t *ftt.Test) {
+					req.RootInvocation.BaselineId = "testrealm/new-baseline"
+					ctx := auth.WithState(ctx, &authtest.FakeState{
+						Identity: "user:baseliner@example.com",
+						IdentityPermissions: []authtest.RealmPermission{
+							{Realm: "testproject:@project", Permission: permPutBaseline},
+						},
+					})
+					_, err := recorder.UpdateRootInvocation(ctx, req)
+					assert.That(t, err, grpccode.ShouldBe(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`baseline_id: does not match`))
 				})
 
 				t.Run("granted", func(t *ftt.Test) {
@@ -828,7 +855,7 @@ func TestUpdateRootInvocation(t *testing.T) {
 			t.Run("properties, tags, baseline_id", func(t *ftt.Test) {
 				newProperties := testutil.TestStrictProperties()
 				newTags := []*pb.StringPair{{Key: "newkey", Value: "newvalue"}}
-				newBaselineID := "try:new-baseline"
+				newBaselineID := "testrealm:new-baseline"
 
 				req.UpdateMask.Paths = []string{"properties", "tags", "baseline_id"}
 				req.RootInvocation = &pb.RootInvocation{

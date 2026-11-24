@@ -182,12 +182,32 @@ func TestVerifyCreateRootInvocationPermissions(t *testing.T) {
 		})
 
 		t.Run("baseline", func(t *ftt.Test) {
-			request.RootInvocation.BaselineId = "try:linux-rel"
+			request.RootInvocation.BaselineId = "realm:linux-rel"
 
 			t.Run("disallowed", func(t *ftt.Test) {
 				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
 				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
 				assert.Loosely(t, err, should.ErrLike(`caller does not have permission to write to test baseline`))
+			})
+
+			t.Run("mismatched realm", func(t *ftt.Test) {
+				request.RootInvocation.BaselineId = "try:linux-rel"
+				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+					Realm: "project:@project", Permission: permPutBaseline,
+				})
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+				assert.Loosely(t, err, should.ErrLike(`baseline_id "try:linux-rel" does not match invocation realm "project:realm"`))
+			})
+
+			t.Run("invalid format", func(t *ftt.Test) {
+				request.RootInvocation.BaselineId = "realm/linux-rel"
+				authState.IdentityPermissions = append(authState.IdentityPermissions, authtest.RealmPermission{
+					Realm: "project:@project", Permission: permPutBaseline,
+				})
+				err := verifyCreateRootInvocationPermissions(ctx, request, cfg)
+				assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+				assert.Loosely(t, err, should.ErrLike(`baseline_id: does not match`))
 			})
 
 			t.Run("allowed", func(t *ftt.Test) {

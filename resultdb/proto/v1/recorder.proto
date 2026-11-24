@@ -241,7 +241,9 @@ service Recorder {
 //   is required.
 // - if a baseline is set,
 //   resultdb.baselines.put permission is required in the ":@project" realm
-//   of the LUCI project the root invocation is being created in.
+//   of the LUCI project the root invocation is being created in, and the
+//   baseline's subrealm prefix (before ':') must match the root invocation's
+//   subrealm.
 message CreateRootInvocationRequest {
   // RootInvocation identifier, becomes a part of the root_invocation.name.
   // Only trusted systems with an agreed format negotiated with ResultDB

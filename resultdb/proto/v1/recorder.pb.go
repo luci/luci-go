@@ -114,7 +114,9 @@ func (FinalizeWorkUnitDescendantsRequest_FinalizationScope) EnumDescriptor() ([]
 //     is required.
 //   - if a baseline is set,
 //     resultdb.baselines.put permission is required in the ":@project" realm
-//     of the LUCI project the root invocation is being created in.
+//     of the LUCI project the root invocation is being created in, and the
+//     baseline's subrealm prefix (before ':') must match the root invocation's
+//     subrealm.
 type CreateRootInvocationRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

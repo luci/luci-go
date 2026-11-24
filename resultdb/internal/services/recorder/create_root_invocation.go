@@ -306,14 +306,11 @@ func verifyCreateRootInvocationPermissions(ctx context.Context, req *pb.CreateRo
 
 	// If a baseline is set,
 	// resultdb.baselines.put permission is required in the ":@project" realm
-	// of the LUCI project the root invocation is being created in.
+	// of the LUCI project the root invocation is being created in, and the
+	// baseline's subrealm prefix must match the root invocation's subrealm.
 	if inv.BaselineId != "" {
-		project, _ := realms.Split(realm)
-		projectRealm := realms.Join(project, realms.ProjectRealm)
-		if allowed, err := auth.HasPermission(ctx, permPutBaseline, projectRealm, nil); err != nil {
+		if err := validateUpdateBaselinePermissions(ctx, realm, inv.BaselineId); err != nil {
 			return err
-		} else if !allowed {
-			return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission to write to test baseline in realm %q`, projectRealm)
 		}
 	}
 

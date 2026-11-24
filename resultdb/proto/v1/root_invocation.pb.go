@@ -380,6 +380,10 @@ type RootInvocation struct {
 	// root invocation the set of test variants in the baseline yields the new
 	// tests run in the invocation. Those tests can then be e.g. subject to additional
 	// presubmit checks, such as to validate they are not flaky.
+	//
+	// The caller must have `resultdb.baselines.put` in the `<project>:@project`
+	// realm to be able to modify this field. When non-empty, the subrealm prefix
+	// (before `:`) must match the subrealm of the root invocation's `realm`.
 	BaselineId string `protobuf:"bytes,15,opt,name=baseline_id,json=baselineId,proto3" json:"baseline_id,omitempty"`
 	// Controls the operation of streaming exports.
 	//

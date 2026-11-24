@@ -17,6 +17,7 @@ package recorder
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -198,12 +199,16 @@ func validateUpdateInvocationPermissions(ctx context.Context, existing *pb.Invoc
 		switch path {
 		case "baseline_id":
 			if req.Invocation.BaselineId != "" {
-				if err := validateUpdateBaselinePermissions(ctx, realm); err != nil {
-					// TODO: Return an error to the caller instead of swallowing the error.
-					logging.Warningf(ctx, "Silently swallowing permission error on %s: %s", req.Invocation.Name, err)
+				if err := validateUpdateBaselinePermissions(ctx, realm, req.Invocation.BaselineId); err != nil {
+					if appstatus.Code(err) == codes.PermissionDenied {
+						// TODO: Return an error to the caller instead of swallowing the error.
+						logging.Warningf(ctx, "Silently swallowing permission error on %s: %s", req.Invocation.Name, err)
 
-					// Silently reset the baseline ID on the invocation instead.
-					req.Invocation.BaselineId = ""
+						// Silently reset the baseline ID on the invocation instead.
+						req.Invocation.BaselineId = ""
+					} else {
+						return err
+					}
 				}
 			}
 		case "bigquery_exports":
@@ -261,10 +266,10 @@ func validateUpdateRealmPermissions(ctx context.Context, newRealm string) error 
 	return nil
 }
 
-func validateUpdateBaselinePermissions(ctx context.Context, realm string) error {
+func validateUpdateBaselinePermissions(ctx context.Context, realm, baselineID string) error {
 	// The baseline is a project-scoped resource, so we should check the
 	// realm <project>:@project.
-	project, _ := realms.Split(realm)
+	project, subrealm := realms.Split(realm)
 	projectRealm := realms.Join(project, realms.ProjectRealm)
 
 	switch allowed, err := auth.HasPermission(ctx, permPutBaseline, projectRealm, nil); {
@@ -272,6 +277,16 @@ func validateUpdateBaselinePermissions(ctx context.Context, realm string) error 
 		return err
 	case !allowed:
 		return appstatus.Errorf(codes.PermissionDenied, `caller does not have permission to write to test baseline in realm %s`, projectRealm)
+	}
+
+	if baselineID != "" {
+		if err := pbutil.ValidateBaselineID(baselineID); err != nil {
+			return appstatus.BadRequest(errors.Fmt("baseline_id: %w", err))
+		}
+		baselineSubrealm, _, _ := strings.Cut(baselineID, ":")
+		if subrealm != baselineSubrealm {
+			return appstatus.Errorf(codes.PermissionDenied, `baseline_id %q does not match invocation realm %q`, baselineID, realm)
+		}
 	}
 	return nil
 }

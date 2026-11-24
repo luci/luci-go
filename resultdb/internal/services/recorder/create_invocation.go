@@ -275,16 +275,8 @@ func verifyCreateInvocationPermissions(ctx context.Context, in *pb.CreateInvocat
 	}
 
 	if inv.BaselineId != "" {
-		// Baselines are project-scoped resources. Find the project-scoped
-		// realm <project>:@project and check authorisation to write to it.
-		project, _ := realms.Split(realm)
-		projectRealm := realms.Join(project, realms.ProjectRealm)
-
-		switch allowed, err := auth.HasPermission(ctx, permPutBaseline, projectRealm, nil); {
-		case err != nil:
+		if err := validateUpdateBaselinePermissions(ctx, realm, inv.BaselineId); err != nil {
 			return err
-		case !allowed:
-			return appstatus.Errorf(codes.PermissionDenied, `creator does not have permission to write to test baseline in realm %q`, projectRealm)
 		}
 	}
 

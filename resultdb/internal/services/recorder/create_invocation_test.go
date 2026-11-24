@@ -315,6 +315,42 @@ func TestVerifyCreateInvocationPermissions(t *testing.T) {
 			})
 			assert.Loosely(t, err, should.ErrLike(`does not have permission to write to test baseline`))
 		})
+		t.Run(`baseline mismatched realm`, func(t *ftt.Test) {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:try", Permission: permCreateInvocation},
+					{Realm: "chromium:@project", Permission: permPutBaseline},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm:      "chromium:try",
+					BaselineId: "ci:linux-rel",
+				},
+			})
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.PermissionDenied))
+			assert.Loosely(t, err, should.ErrLike(`baseline_id "ci:linux-rel" does not match invocation realm "chromium:try"`))
+		})
+		t.Run(`baseline invalid format`, func(t *ftt.Test) {
+			ctx = auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: "user:someone@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{Realm: "chromium:try", Permission: permCreateInvocation},
+					{Realm: "chromium:@project", Permission: permPutBaseline},
+				},
+			})
+			err := verifyCreateInvocationPermissions(ctx, &pb.CreateInvocationRequest{
+				InvocationId: "u-abc",
+				Invocation: &pb.Invocation{
+					Realm:      "chromium:try",
+					BaselineId: "try/linux-rel",
+				},
+			})
+			assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, err, should.ErrLike(`baseline_id: does not match`))
+		})
 		t.Run(`creation disallowed`, func(t *ftt.Test) {
 			ctx = auth.WithState(context.Background(), &authtest.FakeState{
 				Identity:            "user:someone@example.com",

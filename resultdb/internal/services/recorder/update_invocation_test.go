@@ -602,7 +602,7 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 		})
 		t.Run(`baseline_id`, func(t *ftt.Test) {
 			request.UpdateMask.Paths = []string{"baseline_id"}
-			request.Invocation.BaselineId = "try:linux-rel"
+			request.Invocation.BaselineId = "testrealm:linux-rel"
 
 			t.Run(`empty`, func(t *ftt.Test) {
 				request.Invocation.BaselineId = ""
@@ -613,27 +613,52 @@ func TestValidateUpdateInvocationPermissions(t *testing.T) {
 				t.Run(`valid`, func(t *ftt.Test) {
 					err := validatePermissions(request)
 					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, request.Invocation.BaselineId, should.Equal("testrealm:linux-rel"))
+				})
+				t.Run(`mismatched realm`, func(t *ftt.Test) {
+					request.Invocation.BaselineId = "try:linux-rel"
+					err := validatePermissions(request)
+					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, request.Invocation.BaselineId, should.BeEmpty)
+				})
+				t.Run(`invalid format`, func(t *ftt.Test) {
+					request.Invocation.BaselineId = "testrealm/linux-rel"
+					err := validatePermissions(request)
+					assert.Loosely(t, appstatus.Code(err), should.Equal(codes.InvalidArgument))
+					assert.Loosely(t, err, should.ErrLike(`baseline_id: does not match`))
 				})
 				t.Run(`no access`, func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
 					err := validatePermissions(request)
 					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
 					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, request.Invocation.BaselineId, should.BeEmpty)
 				})
 			})
 			t.Run(`concurrent change to realm`, func(t *ftt.Test) {
 				request.UpdateMask.Paths = append(request.UpdateMask.Paths, "realm")
 				request.Invocation.Realm = "testproject:newrealm"
+				request.Invocation.BaselineId = "newrealm:linux-rel"
 
 				t.Run(`valid`, func(t *ftt.Test) {
 					err := validatePermissions(request)
 					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, request.Invocation.BaselineId, should.Equal("newrealm:linux-rel"))
+				})
+				t.Run(`mismatched realm`, func(t *ftt.Test) {
+					request.Invocation.BaselineId = "testrealm:linux-rel"
+					err := validatePermissions(request)
+					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
+					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, request.Invocation.BaselineId, should.BeEmpty)
 				})
 				t.Run(`no access`, func(t *ftt.Test) {
 					authState.IdentityPermissions = removePermission(authState.IdentityPermissions, permPutBaseline)
 					err := validatePermissions(request)
 					// TODO: Once we stop silently swallowing errors, expect a non-nil result.
 					assert.Loosely(t, err, should.BeNil)
+					assert.Loosely(t, request.Invocation.BaselineId, should.BeEmpty)
 				})
 			})
 		})
@@ -779,7 +804,7 @@ func TestUpdateInvocation(t *testing.T) {
 			req := &pb.UpdateInvocationRequest{
 				Invocation: &pb.Invocation{
 					Name:       "invocations/inv",
-					BaselineId: "try:linux-rel",
+					BaselineId: "testrealm:linux-rel",
 				},
 				UpdateMask: &field_mask.FieldMask{Paths: []string{"baseline_id"}},
 			}
@@ -792,16 +817,25 @@ func TestUpdateInvocation(t *testing.T) {
 				// be silently reset.
 				assert.Loosely(t, inv.BaselineId, should.BeEmpty)
 			})
+			t.Run("mismatched realm", func(t *ftt.Test) {
+				req.Invocation.BaselineId = "try:linux-rel"
+
+				inv, err := recorder.UpdateInvocation(ctx, req)
+				assert.Loosely(t, err, should.BeNil)
+				// baseline subrealm does not match invocation realm, so baseline
+				// should be silently reset.
+				assert.Loosely(t, inv.BaselineId, should.BeEmpty)
+			})
 			t.Run("with permission", func(t *ftt.Test) {
 				inv, err := recorder.UpdateInvocation(ctx, req)
 				assert.Loosely(t, err, should.BeNil)
-				assert.Loosely(t, inv.BaselineId, should.Equal("try:linux-rel"))
+				assert.Loosely(t, inv.BaselineId, should.Equal("testrealm:linux-rel"))
 			})
 			t.Run("backtick quoted without permission", func(t *ftt.Test) {
 				reqWithBackticks := &pb.UpdateInvocationRequest{
 					Invocation: &pb.Invocation{
 						Name:       "invocations/inv",
-						BaselineId: "try:linux-rel",
+						BaselineId: "testrealm:linux-rel",
 					},
 					UpdateMask: &field_mask.FieldMask{Paths: []string{"`baseline_id`"}},
 				}
@@ -1266,7 +1300,7 @@ func TestUpdateInvocation(t *testing.T) {
 						Sources: testutil.TestSourcesWithChangelistNumbers(431, 123),
 					},
 					IsSourceSpecFinal: true,
-					BaselineId:        "try:linux-rel",
+					BaselineId:        "newrealm:linux-rel",
 					Realm:             "testproject:newrealm",
 					Instructions:      instructions,
 					Tags: []*pb.StringPair{
@@ -1290,7 +1324,7 @@ func TestUpdateInvocation(t *testing.T) {
 					Sources: testutil.TestSourcesWithChangelistNumbers(123, 431),
 				},
 				IsSourceSpecFinal: true,
-				BaselineId:        "try:linux-rel",
+				BaselineId:        "newrealm:linux-rel",
 				Realm:             "testproject:newrealm",
 				Instructions:      instructionutil.InstructionsWithNames(instructions, "invocations/inv"),
 				Tags: []*pb.StringPair{
