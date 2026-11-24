@@ -36,7 +36,7 @@ import (
 // ActionURLFetchTransformer is the default transformer for
 // core.ActionURLFetch.
 func ActionURLFetchTransformer(a *core.ActionURLFetch, deps []Package) (*core.Derivation, error) {
-	return ReexecDerivation(a, false)
+	return ReexecDerivation(a, true)
 }
 
 // ActionURLFetchExecutor is the default executor for core.ActionURLFetch.

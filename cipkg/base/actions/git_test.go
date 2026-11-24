@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -47,6 +48,23 @@ func TestProcessGit(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 
 		checkReexecArg(t, pkg.Derivation.Args, gitSpec)
+
+		t.Run("forwards host env without changing DerivationID", func(t *ftt.Test) {
+			t.Setenv("https_proxy", "http://127.0.0.1:8443")
+			t.Setenv("ALL_PROXY", "socks5://127.0.0.1:1080")
+
+			proxiedPkg, err := ap.Process("", pm, &core.Action{
+				Name: "git",
+				Spec: &core.Action_Git{Git: gitSpec},
+			})
+			assert.NoErr(t, err)
+			assert.That(t, proxiedPkg.DerivationID, should.Equal(pkg.DerivationID))
+
+			drvEnv := environ.New(proxiedPkg.Derivation.Env)
+			assert.That(t, drvEnv.Get("https_proxy"), should.Equal("http://127.0.0.1:8443"))
+			assert.That(t, drvEnv.Get("ALL_PROXY"), should.Equal("socks5://127.0.0.1:1080"))
+			assert.That(t, drvEnv.Get(envCipkgExec), should.Equal("1"))
+		})
 	})
 }
 
@@ -133,27 +151,58 @@ func TestReexecGit(t *testing.T) {
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 		ctx := context.Background()
-		repo, commit := testutils.InitGitRepo(t)
 		out := t.TempDir()
 
-		pkg, err := ap.Process("", pm, &core.Action{
-			Name: "git",
-			Spec: &core.Action_Git{Git: &core.ActionGitFetch{
-				Url:    repo,
-				Commit: commit,
-				Export: true,
-			}},
+		t.Run("direct", func(t *ftt.Test) {
+			repo, commit := testutils.InitGitRepo(t)
+			pkg, err := ap.Process("", pm, &core.Action{
+				Name: "git",
+				Spec: &core.Action_Git{Git: &core.ActionGitFetch{
+					Url:    repo,
+					Commit: commit,
+					Export: true,
+				}},
+			})
+			assert.Loosely(t, err, should.BeNil)
+
+			runWithDrv(t, ctx, pkg.Derivation, out)
+
+			// Verify the repo was cloned and checked out
+			_, err = os.Stat(filepath.Join(out, "file"))
+			assert.Loosely(t, err, should.BeNil)
+
+			// Verify .git does not exist in out
+			_, err = os.Stat(filepath.Join(out, ".git"))
+			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
 		})
-		assert.Loosely(t, err, should.BeNil)
 
-		runWithDrv(t, ctx, pkg.Derivation, out)
+		t.Run("via http_proxy with submodule", func(t *ftt.Test) {
+			proxyURL, repoURL, commit, proxyHits := testutils.InitGitHTTPProxy(t)
 
-		// Verify the repo was cloned and checked out
-		_, err = os.Stat(filepath.Join(out, "file"))
-		assert.Loosely(t, err, should.BeNil)
+			clearProxyEnv(t)
+			t.Setenv("http_proxy", proxyURL)
 
-		// Verify .git does not exist in out
-		_, err = os.Stat(filepath.Join(out, ".git"))
-		assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
+			pkg, err := ap.Process("", pm, &core.Action{
+				Name: "git",
+				Spec: &core.Action_Git{Git: &core.ActionGitFetch{
+					Url:       repoURL,
+					Commit:    commit,
+					Export:    true,
+					Recursive: true,
+				}},
+			})
+			assert.NoErr(t, err)
+
+			assert.NoErr(t, execDrv(t, ctx, pkg.Derivation, out))
+			assert.That(t, proxyHits.Load() > 0, should.BeTrue)
+
+			b, err := os.ReadFile(filepath.Join(out, "file"))
+			assert.NoErr(t, err)
+			assert.That(t, string(b), should.Equal("data"))
+
+			subBytes, err := os.ReadFile(filepath.Join(out, "sub", "subfile"))
+			assert.NoErr(t, err)
+			assert.That(t, string(subBytes), should.Equal("subdata"))
+		})
 	})
 }

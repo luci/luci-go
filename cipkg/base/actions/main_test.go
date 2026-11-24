@@ -15,6 +15,7 @@
 package actions
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -22,6 +23,9 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	if os.Getenv(envCipkgExec) != "" {
+		NewReexecRegistry().Intercept(context.Background())
+	}
 	execmock.Intercept(execmock.Strict)
 	os.Exit(m.Run())
 }

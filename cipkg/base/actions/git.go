@@ -25,6 +25,7 @@ import (
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
+	"github.com/go-git/go-git/v6/plumbing/client"
 
 	"go.chromium.org/luci/cipkg/core"
 )
@@ -32,7 +33,7 @@ import (
 // ActionGitFetchTransformer is the default transformer for
 // core.ActionGitFetch.
 func ActionGitFetchTransformer(a *core.ActionGitFetch, deps []Package) (*core.Derivation, error) {
-	return ReexecDerivation(a, false)
+	return ReexecDerivation(a, true)
 }
 
 // ActionGitFetchExecutor is the default executor for core.ActionGitFetch.
@@ -42,9 +43,12 @@ func ActionGitFetchExecutor(ctx context.Context, a *core.ActionGitFetch, out str
 		return fmt.Errorf("invalid git commit: %s", a.Commit)
 	}
 
+	clientOpts := []client.Option{client.WithProxyEnvironment()}
+
 	repo, err := git.PlainCloneContext(ctx, out, &git.CloneOptions{
-		URL:        a.Url,
-		NoCheckout: true,
+		URL:           a.Url,
+		NoCheckout:    true,
+		ClientOptions: clientOpts,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to clone git repo: %w", err)
@@ -69,6 +73,7 @@ func ActionGitFetchExecutor(ctx context.Context, a *core.ActionGitFetch, out str
 		if err := subs.Update(&git.SubmoduleUpdateOptions{
 			Init:              true,
 			RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+			ClientOptions:     clientOpts,
 		}); err != nil {
 			return fmt.Errorf("failed to update submodules: %w", err)
 		}

@@ -19,17 +19,24 @@ package testutils
 import (
 	"cmp"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/backend"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/plumbing/filemode"
 	"github.com/go-git/go-git/v6/plumbing/format/index"
 	"github.com/go-git/go-git/v6/plumbing/object"
+	"github.com/go-git/go-git/v6/plumbing/transport"
+	"github.com/go-git/go-git/v6/storage"
 )
 
 func createRepo(t testing.TB, dir string, files map[string]string) (*git.Repository, plumbing.Hash) {
@@ -90,6 +97,14 @@ func InitGitRepoWithSubmodule(t testing.TB) (string, string) {
 
 	subDir := t.TempDir()
 	mainDir := t.TempDir()
+	subURL := "file://" + filepath.ToSlash(subDir)
+	commit := initGitRepoWithSubmodule(t, subDir, mainDir, subURL)
+
+	return "file://" + filepath.ToSlash(mainDir), commit
+}
+
+func initGitRepoWithSubmodule(t testing.TB, subDir, mainDir, subURL string) string {
+	t.Helper()
 
 	// Create submodule repo
 	_, subCommit := createRepo(t, subDir, map[string]string{
@@ -106,8 +121,7 @@ func InitGitRepoWithSubmodule(t testing.TB) (string, string) {
 	}
 
 	// Add .gitmodules
-	subUrl := "file://" + filepath.ToSlash(subDir)
-	if err := os.WriteFile(filepath.Join(mainDir, ".gitmodules"), fmt.Appendf(nil, "[submodule \"sub\"]\n\tpath = sub\n\turl = %s\n", subUrl), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(mainDir, ".gitmodules"), fmt.Appendf(nil, "[submodule \"sub\"]\n\tpath = sub\n\turl = %s\n", subURL), 0644); err != nil {
 		t.Fatalf("failed to create .gitmodules: %s", err)
 	}
 	if _, err := wt.Add(".gitmodules"); err != nil {
@@ -143,5 +157,49 @@ func InitGitRepoWithSubmodule(t testing.TB) (string, string) {
 		t.Fatalf("failed to commit: %s", err)
 	}
 
-	return "file://" + filepath.ToSlash(mainDir), commit.String()
+	return commit.String()
+}
+
+type gitDirLoader map[string]string
+
+func (l gitDirLoader) Load(ep *url.URL) (storage.Storer, error) {
+	dir, ok := l[ep.Path]
+	if !ok {
+		return nil, transport.ErrRepositoryNotFound
+	}
+	r, err := git.PlainOpen(dir)
+	if err != nil {
+		return nil, err
+	}
+	return r.Storer, nil
+}
+
+// InitGitHTTPProxy initializes a git repository (with a submodule) served only
+// via an in-memory HTTP proxy under the non-resolvable host
+// "proxy-target.invalid".
+func InitGitHTTPProxy(t testing.TB) (proxyURL, repoURL, commit string, hits *atomic.Int32) {
+	t.Helper()
+
+	const proxyTargetHost = "proxy-target.invalid"
+	subDir := t.TempDir()
+	mainDir := t.TempDir()
+	commit = initGitRepoWithSubmodule(t, subDir, mainDir, "http://"+proxyTargetHost+"/sub.git")
+
+	gitHandler := backend.New(gitDirLoader{
+		"repo.git": mainDir,
+		"sub.git":  subDir,
+	})
+
+	hits = &atomic.Int32{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Host != proxyTargetHost {
+			http.Error(w, "unexpected host: "+r.Host, http.StatusBadGateway)
+			return
+		}
+		hits.Add(1)
+		gitHandler.ServeHTTP(w, r)
+	}))
+	t.Cleanup(srv.Close)
+
+	return srv.URL, "http://" + proxyTargetHost + "/repo.git", commit, hits
 }

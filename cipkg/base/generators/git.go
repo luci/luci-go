@@ -23,6 +23,7 @@ import (
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/config"
 	"github.com/go-git/go-git/v6/plumbing"
+	"github.com/go-git/go-git/v6/plumbing/client"
 	"github.com/go-git/go-git/v6/storage/memory"
 
 	"go.chromium.org/luci/cipkg/core"
@@ -61,7 +62,9 @@ func ResolveRef(ctx context.Context, url, ref string) (plumbing.Hash, error) {
 		URLs: []string{url},
 	})
 
-	refs, err := remote.ListContext(ctx, &git.ListOptions{})
+	refs, err := remote.ListContext(ctx, &git.ListOptions{
+		ClientOptions: []client.Option{client.WithProxyEnvironment()},
+	})
 	if err != nil {
 		return plumbing.Hash{}, err
 	}

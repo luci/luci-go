@@ -18,6 +18,9 @@ package generators
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -70,6 +73,36 @@ func TestFetchGit(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, hash.String(), should.Equal(commit))
 			})
+
+			t.Run("via http_proxy", func(t *ftt.Test) {
+				proxyURL, proxiedRepoURL, proxiedCommit, proxyHits := testutils.InitGitHTTPProxy(t)
+
+				exe, err := os.Executable()
+				assert.NoErr(t, err)
+				cmd := exec.CommandContext(ctx, exe, "-test.run=^TestResolveRefProxyHelper$")
+				cmd.Env = []string{
+					"PATH=" + os.Getenv("PATH"),
+					"SYSTEMROOT=" + os.Getenv("SYSTEMROOT"),
+					"TMPDIR=" + t.TempDir(),
+					"http_proxy=" + proxyURL,
+					"_CIPKG_TEST_RESOLVE_URL=" + proxiedRepoURL,
+					"_CIPKG_TEST_RESOLVE_REF=refs/heads/master",
+				}
+				out, err := cmd.CombinedOutput()
+				assert.NoErr(t, err)
+				assert.That(t, proxyHits.Load() > 0, should.BeTrue)
+				assert.That(t, strings.TrimSpace(string(out)), should.ContainSubstring("RESOLVED="+proxiedCommit))
+			})
 		})
 	})
+}
+
+func TestResolveRefProxyHelper(t *testing.T) {
+	repoURL := os.Getenv("_CIPKG_TEST_RESOLVE_URL")
+	if repoURL == "" {
+		return
+	}
+	hash, err := ResolveRef(context.Background(), repoURL, os.Getenv("_CIPKG_TEST_RESOLVE_REF"))
+	assert.NoErr(t, err)
+	fmt.Printf("RESOLVED=%s\n", hash.String())
 }

@@ -17,10 +17,12 @@ package actions
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 
 	"google.golang.org/protobuf/encoding/protojson"
@@ -67,6 +69,29 @@ func runWithDrv(tb testing.TB, ctx context.Context, drv *core.Derivation, out st
 		code = i
 	})
 	assert.Loosely(tb, code, should.BeZero)
+}
+
+func execDrv(tb testing.TB, ctx context.Context, drv *core.Derivation, out string) error {
+	tb.Helper()
+	cmd := exec.CommandContext(ctx, drv.Args[0], drv.Args[1:]...)
+	cmd.Env = append(slices.Clone(drv.Env), "out="+out)
+	outBytes, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%w: %s", err, outBytes)
+	}
+	return nil
+}
+
+func clearProxyEnv(tb testing.TB) {
+	tb.Helper()
+	for _, k := range []string{
+		"http_proxy", "HTTP_PROXY",
+		"https_proxy", "HTTPS_PROXY",
+		"all_proxy", "ALL_PROXY",
+		"no_proxy", "NO_PROXY",
+	} {
+		tb.Setenv(k, "")
+	}
 }
 
 func checkReexecArg(tb testing.TB, args []string, m proto.Message) {

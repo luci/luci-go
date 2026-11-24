@@ -25,8 +25,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"sync/atomic"
 	"testing"
 
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -100,6 +102,23 @@ func TestProcessURL(t *testing.T) {
 				assert.NoErr(t, err)
 				assert.That(t, sameHdrPkg.DerivationID, should.Equal(withHdrPkg.DerivationID))
 			}
+		})
+
+		t.Run("forwards host env without changing DerivationID", func(t *ftt.Test) {
+			t.Setenv("http_proxy", "http://127.0.0.1:8080")
+			t.Setenv("HTTPS_PROXY", "http://127.0.0.1:8443")
+
+			proxiedPkg, err := ap.Process("", pm, &core.Action{
+				Name: "url",
+				Spec: &core.Action_Url{Url: url},
+			})
+			assert.NoErr(t, err)
+			assert.That(t, proxiedPkg.DerivationID, should.Equal(pkg.DerivationID))
+
+			drvEnv := environ.New(proxiedPkg.Derivation.Env)
+			assert.That(t, drvEnv.Get("http_proxy"), should.Equal("http://127.0.0.1:8080"))
+			assert.That(t, drvEnv.Get("HTTPS_PROXY"), should.Equal("http://127.0.0.1:8443"))
+			assert.That(t, drvEnv.Get(envCipkgExec), should.Equal("1"))
 		})
 	})
 }
@@ -260,36 +279,69 @@ func TestReexecURL(t *testing.T) {
 		ctx := context.Background()
 		out := t.TempDir()
 
-		var gotUA string
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotUA = r.Header.Get("User-Agent")
-			fmt.Fprint(w, "something")
-		}))
-		defer s.Close()
+		t.Run("direct", func(t *ftt.Test) {
+			var gotUA string
+			s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotUA = r.Header.Get("User-Agent")
+				fmt.Fprint(w, "something")
+			}))
+			defer s.Close()
 
-		pkg, err := ap.Process("", pm, &core.Action{
-			Name: "url",
-			Spec: &core.Action_Url{Url: &core.ActionURLFetch{
-				Url:           s.URL,
-				HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
-				HashValue:     "3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb",
-				Headers: map[string]string{
-					"User-Agent": "crowbar-test/1.0",
-				},
-			}},
-		})
-		assert.Loosely(t, err, should.BeNil)
+			pkg, err := ap.Process("", pm, &core.Action{
+				Name: "url",
+				Spec: &core.Action_Url{Url: &core.ActionURLFetch{
+					Url:           s.URL,
+					HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
+					HashValue:     "3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb",
+					Headers: map[string]string{
+						"User-Agent": "crowbar-test/1.0",
+					},
+				}},
+			})
+			assert.Loosely(t, err, should.BeNil)
 
-		runWithDrv(t, ctx, pkg.Derivation, out)
-		assert.That(t, gotUA, should.Equal("crowbar-test/1.0"))
+			runWithDrv(t, ctx, pkg.Derivation, out)
+			assert.That(t, gotUA, should.Equal("crowbar-test/1.0"))
 
-		{
 			f, err := os.Open(filepath.Join(out, "file"))
 			assert.Loosely(t, err, should.BeNil)
 			defer f.Close()
 			b, err := io.ReadAll(f)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, string(b), should.Equal("something"))
-		}
+		})
+
+		t.Run("via http_proxy", func(t *ftt.Test) {
+			var proxyHits atomic.Int32
+			proxySrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Host == "proxy-target.invalid" && r.URL.Path == "/file" {
+					proxyHits.Add(1)
+					fmt.Fprint(w, "something")
+					return
+				}
+				http.Error(w, "unexpected request", http.StatusBadGateway)
+			}))
+			defer proxySrv.Close()
+
+			clearProxyEnv(t)
+			t.Setenv("http_proxy", proxySrv.URL)
+
+			pkg, err := ap.Process("", pm, &core.Action{
+				Name: "url",
+				Spec: &core.Action_Url{Url: &core.ActionURLFetch{
+					Url:           "http://proxy-target.invalid/file",
+					HashAlgorithm: core.HashAlgorithm_HASH_SHA256,
+					HashValue:     "3fc9b689459d738f8c88a3a48aa9e33542016b7a4052e001aaa536fca74813cb",
+				}},
+			})
+			assert.NoErr(t, err)
+
+			assert.NoErr(t, execDrv(t, ctx, pkg.Derivation, out))
+			assert.That(t, proxyHits.Load(), should.Equal(int32(1)))
+
+			b, err := os.ReadFile(filepath.Join(out, "file"))
+			assert.NoErr(t, err)
+			assert.That(t, string(b), should.Equal("something"))
+		})
 	})
 }
