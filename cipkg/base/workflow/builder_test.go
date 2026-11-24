@@ -122,6 +122,109 @@ func TestBuilder(t *testing.T) {
 			assert.Loosely(t, func() { MustDecRefRecursiveRuntime(pkgs[1]) }, should.NotPanic)
 		})
 
+		t.Run("distinct actions sharing derivation execute hooks and upload once per action", func(t *ftt.Test) {
+			var built int
+			var pre, post, uploaded []string
+			pe = NewPackageExecutor("", PackageExecutorConfig{
+				Storage: &testStorage{
+					fetch: func(ctx context.Context, pkg actions.Package, id string) (string, error) {
+						return "", core.ErrPackageNotExist
+					},
+					upload: func(ctx context.Context, pkg actions.Package, ids []string) (string, error) {
+						uploaded = append(uploaded, pkg.Action.GetMetadata().GetCipd().GetName())
+						return "hash", nil
+					},
+				},
+				PreExecFn: func(ctx context.Context, pkg actions.Package) (context.Context, error) {
+					pre = append(pre, pkg.Action.GetMetadata().GetCipd().GetName())
+					return ctx, nil
+				},
+				PostExecFn: func(ctx context.Context, pkg actions.Package, execErr error) error {
+					post = append(post, pkg.Action.GetMetadata().GetCipd().GetName())
+					return nil
+				},
+				ExecFn: func(context.Context, *ExecutionConfig, *core.Derivation) error {
+					built++
+					return nil
+				},
+			})
+
+			pkgs, err := b.GeneratePackages(ctx, []generators.Generator{
+				&Generator{
+					Name:     "shared",
+					Metadata: &core.Action_Metadata{Cipd: &core.Action_Metadata_CIPD{Name: "pkg/a"}},
+				},
+				&Generator{
+					Name:     "shared",
+					Metadata: &core.Action_Metadata{Cipd: &core.Action_Metadata_CIPD{Name: "pkg/b"}},
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pkgs[0].DerivationID, should.Equal(pkgs[1].DerivationID))
+			assert.Loosely(t, pkgs[0].ActionID, should.NotEqual(pkgs[1].ActionID))
+
+			err = b.BuildPackages(ctx, pe, pkgs, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, built, should.Equal(1))
+			assert.Loosely(t, pre, should.Match([]string{"pkg/a", "pkg/b"}))
+			assert.Loosely(t, post, should.Match([]string{"pkg/a", "pkg/b"}))
+			assert.Loosely(t, uploaded, should.Match([]string{"pkg/a", "pkg/b"}))
+
+			removed, err := pkgs[0].Handler.TryRemove()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, removed, should.BeTrue)
+		})
+
+		t.Run("runtime dependency sharing derivation does not leak lock or skip upload", func(t *ftt.Test) {
+			var built int
+			var uploaded []string
+			pe = NewPackageExecutor("", PackageExecutorConfig{
+				Storage: &testStorage{
+					fetch: func(ctx context.Context, pkg actions.Package, id string) (string, error) {
+						if pkg.Action.GetMetadata().GetCipd().GetName() == "pkg/fetch" {
+							return "hash-fetch", nil
+						}
+						return "", core.ErrPackageNotExist
+					},
+					upload: func(ctx context.Context, pkg actions.Package, ids []string) (string, error) {
+						uploaded = append(uploaded, pkg.Action.GetMetadata().GetCipd().GetName())
+						return "hash", nil
+					},
+				},
+				ExecFn: func(context.Context, *ExecutionConfig, *core.Derivation) error {
+					built++
+					return nil
+				},
+			})
+
+			fetchAct, err := (&Generator{
+				Name:     "shared",
+				Metadata: &core.Action_Metadata{Cipd: &core.Action_Metadata_CIPD{Name: "pkg/fetch"}},
+			}).Generate(ctx, generators.Platforms{})
+			assert.Loosely(t, err, should.BeNil)
+
+			pkgs, err := b.GeneratePackages(ctx, []generators.Generator{
+				&Generator{
+					Name: "shared",
+					Metadata: &core.Action_Metadata{
+						Cipd:        &core.Action_Metadata_CIPD{Name: "pkg/out"},
+						RuntimeDeps: []*core.Action{fetchAct},
+					},
+				},
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pkgs[0].DerivationID, should.Equal(pkgs[0].RuntimeDependencies[0].DerivationID))
+
+			err = b.BuildPackages(ctx, pe, pkgs, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, built, should.Equal(0))
+			assert.Loosely(t, uploaded, should.Match([]string{"pkg/fetch", "pkg/out"}))
+
+			removed, err := pkgs[0].Handler.TryRemove()
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, removed, should.BeTrue)
+		})
+
 		t.Run("prePrepare", func(t *ftt.Test) {
 			var res string
 			pe = NewPackageExecutor("", PackageExecutorConfig{

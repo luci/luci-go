@@ -170,6 +170,10 @@ func (p *PackageExecutor) expand(ctx context.Context, pkg actions.Package, expan
 		newPkgs = append(newPkgs, pkgs...)
 	}
 
+	if _, ok := p.refs[pkg.DerivationID]; ok {
+		return append(newPkgs, pkg), nil
+	}
+
 	switch err := pkg.Handler.IncRef(); {
 	case errors.Is(err, core.ErrPackageNotExist):
 		for _, d := range pkg.BuildDependencies {
@@ -410,12 +414,7 @@ func (b *Builder) BuildPackages(ctx context.Context, pe *PackageExecutor, pkgs [
 	}
 
 	var errs []error
-	executed := stringset.New(len(newPkgs))
 	for _, pkg := range newPkgs {
-		if !executed.Add(pkg.DerivationID) {
-			continue
-		}
-
 		if err := pe.Execute(ctx, pkg); err != nil {
 			if continueOnExecError {
 				errs = append(errs, err)
