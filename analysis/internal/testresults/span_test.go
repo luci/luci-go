@@ -197,6 +197,126 @@ func TestReadTestHistory(t *testing.T) {
 			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts[5:]))
 		})
 
+		t.Run("partial-page pagination when approaching deadline", func(t *ftt.Test) {
+			// Insert a verdict 1 microsecond before the first partition boundary
+			// (-24h - 1us) and a sparse verdict after an empty multi-day gap (-10d)
+			// to verify boundary precision and empty-page continuation.
+			boundaryMinus1us := referenceTime.Add(-day - time.Microsecond)
+			sparseOldTime := referenceTime.Add(-10 * day)
+			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+				for _, tr := range NewTestVerdict().
+					WithBaseTestResult(NewTestResult().
+						WithProject("project").
+						WithTestID("test_id").
+						WithVariantHash(pbutil.VariantHash(testVariant1)).
+						WithPartitionTime(boundaryMinus1us).
+						WithIngestedInvocationID("inv-boundary").
+						WithSubRealm("realm").
+						WithStatus(pb.TestResultStatus_PASS).
+						WithSources(Sources{}).
+						Build()).
+					WithStatus(pb.TestVerdict_PASSED).
+					WithStatusOverride(pb.TestVerdict_NOT_OVERRIDDEN).
+					WithPassedAvgDuration(nil).
+					Build() {
+					span.BufferWrite(ctx, tr.SaveUnverified())
+				}
+				for _, tr := range NewTestVerdict().
+					WithBaseTestResult(NewTestResult().
+						WithProject("project").
+						WithTestID("test_id").
+						WithVariantHash(pbutil.VariantHash(testVariant2)).
+						WithPartitionTime(sparseOldTime).
+						WithIngestedInvocationID("inv-sparse").
+						WithSubRealm("realm").
+						WithStatus(pb.TestResultStatus_PASS).
+						WithSources(Sources{}).
+						Build()).
+					WithStatus(pb.TestVerdict_PASSED).
+					WithStatusOverride(pb.TestVerdict_NOT_OVERRIDDEN).
+					WithPassedAvgDuration(nil).
+					Build() {
+					span.BufferWrite(ctx, tr.SaveUnverified())
+				}
+				return nil
+			})
+			assert.Loosely(t, err, should.BeNil)
+
+			opts.PageSize = 100
+			readWithShortDeadline := func(opts ReadTestHistoryOptions) ([]*pb.TestVerdict, string, error) {
+				shortCtx, cancel := context.WithTimeout(ctx, contextDeadlineSafetyMargin-500*time.Millisecond)
+				defer cancel()
+				return readHistory(shortCtx, opts)
+			}
+
+			// First call scans only the initial 2-day partition
+			// [referenceTime - 24h, now) and returns a partial page (< PageSize)
+			// including expectedTestVerdicts[3] right on the -24h boundary.
+			firstPage, pageToken, err := readWithShortDeadline(opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pageToken, should.NotBeEmpty)
+			assert.Loosely(t, firstPage, should.Match(expectedTestVerdicts[:4]))
+
+			// Continue paginating until all 90 days are scanned, including
+			// intermediate empty pages across the multi-day gap.
+			allVerdicts := append([]*pb.TestVerdict{}, firstPage...)
+			sawEmptyIntermediatePage := false
+			pages := 1
+			for pageToken != "" {
+				opts.PageToken = pageToken
+				page, nextTok, err := readWithShortDeadline(opts)
+				assert.Loosely(t, err, should.BeNil)
+				if len(page) == 0 && nextTok != "" {
+					sawEmptyIntermediatePage = true
+				}
+				allVerdicts = append(allVerdicts, page...)
+				pageToken = nextTok
+				pages++
+				assert.Loosely(t, pages, should.BeLessThan(60))
+			}
+			assert.Loosely(t, sawEmptyIntermediatePage, should.BeTrue)
+
+			wantAll := make([]*pb.TestVerdict, 0, len(expectedTestVerdicts)+2)
+			wantAll = append(wantAll, expectedTestVerdicts[:4]...)
+			wantAll = append(wantAll, &pb.TestVerdict{
+				TestId:            "test_id",
+				VariantHash:       pbutil.VariantHash(testVariant1),
+				InvocationId:      "inv-boundary",
+				Status:            pb.TestVerdictStatus_EXPECTED,
+				StatusV2:          pb.TestVerdict_PASSED,
+				StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
+				PartitionTime:     timestamppb.New(boundaryMinus1us),
+				PassedAvgDuration: nil,
+			})
+			wantAll = append(wantAll, expectedTestVerdicts[4:]...)
+			wantAll = append(wantAll, &pb.TestVerdict{
+				TestId:            "test_id",
+				VariantHash:       pbutil.VariantHash(testVariant2),
+				InvocationId:      "inv-sparse",
+				Status:            pb.TestVerdictStatus_EXPECTED,
+				StatusV2:          pb.TestVerdict_PASSED,
+				StatusOverride:    pb.TestVerdict_NOT_OVERRIDDEN,
+				PartitionTime:     timestamppb.New(sparseOldTime),
+				PassedAvgDuration: nil,
+			})
+			assert.Loosely(t, allVerdicts, should.Match(wantAll))
+		})
+
+		t.Run("no next_page_token when final partition finishes near deadline", func(t *ftt.Test) {
+			opts.PageSize = 100
+			opts.TimeRange = &pb.TimeRange{
+				Earliest: timestamppb.New(referenceTime.Add(-day)),
+				Latest:   timestamppb.New(now),
+			}
+			shortCtx, cancel := context.WithTimeout(ctx, contextDeadlineSafetyMargin-500*time.Millisecond)
+			defer cancel()
+
+			verdicts, nextPageToken, err := readHistory(shortCtx, opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, verdicts, should.Match(expectedTestVerdicts[:4]))
+		})
+
 		t.Run("with partition_time_range", func(t *ftt.Test) {
 			opts.TimeRange = &pb.TimeRange{
 				// Inclusive.
@@ -480,6 +600,93 @@ func TestReadTestHistoryStats(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, nextPageToken, should.BeEmpty)
 			assert.Loosely(t, verdicts, should.Match(expectedGroups[4:]))
+		})
+
+		t.Run("partial-page pagination when approaching deadline", func(t *ftt.Test) {
+			// Add a sparse verdict at -10 days so there is a multi-day empty gap
+			// between -3 days and -10 days.
+			sparseOldTime := referenceTime.Add(-10*day + 2*time.Hour)
+			_, err := span.ReadWriteTransaction(ctx, func(ctx context.Context) error {
+				for _, tr := range NewTestVerdict().
+					WithBaseTestResult(NewTestResult().
+						WithProject("project").
+						WithTestID("test_id").
+						WithVariantHash(pbutil.VariantHash(testVariant2)).
+						WithPartitionTime(sparseOldTime).
+						WithIngestedInvocationID("inv-sparse").
+						WithSubRealm("realm").
+						WithStatus(pb.TestResultStatus_PASS).
+						WithSources(Sources{}).
+						Build()).
+					WithStatus(pb.TestVerdict_PASSED).
+					WithStatusOverride(pb.TestVerdict_NOT_OVERRIDDEN).
+					WithPassedAvgDuration(nil).
+					Build() {
+					span.BufferWrite(ctx, tr.SaveUnverified())
+				}
+				return nil
+			})
+			assert.Loosely(t, err, should.BeNil)
+
+			opts.PageSize = 100
+			readWithShortDeadline := func(opts ReadTestHistoryOptions) ([]*pb.QueryTestHistoryStatsResponse_Group, string, error) {
+				shortCtx, cancel := context.WithTimeout(ctx, contextDeadlineSafetyMargin-500*time.Millisecond)
+				defer cancel()
+				return readStats(shortCtx, opts)
+			}
+
+			// First call scans [referenceTime - 1d, now) and returns only the
+			// groups from day -1, plus a non-empty continuation token.
+			firstPage, pageToken, err := readWithShortDeadline(opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, pageToken, should.NotBeEmpty)
+			assert.Loosely(t, firstPage, should.Match(expectedGroups[:3]))
+
+			// Continue paginating across all remaining days, ensuring no day is
+			// re-scanned or skipped and empty intermediate pages advance cleanly.
+			allGroups := append([]*pb.QueryTestHistoryStatsResponse_Group{}, firstPage...)
+			sawEmptyIntermediatePage := false
+			pages := 1
+			for pageToken != "" {
+				opts.PageToken = pageToken
+				page, nextTok, err := readWithShortDeadline(opts)
+				assert.Loosely(t, err, should.BeNil)
+				if len(page) == 0 && nextTok != "" {
+					sawEmptyIntermediatePage = true
+				}
+				allGroups = append(allGroups, page...)
+				pageToken = nextTok
+				pages++
+				assert.Loosely(t, pages, should.BeLessThan(60))
+			}
+			assert.Loosely(t, sawEmptyIntermediatePage, should.BeTrue)
+
+			wantAll := append([]*pb.QueryTestHistoryStatsResponse_Group{}, expectedGroups...)
+			wantAll = append(wantAll, &pb.QueryTestHistoryStatsResponse_Group{
+				PartitionTime:     timestamppb.New(referenceTime.Add(-10 * day)),
+				VariantHash:       pbutil.VariantHash(testVariant2),
+				ExpectedCount:     1,
+				PassedAvgDuration: nil,
+				VerdictCounts: &pb.QueryTestHistoryStatsResponse_Group_VerdictCounts{
+					Passed: 1,
+				},
+			})
+			assert.Loosely(t, allGroups, should.Match(wantAll))
+		})
+
+		t.Run("no next_page_token when final partition finishes near deadline", func(t *ftt.Test) {
+			opts.PageSize = 100
+			opts.TimeRange = &pb.TimeRange{
+				Earliest: timestamppb.New(referenceTime.Add(-day)),
+				Latest:   timestamppb.New(now),
+			}
+			shortCtx, cancel := context.WithTimeout(ctx, contextDeadlineSafetyMargin-500*time.Millisecond)
+			defer cancel()
+
+			groups, nextPageToken, err := readStats(shortCtx, opts)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, nextPageToken, should.BeEmpty)
+			assert.Loosely(t, groups, should.Match(expectedGroups[:3]))
 		})
 		t.Run("with legacy test results data", func(t *ftt.Test) {
 			// This test case can be deleted from August 2025. This should be
@@ -1090,6 +1297,65 @@ func TestReadVariants(t *testing.T) {
 				{VariantHash: pbutil.VariantHash(var2), Variant: var2},
 			}
 			assert.Loosely(t, variants, should.Match(expectedVariants))
+		})
+	})
+}
+
+func TestNextPartitionDays(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("nextPartitionDays", t, func(t *ftt.Test) {
+		t.Run("without soft deadline uses item density capped at 31", func(t *ftt.Test) {
+			days, ok := nextPartitionDays(0, 100, 1.5, 3*time.Second, false, 0)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, days, should.Equal(31))
+
+			// 20 items over 2 days = 10 items/day; 40 remaining * 1.1 = 4.4 -> 5 days.
+			days, ok = nextPartitionDays(20, 40, 2.0, 3*time.Second, false, 0)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, days, should.Equal(5))
+		})
+
+		t.Run("clamps daysRequired to fit remaining time budget", func(t *ftt.Test) {
+			// 1.5 days took 3s (2s/day); 42s remaining -> at most 21 days fit (clamped from 31).
+			days, ok := nextPartitionDays(0, 100, 1.5, 3*time.Second, true, 42*time.Second)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, days, should.Equal(21))
+
+			// When item-density estimate (5 days) is smaller than budget (21 days), keep 5.
+			days, ok = nextPartitionDays(20, 40, 2.0, 4*time.Second, true, 42*time.Second)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, days, should.Equal(5))
+		})
+
+		t.Run("allows exactly 1 day when 1 day fits", func(t *ftt.Test) {
+			// 2 days took 10s (5s/day); 5s remaining -> exactly 1 day fits.
+			days, ok := nextPartitionDays(0, 100, 2.0, 10*time.Second, true, 5*time.Second)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, days, should.Equal(1))
+		})
+
+		t.Run("stops early when less than 1 day fits", func(t *ftt.Test) {
+			// 2 days took 10s (5s/day); 4s remaining -> < 1 day fits.
+			days, ok := nextPartitionDays(0, 100, 2.0, 10*time.Second, true, 4*time.Second)
+			assert.That(t, ok, should.BeFalse)
+			assert.That(t, days, should.Equal(0))
+		})
+
+		t.Run("stops early when remaining time is non-positive", func(t *ftt.Test) {
+			days, ok := nextPartitionDays(0, 100, 2.0, 0, true, 0)
+			assert.That(t, ok, should.BeFalse)
+			assert.That(t, days, should.Equal(0))
+
+			days, ok = nextPartitionDays(0, 100, 2.0, 0, true, -500*time.Millisecond)
+			assert.That(t, ok, should.BeFalse)
+			assert.That(t, days, should.Equal(0))
+		})
+
+		t.Run("handles zero query duration with positive remaining time", func(t *ftt.Test) {
+			days, ok := nextPartitionDays(0, 100, 2.0, 0, true, 10*time.Second)
+			assert.That(t, ok, should.BeTrue)
+			assert.That(t, days, should.Equal(31))
 		})
 	})
 }

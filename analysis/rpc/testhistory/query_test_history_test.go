@@ -265,6 +265,23 @@ func TestQueryTestHistory(t *testing.T) {
 				},
 			}))
 		})
+
+		t.Run("partial page returned before deadline exceeded", func(t *ftt.Test) {
+			req.PageSize = 100
+			shortCtx, cancel := context.WithTimeout(ctx, 14*time.Second)
+			defer cancel()
+
+			res, err := server.Query(shortCtx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res.Verdicts, should.HaveLength(3))
+			assert.Loosely(t, res.NextPageToken, should.NotBeEmpty)
+
+			req.PageToken = res.NextPageToken
+			res2, err := server.Query(ctx, req)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, res2.Verdicts, should.HaveLength(4))
+			assert.Loosely(t, res2.NextPageToken, should.BeEmpty)
+		})
 		t.Run("without follow renames", func(t *ftt.Test) {
 			req.FollowTestIdRenaming = false
 			req.PageSize = 10

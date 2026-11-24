@@ -39,6 +39,10 @@ import (
 
 const pageTokenTimeFormat = time.RFC3339Nano
 
+// contextDeadlineSafetyMargin is subtracted from ctx.Deadline() to form a soft
+// deadline before starting another partition query.
+const contextDeadlineSafetyMargin = 15 * time.Second
+
 // The suffix used for all gerrit hostnames.
 const GerritHostnameSuffix = "-review.googlesource.com"
 
@@ -304,6 +308,98 @@ type ReadTestHistoryOptions struct {
 	PageToken               string
 }
 
+func (opts ReadTestHistoryOptions) traceAttrs() []attribute.KeyValue {
+	attrs := []attribute.KeyValue{
+		attribute.String("project", opts.Project),
+		attribute.String("test_id", opts.TestID),
+		attribute.StringSlice("sub_realms", opts.SubRealms),
+		attribute.String("submitted_filter", opts.SubmittedFilter.String()),
+		attribute.Bool("exclude_bisection_results", opts.ExcludeBisectionResults),
+		attribute.Int("page_size", opts.PageSize),
+		attribute.String("page_token", opts.PageToken),
+	}
+	if opts.PreviousTestID != "" {
+		attrs = append(attrs, attribute.String("previous_test_id", opts.PreviousTestID))
+	}
+	if opts.VariantPredicate != nil {
+		attrs = append(attrs, attribute.String("variant_predicate", opts.VariantPredicate.String()))
+	}
+	if opts.TimeRange != nil {
+		if opts.TimeRange.Earliest != nil {
+			attrs = append(attrs, attribute.String("time_range_earliest", opts.TimeRange.Earliest.AsTime().Format(time.RFC3339)))
+		}
+		if opts.TimeRange.Latest != nil {
+			attrs = append(attrs, attribute.String("time_range_latest", opts.TimeRange.Latest.AsTime().Format(time.RFC3339)))
+		}
+	}
+	return attrs
+}
+
+func softDeadline(ctx context.Context) (time.Time, bool) {
+	ctxDeadline, ok := ctx.Deadline()
+	if !ok {
+		return time.Time{}, false
+	}
+	return ctxDeadline.Add(-contextDeadlineSafetyMargin), true
+}
+
+// nextPartitionDays computes daysRequired for the next partition query based on
+// two factors:
+//  1. Item density: estimates how many days are needed to collect
+//     remainingItems at the rate observed in the previous query (with a 10%
+//     buffer, at least 1 day, and capped at 31 days).
+//  2. Remaining time budget: when hasSoftDeadline is true, estimates scan cost
+//     per day from the previous query duration and clamps daysRequired to the
+//     number of whole UTC days expected to fit within remainingTime.
+//
+// Returns (days, true) when another partition should be queried, or (0, false)
+// when less than 1 UTC day is estimated to fit within remainingTime so the
+// caller should stop early.
+func nextPartitionDays(
+	itemsInLastQuery int,
+	remainingItems int,
+	lastQueryDays float64,
+	lastQueryDuration time.Duration,
+	hasSoftDeadline bool,
+	remainingTime time.Duration,
+) (days int, ok bool) {
+	// Factor 1: Item density.
+	// Estimate the average number of items we have read per day.
+	// Even if we read nothing, estimate there were ~0.5 items in the query interval
+	// to avoid divide by zero errors later.
+	itemsPerDay := (math.Max(float64(itemsInLastQuery), 0.5)) / lastQueryDays
+
+	// Read about 10% more than we think we need, and at least one day.
+	// The 10% is to reduce the likelihood of missing with the next query.
+	// The 1 day floor (via math.Ceil) is to make sure we make progress.
+	daysRequired := math.Ceil((float64(remainingItems) / itemsPerDay) * 1.1)
+	if daysRequired > 31 {
+		// Cap the number of days read at a time to 31 to avoid
+		// overly expensive queries (e.g. due to early underestimates of
+		// the number of results per day).
+		daysRequired = 31
+	}
+
+	// Factor 2: Remaining time budget before the soft deadline.
+	if hasSoftDeadline {
+		if remainingTime <= 0 {
+			return 0, false
+		}
+		if lastQueryDuration > 0 {
+			durationPerDay := float64(lastQueryDuration) / lastQueryDays
+			maxDaysForBudget := math.Floor(float64(remainingTime) / durationPerDay)
+			if maxDaysForBudget < 1 {
+				return 0, false
+			}
+			if daysRequired > maxDaysForBudget {
+				daysRequired = maxDaysForBudget
+			}
+		}
+	}
+
+	return int(daysRequired), true
+}
+
 // statement generates a spanner statement for the specified query template.
 // timeRange specifies the range of partition times queried.
 func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []string, timeRange TimeRange) (spanner.Statement, error) {
@@ -402,33 +498,24 @@ func (opts ReadTestHistoryOptions) statement(tmpl string, paginationParams []str
 
 // ReadTestHistory reads verdicts from the spanner database.
 // Must be called in a spanner transactional context.
+//
+// If opts.PageSize == 0, there is no page size limit; otherwise at most
+// opts.PageSize verdicts are returned.
+//
+// When approaching ctx.Deadline(), ReadTestHistory stops early
+// and returns fewer than opts.PageSize verdicts (including zero verdicts) with
+// a non-empty nextPageToken.
 func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions, now time.Time) (verdicts []*pb.TestVerdict, nextPageToken string, err error) {
-	attrs := []attribute.KeyValue{
-		attribute.String("project", opts.Project),
-		attribute.String("test_id", opts.TestID),
-		attribute.StringSlice("sub_realms", opts.SubRealms),
-		attribute.String("submitted_filter", opts.SubmittedFilter.String()),
-		attribute.Bool("exclude_bisection_results", opts.ExcludeBisectionResults),
-		attribute.Int("page_size", opts.PageSize),
-		attribute.String("page_token", opts.PageToken),
-	}
-	if opts.PreviousTestID != "" {
-		attrs = append(attrs, attribute.String("previous_test_id", opts.PreviousTestID))
-	}
-	if opts.VariantPredicate != nil {
-		attrs = append(attrs, attribute.String("variant_predicate", opts.VariantPredicate.String()))
-	}
-	if opts.TimeRange != nil {
-		if opts.TimeRange.Earliest != nil {
-			attrs = append(attrs, attribute.String("time_range_earliest", opts.TimeRange.Earliest.AsTime().Format(time.RFC3339)))
-		}
-		if opts.TimeRange.Latest != nil {
-			attrs = append(attrs, attribute.String("time_range_latest", opts.TimeRange.Latest.AsTime().Format(time.RFC3339)))
-		}
-	}
-
-	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/testresults.ReadTestHistory", attrs...)
-	defer func() { tracing.End(s, err) }()
+	var partitionsQueried int
+	var stoppedEarly bool
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/testresults.ReadTestHistory", opts.traceAttrs()...)
+	defer func() {
+		tracing.End(s, err,
+			attribute.Int("partitions_queried", partitionsQueried),
+			attribute.Int("verdicts_returned", len(verdicts)),
+			attribute.Bool("stopped_early", stoppedEarly),
+		)
+	}()
 
 	// Find the partition time range to query.
 	totalQueryInterval, err := findQueryInterval(opts, now, false)
@@ -446,18 +533,23 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions, now time.
 	// Start querying at most 2 UTC days (typically today's fractional data plus yesterday).
 	// After the first run, we will update our estimate of days to query.
 	partitionDays := 2
+	deadline, hasSoftDeadline := softDeadline(ctx)
 
 	verdicts = make([]*pb.TestVerdict, 0, opts.PageSize)
 
-	// Keep reading until one of two conditions:
+	var lastQueryRange TimeRange
+	// Keep reading until one of three conditions:
 	// - We have finished reading all date partitions for this test.
 	// - We have filled up a page of results.
+	// - Less than 1 UTC day is estimated to fit before the soft deadline.
 	for {
 		queryRange, ok := partitioner.Next(partitionDays)
 		if !ok {
 			// We have finished querying all partitions.
 			break
 		}
+		lastQueryRange = queryRange
+		partitionsQueried++
 		logging.Debugf(ctx, "History: querying interval from %v to %v (%v days).", queryRange.Earliest, queryRange.Latest, queryRange.Days())
 
 		stmt, err := opts.statement("testHistoryQuery", []string{"paginationTime", "paginationVariantHash", "paginationInvId"}, queryRange)
@@ -467,6 +559,7 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions, now time.
 
 		var b spanutil.Buffer
 		var itemsInThisLastQuery int
+		queryStartTime := time.Now()
 		err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
 			tv := &pb.TestVerdict{}
 			var isPreviousTestID bool
@@ -554,6 +647,7 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions, now time.
 			itemsInThisLastQuery++
 			return nil
 		})
+		queryDuration := time.Since(queryStartTime)
 		if err != nil && err != complete {
 			return nil, "", errors.Fmt("query test history for %q in %q: %w", opts.TestID, opts.Project, err)
 		}
@@ -562,37 +656,39 @@ func ReadTestHistory(ctx context.Context, opts ReadTestHistoryOptions, now time.
 		if opts.PageSize != 0 {
 			remainingItems = opts.PageSize - len(verdicts)
 		} else {
-			// When page size = 0, we should retrieve all items. Assume there are
-			// a lot of items in the table.
+			// When page size = 0, there is no page size limit (though scanning may
+			// still stop early if ctx has a deadline). Assume there are a lot of
+			// items in the table.
 			remainingItems = 1_000_000
 		}
 		if remainingItems <= 0 {
 			// We have a full page. No need to read further.
 			break
 		}
-
-		// Estimate the average number of items we have read per day.
-		// Even if we read nothing, estimate there were ~0.5 items in the query interval
-		// to avoid divide by zero errors later.
-		itemsPerDay := (math.Max(float64(itemsInThisLastQuery), 0.5)) / queryRange.Days()
-
-		// Read about 10% more than we think we need, and at least one day.
-		// The 10% is to reduce the likelihood of missing with the next query.
-		// The 1 day floor (via math.Ceil) is to make sure we make progress.
-		daysRequired := math.Ceil((float64(remainingItems) / itemsPerDay) * 1.1)
-		if daysRequired > 31 {
-			// Cap the number of days read at a time to 31 to avoid
-			// overly expensive queries (e.g. due to early understimates of
-			// the number of results per day).
-			daysRequired = 31
+		if !partitioner.HasMore() {
+			// We have finished querying all partitions.
+			break
 		}
 
-		partitionDays = int(daysRequired)
+		var remainingTime time.Duration
+		if hasSoftDeadline {
+			remainingTime = time.Until(deadline)
+		}
+		var hasBudget bool
+		partitionDays, hasBudget = nextPartitionDays(itemsInThisLastQuery, remainingItems, queryRange.Days(), queryDuration, hasSoftDeadline, remainingTime)
+		if !hasBudget {
+			stoppedEarly = true
+			break
+		}
 	}
 
 	if opts.PageSize != 0 && len(verdicts) == opts.PageSize {
 		lastTV := verdicts[len(verdicts)-1]
 		nextPageToken = pagination.Token(lastTV.PartitionTime.AsTime().Format(pageTokenTimeFormat), lastTV.VariantHash, lastTV.InvocationId)
+	} else if stoppedEarly {
+		// Position the continuation token immediately before lastQueryRange.Earliest
+		// so findQueryInterval sets Latest = lastQueryRange.Earliest on the next call.
+		nextPageToken = pagination.Token(lastQueryRange.Earliest.Add(-time.Microsecond).Format(pageTokenTimeFormat), "", "")
 	}
 	return verdicts, nextPageToken, nil
 }
@@ -669,7 +765,25 @@ var complete = errors.New("callback does not want any more test verdicts")
 // ReadTestHistoryStats reads stats of verdicts grouped by UTC dates from the
 // spanner database.
 // Must be called in a spanner transactional context.
+//
+// If opts.PageSize == 0, there is no page size limit; otherwise at most
+// opts.PageSize groups are returned.
+//
+// When approaching ctx.Deadline(), ReadTestHistoryStats stops early
+// and returns fewer than opts.PageSize groups (including zero groups) with
+// a non-empty nextPageToken.
 func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions, now time.Time) (groups []*pb.QueryTestHistoryStatsResponse_Group, nextPageToken string, err error) {
+	var partitionsQueried int
+	var stoppedEarly bool
+	ctx, s := tracing.Start(ctx, "go.chromium.org/luci/analysis/internal/testresults.ReadTestHistoryStats", opts.traceAttrs()...)
+	defer func() {
+		tracing.End(s, err,
+			attribute.Int("partitions_queried", partitionsQueried),
+			attribute.Int("groups_returned", len(groups)),
+			attribute.Bool("stopped_early", stoppedEarly),
+		)
+	}()
+
 	// Find the partition time range to query.
 	totalQueryInterval, err := findQueryInterval(opts, now, true)
 	if err != nil {
@@ -686,18 +800,23 @@ func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions, now 
 	// Start querying at most 2 UTC days (typically today's fractional data plus yesterday).
 	// After the first run, we will update our estimate of days to query.
 	partitionDays := 2
+	deadline, hasSoftDeadline := softDeadline(ctx)
 
 	groups = make([]*pb.QueryTestHistoryStatsResponse_Group, 0, opts.PageSize)
 
-	// Keep reading until one of two conditions:
+	var lastQueryRange TimeRange
+	// Keep reading until one of three conditions:
 	// - We have finished reading all date partitions for this test.
 	// - We have filled up a page of results.
+	// - Less than 1 UTC day is estimated to fit before the soft deadline.
 	for {
 		queryRange, ok := partitioner.Next(partitionDays)
 		if !ok {
 			// We have finished querying all partitions.
 			break
 		}
+		lastQueryRange = queryRange
+		partitionsQueried++
 		logging.Debugf(ctx, "Stats: querying interval from %v to %v (%v days).", queryRange.Earliest, queryRange.Latest, queryRange.Days())
 
 		stmt, err := opts.statement("testHistoryStatsQuery", []string{"paginationDate", "paginationVariantHash"}, queryRange)
@@ -707,6 +826,7 @@ func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions, now 
 
 		var b spanutil.Buffer
 		var itemsInThisLastQuery int
+		queryStartTime := time.Now()
 		err = span.Query(ctx, stmt).Do(func(row *spanner.Row) error {
 			group := &pb.QueryTestHistoryStatsResponse_Group{}
 			var (
@@ -767,6 +887,7 @@ func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions, now 
 			itemsInThisLastQuery++
 			return nil
 		})
+		queryDuration := time.Since(queryStartTime)
 		if err != nil && err != complete {
 			return nil, "", errors.Fmt("query test history stats: %w", err)
 		}
@@ -775,37 +896,40 @@ func ReadTestHistoryStats(ctx context.Context, opts ReadTestHistoryOptions, now 
 		if opts.PageSize != 0 {
 			remainingItems = opts.PageSize - len(groups)
 		} else {
-			// When page size = 0, we should retrieve all items. Assume there are
-			// a lot of items in the table.
+			// When page size = 0, there is no page size limit (though scanning may
+			// still stop early if ctx has a deadline). Assume there are a lot of
+			// items in the table.
 			remainingItems = 1_000_000
 		}
 		if remainingItems <= 0 {
 			// We have a full page. No need to read further.
 			break
 		}
-
-		// Estimate the average number of items we have read per day.
-		// Even if we read nothing, estimate there were ~0.5 items in the query interval
-		// to avoid divide by zero errors later.
-		itemsPerDay := (math.Max(float64(itemsInThisLastQuery), 0.5)) / queryRange.Days()
-
-		// Read about 10% more than we think we need, and at least one day.
-		// The 10% is to reduce the likelihood of missing with the next query.
-		// The 1 day floor (via math.Ceil) is to make sure we make progress.
-		daysRequired := math.Ceil((float64(remainingItems) / itemsPerDay) * 1.1)
-		if daysRequired > 31 {
-			// Cap the number of days read at a time to 31 to avoid
-			// overly expensive queries (e.g. due to early understimates of
-			// the number of results per day).
-			daysRequired = 31
+		if !partitioner.HasMore() {
+			// We have finished querying all partitions.
+			break
 		}
 
-		partitionDays = int(daysRequired)
+		var remainingTime time.Duration
+		if hasSoftDeadline {
+			remainingTime = time.Until(deadline)
+		}
+		var hasBudget bool
+		partitionDays, hasBudget = nextPartitionDays(itemsInThisLastQuery, remainingItems, queryRange.Days(), queryDuration, hasSoftDeadline, remainingTime)
+		if !hasBudget {
+			stoppedEarly = true
+			break
+		}
 	}
 
 	if opts.PageSize != 0 && len(groups) == opts.PageSize {
 		lastGroup := groups[len(groups)-1]
 		nextPageToken = pagination.Token(lastGroup.PartitionTime.AsTime().Format(pageTokenTimeFormat), lastGroup.VariantHash)
+	} else if stoppedEarly {
+		// Position the continuation token at the UTC day immediately preceding
+		// lastQueryRange.Earliest so findQueryInterval sets
+		// Latest = lastQueryRange.Earliest on the next call.
+		nextPageToken = pagination.Token(lastQueryRange.Earliest.Add(-24*time.Hour).Format(pageTokenTimeFormat), "")
 	}
 	return groups, nextPageToken, nil
 }

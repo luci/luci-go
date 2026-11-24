@@ -78,6 +78,11 @@ type TimeRangePartitioner struct {
 	next time.Time
 }
 
+// HasMore returns whether there are more partitions to return.
+func (p *TimeRangePartitioner) HasMore() bool {
+	return p.next.After(p.entire.Earliest)
+}
+
 // Next returns the next partition of the interval, which contains
 // `days` UTC days. The partition will be cut on a UTC day boundary.
 //
@@ -85,7 +90,7 @@ type TimeRangePartitioner struct {
 // this is the first or last partition, the interval may contain
 // fractional days.
 func (p *TimeRangePartitioner) Next(days int) (tr TimeRange, ok bool) {
-	if !p.next.After(p.entire.Earliest) {
+	if !p.HasMore() {
 		return TimeRange{}, false
 	}
 	current := p.next.UTC()

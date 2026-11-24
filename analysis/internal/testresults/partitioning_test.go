@@ -26,11 +26,13 @@ import (
 func TestTimeRangePartitioner(t *testing.T) {
 	t.Parallel()
 
-	getPartitions := func(tr TimeRange, days int) []TimeRange {
+	getPartitions := func(t *ftt.Test, tr TimeRange, days int) []TimeRange {
 		p := tr.Partition()
 		var gotPartitions []TimeRange
 		for {
+			hasMore := p.HasMore()
 			partition, ok := p.Next(days)
+			assert.That(t, ok, should.Equal(hasMore))
 			if !ok {
 				break
 			}
@@ -39,6 +41,7 @@ func TestTimeRangePartitioner(t *testing.T) {
 				panic("too many partitions produced")
 			}
 		}
+		assert.That(t, p.HasMore(), should.BeFalse)
 		return gotPartitions
 	}
 
@@ -58,7 +61,7 @@ func TestTimeRangePartitioner(t *testing.T) {
 				Earliest: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 		}
-		assert.That(t, getPartitions(tr, 2), should.Match(expectedPartitions))
+		assert.That(t, getPartitions(t, tr, 2), should.Match(expectedPartitions))
 	})
 	ftt.Run("Partial days", t, func(t *ftt.Test) {
 		tr := TimeRange{
@@ -80,7 +83,7 @@ func TestTimeRangePartitioner(t *testing.T) {
 				Earliest: time.Date(2024, 1, 1, 12, 1, 0, 0, time.UTC),
 			},
 		}
-		assert.That(t, getPartitions(tr, 2), should.Match(expectedPartitions))
+		assert.That(t, getPartitions(t, tr, 2), should.Match(expectedPartitions))
 	})
 	ftt.Run("Partial days (non-UTC)", t, func(t *ftt.Test) {
 		tzSydney, _ := time.LoadLocation("Australia/Sydney") // UTC+11
@@ -103,6 +106,13 @@ func TestTimeRangePartitioner(t *testing.T) {
 				Earliest: time.Date(2024, 1, 1, 1, 1, 0, 0, time.UTC),
 			},
 		}
-		assert.That(t, getPartitions(tr, 2), should.Match(expectedPartitions))
+		assert.That(t, getPartitions(t, tr, 2), should.Match(expectedPartitions))
+	})
+	ftt.Run("Empty range", t, func(t *ftt.Test) {
+		tr := TimeRange{
+			Latest:   time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+			Earliest: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+		}
+		assert.Loosely(t, getPartitions(t, tr, 2), should.BeEmpty)
 	})
 }

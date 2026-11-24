@@ -62,7 +62,8 @@ type QueryTestHistoryRequest struct {
 	FollowTestIdRenaming bool `protobuf:"varint,6,opt,name=follow_test_id_renaming,json=followTestIdRenaming,proto3" json:"follow_test_id_renaming,omitempty"`
 	// The maximum number of entries to return.
 	//
-	// The service may return fewer than this value.
+	// The service may return fewer than this value, including zero entries with
+	// a non-empty `next_page_token` when approaching the request deadline.
 	// If unspecified, at most 100 variants will be returned.
 	// The maximum value is 1000; values above 1000 will be coerced to 1000.
 	PageSize int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -155,7 +156,11 @@ type QueryTestHistoryResponse struct {
 	// Test verdicts will be ordered by `partition_time` DESC, `variant_hash` ASC,
 	// `invocation_id` ASC.
 	Verdicts []*TestVerdict `protobuf:"bytes,1,rep,name=verdicts,proto3" json:"verdicts,omitempty"`
-	// This field will be set if there are more results to return.
+	// This field will be set if there are more results to return or if unscanned
+	// partitions remain (for example, when the request stops early while
+	// approaching its deadline). In the latter case, this field may be non-empty
+	// even when `verdicts` is empty or no matching verdicts remain in older
+	// partitions.
 	// To get the next page of data, send the same request again, but include this
 	// token.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -225,7 +230,8 @@ type QueryTestHistoryStatsRequest struct {
 	FollowTestIdRenaming bool `protobuf:"varint,6,opt,name=follow_test_id_renaming,json=followTestIdRenaming,proto3" json:"follow_test_id_renaming,omitempty"`
 	// The maximum number of entries to return.
 	//
-	// The service may return fewer than this value.
+	// The service may return fewer than this value, including zero entries with
+	// a non-empty `next_page_token` when approaching the request deadline.
 	// If unspecified, at most 100 variants will be returned.
 	// The maximum value is 1000; values above 1000 will be coerced to 1000.
 	PageSize int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
@@ -317,7 +323,11 @@ type QueryTestHistoryStatsResponse struct {
 	// The list of test verdict groups. Test verdicts will be grouped and ordered
 	// by `partition_date` DESC, `variant_hash` ASC.
 	Groups []*QueryTestHistoryStatsResponse_Group `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
-	// This field will be set if there are more results to return.
+	// This field will be set if there are more results to return or if unscanned
+	// partitions remain (for example, when the request stops early while
+	// approaching its deadline). In the latter case, this field may be non-empty
+	// even when `groups` is empty or no matching groups remain in older
+	// partitions.
 	// To get the next page of data, send the same request again, but include this
 	// token.
 	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`

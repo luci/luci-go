@@ -90,7 +90,8 @@ message QueryTestHistoryRequest {
 
   // The maximum number of entries to return.
   //
-  // The service may return fewer than this value.
+  // The service may return fewer than this value, including zero entries with
+  // a non-empty `next_page_token` when approaching the request deadline.
   // If unspecified, at most 100 variants will be returned.
   // The maximum value is 1000; values above 1000 will be coerced to 1000.
   int32 page_size = 4;
@@ -110,7 +111,11 @@ message QueryTestHistoryResponse {
   // `invocation_id` ASC.
   repeated luci.analysis.v1.TestVerdict verdicts = 1;
 
-  // This field will be set if there are more results to return.
+  // This field will be set if there are more results to return or if unscanned
+  // partitions remain (for example, when the request stops early while
+  // approaching its deadline). In the latter case, this field may be non-empty
+  // even when `verdicts` is empty or no matching verdicts remain in older
+  // partitions.
   // To get the next page of data, send the same request again, but include this
   // token.
   string next_page_token = 2;
@@ -140,7 +145,8 @@ message QueryTestHistoryStatsRequest {
 
   // The maximum number of entries to return.
   //
-  // The service may return fewer than this value.
+  // The service may return fewer than this value, including zero entries with
+  // a non-empty `next_page_token` when approaching the request deadline.
   // If unspecified, at most 100 variants will be returned.
   // The maximum value is 1000; values above 1000 will be coerced to 1000.
   int32 page_size = 4;
@@ -226,7 +232,11 @@ message QueryTestHistoryStatsResponse {
   // by `partition_date` DESC, `variant_hash` ASC.
   repeated Group groups = 1;
 
-  // This field will be set if there are more results to return.
+  // This field will be set if there are more results to return or if unscanned
+  // partitions remain (for example, when the request stops early while
+  // approaching its deadline). In the latter case, this field may be non-empty
+  // even when `groups` is empty or no matching groups remain in older
+  // partitions.
   // To get the next page of data, send the same request again, but include this
   // token.
   string next_page_token = 2;
