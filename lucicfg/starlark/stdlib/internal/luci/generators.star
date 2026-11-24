@@ -1322,9 +1322,10 @@ def _cq_tryjob_builder(verifier, cq_group, project, seen):
         )
         return None
     reuse_window = None
-    if verifier.props.reuse_max_commit_distance != None:
+    if verifier.props.reuse_max_commit_distance != None or verifier.props.reuse_max_age != None:
         reuse_window = cq_pb.ReuseWindow(
             max_commit_distance = verifier.props.reuse_max_commit_distance,
+            max_age = optional_duration_pb(verifier.props.reuse_max_age),
         )
 
     return cq_pb.Verifiers.Tryjob.Builder(

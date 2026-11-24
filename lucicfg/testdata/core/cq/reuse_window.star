@@ -31,6 +31,11 @@ luci.cq_group(
         luci.cq_tryjob_verifier(
             builder = "chromium:try/mac-rel",
         ),
+        # Time-based reuse window shorter than the default 24 h
+        luci.cq_tryjob_verifier(
+            builder = "chromium:try/android-rel",
+            reuse_max_age = 4 * time.hour,
+        ),
     ],
 )
 
@@ -51,6 +56,14 @@ luci.cq_group(
 #       committer_list: "committer"
 #     }
 #     tryjob {
+#       builders {
+#         name: "chromium/try/android-rel"
+#         reuse_window {
+#           max_age {
+#             seconds: 14400
+#           }
+#         }
+#       }
 #       builders {
 #         name: "chromium/try/linux-rel"
 #         reuse_window {

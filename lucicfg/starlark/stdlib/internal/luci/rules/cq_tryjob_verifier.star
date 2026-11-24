@@ -16,6 +16,7 @@
 
 load("@stdlib//internal/graph.star", "graph")
 load("@stdlib//internal/lucicfg.star", "lucicfg")
+load("@stdlib//internal/time.star", "time")
 load("@stdlib//internal/validate.star", "validate")
 load("@stdlib//internal/luci/common.star", "keys", "kinds")
 load("@stdlib//internal/luci/lib/cq.star", "cq", "cqimpl")
@@ -30,6 +31,7 @@ def _cq_tryjob_verifier(
         disable_reuse = None,
         disable_reuse_footers = None,
         reuse_max_commit_distance = None,
+        reuse_max_age = None,
         cancel_stale = None,
         experiment_percentage = None,
         location_filters = None,
@@ -219,7 +221,11 @@ def _cq_tryjob_verifier(
       reuse_max_commit_distance: maximum commit distance (number of commits from
         target branch tip) for a tryjob build to remain reusable. Requires target
         branch to use monotonic commit position footers. Cannot be used together
-        with `disable_reuse = True`.
+        with `disable_reuse = True` or `reuse_max_age`.
+      reuse_max_age: maximum age of a tryjob build for it to remain reusable,
+        as a duration (e.g. `4 * time.hour`). Must be positive and at most 24
+        hours. Default is 24 hours. Cannot be used together with
+        `disable_reuse = True` or `reuse_max_commit_distance`.
       experiment_percentage: when this field is present, it marks the verifier
         as experimental. Such verifier is only triggered on a given percentage
         of the CLs and the outcome does not affect the decision whether a CL can
@@ -297,12 +303,25 @@ def _cq_tryjob_verifier(
         min = 1,
         required = False,
     )
+    reuse_max_age = validate.duration(
+        "reuse_max_age",
+        reuse_max_age,
+        min = time.second,
+        max = 24 * time.hour,
+        required = False,
+    )
 
     if disable_reuse and disable_reuse_footers:
         fail('"disable_reuse" and "disable_reuse_footers" can not be used together')
 
     if disable_reuse and reuse_max_commit_distance:
         fail('"disable_reuse" and "reuse_max_commit_distance" cannot be used together')
+
+    if disable_reuse and reuse_max_age:
+        fail('"disable_reuse" and "reuse_max_age" cannot be used together')
+
+    if reuse_max_commit_distance and reuse_max_age:
+        fail('"reuse_max_commit_distance" and "reuse_max_age" cannot be used together')
 
     if not equivalent_builder:
         if equivalent_builder_percentage != None:
@@ -326,6 +345,7 @@ def _cq_tryjob_verifier(
         "disable_reuse": disable_reuse,
         "disable_reuse_footers": validate.list("disable_reuse_footers", disable_reuse_footers, required = False),
         "reuse_max_commit_distance": reuse_max_commit_distance,
+        "reuse_max_age": reuse_max_age,
         "result_visibility": validate.int(
             "result_visibility",
             result_visibility,
