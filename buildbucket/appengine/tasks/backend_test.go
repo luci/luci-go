@@ -450,6 +450,34 @@ func TestCreateBackendTask(t *testing.T) {
 			}))
 			assert.Loosely(c, req.PubsubTopic, should.Equal("projects/app-id/topics/chromium-swarm-dev-backend"))
 		})
+
+		c.Run("led build adds buildbucket_led tag", func(c *ftt.Test) {
+			build := &model.Build{
+				ID:       1,
+				BucketID: "project/bucket",
+				Project:  "project",
+				Proto: &pb.Build{
+					Id: 1,
+					Infra: &pb.BuildInfra{
+						Buildbucket: &pb.BuildInfra_Buildbucket{
+							Hostname: "some unique host name",
+						},
+						Led: &pb.BuildInfra_Led{
+							ShadowedBucket: "bucket",
+						},
+					},
+				},
+			}
+			tags := computeTags(ctx, build)
+			assert.Loosely(c, tags, should.Match([]string{
+				"buildbucket_bucket:project/bucket",
+				"buildbucket_build_id:1",
+				"buildbucket_hostname:some unique host name",
+				"buildbucket_led:1",
+				"buildbucket_template_canary:0",
+				"luci_project:project",
+			}))
+		})
 	})
 
 	ftt.Run("RunTask", t, func(c *ftt.Test) {

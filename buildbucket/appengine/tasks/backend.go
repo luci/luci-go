@@ -255,6 +255,9 @@ func computeTags(ctx context.Context, build *model.Build) []string {
 	} else {
 		tags = append(tags, "buildbucket_template_canary:0")
 	}
+	if build.Proto.GetInfra().GetLed() != nil {
+		tags = append(tags, "buildbucket_led:1")
+	}
 
 	tags = append(tags, build.Tags...)
 	sort.Strings(tags)
