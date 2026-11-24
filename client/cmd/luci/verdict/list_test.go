@@ -313,21 +313,47 @@ func TestQueryLegacyInvocationListedVerdicts(t *testing.T) {
 	ftt.Run(`QueryLegacyInvocationListedVerdicts`, t, func(t *ftt.Test) {
 		ctx := context.Background()
 
-		t.Run(`default filter uses UNEXPECTED predicate`, func(t *ftt.Test) {
+		t.Run(`default filter uses UNEXPECTED_MASK predicate and keeps v1 FLAKY/UNEXPECTEDLY_SKIPPED matching StatusV2`, func(t *ftt.Test) {
 			client := &mockListResultDBClient{
 				queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
 					assert.Loosely(t, in.Invocations, should.Match([]string{"invocations/build-123"}))
-					assert.Loosely(t, in.PageSize, should.Equal(100))
-					assert.Loosely(t, in.Predicate.Status, should.Equal(pb.TestVariantStatus_UNEXPECTED))
+					assert.Loosely(t, in.PageSize, should.Equal(1000))
+					assert.Loosely(t, in.Predicate.Status, should.Equal(pb.TestVariantStatus_UNEXPECTED_MASK))
 					return &pb.QueryTestVariantsResponse{
 						TestVariants: []*pb.TestVariant{
 							{
 								TestId:      "://chrome/test:browser_tests!gtest::Test1",
+								Status:      pb.TestVariantStatus_UNEXPECTED,
 								StatusV2:    pb.TestVerdict_FAILED,
 								VariantHash: "vhash1",
 								Variant: &pb.Variant{
 									Def: map[string]string{"builder": "linux-rel"},
 								},
+							},
+							{
+								// 1 failed run + 1 expected-skipped retry: v1 FLAKY, StatusV2 FAILED.
+								TestId:      "://chrome/test:junit_tests!junit:pkg:Cls#TestSkippedRetry",
+								Status:      pb.TestVariantStatus_FLAKY,
+								StatusV2:    pb.TestVerdict_FAILED,
+								VariantHash: "vhash2",
+							},
+							{
+								// EXECUTION_ERRORED maps to v1 UNEXPECTEDLY_SKIPPED.
+								TestId:      "://chrome/test:browser_tests!gtest::TestErrored",
+								Status:      pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED,
+								StatusV2:    pb.TestVerdict_EXECUTION_ERRORED,
+								VariantHash: "vhash3",
+							},
+							{
+								TestId:         "://chrome/test:browser_tests!gtest::TestExonerated",
+								Status:         pb.TestVariantStatus_EXONERATED,
+								StatusV2:       pb.TestVerdict_FAILED,
+								StatusOverride: pb.TestVerdict_EXONERATED,
+							},
+							{
+								TestId:   "://chrome/test:browser_tests!gtest::TestFlaky",
+								Status:   pb.TestVariantStatus_FLAKY,
+								StatusV2: pb.TestVerdict_FLAKY,
 							},
 						},
 					}, nil
@@ -335,12 +361,137 @@ func TestQueryLegacyInvocationListedVerdicts(t *testing.T) {
 			}
 
 			filter, _ := parseStatusFilter("", false, false, false, false, false, false)
-			verdicts, hasMore, err := QueryLegacyInvocationListedVerdicts(ctx, client, "build-123", filter, 100)
+			verdicts, hasMore, hidden, err := queryLegacyInvocationListedVerdicts(ctx, client, "build-123", filter, 100)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, hasMore, should.BeFalse)
-			assert.Loosely(t, len(verdicts), should.Equal(1))
+			assert.Loosely(t, len(verdicts), should.Equal(3))
 			assert.Loosely(t, verdicts[0].TestID, should.Equal("://chrome/test:browser_tests!gtest::Test1"))
 			assert.Loosely(t, verdicts[0].Status, should.Equal("FAILED"))
+			assert.Loosely(t, verdicts[1].TestID, should.Equal("://chrome/test:junit_tests!junit:pkg:Cls#TestSkippedRetry"))
+			assert.Loosely(t, verdicts[1].Status, should.Equal("FAILED"))
+			assert.Loosely(t, verdicts[2].TestID, should.Equal("://chrome/test:browser_tests!gtest::TestErrored"))
+			assert.Loosely(t, verdicts[2].Status, should.Equal("EXECUTION_ERRORED"))
+			assert.Loosely(t, hidden.exonerated, should.Equal(1))
+			assert.Loosely(t, hidden.flaky, should.Equal(1))
+			assert.Loosely(t, hidden.truncated, should.BeFalse)
+		})
+
+		t.Run(`caps scanned pages when maxVerdicts > 0 on large non-matching legacy invocations`, func(t *ftt.Test) {
+			calls := 0
+			client := &mockListResultDBClient{
+				queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+					calls++
+					assert.Loosely(t, in.PageSize, should.Equal(1000))
+					return &pb.QueryTestVariantsResponse{
+						TestVariants: []*pb.TestVariant{
+							{
+								TestId:   fmt.Sprintf("test-%d", calls),
+								Status:   pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED,
+								StatusV2: pb.TestVerdict_EXECUTION_ERRORED,
+							},
+						},
+						NextPageToken: fmt.Sprintf("page-%d", calls+1),
+					}, nil
+				},
+			}
+
+			filter, _ := parseStatusFilter("failed", false, false, false, false, false, false)
+			verdicts, hasMore, hidden, err := queryLegacyInvocationListedVerdicts(ctx, client, "build-canceled", filter, 100)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Equal(maxLegacyScanPages))
+			assert.Loosely(t, len(verdicts), should.Equal(0))
+			assert.Loosely(t, hasMore, should.BeTrue)
+			assert.Loosely(t, hidden.executionErrored, should.Equal(maxLegacyScanPages))
+			assert.Loosely(t, hidden.scanned, should.Equal(maxLegacyScanPages))
+			assert.Loosely(t, hidden.truncated, should.BeTrue)
+			assert.Loosely(t, hidden.scanCapped, should.BeTrue)
+			assert.Loosely(t, hidden.formatNotice(), should.ContainSubstring("10+ execution-errored verdicts not shown"))
+			assert.Loosely(t, hidden.formatNotice(), should.ContainSubstring("-status=execution_errored"))
+			assert.Loosely(t, hidden.formatNotice(), should.ContainSubstring("stopped after scanning 10 variants, pass -all to scan all"))
+		})
+
+		t.Run(`does not cap scanned pages when clientSideFiltering is false`, func(t *ftt.Test) {
+			calls := 0
+			const totalPages = maxLegacyScanPages + 2
+			client := &mockListResultDBClient{
+				queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+					calls++
+					nextToken := ""
+					if calls < totalPages {
+						nextToken = fmt.Sprintf("page-%d", calls+1)
+					}
+					return &pb.QueryTestVariantsResponse{
+						TestVariants: []*pb.TestVariant{
+							{
+								TestId:   fmt.Sprintf("test-%d", calls),
+								Status:   pb.TestVariantStatus_EXPECTED,
+								StatusV2: pb.TestVerdict_PASSED,
+							},
+						},
+						NextPageToken: nextToken,
+					}, nil
+				},
+			}
+
+			filter, _ := parseStatusFilter("", false, false, false, false, false, true)
+			verdicts, hasMore, hidden, err := queryLegacyInvocationListedVerdicts(ctx, client, "build-all-statuses", filter, 15)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Equal(totalPages))
+			assert.Loosely(t, len(verdicts), should.Equal(totalPages))
+			assert.Loosely(t, hasMore, should.BeFalse)
+			assert.Loosely(t, hidden.scanCapped, should.BeFalse)
+		})
+
+		t.Run(`v1-only UNEXPECTEDLY_SKIPPED and EXONERATED variants match filtering, display, and hidden counts`, func(t *ftt.Test) {
+			client := &mockListResultDBClient{
+				queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+					return &pb.QueryTestVariantsResponse{
+						TestVariants: []*pb.TestVariant{
+							{
+								TestId: "test-v1-errored",
+								Status: pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED,
+							},
+							{
+								TestId: "test-v1-exonerated",
+								Status: pb.TestVariantStatus_EXONERATED,
+							},
+							{
+								TestId:   "test-v1-exonerated-with-v2",
+								Status:   pb.TestVariantStatus_EXONERATED,
+								StatusV2: pb.TestVerdict_FAILED,
+							},
+						},
+					}, nil
+				},
+			}
+
+			defaultFilter, _ := parseStatusFilter("", false, false, false, false, false, false)
+			verdicts, _, hidden, err := queryLegacyInvocationListedVerdicts(ctx, client, "build-v1", defaultFilter, 100)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(verdicts), should.Equal(1))
+			assert.Loosely(t, verdicts[0].TestID, should.Equal("test-v1-errored"))
+			assert.Loosely(t, verdicts[0].Status, should.Equal("EXECUTION_ERRORED"))
+			assert.Loosely(t, hidden.exonerated, should.Equal(2))
+
+			exFilter, _ := parseStatusFilter("exonerated", false, false, false, false, false, false)
+			exVerdicts, _, exHidden, err := queryLegacyInvocationListedVerdicts(ctx, client, "build-v1", exFilter, 100)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, len(exVerdicts), should.Equal(2))
+			assert.Loosely(t, exVerdicts[0].TestID, should.Equal("test-v1-exonerated"))
+			assert.Loosely(t, exVerdicts[0].Status, should.Equal("EXONERATED"))
+			assert.Loosely(t, exVerdicts[1].TestID, should.Equal("test-v1-exonerated-with-v2"))
+			assert.Loosely(t, exVerdicts[1].Status, should.Equal("FAILED (EXONERATED)"))
+			assert.Loosely(t, exHidden.executionErrored, should.Equal(1))
+		})
+
+		t.Run(`hiddenVerdictCounts combines failed and execution_errored into single -status flag and scanCapped header uses -all`, func(t *ftt.Test) {
+			h := hiddenVerdictCounts{failed: 2, executionErrored: 3, flaky: 1}
+			assert.Loosely(t, h.formatNotice(), should.Equal("Note: 2 failed, 3 execution-errored, 1 flaky verdicts not shown (use -status=failed,execution_errored, -flaky or -all-statuses to include).\n"))
+
+			var buf bytes.Buffer
+			f, _ := parseStatusFilter("", false, false, false, false, false, false)
+			printListedVerdictsWithNoticeAndBudget(&buf, "build-123", []*ListedVerdict{{TestID: "t1", Status: "FAILED"}}, true, true, f, "", 0)
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Verdicts (showing 1, use -all to scan all):\n"))
 		})
 
 		t.Run(`flaky included uses UNEXPECTED_MASK predicate and client-side filtering`, func(t *ftt.Test) {
@@ -1123,6 +1274,123 @@ func TestVerdictListDefaultByteCap(t *testing.T) {
 			assert.Loosely(t, out, should.NotContainSubstring("omitted"))
 			assert.Loosely(t, out, should.ContainSubstring("Verdicts (1):\n"))
 			assert.Loosely(t, out, should.ContainSubstring("testSingleFailure"))
+		})
+
+		t.Run(`surfaces hidden exonerated/flaky footer and ACTIVE/FINALIZING notices on legacy and root invocations`, func(t *ftt.Test) {
+			t.Run(`legacy ACTIVE invocation with hidden exonerated verdicts and 0 failures`, func(t *ftt.Test) {
+				legacyClient := &mockListResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+						return nil, status.Error(codes.NotFound, "not found")
+					},
+					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+						return &pb.Invocation{
+							Name:  in.Name,
+							State: pb.Invocation_ACTIVE,
+						}, nil
+					},
+					queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+						return &pb.QueryTestVariantsResponse{
+							TestVariants: []*pb.TestVariant{
+								{
+									TestId:         "test-ex-1",
+									Status:         pb.TestVariantStatus_EXONERATED,
+									StatusV2:       pb.TestVerdict_FAILED,
+									StatusOverride: pb.TestVerdict_EXONERATED,
+								},
+								{
+									TestId:         "test-ex-2",
+									Status:         pb.TestVariantStatus_EXONERATED,
+									StatusV2:       pb.TestVerdict_FAILED,
+									StatusOverride: pb.TestVerdict_EXONERATED,
+								},
+							},
+						}, nil
+					},
+				}
+
+				var buf bytes.Buffer
+				cmd := ListCmd(nil)
+				run := cmd.CommandRun().(*verdictListRun)
+				run.client = legacyClient
+				run.out = &buf
+				assert.Loosely(t, run.Run(nil, []string{"-invocationid", "build-8664637210134224081"}, nil), should.Equal(0))
+				out := buf.String()
+				assert.Loosely(t, out, should.ContainSubstring(`Note: Invocation "build-8664637210134224081" is still ACTIVE (results may be incomplete; test execution is still in progress).`))
+				assert.Loosely(t, out, should.ContainSubstring(`No failed or execution errored verdicts found in invocation "build-8664637210134224081"`))
+				assert.Loosely(t, out, should.ContainSubstring(`Note: 2 exonerated verdicts not shown (use -exonerated or -all-statuses to include).`))
+			})
+
+			t.Run(`root FINALIZING invocation with failures and hidden exonerated/flaky counts`, func(t *ftt.Test) {
+				rootClient := &mockListResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+						return &pb.RootInvocation{
+							Name:              in.Name,
+							State:             pb.RootInvocation_RUNNING,
+							FinalizationState: pb.RootInvocation_FINALIZING,
+						}, nil
+					},
+					queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+						return &pb.QueryTestVerdictsResponse{
+							TestVerdicts: []*pb.TestVerdict{
+								{TestId: ":mod!junit:pkg:Cls#testFail", Status: pb.TestVerdict_FAILED},
+							},
+						}, nil
+					},
+					queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+						return &pb.QueryTestAggregationsResponse{
+							Aggregations: []*pb.TestAggregation{
+								{
+									TotalVerdictCounts: &pb.TestAggregation_VerdictCounts{
+										Failed:     1,
+										Flaky:      3,
+										Exonerated: 5,
+										Passed:     100,
+									},
+								},
+							},
+						}, nil
+					},
+				}
+
+				var buf bytes.Buffer
+				cmd := ListCmd(nil)
+				run := cmd.CommandRun().(*verdictListRun)
+				run.client = rootClient
+				run.out = &buf
+				assert.Loosely(t, run.Run(nil, []string{"-invocationid", "ants-i999"}, nil), should.Equal(0))
+				out := buf.String()
+				assert.Loosely(t, out, should.ContainSubstring(`Note: Invocation "ants-i999" is FINALIZING (results may be incomplete until finalized).`))
+				assert.Loosely(t, out, should.ContainSubstring(`- FAILED :mod!junit:pkg:Cls#testFail`))
+				assert.Loosely(t, out, should.ContainSubstring(`Note: 3 flaky, 5 exonerated verdicts not shown (use -flaky, -exonerated or -all-statuses to include).`))
+			})
+
+			t.Run(`does not issue duplicate QueryTestAggregations RPC when concurrent fetch returns nil on 0-verdict root invocation`, func(t *ftt.Test) {
+				aggCalls := 0
+				rootClient := &mockListResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+						return &pb.RootInvocation{
+							Name:              in.Name,
+							State:             pb.RootInvocation_FAILED,
+							FinalizationState: pb.RootInvocation_FINALIZED,
+						}, nil
+					},
+					queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+						return &pb.QueryTestVerdictsResponse{}, nil
+					},
+					queryTestAggregations: func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error) {
+						aggCalls++
+						return nil, status.Error(codes.Unavailable, "transient error")
+					},
+				}
+
+				var buf bytes.Buffer
+				cmd := ListCmd(nil)
+				run := cmd.CommandRun().(*verdictListRun)
+				run.client = rootClient
+				run.out = &buf
+				assert.Loosely(t, run.Run(nil, []string{"-invocationid", "ants-i999"}, nil), should.Equal(0))
+				assert.Loosely(t, aggCalls, should.Equal(1))
+			})
 		})
 	})
 }

@@ -22,6 +22,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/maruel/subcommands"
 
@@ -34,7 +35,10 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-const defaultMaxVerdicts = 100
+const (
+	defaultMaxVerdicts = 100
+	maxLegacyScanPages = 10
+)
 
 func ListCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
@@ -393,27 +397,13 @@ func rootVerdictToListed(tv *pb.TestVerdict) *ListedVerdict {
 	}
 }
 
+func isLegacyVariantExonerated(tv *pb.TestVariant) bool {
+	return tv.Status == pb.TestVariantStatus_EXONERATED || tv.StatusOverride == pb.TestVerdict_EXONERATED || len(tv.Exonerations) > 0
+}
+
 func legacyVariantToListed(tv *pb.TestVariant) *ListedVerdict {
-	statusStr := ""
-	isExonerated := tv.StatusOverride == pb.TestVerdict_EXONERATED || len(tv.Exonerations) > 0
-	if tv.StatusV2 != pb.TestVerdict_STATUS_UNSPECIFIED {
-		statusStr = tv.StatusV2.String()
-	} else {
-		switch tv.Status {
-		case pb.TestVariantStatus_UNEXPECTED:
-			statusStr = "FAILED"
-		case pb.TestVariantStatus_FLAKY:
-			statusStr = "FLAKY"
-		case pb.TestVariantStatus_EXONERATED:
-			statusStr = "EXONERATED"
-		case pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED:
-			statusStr = "SKIPPED"
-		case pb.TestVariantStatus_EXPECTED:
-			statusStr = "PASSED"
-		default:
-			statusStr = "STATUS_UNSPECIFIED"
-		}
-	}
+	isExonerated := isLegacyVariantExonerated(tv)
+	statusStr := legacyVariantStatusV2(tv).String()
 	if isExonerated {
 		if statusStr == "FAILED" || statusStr == "EXECUTION_ERRORED" || statusStr == "PRECLUDED" || statusStr == "FLAKY" {
 			statusStr = statusStr + " (EXONERATED)"
@@ -505,26 +495,205 @@ func QueryRootInvocationListedVerdicts(ctx context.Context, client pb.ResultDBCl
 	return listed, hasMore, nil
 }
 
+func formatInvocationInProgressNotice(invID string, resolved *base.ResolvedInvocation) string {
+	if resolved == nil {
+		return ""
+	}
+	if resolved.Legacy {
+		if resolved.Invocation == nil {
+			return ""
+		}
+		switch resolved.Invocation.State {
+		case pb.Invocation_ACTIVE:
+			return fmt.Sprintf("Note: Invocation %q is still ACTIVE (results may be incomplete; test execution is still in progress).\n", invID)
+		case pb.Invocation_FINALIZING:
+			return fmt.Sprintf("Note: Invocation %q is FINALIZING (results may be incomplete until finalized).\n", invID)
+		}
+		return ""
+	}
+	if resolved.RootInvocation == nil {
+		return ""
+	}
+	switch resolved.RootInvocation.FinalizationState {
+	case pb.RootInvocation_ACTIVE:
+		return fmt.Sprintf("Note: Invocation %q is still ACTIVE (results may be incomplete; test execution is still in progress).\n", invID)
+	case pb.RootInvocation_FINALIZING:
+		return fmt.Sprintf("Note: Invocation %q is FINALIZING (results may be incomplete until finalized).\n", invID)
+	}
+	return ""
+}
+
+type hiddenVerdictCounts struct {
+	failed           int
+	executionErrored int
+	precluded        int
+	flaky            int
+	exonerated       int
+	truncated        bool
+	scanCapped       bool
+	scanned          int
+}
+
+func (h *hiddenVerdictCounts) add(status pb.TestVerdict_Status, statusOverride pb.TestVerdict_StatusOverride, hasExonerations bool) {
+	if statusOverride == pb.TestVerdict_EXONERATED || hasExonerations {
+		h.exonerated++
+		return
+	}
+	switch status {
+	case pb.TestVerdict_FAILED:
+		h.failed++
+	case pb.TestVerdict_EXECUTION_ERRORED:
+		h.executionErrored++
+	case pb.TestVerdict_PRECLUDED:
+		h.precluded++
+	case pb.TestVerdict_FLAKY:
+		h.flaky++
+	}
+}
+
+func hiddenVerdictCountsFromAgg(vc *pb.TestAggregation_VerdictCounts, filter statusFilter) hiddenVerdictCounts {
+	if vc == nil || filter.All() || filter.hasScopeFilter() {
+		return hiddenVerdictCounts{}
+	}
+	var h hiddenVerdictCounts
+	if !filter.failed && vc.Failed > 0 {
+		h.failed = int(vc.Failed)
+	}
+	if !filter.executionErrored && vc.ExecutionErrored > 0 {
+		h.executionErrored = int(vc.ExecutionErrored)
+	}
+	if !filter.precluded && vc.Precluded > 0 {
+		h.precluded = int(vc.Precluded)
+	}
+	if !filter.flaky && vc.Flaky > 0 {
+		h.flaky = int(vc.Flaky)
+	}
+	if !filter.exonerated && vc.Exonerated > 0 {
+		h.exonerated = int(vc.Exonerated)
+	}
+	return h
+}
+
+func (h hiddenVerdictCounts) total() int {
+	return h.failed + h.executionErrored + h.precluded + h.flaky + h.exonerated
+}
+
+func (h hiddenVerdictCounts) formatNotice() string {
+	suffix := ""
+	if h.truncated {
+		suffix = "+"
+	}
+	var counts []string
+	var statusHints []string
+	var flagHints []string
+	if h.failed > 0 {
+		counts = append(counts, fmt.Sprintf("%d%s failed", h.failed, suffix))
+		statusHints = append(statusHints, "failed")
+	}
+	if h.executionErrored > 0 {
+		counts = append(counts, fmt.Sprintf("%d%s execution-errored", h.executionErrored, suffix))
+		statusHints = append(statusHints, "execution_errored")
+	}
+	if len(statusHints) > 0 {
+		flagHints = append(flagHints, "-status="+strings.Join(statusHints, ","))
+	}
+	if h.precluded > 0 {
+		counts = append(counts, fmt.Sprintf("%d%s precluded", h.precluded, suffix))
+		flagHints = append(flagHints, "-precluded")
+	}
+	if h.flaky > 0 {
+		counts = append(counts, fmt.Sprintf("%d%s flaky", h.flaky, suffix))
+		flagHints = append(flagHints, "-flaky")
+	}
+	if h.exonerated > 0 {
+		counts = append(counts, fmt.Sprintf("%d%s exonerated", h.exonerated, suffix))
+		flagHints = append(flagHints, "-exonerated")
+	}
+	if len(counts) == 0 {
+		if h.scanCapped {
+			return fmt.Sprintf("Note: stopped after scanning %d variants; pass -all to scan all.\n", h.scanned)
+		}
+		return ""
+	}
+	noun := "verdicts"
+	if h.total() == 1 && !h.truncated {
+		noun = "verdict"
+	}
+	hintClause := fmt.Sprintf("use %s or -all-statuses to include", strings.Join(flagHints, ", "))
+	if h.scanCapped {
+		return fmt.Sprintf("Note: %s %s not shown (%s; stopped after scanning %d variants, pass -all to scan all).\n",
+			strings.Join(counts, ", "), noun, hintClause, h.scanned)
+	}
+	return fmt.Sprintf("Note: %s %s not shown (%s).\n", strings.Join(counts, ", "), noun, hintClause)
+}
+
+func legacyVariantStatusV2(tv *pb.TestVariant) pb.TestVerdict_Status {
+	if tv.StatusV2 != pb.TestVerdict_STATUS_UNSPECIFIED {
+		return tv.StatusV2
+	}
+	switch tv.Status {
+	case pb.TestVariantStatus_UNEXPECTED:
+		return pb.TestVerdict_FAILED
+	case pb.TestVariantStatus_FLAKY:
+		return pb.TestVerdict_FLAKY
+	case pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED:
+		return pb.TestVerdict_EXECUTION_ERRORED
+	case pb.TestVariantStatus_EXPECTED:
+		return pb.TestVerdict_PASSED
+	default:
+		return pb.TestVerdict_STATUS_UNSPECIFIED
+	}
+}
+
+func matchesLegacyScope(tv *pb.TestVariant, filter statusFilter) bool {
+	if filter.moduleName != "" {
+		modMatch := (tv.TestIdStructured != nil && tv.TestIdStructured.ModuleName == filter.moduleName) ||
+			strings.Contains(tv.TestId, filter.moduleName)
+		if !modMatch {
+			return false
+		}
+	}
+	if filter.containsFilter != "" {
+		sub := strings.ToLower(filter.containsFilter)
+		textMatch := strings.Contains(strings.ToLower(tv.TestId), sub) ||
+			(tv.TestMetadata != nil && strings.Contains(strings.ToLower(tv.TestMetadata.Name), sub))
+		if !textMatch {
+			return false
+		}
+	}
+	return true
+}
+
 // QueryLegacyInvocationListedVerdicts queries test variants for a legacy invocation in UI priority order.
 func QueryLegacyInvocationListedVerdicts(ctx context.Context, client pb.ResultDBClient, invID string, filter statusFilter, maxVerdicts int) ([]*ListedVerdict, bool, error) {
+	listed, hasMore, _, err := queryLegacyInvocationListedVerdicts(ctx, client, invID, filter, maxVerdicts)
+	return listed, hasMore, err
+}
+
+func queryLegacyInvocationListedVerdicts(ctx context.Context, client pb.ResultDBClient, invID string, filter statusFilter, maxVerdicts int) ([]*ListedVerdict, bool, hiddenVerdictCounts, error) {
 	legacyInvName := "invocations/" + base.NormalizeInvocation(invID)
 
 	var legacyPredicateStatus pb.TestVariantStatus
 	if filter.All() || filter.passed || filter.skipped {
 		legacyPredicateStatus = pb.TestVariantStatus_TEST_VARIANT_STATUS_UNSPECIFIED
-	} else if filter.exonerated || filter.flaky || filter.precluded {
-		legacyPredicateStatus = pb.TestVariantStatus_UNEXPECTED_MASK
 	} else {
-		legacyPredicateStatus = pb.TestVariantStatus_UNEXPECTED
+		// Always use UNEXPECTED_MASK rather than UNEXPECTED because ResultDB v1
+		// maps StatusV2=FAILED verdicts with a skipped retry to v1 FLAKY and
+		// StatusV2=EXECUTION_ERRORED verdicts to v1 UNEXPECTEDLY_SKIPPED.
+		legacyPredicateStatus = pb.TestVariantStatus_UNEXPECTED_MASK
 	}
 
+	clientSideFiltering := !filter.All() || filter.hasScopeFilter()
+
 	var listed []*ListedVerdict
+	var hidden hiddenVerdictCounts
 	pageToken := ""
 	hasMore := false
+	pages := 0
 
 	for {
 		pageSize := int32(1000)
-		if maxVerdicts > 0 {
+		if !clientSideFiltering && maxVerdicts > 0 {
 			remaining := maxVerdicts - len(listed)
 			if remaining <= 0 {
 				break
@@ -550,47 +719,47 @@ func QueryLegacyInvocationListedVerdicts(ctx context.Context, client pb.ResultDB
 		res, err := client.QueryTestVariants(ctx, req)
 		if err != nil {
 			if base.IsPermissionDenied(err) {
-				return nil, false, errors.Fmt("QueryTestVariants RPC failed for %s (%s): %w", legacyInvName, base.ResultDBPermissionReason(legacyInvName, err), err)
+				return nil, false, hiddenVerdictCounts{}, errors.Fmt("QueryTestVariants RPC failed for %s (%s): %w", legacyInvName, base.ResultDBPermissionReason(legacyInvName, err), err)
 			}
-			return nil, false, errors.Fmt("QueryTestVariants RPC failed for %s: %w", legacyInvName, err)
+			return nil, false, hiddenVerdictCounts{}, errors.Fmt("QueryTestVariants RPC failed for %s: %w", legacyInvName, err)
 		}
-		for i, tv := range res.TestVariants {
-			hasEx := tv.StatusOverride == pb.TestVerdict_EXONERATED || len(tv.Exonerations) > 0
-			if !filter.Matches(tv.StatusV2, tv.StatusOverride, hasEx) {
+		pages++
+		hidden.scanned += len(res.TestVariants)
+		for _, tv := range res.TestVariants {
+			if !matchesLegacyScope(tv, filter) {
 				continue
 			}
-			if filter.moduleName != "" {
-				modMatch := (tv.TestIdStructured != nil && tv.TestIdStructured.ModuleName == filter.moduleName) ||
-					strings.Contains(tv.TestId, filter.moduleName)
-				if !modMatch {
-					continue
-				}
+			hasEx := isLegacyVariantExonerated(tv)
+			st := legacyVariantStatusV2(tv)
+			if !filter.Matches(st, tv.StatusOverride, hasEx) {
+				hidden.add(st, tv.StatusOverride, hasEx)
+				continue
 			}
-			if filter.containsFilter != "" {
-				sub := strings.ToLower(filter.containsFilter)
-				textMatch := strings.Contains(strings.ToLower(tv.TestId), sub) ||
-					(tv.TestMetadata != nil && strings.Contains(strings.ToLower(tv.TestMetadata.Name), sub))
-				if !textMatch {
-					continue
-				}
+			if maxVerdicts > 0 && len(listed) >= maxVerdicts {
+				hasMore = true
+				continue
 			}
 			listed = append(listed, legacyVariantToListed(tv))
-			if maxVerdicts > 0 && len(listed) >= maxVerdicts {
-				if i < len(res.TestVariants)-1 || res.NextPageToken != "" {
-					hasMore = true
-				}
-				break
-			}
 		}
 		if maxVerdicts > 0 && len(listed) >= maxVerdicts {
+			if res.NextPageToken != "" {
+				hasMore = true
+				hidden.truncated = true
+			}
 			break
 		}
 		if res.NextPageToken == "" {
 			break
 		}
+		if clientSideFiltering && maxVerdicts > 0 && pages >= maxLegacyScanPages {
+			hasMore = true
+			hidden.truncated = true
+			hidden.scanCapped = true
+			break
+		}
 		pageToken = res.NextPageToken
 	}
-	return listed, hasMore, nil
+	return listed, hasMore, hidden, nil
 }
 
 // QueryVerdictList queries test verdicts for an invocation.
@@ -681,16 +850,28 @@ func formatListedVerdictEntry(v *ListedVerdict) string {
 }
 
 func printListedVerdicts(out io.Writer, invID string, verdicts []*ListedVerdict, hasMore bool, filter statusFilter) {
-	printListedVerdictsWithBudget(out, invID, verdicts, hasMore, filter, 0)
+	printListedVerdictsWithNoticeAndBudget(out, invID, verdicts, hasMore, false, filter, "", 0)
 }
 
 func printListedVerdictsWithBudget(out io.Writer, invID string, verdicts []*ListedVerdict, hasMore bool, filter statusFilter, maxBytes int) {
+	printListedVerdictsWithNoticeAndBudget(out, invID, verdicts, hasMore, false, filter, "", maxBytes)
+}
+
+func printListedVerdictsWithNoticeAndBudget(out io.Writer, invID string, verdicts []*ListedVerdict, hasMore, scanCapped bool, filter statusFilter, hiddenNotice string, maxBytes int) {
 	if len(verdicts) == 0 {
+		var msg string
 		if filter.IsDefault() {
-			fmt.Fprintf(out, "No failed or execution errored verdicts found in invocation %q (use -all-statuses or status flags to see other verdicts)\n", invID)
+			msg = fmt.Sprintf("No failed or execution errored verdicts found in invocation %q (use -all-statuses or status flags to see other verdicts)\n", invID)
 		} else {
-			fmt.Fprintf(out, "No matching verdicts found in invocation %q\n", invID)
+			msg = fmt.Sprintf("No matching verdicts found in invocation %q\n", invID)
 		}
+		if hiddenNotice != "" {
+			msg += hiddenNotice
+		}
+		if maxBytes > 0 && len(msg) > maxBytes {
+			msg = truncateVerdictListOutput(msg, maxBytes)
+		}
+		fmt.Fprint(out, msg)
 		return
 	}
 
@@ -702,16 +883,21 @@ func printListedVerdictsWithBudget(out io.Writer, invID string, verdicts []*List
 	}
 
 	var fullHeader string
-	if hasMore {
+	if scanCapped {
+		fullHeader = fmt.Sprintf("Verdicts (showing %d, use -all to scan all):\n", len(verdicts))
+	} else if hasMore {
 		fullHeader = fmt.Sprintf("Verdicts (showing %d, use -max-verdicts or -all to see more):\n", len(verdicts))
 	} else {
 		fullHeader = fmt.Sprintf("Verdicts (%d):\n", len(verdicts))
 	}
 
-	if maxBytes <= 0 || len(fullHeader)+prefixLen[len(verdicts)] <= maxBytes {
+	if maxBytes <= 0 || len(fullHeader)+prefixLen[len(verdicts)]+len(hiddenNotice) <= maxBytes {
 		fmt.Fprint(out, fullHeader)
 		for _, entry := range entries {
 			fmt.Fprint(out, entry)
+		}
+		if hiddenNotice != "" {
+			fmt.Fprint(out, hiddenNotice)
 		}
 		return
 	}
@@ -744,6 +930,9 @@ func printListedVerdictsWithBudget(out io.Writer, invID string, verdicts []*List
 			ftr = fmt.Sprintf("... and %s more %s omitted to stay within 9.5 KB limit; run 'luci verdict list -invocationid=%s%s -all' (or pass -modulename / -filter) to view more\n",
 				omittedStr, verdictNoun, quotedInv, extraFlags)
 		}
+		if hiddenNotice != "" {
+			ftr += hiddenNotice
+		}
 		return hdr, ftr
 	}
 
@@ -760,6 +949,9 @@ func printListedVerdictsWithBudget(out io.Writer, invID string, verdicts []*List
 	}
 
 	fallback := fmt.Sprintf("Verdicts (%s omitted to stay within output limit; pass -all to view)\n", totalStr)
+	if hiddenNotice != "" {
+		fallback += hiddenNotice
+	}
 	fmt.Fprint(out, format.TruncateUTF8Prefix(fallback, maxBytes))
 }
 
@@ -858,10 +1050,38 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 		maxVerdicts = 0
 	}
 
-	verdicts, hasMore, err := QueryVerdictList(ctx, client, invID, filter, legacy, maxVerdicts)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to list verdicts: %s\n", err)
-		return 1
+	var (
+		verdicts   []*ListedVerdict
+		hasMore    bool
+		hidden     hiddenVerdictCounts
+		rootAgg    *pb.TestAggregation
+		aggFetched bool
+	)
+	if legacy {
+		verdicts, hasMore, hidden, err = queryLegacyInvocationListedVerdicts(ctx, client, invID, filter, maxVerdicts)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to list verdicts: %s\n", err)
+			return 1
+		}
+	} else {
+		var wg sync.WaitGroup
+		aggFetched = !filter.All() && !filter.hasScopeFilter()
+		if aggFetched {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				rootAgg = format.FetchRootInvocationAggregation(ctx, client, invID)
+			}()
+		}
+		verdicts, hasMore, err = QueryRootInvocationListedVerdicts(ctx, client, invID, filter, maxVerdicts)
+		wg.Wait()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to list verdicts: %s\n", err)
+			return 1
+		}
+		if rootAgg != nil {
+			hidden = hiddenVerdictCountsFromAgg(rootAgg.GetTotalVerdictCounts(), filter)
+		}
 	}
 
 	out := r.out
@@ -876,27 +1096,33 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 	ids.PrintDerivedIDs(&headerBuf, extracted)
 	if !legacy {
 		format.FprintRootInvocationMetadata(&headerBuf, resolved.RootInvocation)
-		if len(verdicts) == 0 {
-			rootAgg := format.FetchRootInvocationAggregation(ctx, client, invID)
-			printEmptyRootInvocationVerdicts(&headerBuf, invID, resolved.RootInvocation, rootAgg, filter)
-			headerStr := headerBuf.String()
-			if capOutput && len(headerStr) > format.DefaultMaxOutputBytes {
-				headerStr = truncateVerdictListOutput(headerStr, format.DefaultMaxOutputBytes)
-			}
-			fmt.Fprint(out, headerStr)
-			return 0
-		}
 	}
+	if notice := formatInvocationInProgressNotice(invID, resolved); notice != "" {
+		headerBuf.WriteString(notice)
+	}
+	if !legacy && len(verdicts) == 0 {
+		if !aggFetched {
+			rootAgg = format.FetchRootInvocationAggregation(ctx, client, invID)
+		}
+		printEmptyRootInvocationVerdicts(&headerBuf, invID, resolved.RootInvocation, rootAgg, filter)
+		headerStr := headerBuf.String()
+		if capOutput && len(headerStr) > format.DefaultMaxOutputBytes {
+			headerStr = truncateVerdictListOutput(headerStr, format.DefaultMaxOutputBytes)
+		}
+		fmt.Fprint(out, headerStr)
+		return 0
+	}
+	hiddenNotice := hidden.formatNotice()
 	const minVerdictSectionBytes = 2500
 	headerStr := headerBuf.String()
 	if !capOutput {
 		fmt.Fprint(out, headerStr)
-		printListedVerdictsWithBudget(out, invID, verdicts, hasMore, filter, 0)
+		printListedVerdictsWithNoticeAndBudget(out, invID, verdicts, hasMore, hidden.scanCapped, filter, hiddenNotice, 0)
 		return 0
 	}
 
 	var uncappedVerdicts bytes.Buffer
-	printListedVerdictsWithBudget(&uncappedVerdicts, invID, verdicts, hasMore, filter, 0)
+	printListedVerdictsWithNoticeAndBudget(&uncappedVerdicts, invID, verdicts, hasMore, hidden.scanCapped, filter, hiddenNotice, 0)
 	if len(headerStr)+uncappedVerdicts.Len() <= format.DefaultMaxOutputBytes {
 		fmt.Fprint(out, headerStr)
 		fmt.Fprint(out, uncappedVerdicts.String())
@@ -912,7 +1138,7 @@ func (r *verdictListRun) Run(a subcommands.Application, args []string, env subco
 	if uncappedVerdicts.Len() <= budget {
 		fmt.Fprint(out, uncappedVerdicts.String())
 	} else {
-		printListedVerdictsWithBudget(out, invID, verdicts, hasMore, filter, budget)
+		printListedVerdictsWithNoticeAndBudget(out, invID, verdicts, hasMore, hidden.scanCapped, filter, hiddenNotice, budget)
 	}
 	return 0
 }
