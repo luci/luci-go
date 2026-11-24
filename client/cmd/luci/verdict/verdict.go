@@ -85,6 +85,8 @@ func GetCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.variantHash, "varianthash", "", "Variant hash (optional, e.g. b7de9035241e76cc)")
 			r.Flags.StringVar(&r.variantHash, "variant-hash", "", "Alias for -varianthash")
 			r.Flags.IntVar(&r.maxResults, "max-results", defaultMaxVerdictResults, "Maximum number of results to display (default: 10, 0 for all; setting explicitly bypasses 9.5 KB cap)")
+			r.Flags.IntVar(&r.maxResults, "limit", defaultMaxVerdictResults, "Alias for -max-results")
+			r.Flags.IntVar(&r.maxResults, "n", defaultMaxVerdictResults, "Alias for -max-results")
 			r.Flags.BoolVar(&r.allResults, "all", false, "Show all results without truncation")
 			r.Flags.BoolVar(&r.showMetadata, "show-metadata", false, "Additionally print test metadata, tags, and properties")
 			// -legacy is now unused and will be removed in the future.
@@ -126,7 +128,7 @@ func (r *verdictGetRun) hasExplicitMaxResultsFlag() bool {
 	}
 	explicit := false
 	r.Flags.Visit(func(f *flag.Flag) {
-		if f.Name == "max-results" {
+		if f.Name == "max-results" || f.Name == "limit" || f.Name == "n" {
 			explicit = true
 		}
 	})

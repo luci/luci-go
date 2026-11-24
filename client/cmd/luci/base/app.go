@@ -19,6 +19,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
+	"sort"
 	"strings"
 
 	"github.com/maruel/subcommands"
@@ -41,21 +43,38 @@ func FormatTitleWithSkillHint(title string) string {
 	return title + "\n\n" + AgentSkillHint
 }
 
+// UnknownCommandHintFunc formats an optional actionable hint (without the
+// leading "unknown command" line or trailing "Run '<app> help' for usage."
+// line) when an unknown subcommand is invoked. Returning an empty string falls
+// back to the default suggestion and available-subcommands hint.
+type UnknownCommandHintFunc func(a subcommands.Application, unknownCmd string, rest []string) string
+
 // HelpCmd returns a help subcommand based on subcommands.CmdHelp that includes
 // AgentSkillHint in command-specific help output and supports nested subcommands.
 func HelpCmd() *subcommands.Command {
+	return HelpCmdWithHint(nil)
+}
+
+// HelpCmdWithHint returns a help subcommand like HelpCmd that prints an
+// actionable hint via unknownHint (or the default command suggestions if nil or
+// empty) when asked for help on an unknown command.
+func HelpCmdWithHint(unknownHint UnknownCommandHintFunc) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: subcommands.CmdHelp.UsageLine,
 		ShortDesc: subcommands.CmdHelp.ShortDesc,
 		LongDesc:  subcommands.CmdHelp.LongDesc,
 		CommandRun: func() subcommands.CommandRun {
-			return &skillHelpRun{delegate: subcommands.CmdHelp.CommandRun()}
+			return &skillHelpRun{
+				delegate:    subcommands.CmdHelp.CommandRun(),
+				unknownHint: unknownHint,
+			}
 		},
 	}
 }
 
 type skillHelpRun struct {
-	delegate subcommands.CommandRun
+	delegate    subcommands.CommandRun
+	unknownHint UnknownCommandHintFunc
 }
 
 func (r *skillHelpRun) GetFlags() *flag.FlagSet {
@@ -68,11 +87,212 @@ func (r *skillHelpRun) Run(a subcommands.Application, args []string, env subcomm
 			return cmd.CommandRun().Run(a, append([]string{"help"}, args[1:]...), env)
 		}
 	}
+	if len(args) >= 1 && subcommands.FindNearestCommand(a, args[0]) == nil {
+		return printUnknownCommand(a, args[0], args[1:], r.unknownHint)
+	}
 	code := r.delegate.Run(a, args, env)
 	if code == 0 && len(args) == 1 {
 		fmt.Fprintf(a.GetErr(), "\n%s\n", AgentSkillHint)
 	}
 	return code
+}
+
+// RunApp normalizes help flags and executes a subcommands application, printing
+// actionable hints when an unknown command is invoked.
+func RunApp(a subcommands.Application, args []string, unknownHint UnknownCommandHintFunc) int {
+	args = NormalizeAppArgs(a.GetCommands(), args)
+	if len(args) > 0 {
+		cmd := subcommands.FindNearestCommand(a, args[0])
+		if cmd == nil {
+			return printUnknownCommand(a, args[0], args[1:], unknownHint)
+		}
+		if len(args) > 1 && strings.HasPrefix(args[1], "-") && cmd.CommandRun != nil && strings.Contains(cmd.UsageLine, "<subcommand>") {
+			return cmd.CommandRun().Run(a, args[1:], buildEnvMap(a))
+		}
+	}
+	return subcommands.Run(a, args)
+}
+
+func buildEnvMap(a subcommands.Application) subcommands.Env {
+	envVars := a.GetEnvVars()
+	envMap := make(subcommands.Env, len(envVars))
+	for k, v := range envVars {
+		val, ok := os.LookupEnv(k)
+		if !ok {
+			val = v.Default
+		}
+		envMap[k] = subcommands.EnvVar{Value: val, Exists: ok}
+	}
+	return envMap
+}
+
+func printUnknownCommand(a subcommands.Application, unknownCmd string, rest []string, unknownHint UnknownCommandHintFunc) int {
+	errOut := a.GetErr()
+	fmt.Fprintf(errOut, "%s: unknown command %#q\n", a.GetName(), unknownCmd)
+
+	var hint string
+	if unknownHint != nil {
+		hint = strings.TrimSpace(unknownHint(a, unknownCmd, rest))
+	}
+	if hint == "" {
+		hint = defaultUnknownCommandHint(a, unknownCmd, rest)
+	}
+	if hint != "" {
+		fmt.Fprintf(errOut, "\n%s\n", hint)
+	}
+	fmt.Fprintf(errOut, "\nRun '%s help' for usage.\n", a.GetName())
+	return 2
+}
+
+func defaultUnknownCommandHint(a subcommands.Application, unknownCmd string, rest []string) string {
+	cmds := a.GetCommands()
+	avail := availableCommandNames(cmds)
+	if len(avail) == 1 && looksLikeTargetArg(unknownCmd) {
+		parts := make([]string, 0, 3+len(rest))
+		parts = append(parts, a.GetName(), avail[0], ShellQuoteIfNeeded(unknownCmd))
+		for _, arg := range rest {
+			parts = append(parts, ShellQuoteIfNeeded(arg))
+		}
+		return fmt.Sprintf("Hint: '%s' only supports '%s'. Try:\n  %s", a.GetName(), avail[0], strings.Join(parts, " "))
+	}
+
+	var lines []string
+	if suggestions := SuggestCommands(cmds, unknownCmd); len(suggestions) > 0 {
+		lines = append(lines, fmt.Sprintf("Did you mean: %s?", strings.Join(suggestions, ", ")))
+	}
+	if len(avail) > 0 {
+		lines = append(lines, fmt.Sprintf("Available subcommands for '%s': %s", a.GetName(), strings.Join(avail, ", ")))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func availableCommandNames(commands []*subcommands.Command) []string {
+	names := make([]string, 0, len(commands))
+	for _, c := range commands {
+		if c == nil {
+			continue
+		}
+		name := c.Name()
+		if name == "" || name == "help" {
+			continue
+		}
+		names = append(names, name)
+	}
+	return names
+}
+
+// looksLikeTargetArg reports whether arg resembles a resource ID, URL, or flag
+// rather than an English subcommand verb.
+func looksLikeTargetArg(arg string) bool {
+	if arg == "" {
+		return false
+	}
+	if strings.HasPrefix(arg, "-") {
+		return true
+	}
+	if strings.ContainsAny(arg, "/:._") {
+		return true
+	}
+	for i := 0; i < len(arg); i++ {
+		if arg[i] >= '0' && arg[i] <= '9' {
+			return true
+		}
+	}
+	return false
+}
+
+// SuggestCommands returns up to 3 closest command names from commands for input
+// using edit distance and prefix/substring matching (excluding section headers
+// and "help").
+func SuggestCommands(commands []*subcommands.Command, input string) []string {
+	in := strings.ToLower(strings.TrimSpace(input))
+	if in == "" || looksLikeTargetArg(in) {
+		return nil
+	}
+
+	type candidate struct {
+		name string
+		tier int // 1: distance 1 or prefix match; 2: distance 2 or component match
+		dist int
+	}
+
+	var candidates []candidate
+	bestTier := 3
+	for _, name := range availableCommandNames(commands) {
+		lower := strings.ToLower(name)
+		d := levenshteinDistance(in, lower)
+		tier := 0
+		switch {
+		case d == 1:
+			tier = 1
+		case strings.HasPrefix(lower, in):
+			tier = 1
+		case d == 2 && (len(in) >= 3 || (len(in) == 2 && in[0] == lower[0])):
+			tier = 2
+		case len(in) >= 3 && (strings.Contains(lower, in) || strings.HasPrefix(in, lower+"-")):
+			tier = 2
+		}
+		if tier == 0 {
+			continue
+		}
+		if tier < bestTier {
+			bestTier = tier
+		}
+		candidates = append(candidates, candidate{name: name, tier: tier, dist: d})
+	}
+	if len(candidates) == 0 {
+		return nil
+	}
+
+	filtered := candidates[:0]
+	for _, c := range candidates {
+		if c.tier == bestTier {
+			filtered = append(filtered, c)
+		}
+	}
+	sort.Slice(filtered, func(i, j int) bool {
+		if filtered[i].dist != filtered[j].dist {
+			return filtered[i].dist < filtered[j].dist
+		}
+		return filtered[i].name < filtered[j].name
+	})
+
+	const maxSuggestions = 3
+	if len(filtered) > maxSuggestions {
+		filtered = filtered[:maxSuggestions]
+	}
+	out := make([]string, len(filtered))
+	for i, c := range filtered {
+		out[i] = c.name
+	}
+	return out
+}
+
+func levenshteinDistance(a, b string) int {
+	ra, rb := []rune(a), []rune(b)
+	if len(ra) == 0 {
+		return len(rb)
+	}
+	if len(rb) == 0 {
+		return len(ra)
+	}
+	prev := make([]int, len(rb)+1)
+	curr := make([]int, len(rb)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i := 1; i <= len(ra); i++ {
+		curr[0] = i
+		for j := 1; j <= len(rb); j++ {
+			cost := 1
+			if ra[i-1] == rb[j-1] {
+				cost = 0
+			}
+			curr[j] = min(prev[j]+1, curr[j-1]+1, prev[j-1]+cost)
+		}
+		prev, curr = curr, prev
+	}
+	return prev[len(rb)]
 }
 
 // ParsePositionalTarget extracts at most one positional target argument from args
@@ -182,17 +402,23 @@ func (s *subcommandApp) GetErr() io.Writer {
 	return s.Application.GetErr()
 }
 
-// RunSubcommandApp executes a nested subcommands application with standard help handling.
+// RunSubcommandApp executes a nested subcommands application with standard help
+// and unknown-command handling.
 func RunSubcommandApp(a subcommands.Application, name, title string, commands []*subcommands.Command, args []string) int {
+	return RunSubcommandAppWithHint(a, name, title, commands, args, nil)
+}
+
+// RunSubcommandAppWithHint executes a nested subcommands application like
+// RunSubcommandApp, using unknownHint to customize unknown-command guidance.
+func RunSubcommandAppWithHint(a subcommands.Application, name, title string, commands []*subcommands.Command, args []string, unknownHint UnknownCommandHintFunc) int {
 	cmds := make([]*subcommands.Command, len(commands))
 	for i, c := range commands {
 		if c == subcommands.CmdHelp {
-			cmds[i] = HelpCmd()
+			cmds[i] = HelpCmdWithHint(unknownHint)
 		} else {
 			cmds[i] = c
 		}
 	}
-	args = NormalizeAppArgs(cmds, args)
 	app := &subcommandApp{
 		Application: &cli.Application{
 			Name:     name,
@@ -210,5 +436,5 @@ func RunSubcommandApp(a subcommands.Application, name, title string, commands []
 		app.out = a.GetOut()
 		app.err = a.GetErr()
 	}
-	return subcommands.Run(app, args)
+	return RunApp(app, args, unknownHint)
 }

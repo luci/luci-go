@@ -196,3 +196,133 @@ type dummyRun struct {
 func (r *dummyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
 	return 0
 }
+
+func TestUnknownCommandHints(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`SuggestCommands`, t, func(t *ftt.Test) {
+		cmds := []*subcommands.Command{
+			{UsageLine: "get <id>"},
+			{UsageLine: "list <id>"},
+			{UsageLine: "log <subcommand>"},
+			{UsageLine: "invocation <subcommand>"},
+			{UsageLine: "test-result <subcommand>"},
+			subcommands.Section("Auth\n"),
+			{UsageLine: "auth-info"},
+			{UsageLine: "auth-login"},
+			{UsageLine: "auth-logout"},
+			HelpCmd(),
+		}
+
+		assert.Loosely(t, SuggestCommands(cmds, "lst"), should.Match([]string{"list"}))
+		assert.Loosely(t, SuggestCommands(cmds, "logs"), should.Match([]string{"log"}))
+		assert.Loosely(t, SuggestCommands(cmds, "inv"), should.Match([]string{"invocation"}))
+		assert.Loosely(t, SuggestCommands(cmds, "auth"), should.Match([]string{"auth-info", "auth-login", "auth-logout"}))
+		assert.Loosely(t, SuggestCommands(cmds, "result"), should.Match([]string{"test-result"}))
+		assert.Loosely(t, SuggestCommands(cmds, "I43300010665891529"), should.BeEmpty)
+		assert.Loosely(t, SuggestCommands(cmds, "-invocationid"), should.BeEmpty)
+		assert.Loosely(t, SuggestCommands(cmds, "foobar"), should.BeEmpty)
+	})
+
+	ftt.Run(`RunSubcommandApp unknown command handling`, t, func(t *ftt.Test) {
+		mkCmd := func(usage string) *subcommands.Command {
+			return &subcommands.Command{
+				UsageLine:  usage,
+				CommandRun: func() subcommands.CommandRun { return &dummyRun{} },
+			}
+		}
+
+		t.Run(`single-action group suggests verb when passed a target ID or flag`, func(t *ftt.Test) {
+			var outBuf, errBuf bytes.Buffer
+			parent := &subcommandApp{Application: &cli.Application{Name: "luci"}, out: &outBuf, err: &errBuf}
+
+			code := RunSubcommandApp(parent, "luci item", "Items", []*subcommands.Command{
+				mkCmd("get <id>"),
+				subcommands.CmdHelp,
+			}, []string{"I43300010665891529"})
+			assert.Loosely(t, code, should.Equal(2))
+			assert.Loosely(t, outBuf.String(), should.BeEmpty)
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("luci item: unknown command `I43300010665891529`"))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("Hint: 'luci item' only supports 'get'. Try:\n  luci item get I43300010665891529"))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("Run 'luci item help' for usage."))
+
+			errBuf.Reset()
+			code = RunSubcommandApp(parent, "luci item", "Items", []*subcommands.Command{
+				mkCmd("get <id>"),
+				subcommands.CmdHelp,
+			}, []string{"-id", "abc"})
+			assert.Loosely(t, code, should.Equal(2))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("luci item get -id abc"))
+		})
+
+		t.Run(`single-action group lists available subcommands for non-ID unknown verbs`, func(t *ftt.Test) {
+			var outBuf, errBuf bytes.Buffer
+			parent := &subcommandApp{Application: &cli.Application{Name: "luci"}, out: &outBuf, err: &errBuf}
+
+			code := RunSubcommandApp(parent, "luci item", "Items", []*subcommands.Command{
+				mkCmd("get <id>"),
+				subcommands.CmdHelp,
+			}, []string{"list"})
+			assert.Loosely(t, code, should.Equal(2))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("Available subcommands for 'luci item': get"))
+			assert.Loosely(t, errBuf.String(), should.NotContainSubstring("luci item get list"))
+		})
+
+		t.Run(`multi-action group prints fuzzy suggestion and available subcommands`, func(t *ftt.Test) {
+			var outBuf, errBuf bytes.Buffer
+			parent := &subcommandApp{Application: &cli.Application{Name: "luci"}, out: &outBuf, err: &errBuf}
+			cmds := []*subcommands.Command{
+				mkCmd("get <id>"),
+				mkCmd("list <id>"),
+				mkCmd("log <subcommand>"),
+				subcommands.CmdHelp,
+			}
+
+			// Ambiguous prefix ("l") and ambiguous short typo ("ls") are rejected by
+			// subcommands.FindNearestCommand and surface our fuzzy suggestions.
+			code := RunSubcommandApp(parent, "luci item", "Items", cmds, []string{"l"})
+			assert.Loosely(t, code, should.Equal(2))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("Did you mean: log, list?"))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("Available subcommands for 'luci item': get, list, log"))
+
+			errBuf.Reset()
+			code = RunSubcommandApp(parent, "luci item", "Items", cmds, []string{"ls"})
+			assert.Loosely(t, code, should.Equal(2))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("Did you mean: list, log?"))
+
+			errBuf.Reset()
+			code = RunSubcommandApp(parent, "luci item", "Items", cmds, []string{"show"})
+			assert.Loosely(t, code, should.Equal(2))
+			assert.Loosely(t, errBuf.String(), should.NotContainSubstring("Did you mean:"))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("Available subcommands for 'luci item': get, list, log"))
+		})
+
+		t.Run(`RunSubcommandAppWithHint applies custom hint to direct and help invocations and falls back on empty`, func(t *ftt.Test) {
+			customHint := func(a subcommands.Application, cmd string, rest []string) string {
+				if cmd == "list" {
+					return "Use 'luci other list' instead."
+				}
+				return ""
+			}
+			cmds := []*subcommands.Command{
+				mkCmd("get <id>"),
+				mkCmd("artifact <subcommand>"),
+				subcommands.CmdHelp,
+			}
+
+			for _, args := range [][]string{{"list"}, {"help", "list"}} {
+				var outBuf, errBuf bytes.Buffer
+				parent := &subcommandApp{Application: &cli.Application{Name: "luci"}, out: &outBuf, err: &errBuf}
+				code := RunSubcommandAppWithHint(parent, "luci item", "Items", cmds, args, customHint)
+				assert.Loosely(t, code, should.Equal(2))
+				assert.Loosely(t, errBuf.String(), should.ContainSubstring("Use 'luci other list' instead."))
+			}
+
+			var outBuf, errBuf bytes.Buffer
+			parent := &subcommandApp{Application: &cli.Application{Name: "luci"}, out: &outBuf, err: &errBuf}
+			code := RunSubcommandAppWithHint(parent, "luci item", "Items", cmds, []string{"get-details"}, customHint)
+			assert.Loosely(t, code, should.Equal(2))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("Did you mean: get?"))
+		})
+	})
+}

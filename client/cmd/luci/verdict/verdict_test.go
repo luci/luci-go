@@ -775,6 +775,27 @@ func TestPrintVerdictSummaryInlineArtifacts(t *testing.T) {
 			assert.Loosely(t, len(fiftyOut) > format.DefaultMaxOutputBytes, should.BeTrue)
 			assert.Loosely(t, fiftyOut, should.NotContainSubstring("bytes truncated"))
 			assert.Loosely(t, fiftyOut, should.ContainSubstring("AssertionError on attempt 49"))
+
+			// 4. Explicit -limit and -n aliases (including default value 10 and 0) bypass the 9.5 KB cap.
+			limitTenOut := runGet("-invocationid", "ants-i123", "-testid", testID, "-limit", "10")
+			assert.Loosely(t, len(limitTenOut) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, limitTenOut, should.NotContainSubstring("bytes truncated"))
+			assert.Loosely(t, limitTenOut, should.ContainSubstring("AssertionError on attempt 09"))
+
+			nTenOut := runGet("-invocationid", "ants-i123", "-testid", testID, "-n", "10")
+			assert.Loosely(t, len(nTenOut) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, nTenOut, should.NotContainSubstring("bytes truncated"))
+			assert.Loosely(t, nTenOut, should.ContainSubstring("AssertionError on attempt 09"))
+
+			limitZeroOut := runGet("-invocationid", "ants-i123", "-testid", testID, "-limit", "0")
+			assert.Loosely(t, len(limitZeroOut) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, limitZeroOut, should.NotContainSubstring("bytes truncated"))
+			assert.Loosely(t, limitZeroOut, should.ContainSubstring("AssertionError on attempt 49"))
+
+			nZeroOut := runGet("-invocationid", "ants-i123", "-testid", testID, "-n", "0")
+			assert.Loosely(t, len(nZeroOut) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, nZeroOut, should.NotContainSubstring("bytes truncated"))
+			assert.Loosely(t, nZeroOut, should.ContainSubstring("AssertionError on attempt 49"))
 		})
 	})
 }

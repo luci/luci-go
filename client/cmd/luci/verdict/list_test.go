@@ -90,9 +90,16 @@ func TestListCmd(t *testing.T) {
 		run := cmd.CommandRun().(*verdictListRun)
 		assert.Loosely(t, run.maxVerdicts, should.Equal(100))
 
-		assert.Loosely(t, run.Flags.Parse([]string{"-invocation-id", "inv-1", "-module-name", "ModA"}), should.BeNil)
+		assert.Loosely(t, run.Flags.Parse([]string{"-invocation-id", "inv-1", "-module-name", "ModA", "-testfilter", "AudioFocus", "-n", "25"}), should.BeNil)
 		assert.Loosely(t, run.invocationID, should.Equal("inv-1"))
 		assert.Loosely(t, run.moduleName, should.Equal("ModA"))
+		assert.Loosely(t, run.filter, should.Equal("AudioFocus"))
+		assert.Loosely(t, run.maxVerdicts, should.Equal(25))
+
+		run2 := cmd.CommandRun().(*verdictListRun)
+		assert.Loosely(t, run2.Flags.Parse([]string{"-test-filter", "Playback", "-limit", "40"}), should.BeNil)
+		assert.Loosely(t, run2.filter, should.Equal("Playback"))
+		assert.Loosely(t, run2.maxVerdicts, should.Equal(40))
 	})
 }
 
@@ -913,6 +920,22 @@ func TestVerdictListDefaultByteCap(t *testing.T) {
 			run.out = &buf
 
 			rc := run.Run(nil, []string{"-invocationid", "ants-i999", "-limit", "100"}, nil)
+			assert.Loosely(t, rc, should.Equal(0))
+			out := buf.String()
+
+			assert.Loosely(t, len(out) > format.DefaultMaxOutputBytes, should.BeTrue)
+			assert.Loosely(t, out, should.ContainSubstring("case_099"))
+			assert.Loosely(t, out, should.NotContainSubstring("within 9.5 KB output limit"))
+		})
+
+		t.Run(`explicit -n=100 alias bypasses the 9.5 KB cap`, func(t *ftt.Test) {
+			var buf bytes.Buffer
+			cmd := ListCmd(nil)
+			run := cmd.CommandRun().(*verdictListRun)
+			run.client = client
+			run.out = &buf
+
+			rc := run.Run(nil, []string{"-invocationid", "ants-i999", "-n", "100"}, nil)
 			assert.Loosely(t, rc, should.Equal(0))
 			out := buf.String()
 

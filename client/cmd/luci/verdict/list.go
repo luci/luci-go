@@ -60,8 +60,11 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.moduleName, "module-name", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.moduleName, "module", "", "Alias for -modulename")
 			r.Flags.StringVar(&r.filter, "filter", "", "Filter verdicts by test result filter expression or substring (AIP-160)")
+			r.Flags.StringVar(&r.filter, "testfilter", "", "Alias for -filter")
+			r.Flags.StringVar(&r.filter, "test-filter", "", "Alias for -filter")
 			r.Flags.IntVar(&r.maxVerdicts, "max-verdicts", defaultMaxVerdicts, "Maximum number of verdicts to display (default: 100, 0 for all; setting explicitly bypasses 9.5 KB cap)")
 			r.Flags.IntVar(&r.maxVerdicts, "limit", defaultMaxVerdicts, "Alias for -max-verdicts")
+			r.Flags.IntVar(&r.maxVerdicts, "n", defaultMaxVerdicts, "Alias for -max-verdicts")
 			r.Flags.BoolVar(&r.allVerdicts, "all", false, "Show all verdicts without truncation")
 			r.Flags.StringVar(&r.rawStatus, "status", "", "Comma-separated list of verdict statuses to include (e.g. failed,flaky,exonerated,passed,skipped,precluded,all)")
 			r.Flags.BoolVar(&r.includeExonerated, "exonerated", false, "Include exonerated verdicts")
@@ -777,7 +780,7 @@ func (r *verdictListRun) hasExplicitLimitFlag() bool {
 	}
 	explicit := false
 	r.Flags.Visit(func(f *flag.Flag) {
-		if f.Name == "max-verdicts" || f.Name == "limit" {
+		if f.Name == "max-verdicts" || f.Name == "limit" || f.Name == "n" {
 			explicit = true
 		}
 	})

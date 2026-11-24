@@ -16,7 +16,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/maruel/subcommands"
 
@@ -102,13 +104,62 @@ func getApplication() *cli.Application {
 			authcli.SubcommandLogout(authOpts, "auth-logout", false),
 
 			subcommands.Section("Other\n"),
-			base.HelpCmd(),
+			base.HelpCmdWithHint(topLevelUnknownCommandHint),
 		},
 	}
 }
 
+func topLevelUnknownCommandHint(a subcommands.Application, unknownCmd string, rest []string) string {
+	var parts []string
+	lower := strings.ToLower(strings.TrimSpace(unknownCmd))
+
+	switch lower {
+	case "ants":
+		if len(rest) > 0 && rest[0] != "" {
+			if c := subcommands.FindNearestCommand(a, rest[0]); c != nil && c.Name() != "" && c.Name() != "help" {
+				quoted := make([]string, 0, len(rest))
+				quoted = append(quoted, base.ShellQuoteIfNeeded(c.Name()))
+				for _, arg := range rest[1:] {
+					quoted = append(quoted, base.ShellQuoteIfNeeded(arg))
+				}
+				parts = append(parts,
+					"Note: There is no 'ants' subcommand; AnTS IDs (I..., TR..., WU...) and URLs work directly without it. Try:\n"+
+						"  luci "+strings.Join(quoted, " "))
+			}
+		}
+		if len(parts) == 0 {
+			parts = append(parts,
+				"Note: There is no 'ants' subcommand. Pass AnTS IDs (I..., TR..., WU...) or URLs directly to top-level commands, e.g.:\n"+
+					"  luci invocation get <I...>\n"+
+					"  luci verdict list <I...>\n"+
+					"  luci work-unit get <WU...>")
+		}
+	case "resultdb", "results", "result":
+		parts = append(parts,
+			fmt.Sprintf("Note: ResultDB commands are exposed directly at the top level (there is no '%s' prefix).", lower))
+	default:
+		if suggestions := base.SuggestCommands(a.GetCommands(), unknownCmd); len(suggestions) > 0 {
+			parts = append(parts, fmt.Sprintf("Did you mean: %s?", strings.Join(suggestions, ", ")))
+		}
+	}
+
+	parts = append(parts,
+		"Common luci commands:\n"+
+			"  luci ids <URL|ID>                                      Decompose a URL or ID into resource flags\n"+
+			"  luci verdict list -invocationid <INV>                  List failing test verdicts in an invocation\n"+
+			"  luci verdict get -invocationid <INV> -testid <TEST>    Inspect a test verdict (retries & exonerations)\n"+
+			"  luci test-result get -invocationid <INV> -testid <TEST> -resultid <RES>\n"+
+			"                                                         Inspect an individual test result attempt\n"+
+			"  luci artifact <list|get|head|tail|compare> ...         List and inspect test or work unit artifacts\n"+
+			"  (Also: build, analysis, invocation, module, work-unit, notify)")
+
+	return strings.Join(parts, "\n\n")
+}
+
+func runApp(a subcommands.Application, args []string) int {
+	return base.RunApp(a, args, topLevelUnknownCommandHint)
+}
+
 func main() {
-	app := getApplication()
-	args := base.NormalizeAppArgs(app.Commands, os.Args[1:])
-	os.Exit(subcommands.Run(app, args))
+	os.Exit(runApp(getApplication(), os.Args[1:]))
 }

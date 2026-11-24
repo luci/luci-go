@@ -78,6 +78,8 @@ func ListCmd(af *base.AuthFlags, parentType ParentType) *subcommands.Command {
 			r.Flags.StringVar(&r.filter, "filter", "", "Filter artifacts by case-insensitive regular expression or substring (RE2)")
 			r.Flags.StringVar(&r.glob, "glob", "", "Filter artifacts by case-insensitive shell glob pattern (e.g. *-logcat-*.txt)")
 			r.Flags.IntVar(&r.maxArtifacts, "max-artifacts", DefaultMaxArtifacts, "Maximum number of artifacts to display (default: 100, 0 for all; setting explicitly bypasses 9.5 KB cap)")
+			r.Flags.IntVar(&r.maxArtifacts, "limit", DefaultMaxArtifacts, "Alias for -max-artifacts")
+			r.Flags.IntVar(&r.maxArtifacts, "n", DefaultMaxArtifacts, "Alias for -max-artifacts")
 			r.Flags.BoolVar(&r.allArtifacts, "all", false, "Show all artifacts without truncation")
 			return r
 		},
@@ -98,7 +100,7 @@ func (r *artifactListRun) hasExplicitLimitFlag() bool {
 	}
 	explicit := false
 	r.Flags.Visit(func(f *flag.Flag) {
-		if f.Name == "max-artifacts" {
+		if f.Name == "max-artifacts" || f.Name == "limit" || f.Name == "n" {
 			explicit = true
 		}
 	})

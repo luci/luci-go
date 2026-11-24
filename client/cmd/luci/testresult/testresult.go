@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/maruel/subcommands"
@@ -56,11 +57,23 @@ type testResultRun struct {
 }
 
 func (r *testResultRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	return base.RunSubcommandApp(a, "luci test-result", "Test results management", []*subcommands.Command{
+	return base.RunSubcommandAppWithHint(a, "luci test-result", "Test results management", []*subcommands.Command{
 		GetCmd(r.af),
 		artifact.TestResultArtifactCmd(r.af),
 		subcommands.CmdHelp,
-	}, args)
+	}, args, testResultUnknownCommandHint)
+}
+
+func testResultUnknownCommandHint(a subcommands.Application, unknownCmd string, rest []string) string {
+	switch strings.ToLower(strings.TrimSpace(unknownCmd)) {
+	case "list", "ls", "query", "search":
+		return "Hint: 'luci test-result' inspects a single test result attempt (use 'get' or 'artifact').\n" +
+			"To list failing tests/verdicts in an invocation, use:\n" +
+			"  luci verdict list -invocationid <INV>   (or pass a URL/ID directly)\n\n" +
+			"Available subcommands for 'luci test-result': get, artifact"
+	default:
+		return ""
+	}
 }
 
 func GetCmd(af *base.AuthFlags) *subcommands.Command {

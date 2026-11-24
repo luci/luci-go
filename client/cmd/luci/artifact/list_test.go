@@ -572,6 +572,38 @@ func TestListCmd(t *testing.T) {
 			assert.Loosely(t, explicitZeroRun.Run(nil, []string{"-invocationid", "ants-i26000010636495227", "-max-artifacts", "0"}, nil), should.Equal(0))
 			assert.Loosely(t, len(explicitZeroBuf.String()) > DefaultMaxOutputBytes, should.BeTrue)
 			assert.Loosely(t, explicitZeroBuf.String(), should.ContainSubstring("injectables-deviceinfo-bundle-119"))
+
+			// Explicit -limit and -n aliases (both default value 100 and 0) bypass the 9.5 KB byte cap.
+			for _, tc := range []struct {
+				args     []string
+				expected string
+			}{
+				{[]string{"-invocationid", "ants-i26000010636495227", "-limit", "100"}, "injectables-deviceinfo-bundle-096"},
+				{[]string{"-invocationid", "ants-i26000010636495227", "-n", "100"}, "injectables-deviceinfo-bundle-096"},
+				{[]string{"-invocationid", "ants-i26000010636495227", "-limit", "0"}, "injectables-deviceinfo-bundle-119"},
+				{[]string{"-invocationid", "ants-i26000010636495227", "-n", "0"}, "injectables-deviceinfo-bundle-119"},
+			} {
+				var aliasBuf bytes.Buffer
+				aliasCmd := ListCmd(nil, ParentTypeInvocation)
+				aliasRun := aliasCmd.CommandRun().(*artifactListRun)
+				aliasRun.client = invClient
+				aliasRun.out = &aliasBuf
+				assert.Loosely(t, aliasRun.Run(nil, tc.args, nil), should.Equal(0))
+				assert.Loosely(t, len(aliasBuf.String()) > DefaultMaxOutputBytes, should.BeTrue)
+				assert.Loosely(t, aliasBuf.String(), should.ContainSubstring(tc.expected))
+			}
+
+			// Verify -limit and -n are registered for all parent types (top-level, test-result, work-unit).
+			for _, pt := range []ParentType{ParentTypeUnknown, ParentTypeTestResult, ParentTypeWorkUnit} {
+				cmd := ListCmd(nil, pt)
+				runLimit := cmd.CommandRun().(*artifactListRun)
+				assert.Loosely(t, runLimit.Flags.Parse([]string{"-limit", "15"}), should.BeNil)
+				assert.Loosely(t, runLimit.maxArtifacts, should.Equal(15))
+
+				runN := cmd.CommandRun().(*artifactListRun)
+				assert.Loosely(t, runN.Flags.Parse([]string{"-n", "25"}), should.BeNil)
+				assert.Loosely(t, runN.maxArtifacts, should.Equal(25))
+			}
 		})
 
 		t.Run(`strictly enforces DefaultMaxOutputBytes on tight budgets and legacy parent notices`, func(t *ftt.Test) {
