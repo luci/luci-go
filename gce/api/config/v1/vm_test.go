@@ -222,6 +222,97 @@ func TestVM(t *testing.T) {
 						assert.Loosely(t, err, should.UnwrapToErrStringLike(`disk 0 type "zones/us-central1-c/diskTypes/type" must contain {{.Zone}} template when fallback_zones is set`))
 					})
 				})
+
+				t.Run("enable_display", func(t *ftt.Test) {
+					baseVM := func() *VM {
+						return &VM{
+							Disk: []*Disk{
+								{
+									Image: "global/images/image",
+									Type:  "zones/{{.Zone}}/diskTypes/type",
+								},
+							},
+							EnableDisplay: true,
+							MachineType:   "zones/{{.Zone}}/machineTypes/n2-standard-8",
+							NetworkInterface: []*NetworkInterface{
+								{},
+							},
+							Project: "project",
+							Zone:    "us-central1-c",
+						}
+					}
+
+					t.Run("arm machine type", func(t *ftt.Test) {
+						for _, mt := range []string{
+							"zones/{{.Zone}}/machineTypes/t2a-standard-8",
+							"zones/{{.Zone}}/machineTypes/c3a-standard-8",
+							"zones/{{.Zone}}/machineTypes/c4a-standard-16",
+							"zones/{{.Zone}}/machineTypes/e4a-standard-8",
+							"zones/{{.Zone}}/machineTypes/c5a-standard-8",
+							"zones/{{.Zone}}/machineTypes/n4a-standard-8",
+							"zones/{{.Zone}}/machineTypes/n5a-standard-8",
+							"zones/{{.Zone}}/machineTypes/a4x-highgpu-4g",
+							" zones/{{.Zone}}/machineTypes/C4A-Standard-16 ",
+						} {
+							sub := &validation.Context{Context: context.Background()}
+							vm := baseVM()
+							vm.MachineType = mt
+							vm.Validate(sub, true)
+							err := sub.Finalize().(*validation.Error).Errors
+							assert.Loosely(t, err, should.UnwrapToErrStringLike(`enable_display is not supported with Arm machine type`))
+						}
+					})
+
+					t.Run("bare-metal machine type", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.MachineType = "zones/{{.Zone}}/machineTypes/c3-metal"
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`enable_display is not supported with bare-metal machine type "zones/{{.Zone}}/machineTypes/c3-metal"`))
+					})
+
+					t.Run("gpu machine type", func(t *ftt.Test) {
+						for _, mt := range []string{
+							"zones/{{.Zone}}/machineTypes/a2-highgpu-1g",
+							"zones/{{.Zone}}/machineTypes/a3-highgpu-8g",
+							"zones/{{.Zone}}/machineTypes/a4-highgpu-8g",
+							"zones/{{.Zone}}/machineTypes/g2-standard-4",
+							"zones/{{.Zone}}/machineTypes/g4-standard-48",
+						} {
+							sub := &validation.Context{Context: context.Background()}
+							vm := baseVM()
+							vm.MachineType = mt
+							vm.Validate(sub, true)
+							err := sub.Finalize().(*validation.Error).Errors
+							assert.Loosely(t, err, should.UnwrapToErrStringLike(`enable_display is not supported with GPU machine type`))
+						}
+					})
+
+					t.Run("sandy bridge cpu platform", func(t *ftt.Test) {
+						for _, cpu := range []string{
+							"Intel Sandy Bridge",
+							"sandybridge",
+							"intel-sandybridge",
+							" Intel-SandyBridge ",
+						} {
+							sub := &validation.Context{Context: context.Background()}
+							vm := baseVM()
+							vm.MachineType = "zones/{{.Zone}}/machineTypes/n1-standard-8"
+							vm.MinCpuPlatform = cpu
+							vm.Validate(sub, true)
+							err := sub.Finalize().(*validation.Error).Errors
+							assert.Loosely(t, err, should.UnwrapToErrStringLike(`enable_display is not supported with min_cpu_platform`))
+						}
+					})
+
+					t.Run("confidential compute", func(t *ftt.Test) {
+						vm := baseVM()
+						vm.EnableConfidentialCompute = true
+						vm.Validate(c, true)
+						err := c.Finalize().(*validation.Error).Errors
+						assert.Loosely(t, err, should.UnwrapToErrStringLike(`enable_display is not supported with enable_confidential_compute`))
+					})
+				})
 			})
 
 			t.Run("valid", func(t *ftt.Test) {
@@ -256,6 +347,21 @@ func TestVM(t *testing.T) {
 					assert.Loosely(t, c.Finalize(), should.BeNil)
 
 					vm.SetZone("us-central1-a")
+					vm.Validate(c, true)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
+				})
+
+				t.Run("with enable_display", func(t *ftt.Test) {
+					vm.EnableDisplay = true
+					vm.MachineType = "zones/{{.Zone}}/machineTypes/n2-standard-8"
+					vm.MinCpuPlatform = "Intel Ice Lake"
+					vm.Validate(c, true)
+					assert.Loosely(t, c.Finalize(), should.BeNil)
+				})
+
+				t.Run("arm without enable_display", func(t *ftt.Test) {
+					vm.EnableDisplay = false
+					vm.MachineType = "zones/{{.Zone}}/machineTypes/c4a-standard-16"
 					vm.Validate(c, true)
 					assert.Loosely(t, c.Finalize(), should.BeNil)
 				})

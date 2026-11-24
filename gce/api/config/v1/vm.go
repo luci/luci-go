@@ -15,6 +15,7 @@
 package config
 
 import (
+	"regexp"
 	"strings"
 
 	"google.golang.org/protobuf/proto"
@@ -105,6 +106,7 @@ func (v *VM) Validate(c *validation.Context, metadataFromFileResolved bool) {
 		c.Errorf("zone is required")
 	}
 	v.validateFallbackZones(c)
+	v.validateDisplayDevice(c)
 }
 
 // extractZoneRegion returns the GCP region prefix for a standard "<region>-<zone>"
@@ -160,5 +162,34 @@ func (v *VM) validateFallbackZones(c *validation.Context) {
 		if dt := d.GetType(); dt != "" && !strings.Contains(dt, zoneTemplate) {
 			c.Errorf("disk %d type %q must contain %s template when fallback_zones is set", i, dt, zoneTemplate)
 		}
+	}
+}
+
+// armMachineTypeRe matches GCE Arm machine series prefixes (<letter><digits>a-*).
+var armMachineTypeRe = regexp.MustCompile(`^[a-z][0-9]+a-`)
+
+// validateDisplayDevice validates GCP hardware and feature restrictions when
+// enable_display is set on this VM description.
+func (v *VM) validateDisplayDevice(c *validation.Context) {
+	if !v.GetEnableDisplay() {
+		return
+	}
+	rawMT := strings.TrimSpace(v.GetMachineType())
+	mt := strings.ToLower(strings.TrimSpace(rawMT[strings.LastIndex(rawMT, "/")+1:]))
+	switch {
+	case strings.HasSuffix(mt, "-metal") || strings.Contains(mt, "-metal-"):
+		c.Errorf("enable_display is not supported with bare-metal machine type %q", v.GetMachineType())
+	case armMachineTypeRe.MatchString(mt) || strings.HasPrefix(mt, "a4x-"):
+		c.Errorf("enable_display is not supported with Arm machine type %q", v.GetMachineType())
+	case strings.HasPrefix(mt, "a2-"), strings.HasPrefix(mt, "a3-"), strings.HasPrefix(mt, "a4-"),
+		strings.HasPrefix(mt, "g2-"), strings.HasPrefix(mt, "g4-"):
+		c.Errorf("enable_display is not supported with GPU machine type %q", v.GetMachineType())
+	}
+	switch strings.ToLower(strings.TrimSpace(v.GetMinCpuPlatform())) {
+	case "intel sandy bridge", "sandybridge", "intel-sandybridge":
+		c.Errorf("enable_display is not supported with min_cpu_platform %q", v.GetMinCpuPlatform())
+	}
+	if v.GetEnableConfidentialCompute() {
+		c.Errorf("enable_display is not supported with enable_confidential_compute")
 	}
 }
