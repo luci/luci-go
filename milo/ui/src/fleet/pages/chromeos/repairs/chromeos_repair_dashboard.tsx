@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import GroupIcon from '@mui/icons-material/Group';
-import { Box, Button, Divider, Typography } from '@mui/material';
+import { Box, Divider, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
 import { RecoverableErrorBoundary } from '@/common/components/error_handling';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { MyRepairTasksActions } from '@/fleet/components/repair_queue/my_repair_tasks_actions';
-import { StatusPill } from '@/fleet/components/status_pill/status_pill';
+import { WorkforceActivityButton } from '@/fleet/components/repair_queue/workforce_activity_button';
 import {
   CHROMEOS_PLATFORM,
   generateRepairsWorkforceURL,
@@ -92,8 +91,8 @@ export const ChromeOSRepairDashboard = () => {
           }}
         >
           <LabSelector />
-          <Button
-            variant="toolbar"
+          <WorkforceActivityButton
+            inProgressCount={inProgressCount}
             onClick={() =>
               navigate(
                 generateRepairsWorkforceURL(
@@ -103,15 +102,7 @@ export const ChromeOSRepairDashboard = () => {
                 ) + `?lab=${lab}`,
               )
             }
-            startIcon={<GroupIcon />}
-          >
-            Workforce Activity
-            <Box component="span" sx={{ ml: 1 }}>
-              <StatusPill tone="info" dot={false} size="compact">
-                {`${inProgressCount} In-Progress`}
-              </StatusPill>
-            </Box>
-          </Button>
+          />
         </Box>
       </Box>
 

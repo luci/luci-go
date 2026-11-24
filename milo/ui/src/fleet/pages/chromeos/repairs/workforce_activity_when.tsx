@@ -14,6 +14,7 @@
 
 import { screen, within } from '@testing-library/react';
 
+import { TimeframeOption } from '@/fleet/components/repair_queue/workforce_helpers';
 import { RepairLab } from '@/fleet/pages/chromeos/repairs/use_repair_lab';
 import {
   genericWhen,
@@ -22,7 +23,6 @@ import {
 
 import {
   Component as WorkforceActivityRouteComponent,
-  TimeframeOption,
   WorkforceActivityView,
   WorkforceActivityViewProps,
 } from './workforce_activity_view';

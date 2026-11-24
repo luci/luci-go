@@ -52,7 +52,6 @@ export const aTechnicianActivity = (
   priorityScoreCleared: 0,
   avgPtsPerDut: 0,
   avgQueuePickupRank: 0,
-  isRankSkewed: false,
   completedRepairs: 0,
   avgDuration: undefined,
   ...overrides,

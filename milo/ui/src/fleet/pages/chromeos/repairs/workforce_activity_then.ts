@@ -14,10 +14,9 @@
 
 import { screen, waitFor, within } from '@testing-library/react';
 
+import { TimeframeOption } from '@/fleet/components/repair_queue/workforce_helpers';
 import { RepairLab } from '@/fleet/pages/chromeos/repairs/use_repair_lab';
 import { genericThen } from '@/fleet/testing_tools/integration/fleet_integration_test';
-
-import { TimeframeOption } from './workforce_activity_view';
 
 export interface ExpectedTechnicianRow {
   email?: string;
