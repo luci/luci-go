@@ -21,6 +21,11 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
+	"github.com/go-git/go-git/v6/plumbing/object"
 
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -149,6 +154,66 @@ func TestExecuteGit(t *testing.T) {
 			// Verify submodule .git does not exist
 			_, err = os.Stat(filepath.Join(out3, "sub", ".git"))
 			assert.Loosely(t, os.IsNotExist(err), should.BeTrue)
+		})
+
+		t.Run("Test shallow fetch of tip and non-tip commits", func(t *ftt.Test) {
+			srcDir := t.TempDir()
+			srcRepo, err := git.PlainInit(srcDir, false)
+			assert.NoErr(t, err)
+			defer func() { _ = srcRepo.Close() }()
+			wt, err := srcRepo.Worktree()
+			assert.NoErr(t, err)
+
+			author := &object.Signature{Name: "Test", Email: "test@example.com", When: time.Now()}
+			assert.NoErr(t, os.WriteFile(filepath.Join(srcDir, "file"), []byte("v1"), 0644))
+			_, err = wt.Add("file")
+			assert.NoErr(t, err)
+			commit1, err := wt.Commit("c1", &git.CommitOptions{Author: author})
+			assert.NoErr(t, err)
+
+			assert.NoErr(t, os.WriteFile(filepath.Join(srcDir, "file"), []byte("v2"), 0644))
+			_, err = wt.Add("file")
+			assert.NoErr(t, err)
+			commit2, err := wt.Commit("c2", &git.CommitOptions{Author: author})
+			assert.NoErr(t, err)
+
+			repoURL := "file://" + filepath.ToSlash(srcDir)
+
+			t.Run("tip commit is shallow", func(t *ftt.Test) {
+				dst := t.TempDir()
+				err := ActionGitFetchExecutor(ctx, &core.ActionGitFetch{
+					Url:    repoURL,
+					Commit: commit2.String(),
+					Export: false,
+				}, dst)
+				assert.NoErr(t, err)
+
+				b, err := os.ReadFile(filepath.Join(dst, "file"))
+				assert.NoErr(t, err)
+				assert.That(t, string(b), should.Equal("v2"))
+
+				fetched, err := git.PlainOpen(dst)
+				assert.NoErr(t, err)
+				defer func() { _ = fetched.Close() }()
+
+				shallows, err := fetched.Storer.Shallow()
+				assert.NoErr(t, err)
+				assert.That(t, shallows, should.Match([]plumbing.Hash{commit2}))
+			})
+
+			t.Run("non-tip commit", func(t *ftt.Test) {
+				dst := t.TempDir()
+				err := ActionGitFetchExecutor(ctx, &core.ActionGitFetch{
+					Url:    repoURL,
+					Commit: commit1.String(),
+					Export: true,
+				}, dst)
+				assert.NoErr(t, err)
+
+				b, err := os.ReadFile(filepath.Join(dst, "file"))
+				assert.NoErr(t, err)
+				assert.That(t, string(b), should.Equal("v1"))
+			})
 		})
 	})
 }
