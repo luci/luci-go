@@ -323,6 +323,27 @@ func TestVM(t *testing.T) {
 		})
 	})
 
+	ftt.Run("getDisplayDevice", t, func(t *ftt.Test) {
+		t.Run("zero", func(t *ftt.Test) {
+			t.Run("empty", func(t *ftt.Test) {
+				v := &VM{}
+				d := v.getDisplayDevice()
+				assert.Loosely(t, d, should.BeNil)
+			})
+		})
+		t.Run("EnableDisplay", func(t *ftt.Test) {
+			v := &VM{
+				Attributes: config.VM{
+					EnableDisplay: true,
+				},
+			}
+			d := v.getDisplayDevice()
+			assert.Loosely(t, d, should.Match(&compute.DisplayDevice{
+				EnableDisplay: true,
+			}))
+		})
+	})
+
 	ftt.Run("getDisks", t, func(t *ftt.Test) {
 		t.Run("zero", func(t *ftt.Test) {
 			t.Run("nil", func(t *ftt.Test) {
@@ -1142,6 +1163,7 @@ func TestVM(t *testing.T) {
 			v := &VM{}
 			i := v.GetInstance().Stable
 			assert.Loosely(t, i.Disks, should.HaveLength(0))
+			assert.Loosely(t, i.DisplayDevice, should.BeNil)
 			assert.Loosely(t, i.MachineType, should.BeEmpty)
 			assert.Loosely(t, i.Metadata, should.BeNil)
 			assert.Loosely(t, i.MinCpuPlatform, should.BeEmpty)
@@ -1163,6 +1185,7 @@ func TestVM(t *testing.T) {
 							Size:  100,
 						},
 					},
+					EnableDisplay:    true,
 					EnableSecureBoot: true,
 					MachineType:      "type",
 					MinCpuPlatform:   "plat",
@@ -1191,6 +1214,7 @@ func TestVM(t *testing.T) {
 			}
 			i := v.GetInstance().Stable
 			assert.Loosely(t, i.Disks, should.HaveLength(1))
+			assert.Loosely(t, i.DisplayDevice, should.NotBeNil)
 			assert.Loosely(t, i.MachineType, should.Equal("type"))
 			assert.Loosely(t, i.Metadata, should.BeNil)
 			assert.Loosely(t, i.MinCpuPlatform, should.Equal("plat"))
@@ -1236,6 +1260,20 @@ func TestGetInstanceReturnsAlpha(t *testing.T) {
 			},
 			output: &computealpha.Instance{
 				Name: "awesome-host",
+			},
+		},
+		{
+			name: "display device",
+			input: &VM{
+				Attributes: config.VM{
+					GcpChannel:    config.GCPChannel_GCP_CHANNEL_ALPHA,
+					EnableDisplay: true,
+				},
+			},
+			output: &computealpha.Instance{
+				DisplayDevice: &computealpha.DisplayDevice{
+					EnableDisplay: true,
+				},
 			},
 		},
 		{

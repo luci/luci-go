@@ -424,6 +424,17 @@ func (vm *VM) getConfidentialInstanceConfig() *compute.ConfidentialInstanceConfi
 	}
 }
 
+// getDisplayDevice returns a *compute.DisplayDevice representation of this
+// VM's display device options.
+func (vm *VM) getDisplayDevice() *compute.DisplayDevice {
+	if !vm.Attributes.GetEnableDisplay() {
+		return nil
+	}
+	return &compute.DisplayDevice{
+		EnableDisplay: true,
+	}
+}
+
 // A ComputeInstance is a struct containing either a Stable or an Alpha compute instance.
 // Certain features require the use of the alpha GCP APIs.
 //
@@ -439,6 +450,7 @@ func (vm *VM) GetInstance() ComputeInstance {
 		Name:                       vm.Hostname,
 		ConfidentialInstanceConfig: vm.getConfidentialInstanceConfig(),
 		Disks:                      vm.getDisks(),
+		DisplayDevice:              vm.getDisplayDevice(),
 		MachineType:                vm.Attributes.GetMachineType(),
 		Metadata:                   vm.getMetadata(),
 		MinCpuPlatform:             vm.Attributes.GetMinCpuPlatform(),

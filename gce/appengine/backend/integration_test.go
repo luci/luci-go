@@ -58,15 +58,16 @@ import (
 
 // gceCall records a single HTTP request received by fakeGCEServer.
 type gceCall struct {
-	Method      string
-	Project     string
-	Zone        string
-	Name        string
-	RequestID   string
-	MachineType string
-	DiskType    string
-	SourceImage string
-	Action      string
+	Method        string
+	Project       string
+	Zone          string
+	Name          string
+	RequestID     string
+	MachineType   string
+	DiskType      string
+	SourceImage   string
+	Action        string
+	DisplayDevice *compute.DisplayDevice
 }
 
 // gceInsertOutcome defines a scripted response for an Instances.Insert call in
@@ -252,13 +253,14 @@ func (f *fakeGCEServer) RoundTrip(req *http.Request) (*http.Response, error) {
 			diskType = inst.Disks[0].InitializeParams.DiskType
 		}
 		f.calls = append(f.calls, gceCall{
-			Method:      http.MethodPost,
-			Project:     project,
-			Zone:        zone,
-			Name:        inst.Name,
-			RequestID:   reqID,
-			MachineType: inst.MachineType,
-			DiskType:    diskType,
+			Method:        http.MethodPost,
+			Project:       project,
+			Zone:          zone,
+			Name:          inst.Name,
+			RequestID:     reqID,
+			MachineType:   inst.MachineType,
+			DiskType:      diskType,
+			DisplayDevice: inst.DisplayDevice,
 		})
 
 		if f.instances[zone] == nil {
@@ -674,6 +676,7 @@ func TestVMCreationIntegration(t *testing.T) {
 			receiveConfig(makeFallbackConfig("simple-pool", "us-central1-a", nil, 2))
 			dutCfg := makeFallbackConfig("cloudbots-pool", "us-central1-a", nil, 0)
 			dutCfg.Duts = map[string]*emptypb.Empty{"chromeos8-row1-rack2-host3": {}}
+			dutCfg.Attributes.EnableDisplay = true
 			receiveConfig(dutCfg)
 
 			// 2. Expand configs into model.VM Datastore entities.
@@ -707,6 +710,18 @@ func TestVMCreationIntegration(t *testing.T) {
 			assert.Loosely(t, vm0.FallbackZoneRotations, should.Equal(int64(0)))
 			assert.Loosely(t, len(vm0.NetworkInterfaces), should.Equal(1))
 			assert.Loosely(t, vm0.NetworkInterfaces[0].InternalIP, should.Equal("10.0.0.10"))
+
+			// Verify DisplayDevice is omitted by default and populated when EnableDisplay is true.
+			postDisplayByHost := map[string]*compute.DisplayDevice{}
+			for _, call := range fakeGCE.calls {
+				if call.Method == http.MethodPost {
+					postDisplayByHost[call.Name] = call.DisplayDevice
+				}
+			}
+			assert.Loosely(t, postDisplayByHost[vm0.Hostname], should.BeNil)
+			assert.Loosely(t, postDisplayByHost[vmDUT.Hostname], should.Match(&compute.DisplayDevice{
+				EnableDisplay: true,
+			}))
 
 			// Next create-instances cron tick is a no-op since all VMs now have URLs.
 			assert.Loosely(t, runCreateInstancesTick(), should.BeEmpty)
