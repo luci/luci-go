@@ -146,7 +146,7 @@ func (s *StableStorage) transformDeps(ctx context.Context, buildPlat string, p a
 		}
 	}
 
-	drv, err := s.processor.Transform(buildPlat, p.Action, deps)
+	drv, err := s.processor.Transform(ctx, buildPlat, p.Action, deps)
 	if err != nil {
 		return actions.Package{}, err
 	}
@@ -167,7 +167,7 @@ func (s *StableStorage) Resolve(ctx context.Context, pkg actions.Package, id str
 		return s.inner.Resolve(ctx, pkg, id)
 	}
 	buildPlat := pkg.Derivation.GetPlatform()
-	relocPkg, err := s.processor.Process(buildPlat, stableStubPM, pkg.Action)
+	relocPkg, err := s.processor.Process(ctx, buildPlat, stableStubPM, pkg.Action)
 	if err != nil {
 		return "", err
 	}
@@ -189,7 +189,7 @@ func (s *StableStorage) Fetch(ctx context.Context, pkg actions.Package, id strin
 	}
 
 	buildPlat := pkg.Derivation.GetPlatform()
-	relocPkg, err := s.processor.Process(buildPlat, stableStubPM, pkg.Action)
+	relocPkg, err := s.processor.Process(ctx, buildPlat, stableStubPM, pkg.Action)
 	if err != nil {
 		return "", err
 	}
@@ -225,7 +225,7 @@ func (s *StableStorage) Fetch(ctx context.Context, pkg actions.Package, id strin
 // RemoteStorage.
 func (s *StableStorage) Upload(ctx context.Context, pkg actions.Package, ids []string) (string, error) {
 	buildPlat := pkg.Derivation.GetPlatform()
-	relocPkg, err := s.processor.Process(buildPlat, stableStubPM, pkg.Action)
+	relocPkg, err := s.processor.Process(ctx, buildPlat, stableStubPM, pkg.Action)
 	if err != nil {
 		return "", err
 	}

@@ -28,8 +28,8 @@ import (
 
 // ActionCIPDExportTransformer is the default transformer for
 // core.ActionCIPDExport.
-func ActionCIPDExportTransformer(a *core.ActionCIPDExport, deps []Package) (*core.Derivation, error) {
-	return ReexecDerivation(a, true)
+func ActionCIPDExportTransformer(ctx context.Context, a *core.ActionCIPDExport, deps []Package) (*core.Derivation, error) {
+	return ReexecDerivation(a, deps, environ.FromCtx(ctx))
 }
 
 // ActionCIPDExportExecutor is the default executor for core.ActionCIPDExport.

@@ -15,6 +15,7 @@
 package actions
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -23,7 +24,7 @@ import (
 )
 
 // ActionCommandTransformer is the default transformer for core.ActionCommand.
-func ActionCommandTransformer(a *core.ActionCommand, deps []Package) (*core.Derivation, error) {
+func ActionCommandTransformer(ctx context.Context, a *core.ActionCommand, deps []Package) (*core.Derivation, error) {
 	drv := &core.Derivation{
 		Args: a.Args,
 		Env:  a.Env,

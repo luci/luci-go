@@ -77,25 +77,16 @@ type vpythonSpecTransformer struct {
 	cipdCacheDir string
 }
 
-func (v *vpythonSpecTransformer) Transform(spec *vpython.Spec, deps []actions.Package) (*core.Derivation, error) {
-	drv, err := actions.ReexecDerivation(spec, true)
-	if err != nil {
-		return nil, err
-	}
-	env := environ.New(drv.Env)
+func (v *vpythonSpecTransformer) Transform(ctx context.Context, spec *vpython.Spec, deps []actions.Package) (*core.Derivation, error) {
+	env := environ.New(nil)
 	env.Set(cipd.EnvCacheDir, v.cipdCacheDir)
-	if ar := os.Getenv(common.EnvVpythonArUrl); ar != "" {
+	if ar := environ.FromCtx(ctx).Get(common.EnvVpythonArUrl); ar != "" {
 		env.Set(common.EnvVpythonArUrl, ar)
 	}
 	if common.VpythonCacheSalt != "" {
 		env.Set(common.EnvVpythonCacheSalt, common.VpythonCacheSalt)
 	}
-	for _, d := range deps {
-		drv.FixedOutput += "+" + d.DerivationID
-		env.Set(d.Action.Name, d.Handler.OutputDirectory())
-	}
-	drv.Env = env.Sorted()
-	return drv, nil
+	return actions.ReexecDerivation(spec, deps, env)
 }
 
 func MustSetExecutor(reexec *actions.ReexecRegistry) {

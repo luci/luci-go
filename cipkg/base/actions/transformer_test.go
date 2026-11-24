@@ -15,6 +15,7 @@
 package actions
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -30,46 +31,47 @@ import (
 
 func TestSetTransformer(t *testing.T) {
 	ftt.Run("Test set transformer", t, func(t *ftt.Test) {
+		ctx := context.Background()
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
 		t.Run("ok", func(t *ftt.Test) {
-			err := SetTransformer(ap, func(msg *anypb.Any, deps []Package) (*core.Derivation, error) {
+			err := SetTransformer(ap, func(ctx context.Context, msg *anypb.Any, deps []Package) (*core.Derivation, error) {
 				return &core.Derivation{}, nil
 			})
 			assert.Loosely(t, err, should.BeNil)
 		})
 
 		t.Run("duplicated", func(t *ftt.Test) {
-			err := SetTransformer(ap, func(msg *anypb.Any, deps []Package) (*core.Derivation, error) {
+			err := SetTransformer(ap, func(ctx context.Context, msg *anypb.Any, deps []Package) (*core.Derivation, error) {
 				return &core.Derivation{}, nil
 			})
 			assert.Loosely(t, err, should.BeNil)
-			err = SetTransformer(ap, func(msg *anypb.Any, deps []Package) (*core.Derivation, error) {
+			err = SetTransformer(ap, func(ctx context.Context, msg *anypb.Any, deps []Package) (*core.Derivation, error) {
 				return &core.Derivation{}, nil
 			})
 			assert.Loosely(t, errors.Is(err, ErrTransformerExisted), should.BeTrue)
 		})
 
 		t.Run("sealed", func(t *ftt.Test) {
-			_, err := ap.Process("", pm, &core.Action{
+			_, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "cmd",
 				Spec: &core.Action_Command{Command: &core.ActionCommand{}},
 			})
 			assert.Loosely(t, err, should.BeNil)
-			err = SetTransformer(ap, func(msg *anypb.Any, deps []Package) (*core.Derivation, error) {
+			err = SetTransformer(ap, func(ctx context.Context, msg *anypb.Any, deps []Package) (*core.Derivation, error) {
 				return &core.Derivation{}, nil
 			})
 			assert.Loosely(t, errors.Is(err, ErrActionProcessorSealed), should.BeTrue)
 		})
 
 		t.Run("sealed by transform", func(t *ftt.Test) {
-			_, err := ap.Transform("", &core.Action{
+			_, err := ap.Transform(ctx, "", &core.Action{
 				Name: "cmd",
 				Spec: &core.Action_Command{Command: &core.ActionCommand{}},
 			}, nil)
 			assert.Loosely(t, err, should.BeNil)
-			err = SetTransformer(ap, func(msg *anypb.Any, deps []Package) (*core.Derivation, error) {
+			err = SetTransformer(ap, func(ctx context.Context, msg *anypb.Any, deps []Package) (*core.Derivation, error) {
 				return &core.Derivation{}, nil
 			})
 			assert.Loosely(t, errors.Is(err, ErrActionProcessorSealed), should.BeTrue)
@@ -79,6 +81,7 @@ func TestSetTransformer(t *testing.T) {
 
 func TestTransform(t *testing.T) {
 	ftt.Run("Test transform", t, func(t *ftt.Test) {
+		ctx := context.Background()
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("/storage")
 
@@ -87,7 +90,7 @@ func TestTransform(t *testing.T) {
 			DerivationID: "dep-customid",
 			Handler:      pm.Get("dep-customid"),
 		}
-		drv, err := ap.Transform("linux-amd64", &core.Action{
+		drv, err := ap.Transform(ctx, "linux-amd64", &core.Action{
 			Name: "pkg",
 			Spec: &core.Action_Command{
 				Command: &core.ActionCommand{

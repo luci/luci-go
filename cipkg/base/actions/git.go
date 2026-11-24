@@ -32,8 +32,8 @@ import (
 
 // ActionGitFetchTransformer is the default transformer for
 // core.ActionGitFetch.
-func ActionGitFetchTransformer(a *core.ActionGitFetch, deps []Package) (*core.Derivation, error) {
-	return ReexecDerivation(a, true)
+func ActionGitFetchTransformer(ctx context.Context, a *core.ActionGitFetch, deps []Package) (*core.Derivation, error) {
+	return ReexecDerivation(a, deps, passthroughEnv(ctx, httpEnvVars...))
 }
 
 // ActionGitFetchExecutor is the default executor for core.ActionGitFetch.

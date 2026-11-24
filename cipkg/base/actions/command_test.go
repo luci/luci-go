@@ -15,6 +15,7 @@
 package actions
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/luci/common/testing/ftt"
@@ -27,6 +28,7 @@ import (
 
 func TestProcessCommand(t *testing.T) {
 	ftt.Run("Test action processor for cipd", t, func(t *ftt.Test) {
+		ctx := context.Background()
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
@@ -36,7 +38,7 @@ func TestProcessCommand(t *testing.T) {
 				Env:  []string{"env1=var1", "env2=var2", "env3=" + DepRef("something")},
 			}
 
-			pkg, err := ap.Process("", pm, &core.Action{
+			pkg, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "url",
 				Metadata: &core.Action_Metadata{
 					RuntimeDeps: []*core.Action{
@@ -65,7 +67,7 @@ func TestProcessCommand(t *testing.T) {
 				Args: []string{"bin", "arg1", "arg2", "{{something}}"},
 			}
 
-			_, err := ap.Process("", pm, &core.Action{
+			_, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "url",
 				Deps: []*core.Action{
 					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
@@ -80,7 +82,7 @@ func TestProcessCommand(t *testing.T) {
 				Env: []string{DepRef("else")},
 			}
 
-			_, err := ap.Process("", pm, &core.Action{
+			_, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "url",
 				Deps: []*core.Action{
 					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},

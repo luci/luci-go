@@ -41,6 +41,7 @@ import (
 
 func TestProcessURL(t *testing.T) {
 	ftt.Run("Test action processor for url", t, func(t *ftt.Test) {
+		ctx := context.Background()
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
@@ -50,7 +51,7 @@ func TestProcessURL(t *testing.T) {
 			HashValue:     "abcdef",
 		}
 
-		pkg, err := ap.Process("", pm, &core.Action{
+		pkg, err := ap.Process(ctx, "", pm, &core.Action{
 			Name: "url",
 			Spec: &core.Action_Url{Url: url},
 		})
@@ -59,7 +60,7 @@ func TestProcessURL(t *testing.T) {
 		checkReexecArg(t, pkg.Derivation.Args, url)
 
 		t.Run("headers influence derivation output", func(t *ftt.Test) {
-			emptyHdrPkg, err := ap.Process("", pm, &core.Action{
+			emptyHdrPkg, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "url",
 				Spec: &core.Action_Url{Url: &core.ActionURLFetch{
 					Url:           "https://host.not.exist/123",
@@ -71,7 +72,7 @@ func TestProcessURL(t *testing.T) {
 			assert.NoErr(t, err)
 			assert.That(t, emptyHdrPkg.DerivationID, should.Equal(pkg.DerivationID))
 
-			withHdrPkg, err := ap.Process("", pm, &core.Action{
+			withHdrPkg, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "url",
 				Spec: &core.Action_Url{Url: &core.ActionURLFetch{
 					Url:           "https://host.not.exist/123",
@@ -87,7 +88,7 @@ func TestProcessURL(t *testing.T) {
 			assert.That(t, withHdrPkg.DerivationID, should.NotEqual(pkg.DerivationID))
 
 			for range 10 {
-				sameHdrPkg, err := ap.Process("", pm, &core.Action{
+				sameHdrPkg, err := ap.Process(ctx, "", pm, &core.Action{
 					Name: "url",
 					Spec: &core.Action_Url{Url: &core.ActionURLFetch{
 						Url:           "https://host.not.exist/123",
@@ -104,11 +105,15 @@ func TestProcessURL(t *testing.T) {
 			}
 		})
 
-		t.Run("forwards host env without changing DerivationID", func(t *ftt.Test) {
-			t.Setenv("http_proxy", "http://127.0.0.1:8080")
-			t.Setenv("HTTPS_PROXY", "http://127.0.0.1:8443")
+		t.Run("forwards proxy and TLS env without leaking unrelated host env or changing DerivationID", func(t *ftt.Test) {
+			envCtx := environ.New([]string{
+				"http_proxy=http://127.0.0.1:8080",
+				"HTTPS_PROXY=http://127.0.0.1:8443",
+				"SSL_CERT_FILE=/etc/ssl/certs/custom.pem",
+				"UNRELATED_HOST_ENV=should-not-leak",
+			}).SetInCtx(ctx)
 
-			proxiedPkg, err := ap.Process("", pm, &core.Action{
+			proxiedPkg, err := ap.Process(envCtx, "", pm, &core.Action{
 				Name: "url",
 				Spec: &core.Action_Url{Url: url},
 			})
@@ -118,6 +123,8 @@ func TestProcessURL(t *testing.T) {
 			drvEnv := environ.New(proxiedPkg.Derivation.Env)
 			assert.That(t, drvEnv.Get("http_proxy"), should.Equal("http://127.0.0.1:8080"))
 			assert.That(t, drvEnv.Get("HTTPS_PROXY"), should.Equal("http://127.0.0.1:8443"))
+			assert.That(t, drvEnv.Get("SSL_CERT_FILE"), should.Equal("/etc/ssl/certs/custom.pem"))
+			assert.That(t, drvEnv.Get("UNRELATED_HOST_ENV"), should.Equal(""))
 			assert.That(t, drvEnv.Get(envCipkgExec), should.Equal("1"))
 		})
 	})
@@ -287,7 +294,7 @@ func TestReexecURL(t *testing.T) {
 			}))
 			defer s.Close()
 
-			pkg, err := ap.Process("", pm, &core.Action{
+			pkg, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "url",
 				Spec: &core.Action_Url{Url: &core.ActionURLFetch{
 					Url:           s.URL,
@@ -326,7 +333,7 @@ func TestReexecURL(t *testing.T) {
 			clearProxyEnv(t)
 			t.Setenv("http_proxy", proxySrv.URL)
 
-			pkg, err := ap.Process("", pm, &core.Action{
+			pkg, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "url",
 				Spec: &core.Action_Url{Url: &core.ActionURLFetch{
 					Url:           "http://proxy-target.invalid/file",

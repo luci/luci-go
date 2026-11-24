@@ -78,9 +78,9 @@ func TestStableStorage(t *testing.T) {
 		}
 
 		t.Run("reproducible across local storage paths", func(t *ftt.Test) {
-			pkg1, err := ap.Process("", pm1, makeAction("v1"))
+			pkg1, err := ap.Process(ctx, "", pm1, makeAction("v1"))
 			assert.Loosely(t, err, should.BeNil)
-			pkg2, err := ap.Process("", pm2, makeAction("v1"))
+			pkg2, err := ap.Process(ctx, "", pm2, makeAction("v1"))
 			assert.Loosely(t, err, should.BeNil)
 
 			// DerivationID differs because local storage paths differ.
@@ -135,7 +135,7 @@ func TestStableStorage(t *testing.T) {
 			remote := make(map[string]string)
 
 			// Build 1: dep ("v1") uploads "dep-same-hash", then pkg uploads.
-			pkgV1, err := ap.Process("", pm1, makeAction("v1"))
+			pkgV1, err := ap.Process(ctx, "", pm1, makeAction("v1"))
 			assert.Loosely(t, err, should.BeNil)
 			depV1 := pkgV1.BuildDependencies[0]
 
@@ -169,7 +169,7 @@ func TestStableStorage(t *testing.T) {
 
 			// Build 2: dep action changes ("v2") so relocID changes, but dep produces
 			// the same content hash ("dep-same-hash").
-			pkgV2, err := ap.Process("", pm2, makeAction("v2"))
+			pkgV2, err := ap.Process(ctx, "", pm2, makeAction("v2"))
 			assert.Loosely(t, err, should.BeNil)
 			depV2 := pkgV2.BuildDependencies[0]
 
@@ -219,7 +219,7 @@ func TestStableStorage(t *testing.T) {
 		t.Run("transitive propagation through unstored intermediate dependency", func(t *ftt.Test) {
 			remote := make(map[string]string)
 
-			topV1, err := ap.Process("", pm1, makeChain("v1"))
+			topV1, err := ap.Process(ctx, "", pm1, makeChain("v1"))
 			assert.Loosely(t, err, should.BeNil)
 			midV1 := topV1.BuildDependencies[0]
 			leafV1 := midV1.BuildDependencies[0]
@@ -251,7 +251,7 @@ func TestStableStorage(t *testing.T) {
 			_, err = s1.Upload(ctx, topV1, nil)
 			assert.Loosely(t, err, should.BeNil)
 
-			topV2, err := ap.Process("", pm2, makeChain("v2"))
+			topV2, err := ap.Process(ctx, "", pm2, makeChain("v2"))
 			assert.Loosely(t, err, should.BeNil)
 			midV2 := topV2.BuildDependencies[0]
 			leafV2 := midV2.BuildDependencies[0]
@@ -288,7 +288,7 @@ func TestStableStorage(t *testing.T) {
 		})
 
 		t.Run("lazily resolves dependency hash via Resolve when not in memory", func(t *ftt.Test) {
-			pkgV1, err := ap.Process("", pm1, makeAction("v1"))
+			pkgV1, err := ap.Process(ctx, "", pm1, makeAction("v1"))
 			assert.Loosely(t, err, should.BeNil)
 
 			remote := make(map[string]string)
@@ -314,7 +314,7 @@ func TestStableStorage(t *testing.T) {
 
 			// dep ("v2") was already uploaded remotely with the same content hash,
 			// while pkg ("v2") has not been tagged with relocID(pkgV2) yet.
-			pkgV2, err := ap.Process("", pm2, makeAction("v2"))
+			pkgV2, err := ap.Process(ctx, "", pm2, makeAction("v2"))
 			assert.Loosely(t, err, should.BeNil)
 			_, err = s1.Upload(ctx, pkgV2.BuildDependencies[0], nil)
 			assert.Loosely(t, err, should.BeNil)
@@ -352,7 +352,7 @@ func TestStableStorage(t *testing.T) {
 		})
 
 		t.Run("stops recursion at resolved dependency without resolving its children", func(t *ftt.Test) {
-			topPkg, err := ap.Process("", pm1, makeChain("v1"))
+			topPkg, err := ap.Process(ctx, "", pm1, makeChain("v1"))
 			assert.Loosely(t, err, should.BeNil)
 
 			var resolvedPkgs []string

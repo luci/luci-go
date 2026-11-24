@@ -168,8 +168,10 @@ func (r *ReexecRegistry) interceptWithArgs(ctx context.Context, env environ.Env,
 const reexecVersion = "v1"
 
 // ReexecDerivation returns a derivation for re-executing the binary. It sets
-// the FixedOutput using hash generated from action spec.
-func ReexecDerivation(m proto.Message, hostEnv bool) (*core.Derivation, error) {
+// the FixedOutput using hash generated from action spec and dependency
+// derivation IDs. The provided env is passed to the execution environment
+// without affecting FixedOutput.
+func ReexecDerivation(m proto.Message, deps []Package, env environ.Env) (*core.Derivation, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return nil, err
@@ -184,14 +186,14 @@ func ReexecDerivation(m proto.Message, hostEnv bool) (*core.Derivation, error) {
 		return nil, err
 	}
 
-	fixed, err := sha256String(m)
+	fixed, err := sha256String(m, deps)
 	if err != nil {
 		return nil, err
 	}
 
-	env := environ.New(nil)
-	if hostEnv {
-		env = environ.System()
+	env = env.Clone()
+	for _, d := range deps {
+		env.Set(d.Action.Name, d.Handler.OutputDirectory())
 	}
 	env.Set(envCipkgExec, "1")
 
@@ -202,11 +204,35 @@ func ReexecDerivation(m proto.Message, hostEnv bool) (*core.Derivation, error) {
 	}, nil
 }
 
-func sha256String(m proto.Message) (string, error) {
+// httpEnvVars lists environment variables respected by Go's net/http and
+// crypto/x509 packages.
+var httpEnvVars = []string{
+	"HTTP_PROXY", "http_proxy",
+	"HTTPS_PROXY", "https_proxy",
+	"NO_PROXY", "no_proxy",
+	"SSL_CERT_FILE", "SSL_CERT_DIR",
+}
+
+func passthroughEnv(ctx context.Context, keys ...string) environ.Env {
+	src := environ.FromCtx(ctx)
+	dst := environ.New(nil)
+	for _, k := range keys {
+		if v, ok := src.Lookup(k); ok {
+			dst.Set(k, v)
+		}
+	}
+	return dst
+}
+
+func sha256String(m proto.Message, deps []Package) (string, error) {
 	const algo = crypto.SHA256
 	h := algo.New()
 	if err := luciproto.StableHash(h, m); err != nil {
 		return "", err
+	}
+	for _, d := range deps {
+		h.Write([]byte{0})
+		h.Write([]byte(d.DerivationID))
 	}
 	return fmt.Sprintf("%s%s:%x", reexecVersion, algo, h.Sum(nil)), nil
 }

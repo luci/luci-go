@@ -36,8 +36,8 @@ import (
 
 // ActionFilesCopyTransformer is the default transformer for
 // core.ActionFilesCopy.
-func ActionFilesCopyTransformer(a *core.ActionFilesCopy, deps []Package) (*core.Derivation, error) {
-	drv, err := ReexecDerivation(a, false)
+func ActionFilesCopyTransformer(ctx context.Context, a *core.ActionFilesCopy, deps []Package) (*core.Derivation, error) {
+	drv, err := ReexecDerivation(a, deps, environ.Env{})
 	if err != nil {
 		return nil, err
 	}
@@ -60,15 +60,10 @@ func ActionFilesCopyTransformer(a *core.ActionFilesCopy, deps []Package) (*core.
 			c.Embed.Ref = ""
 		}
 	}
-	if drv.FixedOutput, err = sha256String(m); err != nil {
+	if drv.FixedOutput, err = sha256String(m, deps); err != nil {
 		return nil, err
 	}
 
-	for _, d := range deps {
-		name := d.Action.Name
-		outDir := d.Handler.OutputDirectory()
-		drv.Env = append(drv.Env, fmt.Sprintf("%s=%s", name, outDir))
-	}
 	return drv, nil
 }
 

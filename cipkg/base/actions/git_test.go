@@ -33,6 +33,7 @@ import (
 
 func TestProcessGit(t *testing.T) {
 	ftt.Run("Test action processor for git", t, func(t *ftt.Test) {
+		ctx := context.Background()
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
@@ -41,7 +42,7 @@ func TestProcessGit(t *testing.T) {
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 		}
 
-		pkg, err := ap.Process("", pm, &core.Action{
+		pkg, err := ap.Process(ctx, "", pm, &core.Action{
 			Name: "git",
 			Spec: &core.Action_Git{Git: gitSpec},
 		})
@@ -49,11 +50,15 @@ func TestProcessGit(t *testing.T) {
 
 		checkReexecArg(t, pkg.Derivation.Args, gitSpec)
 
-		t.Run("forwards host env without changing DerivationID", func(t *ftt.Test) {
-			t.Setenv("https_proxy", "http://127.0.0.1:8443")
-			t.Setenv("ALL_PROXY", "socks5://127.0.0.1:1080")
+		t.Run("forwards proxy and TLS env without leaking unrelated host env or changing DerivationID", func(t *ftt.Test) {
+			envCtx := environ.New([]string{
+				"https_proxy=http://127.0.0.1:8443",
+				"NO_PROXY=localhost",
+				"SSL_CERT_DIR=/etc/ssl/certs",
+				"UNRELATED_HOST_ENV=should-not-leak",
+			}).SetInCtx(ctx)
 
-			proxiedPkg, err := ap.Process("", pm, &core.Action{
+			proxiedPkg, err := ap.Process(envCtx, "", pm, &core.Action{
 				Name: "git",
 				Spec: &core.Action_Git{Git: gitSpec},
 			})
@@ -62,7 +67,9 @@ func TestProcessGit(t *testing.T) {
 
 			drvEnv := environ.New(proxiedPkg.Derivation.Env)
 			assert.That(t, drvEnv.Get("https_proxy"), should.Equal("http://127.0.0.1:8443"))
-			assert.That(t, drvEnv.Get("ALL_PROXY"), should.Equal("socks5://127.0.0.1:1080"))
+			assert.That(t, drvEnv.Get("NO_PROXY"), should.Equal("localhost"))
+			assert.That(t, drvEnv.Get("SSL_CERT_DIR"), should.Equal("/etc/ssl/certs"))
+			assert.That(t, drvEnv.Get("UNRELATED_HOST_ENV"), should.Equal(""))
 			assert.That(t, drvEnv.Get(envCipkgExec), should.Equal("1"))
 		})
 	})
@@ -155,7 +162,7 @@ func TestReexecGit(t *testing.T) {
 
 		t.Run("direct", func(t *ftt.Test) {
 			repo, commit := testutils.InitGitRepo(t)
-			pkg, err := ap.Process("", pm, &core.Action{
+			pkg, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "git",
 				Spec: &core.Action_Git{Git: &core.ActionGitFetch{
 					Url:    repo,
@@ -182,7 +189,7 @@ func TestReexecGit(t *testing.T) {
 			clearProxyEnv(t)
 			t.Setenv("http_proxy", proxyURL)
 
-			pkg, err := ap.Process("", pm, &core.Action{
+			pkg, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "git",
 				Spec: &core.Action_Git{Git: &core.ActionGitFetch{
 					Url:       repoURL,

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/exec/execmock"
+	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -29,6 +30,7 @@ import (
 
 func TestProcessCIPD(t *testing.T) {
 	ftt.Run("Test action processor for cipd", t, func(t *ftt.Test) {
+		ctx := context.Background()
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
@@ -36,13 +38,28 @@ func TestProcessCIPD(t *testing.T) {
 			EnsureFile: "infra/tools/luci/vpython/linux-amd64 git_revision:98782288dfc349541691a2a5dfc0e44327f22731",
 		}
 
-		pkg, err := ap.Process("", pm, &core.Action{
+		pkg, err := ap.Process(ctx, "", pm, &core.Action{
 			Name: "url",
 			Spec: &core.Action_Cipd{Cipd: cipd},
 		})
 		assert.Loosely(t, err, should.BeNil)
 
 		checkReexecArg(t, pkg.Derivation.Args, cipd)
+
+		t.Run("forwards ctx env unconditionally without changing DerivationID", func(t *ftt.Test) {
+			envCtx := environ.New([]string{"CUSTOM_CIPD_HOST_ENV=value"}).SetInCtx(ctx)
+
+			pkgWithHostEnv, err := ap.Process(envCtx, "", pm, &core.Action{
+				Name: "url",
+				Spec: &core.Action_Cipd{Cipd: cipd},
+			})
+			assert.NoErr(t, err)
+			assert.That(t, pkgWithHostEnv.DerivationID, should.Equal(pkg.DerivationID))
+
+			drvEnv := environ.New(pkgWithHostEnv.Derivation.Env)
+			assert.That(t, drvEnv.Get("CUSTOM_CIPD_HOST_ENV"), should.Equal("value"))
+			assert.That(t, drvEnv.Get(envCipkgExec), should.Equal("1"))
+		})
 	})
 }
 
@@ -77,7 +94,7 @@ func TestReexecCIPD(t *testing.T) {
 		pm := testutils.NewMockPackageManage("")
 		out := t.TempDir()
 
-		pkg, err := ap.Process("", pm, &core.Action{
+		pkg, err := ap.Process(ctx, "", pm, &core.Action{
 			Name: "url",
 			Spec: &core.Action_Cipd{Cipd: &core.ActionCIPDExport{
 				EnsureFile: "",

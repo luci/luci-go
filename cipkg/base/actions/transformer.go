@@ -15,6 +15,7 @@
 package actions
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
@@ -54,7 +55,7 @@ var (
 
 // Transformer is the function transforms an action specification to a
 // derivation.
-type Transformer[M proto.Message] func(M, []Package) (*core.Derivation, error)
+type Transformer[M proto.Message] func(context.Context, M, []Package) (*core.Derivation, error)
 
 // ActionProcessor processes and transforms actions into packages.
 type ActionProcessor struct {
@@ -96,8 +97,8 @@ func SetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M]) err
 	if _, ok := ap.transformers[name]; ok {
 		return ErrTransformerExisted
 	}
-	ap.transformers[name] = func(m proto.Message, deps []Package) (*core.Derivation, error) {
-		return tf(m.(M), deps)
+	ap.transformers[name] = func(ctx context.Context, m proto.Message, deps []Package) (*core.Derivation, error) {
+		return tf(ctx, m.(M), deps)
 	}
 	return nil
 }
@@ -112,14 +113,14 @@ func MustSetTransformer[M proto.Message](ap *ActionProcessor, tf Transformer[M])
 
 // Process transforms a given *core.Action into a self-contained Package, which
 // includes all its dependencies also converted from *core.Action into Package.
-func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *core.Action) (Package, error) {
+func (ap *ActionProcessor) Process(ctx context.Context, buildPlat string, pm core.PackageManager, a *core.Action) (Package, error) {
 	pkg := Package{
 		Action: a,
 	}
 
 	// Recursively process all dependencies
 	for _, d := range a.Deps {
-		dpkg, err := ap.Process(buildPlat, pm, d)
+		dpkg, err := ap.Process(ctx, buildPlat, pm, d)
 		if err != nil {
 			return Package{}, err
 		}
@@ -130,7 +131,7 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 	// They won't be included in the derivation's input.
 	if a.Metadata != nil {
 		for _, d := range a.Metadata.RuntimeDeps {
-			dpkg, err := ap.Process(buildPlat, pm, d)
+			dpkg, err := ap.Process(ctx, buildPlat, pm, d)
 			if err != nil {
 				return Package{}, err
 			}
@@ -139,7 +140,7 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 		}
 	}
 
-	drv, err := ap.Transform(buildPlat, a, pkg.BuildDependencies)
+	drv, err := ap.Transform(ctx, buildPlat, a, pkg.BuildDependencies)
 	if err != nil {
 		return Package{}, err
 	}
@@ -164,7 +165,7 @@ func (ap *ActionProcessor) Process(buildPlat string, pm core.PackageManager, a *
 
 // Transform transforms a single *core.Action with already-processed build
 // dependencies into a *core.Derivation.
-func (ap *ActionProcessor) Transform(buildPlat string, a *core.Action, deps []Package) (*core.Derivation, error) {
+func (ap *ActionProcessor) Transform(ctx context.Context, buildPlat string, a *core.Action, deps []Package) (*core.Derivation, error) {
 	ap.mu.Lock()
 	if !ap.sealed {
 		ap.sealed = true
@@ -200,7 +201,7 @@ func (ap *ActionProcessor) Transform(buildPlat string, a *core.Action, deps []Pa
 	if tr == nil {
 		return nil, ErrUnsupportedAction
 	}
-	drv, err := tr(spec, deps)
+	drv, err := tr(ctx, spec, deps)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", a.Spec, err)
 	}

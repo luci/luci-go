@@ -36,6 +36,7 @@ import (
 
 func TestProcessCopy(t *testing.T) {
 	ftt.Run("Test action processor for copy", t, func(t *ftt.Test) {
+		ctx := context.Background()
 		ap := NewActionProcessor()
 		pm := testutils.NewMockPackageManage("")
 
@@ -51,7 +52,7 @@ func TestProcessCopy(t *testing.T) {
 				},
 			}
 
-			pkg, err := ap.Process("", pm, &core.Action{
+			pkg, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "copy",
 				Deps: []*core.Action{
 					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
@@ -78,7 +79,7 @@ func TestProcessCopy(t *testing.T) {
 				},
 			}
 
-			pkg1, err := ap.Process("", pm, &core.Action{
+			pkg1, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "copy",
 				Deps: []*core.Action{
 					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
@@ -99,7 +100,7 @@ func TestProcessCopy(t *testing.T) {
 				},
 			}
 
-			pkg2, err := ap.Process("", pm, &core.Action{
+			pkg2, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "copy",
 				Deps: []*core.Action{
 					{Name: "something", Spec: &core.Action_Command{Command: &core.ActionCommand{}}},
@@ -125,11 +126,56 @@ func TestProcessCopy(t *testing.T) {
 				},
 			}
 
-			_, err := ap.Process("", pm, &core.Action{
+			_, err := ap.Process(ctx, "", pm, &core.Action{
 				Name: "copy",
 				Spec: &core.Action_Copy{Copy: copyEmbed},
 			})
 			assert.Loosely(t, err, should.BeNil)
+		})
+
+		t.Run("output", func(t *ftt.Test) {
+			copyOut := &core.ActionFilesCopy{
+				Files: map[string]*core.ActionFilesCopy_Source{
+					".": {
+						Content: &core.ActionFilesCopy_Source_Output_{
+							Output: &core.ActionFilesCopy_Source_Output{Name: "dep", Path: "."},
+						},
+						Mode: uint32(fs.ModeDir),
+					},
+				},
+			}
+
+			pkg1, err := ap.Process(ctx, "", pm, &core.Action{
+				Name: "copy",
+				Deps: []*core.Action{
+					{Name: "dep", Spec: &core.Action_Command{Command: &core.ActionCommand{Args: []string{"v1"}}}},
+				},
+				Spec: &core.Action_Copy{Copy: copyOut},
+			})
+			assert.NoErr(t, err)
+
+			pkg2, err := ap.Process(ctx, "", pm, &core.Action{
+				Name: "copy",
+				Deps: []*core.Action{
+					{Name: "dep", Spec: &core.Action_Command{Command: &core.ActionCommand{Args: []string{"v2"}}}},
+				},
+				Spec: &core.Action_Copy{Copy: copyOut},
+			})
+			assert.NoErr(t, err)
+
+			assert.That(t, pkg1.DerivationID, should.NotEqual(pkg2.DerivationID))
+
+			// Relocatable when dep derivation ID is stable across storage paths.
+			pm2 := testutils.NewMockPackageManage("/other")
+			pkg3, err := ap.Process(ctx, "", pm2, &core.Action{
+				Name: "copy",
+				Deps: []*core.Action{
+					{Name: "dep", Spec: &core.Action_Command{Command: &core.ActionCommand{Args: []string{"v1"}}}},
+				},
+				Spec: &core.Action_Copy{Copy: copyOut},
+			})
+			assert.NoErr(t, err)
+			assert.That(t, pkg1.DerivationID, should.Equal(pkg3.DerivationID))
 		})
 	})
 }
@@ -194,6 +240,29 @@ func TestExecuteCopy(t *testing.T) {
 				assert.Loosely(t, err, should.BeNil)
 				assert.Loosely(t, l, should.Equal(filepath.FromSlash("/abc/efg/something")))
 			}
+		})
+
+		t.Run("output dir to root", func(t *ftt.Test) {
+			src := t.TempDir()
+			assert.NoErr(t, os.MkdirAll(filepath.Join(src, "bin"), 0o755))
+			assert.NoErr(t, os.WriteFile(filepath.Join(src, "bin", "tool"), []byte("binary"), 0o555))
+
+			ctx = environ.New([]string{"somedrv=" + src}).SetInCtx(ctx)
+			a := &core.ActionFilesCopy{
+				Files: map[string]*core.ActionFilesCopy_Source{
+					".": {
+						Content: &core.ActionFilesCopy_Source_Output_{
+							Output: &core.ActionFilesCopy_Source_Output{Name: "somedrv", Path: "."},
+						},
+						Mode: uint32(fs.ModeDir),
+					},
+				},
+			}
+
+			assert.NoErr(t, e.Execute(ctx, a, out))
+			b, err := os.ReadFile(filepath.Join(out, "bin", "tool"))
+			assert.NoErr(t, err)
+			assert.That(t, string(b), should.Equal("binary"))
 		})
 
 		t.Run("local", func(t *ftt.Test) {
@@ -432,7 +501,7 @@ func TestReexecExecuteCopy(t *testing.T) {
 		ctx := context.Background()
 		out := t.TempDir()
 
-		pkg, err := ap.Process("", pm, &core.Action{
+		pkg, err := ap.Process(ctx, "", pm, &core.Action{
 			Name: "copy",
 			Spec: &core.Action_Copy{Copy: &core.ActionFilesCopy{
 				Files: map[string]*core.ActionFilesCopy_Source{

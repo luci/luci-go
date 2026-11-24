@@ -35,7 +35,59 @@ import (
 	"go.chromium.org/luci/common/testing/truth/should"
 
 	"go.chromium.org/luci/cipkg/core"
+	"go.chromium.org/luci/cipkg/testutils"
 )
+
+func TestReexecDerivation(t *testing.T) {
+	ftt.Run("Test ReexecDerivation", t, func(t *ftt.Test) {
+		t.Setenv("UNRELATED_HOST_ENV", "should-not-leak")
+		spec := &core.ActionURLFetch{Url: "https://example.com/file"}
+
+		t.Run("explicit env does not leak host env, mutate caller, or affect FixedOutput", func(t *ftt.Test) {
+			in := environ.New([]string{"FOO=bar"})
+			drv1, err := ReexecDerivation(spec, nil, in)
+			assert.NoErr(t, err)
+			drv2, err := ReexecDerivation(spec, nil, environ.New([]string{"FOO=baz", "EXTRA=1"}))
+			assert.NoErr(t, err)
+			drvZero, err := ReexecDerivation(spec, nil, environ.Env{})
+			assert.NoErr(t, err)
+
+			assert.That(t, drv1.FixedOutput, should.Equal(drv2.FixedOutput))
+			assert.That(t, drv1.FixedOutput, should.Equal(drvZero.FixedOutput))
+			assert.That(t, in.Get(envCipkgExec), should.Equal(""))
+
+			env1 := environ.New(drv1.Env)
+			assert.That(t, env1.Get("FOO"), should.Equal("bar"))
+			assert.That(t, env1.Get(envCipkgExec), should.Equal("1"))
+			assert.That(t, env1.Get("UNRELATED_HOST_ENV"), should.Equal(""))
+		})
+
+		t.Run("deps affect FixedOutput and populate dep env", func(t *ftt.Test) {
+			pm := testutils.NewMockPackageManage("/store")
+			dep1 := Package{
+				Action:       &core.Action{Name: "dep"},
+				DerivationID: "dep-111",
+				Handler:      pm.Get("dep-111"),
+			}
+			dep2 := Package{
+				Action:       &core.Action{Name: "dep"},
+				DerivationID: "dep-222",
+				Handler:      pm.Get("dep-222"),
+			}
+
+			drv1, err := ReexecDerivation(spec, []Package{dep1}, environ.Env{})
+			assert.NoErr(t, err)
+			drv2, err := ReexecDerivation(spec, []Package{dep2}, environ.Env{})
+			assert.NoErr(t, err)
+			drvNoDep, err := ReexecDerivation(spec, nil, environ.Env{})
+			assert.NoErr(t, err)
+
+			assert.That(t, drv1.FixedOutput, should.NotEqual(drv2.FixedOutput))
+			assert.That(t, drv1.FixedOutput, should.NotEqual(drvNoDep.FixedOutput))
+			assert.That(t, environ.New(drv1.Env).Get("dep"), should.Equal(dep1.Handler.OutputDirectory()))
+		})
+	})
+}
 
 func TestSetExecutor(t *testing.T) {
 	ftt.Run("Test set executor", t, func(t *ftt.Test) {

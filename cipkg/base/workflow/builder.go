@@ -372,7 +372,7 @@ func (b *Builder) GeneratePackages(ctx context.Context, gs []generators.Generato
 	// *core.Action -> actions.Package
 	var pkgs []actions.Package
 	for _, a := range acts {
-		pkg, err := b.processor.Process(b.platforms.Build.String(), b.packages, a)
+		pkg, err := b.processor.Process(ctx, b.platforms.Build.String(), b.packages, a)
 		if err != nil {
 			return nil, err
 		}

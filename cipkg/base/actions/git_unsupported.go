@@ -27,7 +27,7 @@ import (
 )
 
 // ActionGitFetchTransformer is the stub for core.ActionGitFetch on unsupported platforms.
-func ActionGitFetchTransformer(a *core.ActionGitFetch, deps []Package) (*core.Derivation, error) {
+func ActionGitFetchTransformer(ctx context.Context, a *core.ActionGitFetch, deps []Package) (*core.Derivation, error) {
 	return nil, fmt.Errorf("ActionGitFetch is not supported on the platform")
 }
 
