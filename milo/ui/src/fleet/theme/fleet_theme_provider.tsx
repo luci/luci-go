@@ -129,11 +129,14 @@ function codeMirrorDarkStyles(p: FleetPalette) {
 export function FleetThemeProvider({ children }: { children: ReactNode }) {
   const { trackEvent } = useFleetAnalytics();
   // Stored as the plain string `light` | `dark` | `auto` (not JSON) only once
-  // the user explicitly picks a theme, so first-time visitors stay on default.
+  // the user explicitly picks a theme, so first-time visitors default to 'auto'
+  // (following the browser/OS color-scheme preference).
   const [storedChoice, setStoredChoice] = useState<
     FleetThemeChoice | undefined
   >(() => readStoredThemeChoice());
-  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)');
+  const prefersDark = useMediaQuery('(prefers-color-scheme: dark)', {
+    noSsr: true,
+  });
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -144,7 +147,7 @@ export function FleetThemeProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const choice: FleetThemeChoice = storedChoice ?? 'light';
+  const choice: FleetThemeChoice = storedChoice ?? 'auto';
   const resolvedId: FleetThemeId =
     choice === 'auto' ? (prefersDark ? 'dark' : 'light') : choice;
   const palette = FLEET_PALETTES[resolvedId];

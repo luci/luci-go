@@ -60,11 +60,12 @@ emerges, add a token or recipe here so the rest of the app can reuse it.
 
 ## Light / Dark / Auto
 
-Fleet Console has a light and a dark theme. Users can toggle Light ↔ Dark from
-the header icon button or pick **Theme → Light / Dark / Auto** in the ⋮
-settings menu (Auto follows the OS setting). The choice is stored in
-localStorage (`fleet-console-theme`), and the resolved theme is exposed as
-`data-fleet-theme` on `<html>` for debugging and screenshots.
+Fleet Console has a light and a dark theme and defaults to **Auto** (following
+the browser/OS color-scheme preference). Users can toggle Light ↔ Dark from the
+header icon button or pick **Theme → Light / Dark / Auto** in the ⋮ settings
+menu. Explicit choices are stored in localStorage (`fleet-console-theme`), and
+the resolved theme is exposed as `data-fleet-theme` on `<html>` for debugging
+and screenshots.
 
 How it works:
 

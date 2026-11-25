@@ -71,7 +71,7 @@ describe('FleetThemeProvider and theme controls', () => {
     jest.restoreAllMocks();
   });
 
-  it('defaults to light without writing localStorage and tracks default session once', () => {
+  it('defaults to browser preference (light) without writing localStorage and tracks default session once', () => {
     render(
       <MemoryRouter>
         <FleetThemeProvider>
@@ -89,6 +89,30 @@ describe('FleetThemeProvider and theme controls', () => {
     });
     expect(window.gtag).toHaveBeenCalledWith('set', 'user_properties', {
       fleet_theme: 'light',
+      fleet_theme_choice: 'default',
+    });
+  });
+
+  it('defaults to browser preference (dark) synchronously without writing localStorage', () => {
+    setPrefersDark(true);
+
+    render(
+      <MemoryRouter>
+        <FleetThemeProvider>
+          <ThemeToggleButton />
+        </FleetThemeProvider>
+      </MemoryRouter>,
+    );
+
+    expect(document.documentElement.dataset.fleetTheme).toBe('dark');
+    expect(window.localStorage.getItem(FLEET_THEME_STORAGE_KEY)).toBeNull();
+    expect(mockTrackEvent).toHaveBeenCalledWith('theme_session_active', {
+      theme: 'dark',
+      themeChoice: 'default',
+      themeResolved: 'dark',
+    });
+    expect(window.gtag).toHaveBeenCalledWith('set', 'user_properties', {
+      fleet_theme: 'dark',
       fleet_theme_choice: 'default',
     });
   });
@@ -122,7 +146,7 @@ describe('FleetThemeProvider and theme controls', () => {
     expect(window.localStorage.getItem(FLEET_THEME_STORAGE_KEY)).toBe('light');
   });
 
-  it('exposes keyboard-reachable menuitemradio choices in SettingsMenu including Auto', () => {
+  it('exposes keyboard-reachable menuitemradio choices in SettingsMenu with Auto selected by default', () => {
     setPrefersDark(true);
 
     render(
@@ -137,9 +161,18 @@ describe('FleetThemeProvider and theme controls', () => {
     const autoItem = screen.getByRole('menuitemradio', {
       name: /Auto \(system\)/i,
     });
-    expect(autoItem.getAttribute('aria-checked')).toBe('false');
+    const lightItem = screen.getByRole('menuitemradio', { name: /^Light$/i });
+    expect(autoItem.getAttribute('aria-checked')).toBe('true');
+    expect(lightItem.getAttribute('aria-checked')).toBe('false');
 
-    fireEvent.click(autoItem);
+    fireEvent.click(lightItem);
+    expect(document.documentElement.dataset.fleetTheme).toBe('light');
+    expect(window.localStorage.getItem(FLEET_THEME_STORAGE_KEY)).toBe('light');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    fireEvent.click(
+      screen.getByRole('menuitemradio', { name: /Auto \(system\)/i }),
+    );
 
     expect(document.documentElement.dataset.fleetTheme).toBe('dark');
     expect(window.localStorage.getItem(FLEET_THEME_STORAGE_KEY)).toBe('auto');
