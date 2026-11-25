@@ -35,6 +35,7 @@ import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { getMetricsGridStyles } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { toneColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 
 import { useBrowserFilters } from './use_browser_filters';
@@ -406,7 +407,7 @@ export function BrowserSummaryHeader() {
                 value={ufsExcluded + nonServingOthers}
                 total={totalDevices}
                 onClick={handleNonServingClick}
-                dotColor={theme.palette.grey[400]}
+                dotColor={toneColors.neutral.accent}
                 loading={isLoading}
               />
               <SmallMetricItem
@@ -424,7 +425,7 @@ export function BrowserSummaryHeader() {
                 ariaLabel="Missing Swarming Bot"
                 value={sMissingBots}
                 total={totalDevices}
-                dotColor={theme.palette.grey[400]}
+                dotColor={toneColors.neutral.accent}
                 loading={isLoading}
               />
             </SubMetricList>

@@ -34,7 +34,6 @@ import { Link } from 'react-router';
 import { StatusPill } from '@/fleet/components/status_pill/status_pill';
 import { getCurrentFleetPathnameWithParams } from '@/fleet/constants/paths';
 import { useProductCatalogRevamp } from '@/fleet/features';
-import { colors } from '@/fleet/theme/colors';
 import {
   borders,
   controlHeights,
@@ -44,6 +43,7 @@ import {
   fontSizes,
   iconSizes,
   radii,
+  toneColors,
 } from '@/fleet/theme/tokens';
 
 import { formatUnitCost, getPlmStatusTone } from './catalog_details_helpers';
@@ -244,7 +244,7 @@ const CatalogEntryCard = ({ entry }: CatalogEntryCardProps) => {
                         px: 1,
                         height: controlHeights.chipCompact,
                         borderRadius: radii.pill,
-                        backgroundColor: colors.grey[900],
+                        backgroundColor: toneColors.neutral.onContainerStrong,
                         color: fleetColors.surface,
                         boxShadow: elevations.card,
                       }}
@@ -496,27 +496,27 @@ const getLegacyPlmStatusColor = (status?: string) => {
   switch (status?.toUpperCase()) {
     case PlmStatus.GA:
       return {
-        bg: colors.green[50],
-        text: colors.green[700],
-        border: colors.green[200],
+        bg: toneColors.success.surface,
+        text: toneColors.success.mainStrong,
+        border: toneColors.success.containerStrong,
       };
     case PlmStatus.LA:
       return {
-        bg: colors.orange[50],
-        text: colors.orange[700],
-        border: colors.orange[200],
+        bg: toneColors.caution.surface,
+        text: toneColors.caution.mainStrong,
+        border: toneColors.caution.containerStrong,
       };
     case PlmStatus.NPI:
       return {
-        bg: colors.blue[50],
-        text: colors.blue[700],
-        border: colors.blue[200],
+        bg: toneColors.info.surface,
+        text: toneColors.info.mainStrong,
+        border: toneColors.info.containerStrong,
       };
     default:
       return {
-        bg: colors.grey[50],
-        text: colors.grey[700],
-        border: colors.grey[200],
+        bg: toneColors.neutral.surface,
+        text: toneColors.neutral.mainStrong,
+        border: toneColors.neutral.containerStrong,
       };
   }
 };
@@ -573,21 +573,23 @@ const LegacyProductCatalogueCardView = ({
           justifyContent: 'center',
           py: 8,
           px: 2,
-          border: `1px dashed ${colors.grey[300]}`,
+          border: `1px dashed ${toneColors.neutral.border}`,
           borderRadius: radii.md,
-          backgroundColor: colors.grey[50],
+          backgroundColor: toneColors.neutral.surface,
         }}
       >
-        <DevicesIcon sx={{ fontSize: 48, color: colors.grey[400], mb: 2 }} />
+        <DevicesIcon
+          sx={{ fontSize: 48, color: toneColors.neutral.borderStrong, mb: 2 }}
+        />
         <Typography
           variant="h6"
-          sx={{ color: colors.grey[800], mb: 1, fontWeight: 600 }}
+          sx={{ color: toneColors.neutral.onContainer, mb: 1, fontWeight: 600 }}
         >
           No catalog entries found
         </Typography>
         <Typography
           variant="body2"
-          sx={{ color: colors.grey[600], textAlign: 'center' }}
+          sx={{ color: toneColors.neutral.main, textAlign: 'center' }}
         >
           Try adjusting your search or filters to find what you&apos;re looking
           for.
@@ -629,7 +631,7 @@ const LegacyProductCatalogueCardView = ({
                         sx={{
                           fontSize: fontSizes.title,
                           fontWeight: 600,
-                          color: colors.grey[900],
+                          color: toneColors.neutral.onContainerStrong,
                           lineHeight: 1.2,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -665,7 +667,7 @@ const LegacyProductCatalogueCardView = ({
                     <Typography
                       variant="caption"
                       sx={{
-                        color: colors.grey[600],
+                        color: toneColors.neutral.main,
                         display: 'block',
                         mb: 1.5,
                         fontFamily: fontFamilies.mono,
@@ -677,7 +679,7 @@ const LegacyProductCatalogueCardView = ({
                       <Typography
                         variant="body2"
                         sx={{
-                          color: colors.grey[700],
+                          color: toneColors.neutral.mainStrong,
                           mb: 2,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -698,14 +700,17 @@ const LegacyProductCatalogueCardView = ({
                       flexWrap: 'wrap',
                       gap: 3,
                       pt: 1.5,
-                      borderTop: `1px solid ${colors.grey[100]}`,
+                      borderTop: `1px solid ${toneColors.neutral.container}`,
                     }}
                   >
                     {entry.gpn && (
                       <Box>
                         <Typography
                           variant="caption"
-                          sx={{ color: colors.grey[500], display: 'block' }}
+                          sx={{
+                            color: toneColors.neutral.accent,
+                            display: 'block',
+                          }}
                         >
                           GPN
                         </Typography>
@@ -713,7 +718,7 @@ const LegacyProductCatalogueCardView = ({
                           variant="body2"
                           sx={{
                             fontWeight: 500,
-                            color: colors.grey[800],
+                            color: toneColors.neutral.onContainer,
                             fontSize: fontSizes.label,
                           }}
                         >
@@ -725,7 +730,10 @@ const LegacyProductCatalogueCardView = ({
                       <Box>
                         <Typography
                           variant="caption"
-                          sx={{ color: colors.grey[500], display: 'block' }}
+                          sx={{
+                            color: toneColors.neutral.accent,
+                            display: 'block',
+                          }}
                         >
                           Resource Type
                         </Typography>
@@ -733,7 +741,7 @@ const LegacyProductCatalogueCardView = ({
                           variant="body2"
                           sx={{
                             fontWeight: 500,
-                            color: colors.grey[800],
+                            color: toneColors.neutral.onContainer,
                             fontSize: fontSizes.label,
                           }}
                         >
@@ -745,7 +753,10 @@ const LegacyProductCatalogueCardView = ({
                       <Box>
                         <Typography
                           variant="caption"
-                          sx={{ color: colors.grey[500], display: 'block' }}
+                          sx={{
+                            color: toneColors.neutral.accent,
+                            display: 'block',
+                          }}
                         >
                           R11N
                         </Typography>
@@ -753,7 +764,7 @@ const LegacyProductCatalogueCardView = ({
                           variant="body2"
                           sx={{
                             fontWeight: 500,
-                            color: colors.grey[800],
+                            color: toneColors.neutral.onContainer,
                             fontSize: fontSizes.label,
                           }}
                         >
@@ -767,7 +778,10 @@ const LegacyProductCatalogueCardView = ({
                         <Box>
                           <Typography
                             variant="caption"
-                            sx={{ color: colors.grey[500], display: 'block' }}
+                            sx={{
+                              color: toneColors.neutral.accent,
+                              display: 'block',
+                            }}
                           >
                             Unit Cost
                           </Typography>
@@ -775,7 +789,7 @@ const LegacyProductCatalogueCardView = ({
                             variant="body2"
                             sx={{
                               fontWeight: 500,
-                              color: colors.grey[800],
+                              color: toneColors.neutral.onContainer,
                               fontSize: fontSizes.label,
                             }}
                           >
@@ -788,7 +802,10 @@ const LegacyProductCatalogueCardView = ({
                         <Box>
                           <Typography
                             variant="caption"
-                            sx={{ color: colors.grey[500], display: 'block' }}
+                            sx={{
+                              color: toneColors.neutral.accent,
+                              display: 'block',
+                            }}
                           >
                             Per Rack
                           </Typography>
@@ -796,7 +813,7 @@ const LegacyProductCatalogueCardView = ({
                             variant="body2"
                             sx={{
                               fontWeight: 500,
-                              color: colors.grey[800],
+                              color: toneColors.neutral.onContainer,
                               fontSize: fontSizes.label,
                             }}
                           >
@@ -808,7 +825,10 @@ const LegacyProductCatalogueCardView = ({
                       <Box>
                         <Typography
                           variant="caption"
-                          sx={{ color: colors.grey[500], display: 'block' }}
+                          sx={{
+                            color: toneColors.neutral.accent,
+                            display: 'block',
+                          }}
                         >
                           CPU Type
                         </Typography>
@@ -816,7 +836,7 @@ const LegacyProductCatalogueCardView = ({
                           variant="body2"
                           sx={{
                             fontWeight: 500,
-                            color: colors.grey[800],
+                            color: toneColors.neutral.onContainer,
                             fontSize: fontSizes.label,
                           }}
                         >
@@ -829,7 +849,10 @@ const LegacyProductCatalogueCardView = ({
                         <Box>
                           <Typography
                             variant="caption"
-                            sx={{ color: colors.grey[500], display: 'block' }}
+                            sx={{
+                              color: toneColors.neutral.accent,
+                              display: 'block',
+                            }}
                           >
                             CPU / VM
                           </Typography>
@@ -837,7 +860,7 @@ const LegacyProductCatalogueCardView = ({
                             variant="body2"
                             sx={{
                               fontWeight: 500,
-                              color: colors.grey[800],
+                              color: toneColors.neutral.onContainer,
                               fontSize: fontSizes.label,
                             }}
                           >
@@ -850,7 +873,10 @@ const LegacyProductCatalogueCardView = ({
                         <Box>
                           <Typography
                             variant="caption"
-                            sx={{ color: colors.grey[500], display: 'block' }}
+                            sx={{
+                              color: toneColors.neutral.accent,
+                              display: 'block',
+                            }}
                           >
                             Memory / VM
                           </Typography>
@@ -858,7 +884,7 @@ const LegacyProductCatalogueCardView = ({
                             variant="body2"
                             sx={{
                               fontWeight: 500,
-                              color: colors.grey[800],
+                              color: toneColors.neutral.onContainer,
                               fontSize: fontSizes.label,
                             }}
                           >
@@ -972,21 +998,23 @@ export const ProductCatalogueCardView = ({
           justifyContent: 'center',
           py: 8,
           px: 2,
-          border: `1px dashed ${colors.grey[300]}`,
+          border: `1px dashed ${toneColors.neutral.border}`,
           borderRadius: radii.md,
-          backgroundColor: colors.grey[50],
+          backgroundColor: toneColors.neutral.surface,
         }}
       >
-        <DevicesIcon sx={{ fontSize: 48, color: colors.grey[400], mb: 2 }} />
+        <DevicesIcon
+          sx={{ fontSize: 48, color: toneColors.neutral.borderStrong, mb: 2 }}
+        />
         <Typography
           variant="h6"
-          sx={{ color: colors.grey[800], mb: 1, fontWeight: 600 }}
+          sx={{ color: toneColors.neutral.onContainer, mb: 1, fontWeight: 600 }}
         >
           No catalog entries found
         </Typography>
         <Typography
           variant="body2"
-          sx={{ color: colors.grey[600], textAlign: 'center' }}
+          sx={{ color: toneColors.neutral.main, textAlign: 'center' }}
         >
           Try adjusting your search or filters to find what you&apos;re looking
           for.

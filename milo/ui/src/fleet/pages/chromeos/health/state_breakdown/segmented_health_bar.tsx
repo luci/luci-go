@@ -16,7 +16,7 @@ import { Box } from '@mui/material';
 import { useMemo } from 'react';
 
 import { focusRingSx } from '@/fleet/theme/recipes';
-import { radii } from '@/fleet/theme/tokens';
+import { fleetColors, radii } from '@/fleet/theme/tokens';
 
 import {
   computeBreakdownStats,
@@ -116,7 +116,7 @@ export const SegmentedHealthBar = ({
             overflow: 'hidden',
             isolation: 'isolate',
             pointerEvents: 'none',
-            bgcolor: 'grey.200',
+            bgcolor: fleetColors.track,
             position: 'relative',
             transformOrigin: 'center',
             transition:

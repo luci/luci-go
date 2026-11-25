@@ -53,35 +53,35 @@ const mockBreakdown: DeviceStateBreakdown = {
 
 describe('health_state_definitions', () => {
   it('defines valid color tokens and categories for all DUT states', () => {
-    expect(STATE_VISUAL_CONFIGS.reserved.color).toBe('#1b5e20');
+    expect(STATE_VISUAL_CONFIGS.reserved.color).toContain('#1b5e20');
     expect(HEALTH_CATEGORIES.healthy.states).toContain('reserved');
 
-    expect(STATE_VISUAL_CONFIGS.ready.color).toBe('#43a047');
+    expect(STATE_VISUAL_CONFIGS.ready.color).toContain('#43a047');
     expect(HEALTH_CATEGORIES.healthy.states).toContain('ready');
 
-    expect(STATE_VISUAL_CONFIGS.needs_repair.color).toBe('#81c784');
+    expect(STATE_VISUAL_CONFIGS.needs_repair.color).toContain('#81c784');
     expect(HEALTH_CATEGORIES.healthy.states).toContain('needs_repair');
 
-    expect(STATE_VISUAL_CONFIGS.repair_failed.color).toBe('#81c784');
+    expect(STATE_VISUAL_CONFIGS.repair_failed.color).toContain('#81c784');
     expect(HEALTH_CATEGORIES.healthy.states).toContain('repair_failed');
 
-    expect(STATE_VISUAL_CONFIGS.needs_deploy.color).toBe('#d32f2f');
+    expect(STATE_VISUAL_CONFIGS.needs_deploy.color).toContain('#d32f2f');
     expect(HEALTH_CATEGORIES.action_required.states).toContain('needs_deploy');
 
-    expect(STATE_VISUAL_CONFIGS.needs_manual_repair.color).toBe('#d32f2f');
+    expect(STATE_VISUAL_CONFIGS.needs_manual_repair.color).toContain('#d32f2f');
     expect(HEALTH_CATEGORIES.action_required.states).toContain(
       'needs_manual_repair',
     );
 
-    expect(STATE_VISUAL_CONFIGS.needs_replacement.color).toBe('#d32f2f');
+    expect(STATE_VISUAL_CONFIGS.needs_replacement.color).toContain('#d32f2f');
     expect(HEALTH_CATEGORIES.action_required.states).toContain(
       'needs_replacement',
     );
 
-    expect(STATE_VISUAL_CONFIGS.registered.color).toBe('#757575');
+    expect(STATE_VISUAL_CONFIGS.registered.color).toContain('#757575');
     expect(HEALTH_CATEGORIES.administrative.states).toContain('registered');
 
-    expect(STATE_VISUAL_CONFIGS.unknown.color).toBe('#9e9e9e');
+    expect(STATE_VISUAL_CONFIGS.unknown.color).toContain('#9e9e9e');
     expect(HEALTH_CATEGORIES.administrative.states).toContain('unknown');
   });
 });

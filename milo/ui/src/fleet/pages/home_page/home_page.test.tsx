@@ -16,6 +16,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 
 import { useUserProfile } from '@/common/hooks/use_user_profile';
 import { FleetConsoleMockAPI } from '@/fleet/testing_tools/mock_api';
+import { toneColors } from '@/fleet/theme/tokens';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import { workspaces } from '../../workspaces';
@@ -322,7 +323,10 @@ describe('<HomePage />', () => {
     expect(chip).toBeInTheDocument();
 
     // Should have green background (high status) instead of yellow (warn status)
-    expect(chip).toHaveStyleRule('background-color', 'hsl(137, 40%, 86%)');
+    expect(chip).toHaveStyleRule(
+      'background-color',
+      toneColors.success.container,
+    );
   });
 
   it('clamps healthy percentage to a maximum of 100%', async () => {

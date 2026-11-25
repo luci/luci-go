@@ -33,7 +33,7 @@ import {
 import { renderCellWithLink } from '@/fleet/components/table/cell_with_link';
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
 import { DutStateCell } from '@/fleet/pages/device_list_page/chromeos/dut_state_cell';
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 import { FC_CellProps } from '@/fleet/types/table';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { RepairQueueItem } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -410,20 +410,24 @@ export const useRepairQueueColumns = ({
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircleIcon sx={{ color: colors.green[500], fontSize: 14 }} />
+                  <CircleIcon
+                    sx={{ color: toneColors.success.accent, fontSize: 14 }}
+                  />
                   <Typography variant="body2">
                     <strong>Green</strong> &mdash; Healthy &amp; responsive (OK)
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <CircleIcon sx={{ color: colors.red[600], fontSize: 14 }} />
+                  <CircleIcon
+                    sx={{ color: toneColors.error.main, fontSize: 14 }}
+                  />
                   <Typography variant="body2">
                     <strong>Red</strong> &mdash; Hardware failure (BROKEN)
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <CircleIcon
-                    sx={{ color: colors.orange[600], fontSize: 14 }}
+                    sx={{ color: toneColors.caution.main, fontSize: 14 }}
                   />
                   <Typography variant="body2">
                     <strong>Orange</strong> &mdash; Disconnected / unplugged

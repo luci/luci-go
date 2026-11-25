@@ -25,7 +25,7 @@ import { useMemo, useRef, useState } from 'react';
 import { healthToDeviceFilter } from '@/fleet/adapters/filter_adapters';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
 import { subMetricRowSx } from '@/fleet/theme/recipes';
-import { radii } from '@/fleet/theme/tokens';
+import { elevations, fleetColors, radii } from '@/fleet/theme/tokens';
 import { combineAipFiltersWithParentheses } from '@/fleet/utils/search_param';
 import {
   HealthSlice,
@@ -208,25 +208,21 @@ export const HealthSliceItem = ({
         p: 1.75,
         borderRadius: 2,
         bgcolor: isDragOver
-          ? 'rgba(25, 118, 210, 0.08)'
+          ? fleetColors.primaryContainer
           : isSelected
-            ? 'rgba(25, 118, 210, 0.04)'
-            : '#ffffff',
+            ? fleetColors.infoCard
+            : fleetColors.surface,
         border: '1px solid',
         borderColor: isDragOver
           ? 'primary.main'
           : isSelected
             ? 'primary.main'
             : 'divider',
-        outline: isDragOver ? '2px dashed #1976d2' : 'none',
+        outline: isDragOver ? `2px dashed ${fleetColors.primary}` : 'none',
         outlineOffset: isDragOver ? '2px' : 0,
         opacity: isDragging ? 0.35 : 1,
         transform: 'none',
-        boxShadow: isDragOver
-          ? '0 4px 12px rgba(25, 118, 210, 0.25)'
-          : isSelected
-            ? '0 1px 4px rgba(25, 118, 210, 0.16)'
-            : '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow: isDragOver ? 4 : isSelected ? 1 : elevations.card,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -246,10 +242,10 @@ export const HealthSliceItem = ({
         '&:hover': onSelect
           ? {
               borderColor: isSelected ? 'primary.dark' : 'primary.main',
-              bgcolor: isSelected ? 'rgba(25, 118, 210, 0.07)' : 'action.hover',
-              boxShadow: isSelected
-                ? '0 2px 6px rgba(25, 118, 210, 0.2)'
-                : '0 2px 6px rgba(0,0,0,0.06)',
+              bgcolor: isSelected
+                ? fleetColors.primaryContainer
+                : 'action.hover',
+              boxShadow: isSelected ? 2 : elevations.card,
             }
           : {},
       }}

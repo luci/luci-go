@@ -12,25 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/* eslint-disable react-refresh/only-export-components */
-
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Divider, Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
-import { Link } from 'react-router';
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { generateDeviceListURL } from '@/fleet/constants/paths';
 import { ORDER_BY_PARAM_KEY, OrderByDirection } from '@/fleet/hooks/order_by';
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 import { getFilterQueryString } from '@/fleet/utils/search_param';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
-import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import {
   RepairMetric_Priority,
   repairMetric_PriorityToJSON,
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import {
+  ExploreDevicesLink,
+  ExploreInArsenalLink,
+} from './repairs_column_links';
 import { getPriorityIcon, type Row } from './repairs_columns.utils';
 
 // Labs where lab_name comes from the MobileHarness "lab" host property
@@ -50,71 +49,6 @@ const LAB_PROPERTY_LAB_NAMES = new Set([
   'slaas-wasabi-ate',
   'us-mtv-tv-1667',
 ]);
-
-interface ExploreInArsenalLinkProps {
-  to: string;
-  totalDevices: number;
-}
-
-const ExploreInArsenalLink = ({
-  to,
-  totalDevices,
-}: ExploreInArsenalLinkProps) => {
-  const { trackEvent } = useGoogleAnalytics();
-
-  return (
-    <Link
-      aria-label="Explore in Arsenal"
-      css={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100%',
-      }}
-      to={to}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={() =>
-        trackEvent('explore_in_arsenal_clicked', {
-          totalDevices: totalDevices,
-        })
-      }
-    >
-      <OpenInNewIcon />
-    </Link>
-  );
-};
-
-interface ExploreDevicesLinkProps {
-  to: string;
-  totalDevices: number;
-}
-
-const ExploreDevicesLink = ({ to, totalDevices }: ExploreDevicesLinkProps) => {
-  const { trackEvent } = useGoogleAnalytics();
-
-  return (
-    <Link
-      aria-label="Explore devices"
-      css={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100%',
-      }}
-      to={to}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={() =>
-        trackEvent('explore_devices_clicked', {
-          totalDevices: totalDevices,
-        })
-      }
-    >
-      <OpenInNewIcon />
-    </Link>
-  );
-};
 
 export const getRepairsColumns = (workspace: AndroidPageWorkspace) =>
   ({
@@ -300,7 +234,10 @@ export const getRepairsColumns = (workspace: AndroidPageWorkspace) =>
           </Typography>
           {(x.cell.getValue() as number) >= 0 &&
             x.row.original.total_devices && (
-              <Typography variant="caption" sx={{ color: colors.grey[500] }}>
+              <Typography
+                variant="caption"
+                sx={{ color: toneColors.neutral.accent }}
+              >
                 (
                 {
                   // Capping the value if the percentage is higher than 100%, see b/473028358.

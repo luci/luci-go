@@ -48,6 +48,7 @@ import { db } from '@/firebase';
 import { useAdminTaskPermission } from '@/fleet/components/actions/shared/use_admin_task_permission';
 import { FEEDBACK_BUGANIZER_BUG_ID } from '@/fleet/constants/feedback';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { borders, fleetColors, toneColors } from '@/fleet/theme/tokens';
 import { useGoogleAnalytics } from '@/generic_libs/components/google_analytics';
 import { GetSmartRepairResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -373,8 +374,8 @@ export const ChromeOSSmartRepair = () => {
                 p: 1,
                 px: 2,
                 borderRadius: 2,
-                backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
+                backgroundColor: fleetColors.panelSubtle,
+                border: borders.default,
               }}
             >
               <Typography
@@ -395,9 +396,9 @@ export const ChromeOSSmartRepair = () => {
                         minWidth: 0,
                         p: '4px 8px',
                         borderRadius: 1.5,
-                        borderColor: 'rgba(46, 125, 50, 0.3)',
+                        borderColor: toneColors.success.border,
                         '&:hover': {
-                          backgroundColor: 'rgba(46, 125, 50, 0.08)',
+                          backgroundColor: toneColors.success.surface,
                           borderColor: 'success.main',
                         },
                       }}
@@ -414,9 +415,9 @@ export const ChromeOSSmartRepair = () => {
                         minWidth: 0,
                         p: '4px 8px',
                         borderRadius: 1.5,
-                        borderColor: 'rgba(211, 47, 47, 0.3)',
+                        borderColor: toneColors.error.border,
                         '&:hover': {
-                          backgroundColor: 'rgba(211, 47, 47, 0.08)',
+                          backgroundColor: toneColors.error.surface,
                           borderColor: 'error.main',
                         },
                       }}
@@ -570,8 +571,8 @@ export const ChromeOSSmartRepair = () => {
                     p: 2.5,
                     mb: 3,
                     borderRadius: 2,
-                    backgroundColor: '#eef6fc',
-                    borderLeft: '5px solid #1976d2',
+                    backgroundColor: fleetColors.infoBanner,
+                    borderLeft: `5px solid ${fleetColors.infoAccent}`,
                   }}
                 >
                   <Typography
@@ -598,8 +599,8 @@ export const ChromeOSSmartRepair = () => {
                         p: 2,
                         mb: 3,
                         borderRadius: 1,
-                        backgroundColor: '#f5f5f5',
-                        border: '1px solid #e0e0e0',
+                        backgroundColor: fleetColors.panelMuted,
+                        border: `1px solid ${fleetColors.borderSubtle}`,
                       }}
                     >
                       <Typography
@@ -623,7 +624,7 @@ export const ChromeOSSmartRepair = () => {
                           style={{
                             wordBreak: 'break-all',
                             textDecoration: 'none',
-                            color: '#1976d2',
+                            color: fleetColors.infoAccent,
                             fontWeight: 500,
                           }}
                         >
@@ -643,7 +644,10 @@ export const ChromeOSSmartRepair = () => {
                   )}
 
                   {/* Conclusions Card */}
-                  <Card variant="outlined" sx={{ backgroundColor: '#f9f9f9' }}>
+                  <Card
+                    variant="outlined"
+                    sx={{ backgroundColor: fleetColors.panelSubtle }}
+                  >
                     <CardContent>
                       <Typography
                         variant="subtitle2"
@@ -662,7 +666,7 @@ export const ChromeOSSmartRepair = () => {
                               elevation={0}
                               sx={{
                                 '&:before': { display: 'none' },
-                                border: '1px solid #e0e0e0',
+                                border: `1px solid ${fleetColors.borderSubtle}`,
                                 mb:
                                   index ===
                                   normalizedResult.conclusions.length - 1
@@ -774,7 +778,7 @@ export const ChromeOSSmartRepair = () => {
                     variant="outlined"
                     sx={{
                       borderColor: 'primary.main',
-                      backgroundColor: '#f0f7ff',
+                      backgroundColor: fleetColors.infoCard,
                       height: '100%',
                     }}
                   >

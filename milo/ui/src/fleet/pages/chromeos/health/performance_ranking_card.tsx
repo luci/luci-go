@@ -39,6 +39,7 @@ import {
 } from '@/fleet/constants/paths';
 import { getFilterKey } from '@/fleet/pages/device_list_page/chromeos/chromeos_fields';
 import { subMetricRowSx } from '@/fleet/theme/recipes';
+import { elevations, fleetColors } from '@/fleet/theme/tokens';
 import {
   combineAipFiltersWithParentheses,
   getFilterQueryString,
@@ -152,8 +153,8 @@ export const PerformanceRankingCard = ({
         maxHeight: { xs: 560, lg: 'none' },
         boxSizing: 'border-box',
         borderRadius: 2,
-        bgcolor: '#ffffff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        bgcolor: fleetColors.surface,
+        boxShadow: elevations.card,
       }}
     >
       <CardHeader
@@ -224,7 +225,7 @@ export const PerformanceRankingCard = ({
                   sx={{
                     height: 28,
                     fontSize: '0.8125rem',
-                    bgcolor: '#ffffff',
+                    bgcolor: fleetColors.surface,
                     '& .MuiSelect-select': {
                       py: '2px !important',
                       pl: 1.25,

@@ -15,7 +15,7 @@
 import { ToggleButtonGroup, ToggleButton, styled } from '@mui/material';
 import React from 'react';
 
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 
 export interface ToggleOption {
   value: string;
@@ -41,10 +41,10 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup, {
   borderRadius: '20px',
   border: 'none',
   overflow: 'hidden',
-  backgroundColor: colors.grey[50],
+  backgroundColor: toneColors.neutral.surface,
   width: '100%',
   '&:focus-visible': {
-    outline: `2px solid ${colors.blue[700]}`,
+    outline: `2px solid ${toneColors.info.mainStrong}`,
     outlineOffset: '2px',
   },
   '&::before': {
@@ -54,7 +54,7 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup, {
     left: 0,
     width: `${100 / totalOptions}%`,
     height: '100%',
-    backgroundColor: colors.blue[50],
+    backgroundColor: toneColors.info.surface,
     borderRadius: '20px',
     transition: 'transform 0.1s ease-in-out',
     transform: `translateX(${selectedIndex * 100}%)`,
@@ -77,21 +77,21 @@ const StyledToggleButton = styled(ToggleButton)(() => ({
   fontSize: '14px',
   fontWeight: 500,
   textTransform: 'none',
-  color: colors.grey[700],
+  color: toneColors.neutral.mainStrong,
   borderRadius: '20px',
   border: 'none',
   flex: 1,
   '&.Mui-selected': {
     backgroundColor: 'transparent',
     fontWeight: 500,
-    color: colors.blue[700],
+    color: toneColors.info.mainStrong,
     borderRadius: '20px',
     '&:hover': {
-      backgroundColor: colors.blue[100],
+      backgroundColor: toneColors.info.container,
     },
   },
   '&:hover': {
-    backgroundColor: colors.grey[100],
+    backgroundColor: toneColors.neutral.container,
     borderRadius: '20px',
   },
 }));

@@ -22,7 +22,7 @@ import {
 } from 'material-react-table';
 
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 
 export interface FleetColumnHeaderProps<TData extends MRT_RowData> {
   column: MRT_Header<TData>['column'];
@@ -91,7 +91,9 @@ export const FleetColumnHeader = <TData extends MRT_RowData>({
           title={typeof resolvedText === 'string' ? resolvedText : undefined}
           sx={{
             fontWeight: 500,
-            color: isHighlighted ? colors.blue[600] : colors.grey[800],
+            color: isHighlighted
+              ? toneColors.info.main
+              : toneColors.neutral.onContainer,
             mr: 0.5,
             minWidth: 0,
             flex: '1 1 0%',
@@ -123,7 +125,7 @@ export const FleetColumnHeader = <TData extends MRT_RowData>({
         sx={{
           alignItems: 'center',
           backgroundColor: isHighlighted
-            ? `${colors.blue[50]}`
+            ? `${toneColors.info.surface}`
             : 'var(--header-bg-color)',
           pointerEvents: 'none',
           zIndex: 999,

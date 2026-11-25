@@ -14,7 +14,7 @@
 
 import { render, screen } from '@testing-library/react';
 
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 
 import { HighlightCharacter } from './highlight_character';
 
@@ -113,8 +113,14 @@ describe('HighlightCharacter', () => {
       </HighlightCharacter>,
     );
     const spans = container.querySelectorAll('span');
-    expect(spans[0]).toHaveStyle({ backgroundColor: colors.yellow[200] });
-    expect(spans[1]).toHaveStyle({ backgroundColor: colors.yellow[200] });
-    expect(spans[2]).not.toHaveStyle({ backgroundColor: colors.yellow[200] });
+    expect(spans[0]).toHaveStyle({
+      backgroundColor: toneColors.warning.containerStrong,
+    });
+    expect(spans[1]).toHaveStyle({
+      backgroundColor: toneColors.warning.containerStrong,
+    });
+    expect(spans[2]).not.toHaveStyle({
+      backgroundColor: toneColors.warning.containerStrong,
+    });
   });
 });

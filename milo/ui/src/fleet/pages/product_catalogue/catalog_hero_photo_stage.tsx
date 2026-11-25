@@ -18,7 +18,6 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
 
-import { colors } from '@/fleet/theme/colors';
 import { focusRingSx, iconButtonSx } from '@/fleet/theme/recipes';
 import {
   borders,
@@ -28,6 +27,7 @@ import {
   fontSizes,
   iconSizes,
   radii,
+  toneColors,
 } from '@/fleet/theme/tokens';
 
 import { resolvePhotoPreviewSrc } from './catalog_edit_validation';
@@ -289,7 +289,7 @@ export const CatalogHeroPhotoStage = ({
                 px: 1,
                 height: controlHeights.chipCompact,
                 borderRadius: radii.pill,
-                backgroundColor: colors.grey[900],
+                backgroundColor: toneColors.neutral.onContainerStrong,
                 color: fleetColors.surface,
                 boxShadow: elevations.card,
               }}

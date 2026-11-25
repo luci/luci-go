@@ -24,7 +24,7 @@ import {
 } from 'react';
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { colors } from '@/fleet/theme/colors';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 import { OptionValue } from '@/fleet/types/option';
 import * as ast from '@/fleet/utils/aip160/ast/ast';
 import { scoreTargetWithFallback } from '@/fleet/utils/fuzzy_sort';
@@ -572,12 +572,12 @@ const OptionComponent = function OptionComponent({
           fontSize: 12,
           width: 16,
           height: 16,
-          backgroundColor: colors.red[500],
+          backgroundColor: toneColors.error.accent,
           borderRadius: '2px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#ffffff',
+          color: fleetColors.onPrimary,
         }}
       />
     </div>

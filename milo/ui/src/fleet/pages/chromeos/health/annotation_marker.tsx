@@ -15,7 +15,7 @@
 import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
 
-import { colors } from '@/fleet/theme/colors';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 
 import { HealthTooltip } from './health_tooltip';
 import {
@@ -68,7 +68,9 @@ export const AnnotationMarker = ({
   const topY = Math.min(y1, y2);
   const bottomY = Math.max(y1, y2);
   const isActive = isHovered || isFocused;
-  const markerColor = isActive ? colors.grey[500] : colors.grey[400];
+  const markerColor = isActive
+    ? toneColors.neutral.accent
+    : toneColors.neutral.borderStrong;
   const badgeRadius = 9;
   const badgeCenterY = topY + 8;
   const ts = getAnnotationTimestampMs(annotation);
@@ -141,7 +143,7 @@ export const AnnotationMarker = ({
             cy={badgeCenterY}
             r={badgeRadius + 3}
             fill="none"
-            stroke={colors.grey[500]}
+            stroke={toneColors.neutral.accent}
             strokeWidth={1.5}
           />
         )}
@@ -151,7 +153,7 @@ export const AnnotationMarker = ({
           cx={x2}
           cy={badgeCenterY}
           r={badgeRadius}
-          fill={isActive ? markerColor : colors.white}
+          fill={isActive ? markerColor : fleetColors.surface}
           stroke={markerColor}
           strokeWidth={1.5}
         />
@@ -161,7 +163,7 @@ export const AnnotationMarker = ({
           y={badgeCenterY}
           textAnchor="middle"
           dominantBaseline="central"
-          fill={isActive ? colors.white : colors.grey[600]}
+          fill={isActive ? fleetColors.surface : toneColors.neutral.main}
           fontSize={11}
           fontWeight="bold"
           fontFamily="sans-serif"

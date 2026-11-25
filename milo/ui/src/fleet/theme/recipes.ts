@@ -37,7 +37,17 @@ import {
   radii,
 } from './tokens';
 
-/** White rounded card on the canvas. Use for every content container. */
+/** Page backdrop (`canvas`). */
+export const canvasBackdropSx = {
+  backgroundColor: fleetColors.canvas,
+} as const satisfies SxProps<Theme>;
+
+/** App shell backdrop (`shell`). */
+export const shellBackdropSx = {
+  backgroundColor: fleetColors.shell,
+} as const satisfies SxProps<Theme>;
+
+/** Rounded card on the canvas. Use for every content container. */
 export const surfaceCardSx = {
   backgroundColor: fleetColors.surface,
   border: borders.default,
@@ -66,7 +76,7 @@ export const tonalPanelSx = {
  * tab strip. Pair with `dockedTabStripSx`.
  */
 export const pageHeaderSx = {
-  backgroundColor: fleetColors.surface,
+  backgroundColor: fleetColors.pageHeader,
   px: 3,
   pt: 2.5,
   pb: 1.5,
@@ -77,7 +87,7 @@ export const pageHeaderSx = {
 
 /** Container for `<TabList>` / `<Tabs>` docked under a page header. */
 export const dockedTabStripSx = {
-  backgroundColor: fleetColors.surface,
+  backgroundColor: fleetColors.pageHeader,
   borderBottom: borders.default,
   px: 3,
 } as const satisfies SxProps<Theme>;
@@ -299,11 +309,11 @@ export const datePickerPaperSx = {
     },
     '&.Mui-selected': {
       backgroundColor: fleetColors.primary,
-      color: fleetColors.surface,
+      color: fleetColors.onPrimary,
       fontWeight: 500,
       '&:hover, &:focus': {
         backgroundColor: fleetColors.primaryHover,
-        color: fleetColors.surface,
+        color: fleetColors.onPrimary,
       },
     },
   },
@@ -343,11 +353,11 @@ export const datePickerPaperSx = {
     },
     '&.Mui-selected': {
       backgroundColor: fleetColors.primary,
-      color: fleetColors.surface,
+      color: fleetColors.onPrimary,
       fontWeight: 500,
       '&:hover, &:focus, &:active': {
         backgroundColor: fleetColors.primaryHover,
-        color: fleetColors.surface,
+        color: fleetColors.onPrimary,
       },
     },
   },

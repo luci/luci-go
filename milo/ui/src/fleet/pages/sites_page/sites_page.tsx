@@ -39,6 +39,7 @@ import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { PageNotFoundPage } from '@/fleet/pages/not_found_page';
 import {
   actionRowSx,
+  canvasBackdropSx,
   datePresetChipSx,
   iconButtonSx,
   pageHeaderSx,
@@ -205,10 +206,7 @@ export const SitesPage = () => {
     editingSite?.id ?? (isFormOpen ? 'create-open' : 'create-closed');
 
   return (
-    <Box
-      component="main"
-      sx={{ backgroundColor: fleetColors.canvas, minHeight: '100%' }}
-    >
+    <Box component="main" sx={{ ...canvasBackdropSx, minHeight: '100%' }}>
       <Box sx={{ ...pageHeaderSx, borderBottom: borders.default }}>
         <Box sx={headerWrapSx}>
           <Box sx={actionRowSx}>

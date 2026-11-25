@@ -51,8 +51,12 @@ import {
 } from 'recharts';
 
 import { TRENDS_TOOLTIP_PAPER_SX } from '@/fleet/components/info_tooltip/info_tooltip_styles';
-import { colors } from '@/fleet/theme/colors';
-import { radii } from '@/fleet/theme/tokens';
+import {
+  elevations,
+  fleetColors,
+  radii,
+  toneColors,
+} from '@/fleet/theme/tokens';
 import {
   TrendlineGrouping,
   TrendlineMetricType,
@@ -307,7 +311,7 @@ const TrendsTooltip = ({
             p: 0.75,
             bgcolor: 'action.hover',
             borderRadius: radii.sm,
-            borderLeft: `3px solid ${colors.grey[400]}`,
+            borderLeft: `3px solid ${toneColors.neutral.borderStrong}`,
           }}
         >
           <Typography
@@ -353,7 +357,7 @@ const valueOf = (name: string) => (row: TrendsChartRow) =>
 const readingDot = (color: string) => ({
   r: 2.5,
   fill: color,
-  stroke: colors.white,
+  stroke: fleetColors.surface,
   strokeWidth: 1.5,
 });
 
@@ -399,7 +403,7 @@ const TrendLines = memo(function TrendLines({
       >
         <CartesianGrid
           vertical={false}
-          stroke={colors.grey[300]}
+          stroke={toneColors.neutral.border}
           strokeDasharray="2 2"
         />
         <XAxis
@@ -417,7 +421,7 @@ const TrendLines = memo(function TrendLines({
           tickFormatter={formatTickLabel}
           tick={axisTickStyle}
           tickLine={false}
-          stroke={colors.grey[300]}
+          stroke={toneColors.neutral.border}
         />
         <YAxis
           domain={[0, maxYScale]}
@@ -432,7 +436,7 @@ const TrendLines = memo(function TrendLines({
           isAnimationActive={false}
           wrapperStyle={TOOLTIP_WRAPPER_STYLE}
           cursor={{
-            stroke: colors.grey[500],
+            stroke: toneColors.neutral.accent,
             strokeWidth: 1,
             strokeDasharray: '3 3',
           }}
@@ -482,7 +486,7 @@ const TrendLines = memo(function TrendLines({
             // with no coordinate, i.e. the empty buckets, are
             // skipped by recharts rather than drawn at zero.
             dot={readingDot(color)}
-            activeDot={{ r: 4, strokeWidth: 1.5, stroke: colors.white }}
+            activeDot={{ r: 4, strokeWidth: 1.5, stroke: fleetColors.surface }}
             // Background refetches would otherwise make the
             // chart redraw itself for no visible reason.
             isAnimationActive={false}
@@ -559,7 +563,7 @@ const HighlightLayer = ({
           strokeLinejoin="round"
           connectNulls={false}
           dot={readingDot(series.color)}
-          activeDot={{ r: 5, strokeWidth: 1.5, stroke: colors.white }}
+          activeDot={{ r: 5, strokeWidth: 1.5, stroke: fleetColors.surface }}
           isAnimationActive={false}
         />
       </LineChart>
@@ -750,7 +754,7 @@ export const HistoricalAvailabilityTrendsChart = ({
 
   const axisTickStyle = useMemo(
     () => ({
-      fill: colors.grey[600],
+      fill: toneColors.neutral.main,
       fontSize: theme.typography.caption.fontSize,
       fontFamily: theme.typography.caption.fontFamily,
     }),
@@ -785,7 +789,7 @@ export const HistoricalAvailabilityTrendsChart = ({
         width: '100%',
         boxSizing: 'border-box',
         flexShrink: 0,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        boxShadow: elevations.card,
       }}
     >
       <CardHeader

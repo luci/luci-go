@@ -17,9 +17,11 @@ import { Alert, IconButton, Snackbar, styled } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useLocalStorage } from 'react-use';
 
+import { fleetColors } from '@/fleet/theme/tokens';
+
 const Key = styled('span')({
   fontFamily: 'monospace',
-  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  backgroundColor: fleetColors.surfaceTonal,
   padding: '1px 5px',
   borderRadius: '4px',
   fontWeight: 'bold',

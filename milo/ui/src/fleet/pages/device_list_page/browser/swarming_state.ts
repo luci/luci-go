@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { StateUnion } from '@/fleet/components/table/cell_with_chip';
-import { colors, unknownStateColor } from '@/fleet/theme/colors';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 
 export enum swarmingState {
   DEAD = 'DEAD',
@@ -25,15 +25,15 @@ export enum swarmingState {
 export const getBrowserSwarmingStateColor = (status: StateUnion) => {
   switch (status.toUpperCase()) {
     case swarmingState.DEAD:
-      return colors.red[100];
+      return toneColors.error.container;
     case swarmingState.QUARANTINED:
-      return colors.yellow[100];
+      return toneColors.warning.container;
     case swarmingState.MAINTENANCE:
-      return colors.cyan[100];
+      return toneColors.teal.container;
     case swarmingState.ALIVE:
-      return colors.green[100];
+      return toneColors.success.container;
     default:
-      return unknownStateColor;
+      return fleetColors.unknownState;
   }
 };
 

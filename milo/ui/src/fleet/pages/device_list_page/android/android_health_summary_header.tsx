@@ -39,6 +39,7 @@ import {
 import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { METRICS_COLUMN_STYLE } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { HealthCategoryBucket } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
@@ -97,7 +98,7 @@ export function AndroidHealthSummaryHeader({
     rose: theme.palette.error.main,
     amber: theme.palette.warning.main,
     slate: theme.palette.text.secondary,
-    grey: theme.palette.grey[400],
+    grey: toneColors.neutral.accent,
     dark: theme.palette.text.primary,
   };
 
@@ -465,7 +466,7 @@ export function AndroidHealthSummaryHeader({
               />
             </Grid>
 
-            <Divider sx={{ my: 0.5, borderColor: 'rgba(0, 0, 0, 0.05)' }} />
+            <Divider sx={{ my: 0.5, borderColor: fleetColors.divider }} />
 
             {/* Bottom Row: Devices Health */}
             <Grid

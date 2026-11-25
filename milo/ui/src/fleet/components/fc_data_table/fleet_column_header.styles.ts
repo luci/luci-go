@@ -14,7 +14,6 @@
 
 import { SxProps, Theme } from '@mui/material';
 
-import { colors } from '@/fleet/theme/colors';
 import {
   borders,
   fleetColors,
@@ -22,6 +21,7 @@ import {
   fontSizes,
   iconSizes,
   radii,
+  toneColors,
 } from '@/fleet/theme/tokens';
 
 export type Density = 'spacious' | 'comfortable' | 'compact';
@@ -39,7 +39,7 @@ export const getDensityPadding = (density: Density) => {
 };
 
 export const fleetTableHeaderSx: SxProps<Theme> = {
-  '--header-bg-color': fleetColors.surfaceTonal,
+  '--header-bg-color': fleetColors.tableHeader,
   // Use && to increase specificity and avoid !important where possible
   '&&': {
     backgroundColor: 'var(--header-bg-color)',
@@ -125,7 +125,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     justifyContent: 'center',
     transition: 'background-color 0.2s',
     '&:hover': {
-      backgroundColor: 'rgba(0, 0, 0, 0.05)',
+      backgroundColor: fleetColors.tableHeaderHover,
     },
     '& .MuiTableSortLabel-icon': {
       margin: 0,
@@ -153,7 +153,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     fontSize: '9px',
     padding: 0,
     backgroundColor: 'transparent',
-    color: `${colors.grey[900]}`,
+    color: `${toneColors.neutral.onContainerStrong}`,
     fontWeight: 700,
   },
   // Reduce the size of the 3-dot menu icon to match the others
@@ -166,7 +166,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     borderRadius: '50% !important',
     transition: 'background-color 0.2s',
     '&:hover': {
-      backgroundColor: 'rgba(0, 0, 0, 0.05)',
+      backgroundColor: fleetColors.tableHeaderHover,
     },
     '& .MuiSvgIcon-root': {
       fontSize: `${iconSizes.inline}px !important`,
@@ -188,7 +188,7 @@ export const fleetTableHeaderSx: SxProps<Theme> = {
     justifyContent: 'center',
     transition: 'background-color 0.2s',
     '&:hover': {
-      backgroundColor: 'rgba(0, 0, 0, 0.05)',
+      backgroundColor: fleetColors.tableHeaderHover,
     },
     '& .MuiSvgIcon-root': {
       fontSize: iconSizes.control, // Matches InfoTooltip fontSize override

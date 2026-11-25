@@ -20,7 +20,7 @@ import Box from '@mui/material/Box';
 import SvgIcon, { SvgIconProps } from '@mui/material/SvgIcon';
 import Tooltip from '@mui/material/Tooltip';
 
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 import { PeripheralState } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/chromeos.pb';
 
 /* eslint-disable max-len */
@@ -74,15 +74,15 @@ export const SinglePeripheralIcon = ({
 
   switch (state) {
     case PeripheralState.PERIPHERAL_STATE_OK:
-      color = colors.green[500];
+      color = toneColors.success.accent;
       statusText = 'OK';
       break;
     case PeripheralState.PERIPHERAL_STATE_BROKEN:
-      color = colors.red[600];
+      color = toneColors.error.main;
       statusText = 'BROKEN';
       break;
     case PeripheralState.PERIPHERAL_STATE_MISSING:
-      color = colors.orange[600];
+      color = toneColors.caution.main;
       statusText = 'MISSING';
       break;
     default:

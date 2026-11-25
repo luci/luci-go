@@ -38,13 +38,12 @@ import {
 
 import { SafeAdapterLuxon } from '@/fleet/adapters/date_adapter';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
-import { colors } from '@/fleet/theme/colors';
 import {
   datePickerPaperSx,
   datePickerTextFieldSx,
   datePresetChipSx,
 } from '@/fleet/theme/recipes';
-import { fontSizes } from '@/fleet/theme/tokens';
+import { fontSizes, toneColors } from '@/fleet/theme/tokens';
 import { DateFilterValue } from '@/fleet/types';
 import {
   getValidDateTime,
@@ -302,7 +301,7 @@ export const DateFilter = forwardRef(function DateFilter(
           <Typography
             variant="caption"
             sx={{
-              color: colors.grey[700],
+              color: toneColors.neutral.mainStrong,
               fontWeight: 500,
               letterSpacing: '0.01em',
             }}
@@ -389,7 +388,7 @@ export const DateFilter = forwardRef(function DateFilter(
           isDateOnly={isDateOnly}
         />
       </Box>
-      <Divider sx={{ borderColor: colors.grey[200] }} />
+      <Divider sx={{ borderColor: toneColors.neutral.containerStrong }} />
       <Box role="group" aria-label="Blank options" sx={{ padding: '6px 0' }}>
         <MenuItem
           disableRipple
@@ -421,7 +420,7 @@ export const DateFilter = forwardRef(function DateFilter(
             Include{' '}
             <Box
               component="span"
-              sx={{ fontStyle: 'italic', color: colors.grey[700] }}
+              sx={{ fontStyle: 'italic', color: toneColors.neutral.mainStrong }}
             >
               {BLANK_VALUE}
             </Box>
@@ -483,7 +482,7 @@ export const DateFilter = forwardRef(function DateFilter(
             Exclude{' '}
             <Box
               component="span"
-              sx={{ fontStyle: 'italic', color: colors.grey[700] }}
+              sx={{ fontStyle: 'italic', color: toneColors.neutral.mainStrong }}
             >
               {BLANK_VALUE}
             </Box>

@@ -16,7 +16,7 @@ import { render, renderHook, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import { SettingsProvider } from '@/fleet/context/providers';
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 import { SyncedSearchParamsProvider } from '@/generic_libs/hooks/synced_search_params';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
@@ -368,7 +368,9 @@ describe('useChromeOSColumns', () => {
       'http://goto.google.com/flops-swarming#need-replacement',
     );
     expect(brokenServoChip).toHaveClass('MuiChip-root');
-    expect(brokenServoChip).toHaveStyle(`background-color: ${colors.red[100]}`);
+    expect(brokenServoChip).toHaveStyle(
+      `background-color: ${toneColors.error.container}`,
+    );
 
     const workingServoChip = screen.getByText('Working').closest('a');
     expect(workingServoChip).toHaveAttribute(
@@ -377,7 +379,7 @@ describe('useChromeOSColumns', () => {
     );
     expect(workingServoChip).toHaveClass('MuiChip-root');
     expect(workingServoChip).toHaveStyle(
-      `background-color: ${colors.green[100]}`,
+      `background-color: ${toneColors.success.container}`,
     );
 
     const neutralServoChip = screen.getByText('Not applicable').closest('a');
@@ -395,7 +397,7 @@ describe('useChromeOSColumns', () => {
     );
     expect(acceptableUsbChip).toHaveClass('MuiChip-root');
     expect(acceptableUsbChip).toHaveStyle(
-      `background-color: ${colors.yellow[100]}`,
+      `background-color: ${toneColors.warning.container}`,
     );
 
     const normalUsbChip = screen.getByText('Normal').closest('a');
@@ -404,6 +406,8 @@ describe('useChromeOSColumns', () => {
       'http://goto.google.com/flops-swarming#normal-2',
     );
     expect(normalUsbChip).toHaveClass('MuiChip-root');
-    expect(normalUsbChip).toHaveStyle(`background-color: ${colors.green[100]}`);
+    expect(normalUsbChip).toHaveStyle(
+      `background-color: ${toneColors.success.container}`,
+    );
   });
 });

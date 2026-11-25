@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { colors, unknownStateColor } from '@/fleet/theme/colors';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 import { Chameleon_AudioBoxJackPlugger } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/chromeos/lab/chameleon.pb';
 import { State } from '@/proto/go.chromium.org/infra/unifiedfleet/api/v1/models/state.pb';
 
@@ -24,34 +24,34 @@ export const getStatusColor = (
     case State.STATE_SERVING:
     case 'STATE_DEPLOYED_TESTING':
     case State.STATE_DEPLOYED_TESTING:
-      return colors.green[100];
+      return toneColors.success.container;
     case 'STATE_NEEDS_MANUAL_REPAIR':
     case State.STATE_NEEDS_MANUAL_REPAIR:
-      return colors.red[100];
+      return toneColors.error.container;
     case 'STATE_NEEDS_REPAIR':
     case State.STATE_NEEDS_REPAIR:
     case 'STATE_NEEDS_RESET':
     case State.STATE_NEEDS_RESET:
     case 'STATE_REPAIR_FAILED':
     case State.STATE_REPAIR_FAILED:
-      return colors.orange[100];
+      return toneColors.caution.container;
     case 'STATE_REGISTERED':
     case State.STATE_REGISTERED:
     case 'STATE_DEPLOYING':
     case State.STATE_DEPLOYING:
     case 'STATE_DEPLOYED_PRE_SERVING':
     case State.STATE_DEPLOYED_PRE_SERVING:
-      return colors.yellow[100];
+      return toneColors.warning.container;
     case 'STATE_DISABLED':
     case State.STATE_DISABLED:
     case 'STATE_DECOMMISSIONED':
     case State.STATE_DECOMMISSIONED:
-      return colors.grey[300];
+      return toneColors.neutral.border;
     case 'STATE_RESERVED':
     case State.STATE_RESERVED:
-      return colors.purple[100];
+      return toneColors.special.container;
     default:
-      return unknownStateColor;
+      return fleetColors.unknownState;
   }
 };
 

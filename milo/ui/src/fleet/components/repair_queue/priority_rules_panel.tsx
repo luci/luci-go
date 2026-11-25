@@ -22,8 +22,7 @@ import {
   FilterCategory,
   FilterCategoryBuilder,
 } from '@/fleet/components/filters/use_filters';
-import { colors } from '@/fleet/theme/colors';
-import { fleetColors, radii } from '@/fleet/theme/tokens';
+import { fleetColors, radii, toneColors } from '@/fleet/theme/tokens';
 
 import {
   EditableRuleRow,
@@ -284,7 +283,7 @@ export const PriorityRulesPanel = ({
               sx={{
                 p: 2,
                 textAlign: 'center',
-                backgroundColor: colors.grey[50],
+                backgroundColor: toneColors.neutral.surface,
                 borderRadius: radii.sm,
                 border: `1px dashed ${fleetColors.border}`,
               }}

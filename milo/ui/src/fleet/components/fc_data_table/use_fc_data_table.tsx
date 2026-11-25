@@ -18,7 +18,14 @@ import {
   Clear,
   VisibilityOff,
 } from '@mui/icons-material';
-import { Divider, ListItemIcon, ListItemText, MenuItem } from '@mui/material';
+import {
+  Divider,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  Theme,
+  useTheme,
+} from '@mui/material';
 import _ from 'lodash';
 import {
   MRT_RowData,
@@ -28,6 +35,7 @@ import {
   type MRT_ColumnDef,
   useMaterialReactTable,
 } from 'material-react-table';
+import { useMemo } from 'react';
 
 import { MRT_INTERNAL_COLUMNS } from '@/fleet/components/columns/use_mrt_column_management';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
@@ -107,9 +115,11 @@ const DEFAULT_MUI_PAGINATION_PROPS = {
   },
 };
 
-const DEFAULT_MRT_THEME = {
-  baseBackgroundColor: fleetColors.surface,
-};
+// MRT runs alpha()/darken() on these, so they must be concrete colors from the
+// MUI palette, not `fleetColors` CSS vars.
+const getDefaultMrtTheme = (theme: Theme) => ({
+  baseBackgroundColor: theme.palette.background.paper,
+});
 
 const DEFAULT_MUI_TABLE_PAPER_PROPS = {
   variant: 'surface' as const,
@@ -173,7 +183,7 @@ const DEFAULT_MUI_TABLE_PROPS = {
 
 const DEFAULT_MUI_BOTTOM_TOOLBAR_PROPS = {
   sx: {
-    backgroundColor: fleetColors.canvas,
+    backgroundColor: fleetColors.controlSurface,
     borderTop: borders.default,
     boxShadow: 'none',
   },
@@ -225,6 +235,11 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
   },
 ): MRT_TableInstance<TData> => {
   const [settings, setSettings] = useSettings();
+  const muiTheme = useTheme();
+  const defaultMrtTheme = useMemo(
+    () => getDefaultMrtTheme(muiTheme),
+    [muiTheme],
+  );
 
   const defaultOptions: Partial<FC_TableOptions<TData, TValue>> = {
     enableKeyboardShortcuts: false, // Prevents stealing Arrow Keys from Dropdown Menus
@@ -261,7 +276,7 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
     },
 
     muiPaginationProps: DEFAULT_MUI_PAGINATION_PROPS,
-    mrtTheme: DEFAULT_MRT_THEME,
+    mrtTheme: defaultMrtTheme,
     muiTablePaperProps: DEFAULT_MUI_TABLE_PAPER_PROPS,
     muiTableHeadProps: DEFAULT_MUI_TABLE_HEAD_PROPS,
     muiTableHeadRowProps: DEFAULT_MUI_TABLE_HEAD_ROW_PROPS,
@@ -499,7 +514,7 @@ export const useFCDataTable = <TData extends MRT_RowData, TValue = unknown>(
       DEFAULT_MUI_PAGINATION_PROPS,
       restTableOptions.muiPaginationProps,
     ),
-    mrtTheme: mergeDefaultProp(DEFAULT_MRT_THEME, restTableOptions.mrtTheme),
+    mrtTheme: mergeDefaultProp(defaultMrtTheme, restTableOptions.mrtTheme),
     muiTablePaperProps: mergeDefaultProp(
       DEFAULT_MUI_TABLE_PAPER_PROPS,
       restTableOptions.muiTablePaperProps,

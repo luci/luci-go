@@ -41,8 +41,7 @@ import { ORDER_BY_PARAM_KEY } from '@/fleet/hooks/order_by';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { AndroidRepairDashboard } from '@/fleet/pages/android/repair_queue';
-import { colors } from '@/fleet/theme/colors';
-import { radii } from '@/fleet/theme/tokens';
+import { radii, toneColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import {
   combineAipFilters,
@@ -210,7 +209,7 @@ function Metrics({
             display: 'flex',
             flexDirection: 'column',
             flexGrow: 1,
-            borderRight: `1px solid ${colors.grey[300]}`,
+            borderRight: `1px solid ${toneColors.neutral.border}`,
             marginRight: 15,
             paddingRight: 15,
           }}
@@ -234,7 +233,7 @@ function Metrics({
               name="Distinct Hosts Offline"
               value={countQuery.data?.offlineHosts}
               total={countQuery.data?.totalHosts}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
+              Icon={<ErrorIcon sx={{ color: toneColors.error.main }} />}
               loading={countQuery.isPending}
               filterUrl={generateFilterURL({
                 fc_machine_type: ['host'],
@@ -250,7 +249,7 @@ function Metrics({
             display: 'flex',
             flexDirection: 'column',
             flexGrow: 2,
-            borderRight: `1px solid ${colors.grey[300]}`,
+            borderRight: `1px solid ${toneColors.neutral.border}`,
             marginRight: 15,
             paddingRight: 15,
           }}
@@ -275,7 +274,7 @@ function Metrics({
               name="In Service"
               value={countQuery.data?.inServiceDevices}
               total={countQuery.data?.totalDevices}
-              Icon={<DoneIcon sx={{ color: colors.green[600] }} />}
+              Icon={<DoneIcon sx={{ color: toneColors.success.main }} />}
               loading={countQuery.isPending}
               filterUrl={generateFilterURL({
                 fc_machine_type: ['device'],
@@ -293,7 +292,7 @@ function Metrics({
               name="Need Manual Repair"
               value={countQuery.data?.needManualRepairDevices}
               total={countQuery.data?.totalDevices}
-              Icon={<ErrorIcon sx={{ color: colors.red[600] }} />}
+              Icon={<ErrorIcon sx={{ color: toneColors.error.main }} />}
               loading={countQuery.isPending}
               filterUrl={generateFilterURL({
                 fc_machine_type: ['device'],
@@ -310,7 +309,11 @@ function Metrics({
               name="In Automated Maintenance"
               value={countQuery.data?.inAutomatedMaintenanceDevices}
               total={countQuery.data?.totalDevices}
-              Icon={<WarningIcon sx={{ color: colors.yellow[900] }} />}
+              Icon={
+                <WarningIcon
+                  sx={{ color: toneColors.warning.onContainerStrong }}
+                />
+              }
               loading={countQuery.isPending}
               filterUrl={generateFilterURL({
                 fc_machine_type: ['device'],

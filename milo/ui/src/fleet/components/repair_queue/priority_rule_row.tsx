@@ -206,7 +206,7 @@ export const PriorityRuleRow = ({
             },
             '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline':
               {
-                borderColor: 'rgba(0, 0, 0, 0.23)',
+                borderColor: fleetColors.border,
               },
           }),
         }}

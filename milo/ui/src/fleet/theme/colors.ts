@@ -153,13 +153,14 @@ export const yellowA = {
   700: 'hsl(50, 100%, 50%)',
 };
 
-export const unknownStateColor = 'hsl(165, 70%, 80%)';
+export const rawUnknownStateColor = 'hsl(165, 70%, 80%)';
 
-export const transparent = 'hsla(0, 100%, 50%, 0)';
-
-export const colors = {
-  black,
-  white,
+/**
+ * Raw light-theme Material hue scales. Theme internals only: `palettes.ts`
+ * builds the light `toneColors` from them. Components must use the tokens in
+ * `tokens.ts` (`toneColors`, `fleetColors`, ...) so colors follow the theme.
+ */
+export const legacyScales = {
   blue,
   red,
   yellow,
@@ -169,5 +170,4 @@ export const colors = {
   grey,
   cyan,
   green,
-  transparent,
 } as const;

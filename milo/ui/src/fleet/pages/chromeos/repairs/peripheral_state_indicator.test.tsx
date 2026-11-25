@@ -15,7 +15,7 @@
 import WifiIcon from '@mui/icons-material/Wifi';
 import { render, screen } from '@testing-library/react';
 
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 import { PeripheralState } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc/chromeos.pb';
 
 import {
@@ -43,7 +43,7 @@ describe('SinglePeripheralIcon', () => {
     );
     const indicator = screen.getByTestId('wifi-indicator');
     expect(indicator).toBeInTheDocument();
-    expect(indicator).toHaveStyle({ color: colors.green[500] });
+    expect(indicator).toHaveStyle({ color: toneColors.success.accent });
     expect(screen.getByLabelText('Wi-Fi: OK')).toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe('SinglePeripheralIcon', () => {
     );
     const indicator = screen.getByTestId('bt-indicator');
     expect(indicator).toBeInTheDocument();
-    expect(indicator).toHaveStyle({ color: colors.red[600] });
+    expect(indicator).toHaveStyle({ color: toneColors.error.main });
     expect(screen.getByLabelText('Bluetooth: BROKEN')).toBeInTheDocument();
   });
 
@@ -73,7 +73,7 @@ describe('SinglePeripheralIcon', () => {
     );
     const indicator = screen.getByTestId('servo-indicator');
     expect(indicator).toBeInTheDocument();
-    expect(indicator).toHaveStyle({ color: colors.orange[600] });
+    expect(indicator).toHaveStyle({ color: toneColors.caution.main });
     expect(screen.getByLabelText('Servo: MISSING')).toBeInTheDocument();
   });
 

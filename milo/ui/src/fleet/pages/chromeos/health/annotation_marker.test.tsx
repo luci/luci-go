@@ -15,7 +15,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { DateTime } from 'luxon';
 
-import { colors } from '@/fleet/theme/colors';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 
 import { AnnotationMarker } from './annotation_marker';
 import {
@@ -84,7 +84,7 @@ describe('AnnotationMarker', () => {
     expect(line).toHaveAttribute('y1', '350');
     expect(line).toHaveAttribute('x2', '200');
     expect(line).toHaveAttribute('y2', '50');
-    expect(line).toHaveAttribute('stroke', colors.grey[400]);
+    expect(line).toHaveAttribute('stroke', toneColors.neutral.borderStrong);
     expect(line).toHaveAttribute('stroke-dasharray', '4 4');
 
     const hitArea = screen.getByTestId('trendline-annotation-hit-area');
@@ -110,22 +110,22 @@ describe('AnnotationMarker', () => {
     const line = screen.getByTestId('trendline-annotation-line');
     const badge = screen.getByTestId('trendline-annotation-badge');
 
-    expect(line).toHaveAttribute('stroke', colors.grey[400]);
-    expect(badge).toHaveAttribute('fill', colors.white);
+    expect(line).toHaveAttribute('stroke', toneColors.neutral.borderStrong);
+    expect(badge).toHaveAttribute('fill', fleetColors.surface);
 
     act(() => {
       fireEvent.mouseEnter(markerGroup);
     });
 
-    expect(line).toHaveAttribute('stroke', colors.grey[500]);
-    expect(badge).toHaveAttribute('fill', colors.grey[500]);
+    expect(line).toHaveAttribute('stroke', toneColors.neutral.accent);
+    expect(badge).toHaveAttribute('fill', toneColors.neutral.accent);
 
     act(() => {
       fireEvent.mouseLeave(markerGroup);
     });
 
-    expect(line).toHaveAttribute('stroke', colors.grey[400]);
-    expect(badge).toHaveAttribute('fill', colors.white);
+    expect(line).toHaveAttribute('stroke', toneColors.neutral.borderStrong);
+    expect(badge).toHaveAttribute('fill', fleetColors.surface);
   });
 
   it('renders circular focus ring when keyboard focused', () => {
@@ -146,7 +146,7 @@ describe('AnnotationMarker', () => {
     circles = container.querySelectorAll('circle');
     expect(circles.length).toBe(2);
     const focusRing = circles[0];
-    expect(focusRing).toHaveAttribute('stroke', colors.grey[500]);
+    expect(focusRing).toHaveAttribute('stroke', toneColors.neutral.accent);
     expect(focusRing).toHaveAttribute('fill', 'none');
 
     act(() => {

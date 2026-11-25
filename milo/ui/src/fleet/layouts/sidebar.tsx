@@ -26,7 +26,8 @@ import Toolbar from '@mui/material/Toolbar';
 import { Fragment, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 
-import { colors } from '@/fleet/theme/colors';
+import { shellBackdropSx } from '@/fleet/theme/recipes';
+import { fleetColors } from '@/fleet/theme/tokens';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { useCurrentPlatform } from '../hooks/usePlatform';
@@ -66,12 +67,18 @@ export const Sidebar = ({ open }: { open: boolean }) => {
       sx={{
         position: 'relative',
         height: '100%',
-        '& .MuiDrawer-paper': {
+        // Double-ampersand ensures `shellBackdropSx` applies uniformly behind
+        // every nav row inside the MUI Drawer paper.
+        '&& .MuiDrawer-paper': {
           width: DRAWER_WIDTH,
           boxSizing: 'border-box',
           height: 'min(100vh, 100%)',
           position: 'sticky',
           top: '0px',
+          ...shellBackdropSx,
+        },
+        '& .MuiListSubheader-root': {
+          ...shellBackdropSx,
         },
       }}
       variant="persistent"
@@ -97,16 +104,16 @@ export const Sidebar = ({ open }: { open: boolean }) => {
                     px: 1.5,
                     borderRadius: '20px',
                     '&.Mui-selected': {
-                      backgroundColor: colors.blue[50],
-                      color: colors.blue[800],
+                      backgroundColor: fleetColors.navSelected,
+                      color: fleetColors.onNavSelected,
                       '& .MuiListItemIcon-root': {
-                        color: colors.blue[800],
+                        color: fleetColors.onNavSelected,
                       },
                       '& .MuiListItemText-primary': {
                         fontWeight: 500,
                       },
                       '&:hover': {
-                        backgroundColor: colors.blue[100],
+                        backgroundColor: fleetColors.navSelectedHover,
                       },
                     },
                   }}

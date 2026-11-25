@@ -320,7 +320,7 @@ export default function AutorepairDialog({
                     View in Milo
                   </a>
                 ) : (
-                  <span style={{ color: 'red' }}>
+                  <span style={{ color: statusTones.error.fg }}>
                     Failed to schedule autorepair: {result.errorMessage}
                   </span>
                 )}

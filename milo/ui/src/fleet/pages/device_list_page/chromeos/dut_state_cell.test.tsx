@@ -15,7 +15,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import { SettingsProvider } from '@/fleet/context/providers';
-import { colors } from '@/fleet/theme/colors';
+import { toneColors, transparent } from '@/fleet/theme/tokens';
 import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider';
 
 import {
@@ -192,40 +192,66 @@ describe('DutStateCell', () => {
   });
 
   test('should use orange for automated REPAIR_FAILED and red for NEEDS_MANUAL_REPAIR', () => {
-    expect(getStatusColor(dutState.REPAIR_FAILED)).toBe(colors.orange[100]);
-    expect(getStatusColor(dutState.NEEDS_REPAIR)).toBe(colors.orange[100]);
-    expect(getStatusColor(dutState.NEEDS_MANUAL_REPAIR)).toBe(colors.red[100]);
+    expect(getStatusColor(dutState.REPAIR_FAILED)).toBe(
+      toneColors.caution.container,
+    );
+    expect(getStatusColor(dutState.NEEDS_REPAIR)).toBe(
+      toneColors.caution.container,
+    );
+    expect(getStatusColor(dutState.NEEDS_MANUAL_REPAIR)).toBe(
+      toneColors.error.container,
+    );
   });
 
   test('should map Servo State values to semantic chip colors across healthy, neutral, and broken states', () => {
-    expect(getServoStateColor('WORKING')).toBe(colors.green[100]);
-    expect(getServoStateColor('working')).toBe(colors.green[100]);
-    expect(getServoStateColor('OK')).toBe(colors.green[100]);
-    expect(getServoStateColor('BROKEN')).toBe(colors.red[100]);
-    expect(getServoStateColor('NEED_REPLACEMENT')).toBe(colors.red[100]);
-    expect(getServoStateColor('NO_SSH')).toBe(colors.red[100]);
-    expect(getServoStateColor('NOT_CONNECTED')).toBe(colors.red[100]);
-    expect(getServoStateColor('SERVOD_ISSUE')).toBe(colors.red[100]);
-    expect(getServoStateColor('CCD_TESTLAB_ISSUE')).toBe(colors.red[100]);
-    expect(getServoStateColor('CR50_CONSOLE_MISSING')).toBe(colors.red[100]);
-    expect(getServoStateColor('SBU_LOW_VOLTAGE')).toBe(colors.red[100]);
-    expect(getServoStateColor('DUT_NOT_CONNECTED')).toBe(colors.red[100]);
-    expect(getServoStateColor('NOT_APPLICABLE')).toBe(colors.transparent);
-    expect(getServoStateColor('UNKNOWN')).toBe(colors.transparent);
-    expect(getServoStateColor('')).toBe(colors.transparent);
+    expect(getServoStateColor('WORKING')).toBe(toneColors.success.container);
+    expect(getServoStateColor('working')).toBe(toneColors.success.container);
+    expect(getServoStateColor('OK')).toBe(toneColors.success.container);
+    expect(getServoStateColor('BROKEN')).toBe(toneColors.error.container);
+    expect(getServoStateColor('NEED_REPLACEMENT')).toBe(
+      toneColors.error.container,
+    );
+    expect(getServoStateColor('NO_SSH')).toBe(toneColors.error.container);
+    expect(getServoStateColor('NOT_CONNECTED')).toBe(
+      toneColors.error.container,
+    );
+    expect(getServoStateColor('SERVOD_ISSUE')).toBe(toneColors.error.container);
+    expect(getServoStateColor('CCD_TESTLAB_ISSUE')).toBe(
+      toneColors.error.container,
+    );
+    expect(getServoStateColor('CR50_CONSOLE_MISSING')).toBe(
+      toneColors.error.container,
+    );
+    expect(getServoStateColor('SBU_LOW_VOLTAGE')).toBe(
+      toneColors.error.container,
+    );
+    expect(getServoStateColor('DUT_NOT_CONNECTED')).toBe(
+      toneColors.error.container,
+    );
+    expect(getServoStateColor('NOT_APPLICABLE')).toBe(transparent);
+    expect(getServoStateColor('UNKNOWN')).toBe(transparent);
+    expect(getServoStateColor('')).toBe(transparent);
   });
 
   test('should map Servo USB State values to semantic chip colors across healthy, degraded, neutral, and broken states', () => {
-    expect(getServoUsbStateColor('NORMAL')).toBe(colors.green[100]);
-    expect(getServoUsbStateColor('HARDWARE_NORMAL')).toBe(colors.green[100]);
-    expect(getServoUsbStateColor('ACCEPTABLE')).toBe(colors.yellow[100]);
-    expect(getServoUsbStateColor('HARDWARE_ACCEPTABLE')).toBe(
-      colors.yellow[100],
+    expect(getServoUsbStateColor('NORMAL')).toBe(toneColors.success.container);
+    expect(getServoUsbStateColor('HARDWARE_NORMAL')).toBe(
+      toneColors.success.container,
     );
-    expect(getServoUsbStateColor('NOT_DETECTED')).toBe(colors.red[100]);
-    expect(getServoUsbStateColor('NEED_REPLACEMENT')).toBe(colors.red[100]);
-    expect(getServoUsbStateColor('NOT_APPLICABLE')).toBe(colors.transparent);
-    expect(getServoUsbStateColor('UNKNOWN')).toBe(colors.transparent);
-    expect(getServoUsbStateColor('')).toBe(colors.transparent);
+    expect(getServoUsbStateColor('ACCEPTABLE')).toBe(
+      toneColors.warning.container,
+    );
+    expect(getServoUsbStateColor('HARDWARE_ACCEPTABLE')).toBe(
+      toneColors.warning.container,
+    );
+    expect(getServoUsbStateColor('NOT_DETECTED')).toBe(
+      toneColors.error.container,
+    );
+    expect(getServoUsbStateColor('NEED_REPLACEMENT')).toBe(
+      toneColors.error.container,
+    );
+    expect(getServoUsbStateColor('NOT_APPLICABLE')).toBe(transparent);
+    expect(getServoUsbStateColor('UNKNOWN')).toBe(transparent);
+    expect(getServoUsbStateColor('')).toBe(transparent);
   });
 });

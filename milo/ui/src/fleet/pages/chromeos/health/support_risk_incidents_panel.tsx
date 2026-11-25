@@ -26,6 +26,8 @@ import {
   Typography,
 } from '@mui/material';
 
+import { elevations, fleetColors } from '@/fleet/theme/tokens';
+
 import { useSupportRiskIncidents } from './use_support_risk_incidents';
 
 export interface SupportRiskIncidentsPanelProps {
@@ -50,8 +52,8 @@ export const SupportRiskIncidentsPanel = ({
         maxHeight: { xs: 420, lg: 'none' },
         boxSizing: 'border-box',
         borderRadius: 2,
-        bgcolor: '#ffffff',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        bgcolor: fleetColors.surface,
+        boxShadow: elevations.card,
       }}
     >
       <CardHeader

@@ -15,6 +15,8 @@
 import { Add } from '@mui/icons-material';
 import { ButtonBase, Typography } from '@mui/material';
 
+import { elevations, fleetColors } from '@/fleet/theme/tokens';
+
 export interface AddSliceCardProps {
   readonly isDragOver?: boolean;
   readonly onClick: () => void;
@@ -45,9 +47,9 @@ export const AddSliceCard = ({
       borderRadius: 2,
       border: '1px dashed',
       borderColor: isDragOver ? 'primary.main' : 'divider',
-      outline: isDragOver ? '2px dashed #1976d2' : 'none',
+      outline: isDragOver ? `2px dashed ${fleetColors.primary}` : 'none',
       outlineOffset: isDragOver ? '2px' : 0,
-      bgcolor: isDragOver ? 'rgba(25, 118, 210, 0.08)' : 'background.paper',
+      bgcolor: isDragOver ? fleetColors.primaryContainer : 'background.paper',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -62,7 +64,7 @@ export const AddSliceCard = ({
       '&:hover': {
         bgcolor: 'action.hover',
         borderColor: 'primary.main',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+        boxShadow: elevations.card,
         '& .add-icon': {
           color: 'primary.main',
         },

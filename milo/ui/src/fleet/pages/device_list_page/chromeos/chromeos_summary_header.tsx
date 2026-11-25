@@ -31,8 +31,7 @@ import { MetricsContainer } from '@/fleet/constants/css_snippets';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { getMetricsGridStyles } from '@/fleet/constants/styles';
 import { useFleetConsoleClient } from '@/fleet/hooks/prpc_clients';
-import { colors as legacyColors } from '@/fleet/theme/colors';
-import { fleetColors } from '@/fleet/theme/tokens';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { parseChromeosDeviceMetrics } from '@/fleet/utils/metrics';
 import { combineAipFilters, formatAipClause } from '@/fleet/utils/search_param';
@@ -133,8 +132,8 @@ export function ChromeOSSummaryHeader({
     success: theme.palette.success.main,
     error: theme.palette.error.main,
     warning: theme.palette.warning.main,
-    grey: theme.palette.grey[400],
-    reserved: legacyColors.purple[400],
+    grey: toneColors.neutral.accent,
+    reserved: toneColors.special.borderStrong,
   };
 
   const getContent = () => {

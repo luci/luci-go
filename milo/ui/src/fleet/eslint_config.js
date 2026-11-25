@@ -26,6 +26,20 @@ export default [
       'fcon-rules/no-window-location-hostname': 'error',
       'fcon-rules/require-create-fleet-feature-flag': 'error',
       'fcon-rules/no-legacy-imports': 'error',
+      'fcon-rules/no-hardcoded-colors': 'error',
+    },
+  },
+  {
+    files: [
+      'theme/**',
+      'testing_tools/**',
+      '**/*.test.{ts,tsx}',
+      '**/*.stories.{ts,tsx}',
+      '**/mocks/**',
+      '**/mock/**',
+    ],
+    rules: {
+      'fcon-rules/no-hardcoded-colors': 'off',
     },
   },
   {

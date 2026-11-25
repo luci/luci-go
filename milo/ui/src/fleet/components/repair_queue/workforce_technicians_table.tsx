@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import { ReactNode, useState } from 'react';
 
-import { colors } from '@/fleet/theme/colors';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 
 import { UserAvatar } from './user_avatar';
 import {
@@ -173,8 +173,8 @@ export const WorkforceTechniciansTable = ({
               <Chip
                 label={`#${tech.avgQueuePickupRank}`}
                 sx={{
-                  bgcolor: colors.green[700],
-                  color: colors.white,
+                  bgcolor: toneColors.success.mainStrong,
+                  color: fleetColors.surface,
                   fontWeight: 700,
                   height: 28,
                   fontSize: '0.875rem',
@@ -258,10 +258,13 @@ export const WorkforceTechniciansTable = ({
     <TableContainer
       component={Paper}
       elevation={0}
-      sx={{ border: `1px solid ${colors.grey[300]}`, borderRadius: '8px' }}
+      sx={{
+        border: `1px solid ${toneColors.neutral.border}`,
+        borderRadius: '8px',
+      }}
     >
       <Table>
-        <TableHead sx={{ bgcolor: colors.grey[50] }}>
+        <TableHead sx={{ bgcolor: toneColors.neutral.surface }}>
           <TableRow>
             {columns.map((col) => (
               <TableCell

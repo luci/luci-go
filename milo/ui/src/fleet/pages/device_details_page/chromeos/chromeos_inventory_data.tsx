@@ -28,6 +28,7 @@ import {
   useFleetConsoleClient,
 } from '@/fleet/hooks/prpc_clients';
 import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
+import { borders } from '@/fleet/theme/tokens';
 import { extractDutLabel } from '@/fleet/utils/devices';
 import { getErrorMessage } from '@/fleet/utils/errors';
 import { CodeMirrorEditor } from '@/generic_libs/components/code_mirror_editor';
@@ -356,7 +357,7 @@ export const ChromeOSInventoryData = ({
           {viewMode === 'json' && (
             <Box
               sx={{
-                border: '1px solid #ddd',
+                border: borders.default,
                 borderRadius: 1,
                 overflow: 'hidden',
               }}

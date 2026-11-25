@@ -29,6 +29,7 @@ import {
 } from '@mui/material';
 
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
+import { statusTones } from '@/fleet/theme/tokens';
 import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
 import { isPartnerNamespace } from '@/fleet/utils/devices';
 import { ScheduleDeployResult } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
@@ -210,7 +211,7 @@ export default function DeployDialog({
                     View in Milo
                   </a>
                 ) : (
-                  <span style={{ color: 'red' }}>
+                  <span style={{ color: statusTones.error.fg }}>
                     Failed to schedule deploy: {result.errorMessage}
                   </span>
                 )}

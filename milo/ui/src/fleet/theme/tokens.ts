@@ -25,6 +25,19 @@
  *   use it) instead of inlining a near-duplicate.
  */
 
+import { cssVar } from './color_math';
+import {
+  cssVarNames,
+  FleetColorRole,
+  HealthStateColors,
+  lightPalette,
+  StatusTone,
+  StatusToneColors,
+  ToneName,
+  ToneRole,
+  ToneRoles,
+} from './palettes';
+
 /**
  * Corner radius scale. Only three steps, on purpose.
  */
@@ -39,43 +52,18 @@ export const radii = {
 
 /**
  * Semantic color roles, aligned with Google Material 3.
+ *
+ * Each value is a CSS `var()` that follows the active Fleet theme (light or
+ * dark in `palettes.ts`) and falls back to the light value. Use them anywhere CSS accepts a color. Never pass them to MUI's `alpha()`,
+ * `darken()`, or `lighten()`: read `theme.palette` for computed colors instead.
+ * See `palettes.ts` (`FleetColorRoles`) for what each role is for.
  */
-export const fleetColors = {
-  /** Page background behind cards. */
-  canvas: '#f8fafd',
-  /** Card, table, and header surface. */
-  surface: '#ffffff',
-  /** Subtle tonal fill: table headers, row hover, nested panels. */
-  surfaceTonal: '#f3f6fc',
-
-  /** Default 1px border for cards, tables, inputs (GM3 outlineVariant). */
-  border: '#dadce0',
-  /** Hairline divider between table rows and list items (High contrast). */
-  divider: '#e0e2ec',
-  /** Emphasized border for table headers and active boundaries. */
-  borderEmphasis: '#c4c7c5',
-  /** Border of primary-tinted outlined controls. */
-  borderPrimary: '#c2d7f8',
-  /** Border of any outlined control on hover. */
-  borderHover: '#8ab4f8',
-
-  primary: '#0b57d0',
-  primaryHover: '#0842a0',
-  /** Fill for selected/active tonal elements (filter chips, active tabs). */
-  primaryContainer: '#e8f0fe',
-  primaryContainerHover: '#d2e3fc',
-
-  textPrimary: '#1f1f1f',
-  textSecondary: '#444746',
-  textTertiary: '#5f6368',
-
-  /** GM3 media overlay scrim (`inverseSurface` at 76% opacity) for floating controls over photos. */
-  scrim: 'rgba(31, 31, 31, 0.76)',
-  /** Foreground text and icons on `scrim` (`inverseOnSurface`). */
-  onScrim: '#ffffff',
-  /** Hover state layer (`inverseOnSurface` at 14% opacity) inside `scrim` controls. */
-  scrimHover: 'rgba(255, 255, 255, 0.14)',
-} as const;
+export const fleetColors = Object.fromEntries(
+  (Object.keys(lightPalette.colors) as FleetColorRole[]).map((role) => [
+    role,
+    cssVar(cssVarNames.color(role), lightPalette.colors[role]),
+  ]),
+) as Readonly<Record<FleetColorRole, string>>;
 
 export const borders = {
   default: `1px solid ${fleetColors.border}`,
@@ -85,9 +73,9 @@ export const borders = {
 
 export const elevations = {
   /** Resting card. Barely visible; the border does most of the work. */
-  card: '0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02)',
+  card: cssVar(cssVarNames.elevation('card'), lightPalette.elevations.card),
   /** Inputs that sit directly on the canvas. */
-  input: '0 1px 2px rgba(15, 23, 42, 0.03)',
+  input: cssVar(cssVarNames.elevation('input'), lightPalette.elevations.input),
 } as const;
 
 export const fontFamilies = {
@@ -141,59 +129,68 @@ export const iconSizes = {
 
 /**
  * Semantic status tones for `<StatusPill>` and any colored state indicator.
- * Each tone has an accessible foreground on its tinted background.
+ * Each tone has an accessible foreground on its tinted background (`fg`, `bg`,
+ * `dot`).
  */
-export type StatusTone =
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'info'
-  | 'neutral'
-  | 'special';
+export type { StatusTone, ToneName, ToneRole };
 
-export const statusTones: Record<
-  StatusTone,
-  { fg: string; bg: string; dot: string }
-> = {
-  success: { fg: '#137333', bg: '#e6f4ea', dot: '#1e8e3e' },
-  warning: { fg: '#9e5400', bg: '#fef7e0', dot: '#f9ab00' },
-  error: { fg: '#c5221f', bg: '#fce8e6', dot: '#d93025' },
-  info: {
-    fg: fleetColors.primary,
-    bg: fleetColors.primaryContainer,
-    dot: '#1a73e8',
-  },
-  neutral: { fg: fleetColors.textSecondary, bg: '#f1f3f4', dot: '#80868b' },
-  special: { fg: '#681da8', bg: '#f3e8fd', dot: '#9334e6' },
-};
+export const statusTones = Object.fromEntries(
+  (Object.keys(lightPalette.status) as StatusTone[]).map((tone) => {
+    const light = lightPalette.status[tone];
+    const part = (key: keyof StatusToneColors) =>
+      cssVar(cssVarNames.status(tone, key), light[key]);
+    return [tone, { fg: part('fg'), bg: part('bg'), dot: part('dot') }];
+  }),
+) as Readonly<Record<StatusTone, StatusToneColors>>;
 
 /**
  * Spectrum color tokens for ChromeOS Fleet Health state breakdown and continuous progress bar.
  * Harmonious spectrum representing:
- * - Operable capacity (green spectrum):
- *   - reserved: dark green (#1b5e20)
- *   - ready: medium green (#43a047)
- *   - needsRepair: light green (#81c784)
- *   - repairFailed: light green (#81c784)
- * - Action required / broken (red spectrum):
- *   - needsDeploy: red (#d32f2f)
- *   - needsManualRepair: red (#d32f2f)
- *   - needsReplacement: red (#d32f2f)
- * - Administrative / inventory (grey spectrum):
- *   - registered: grey (#757575)
- *   - unknown: grey (#9e9e9e)
+ * - Operable capacity (green spectrum): reserved (darkest) > ready > needsRepair/repairFailed.
+ * - Action required / broken (red spectrum): needsDeploy, needsManualRepair, needsReplacement.
+ * - Administrative / inventory (grey spectrum): registered, unknown.
+ * Light values live in `palettes.ts`; dark themes lift lightness.
  */
-export const healthStateColors = {
-  reserved: '#1b5e20',
-  ready: '#43a047',
-  needsRepair: '#81c784',
-  repairFailed: '#81c784',
-  needsDeploy: '#d32f2f',
-  needsManualRepair: '#d32f2f',
-  needsReplacement: '#d32f2f',
-  registered: '#757575',
-  unknown: '#9e9e9e',
-  macroHealthy: '#2e7d32',
-  macroActionRequired: '#d32f2f',
-  macroAdministrative: '#757575',
+export const healthStateColors = Object.fromEntries(
+  (Object.keys(lightPalette.health) as (keyof HealthStateColors)[]).map(
+    (key) => [key, cssVar(cssVarNames.health(key), lightPalette.health[key])],
+  ),
+) as Readonly<Record<keyof HealthStateColors, string>>;
+
+/**
+ * Color families for chips, indicators and chart series, e.g.
+ * `toneColors.success.container` (chip fill) with
+ * `toneColors.success.onContainer` (chip text), or `toneColors.info.accent`
+ * (chart series). Prefer `statusTones` / `<StatusPill>` for task and device
+ * states; use tones when you need more steps or a decorative hue. See
+ * `ToneRoles` in `palettes.ts` for what each role is for.
+ */
+export const toneColors = Object.fromEntries(
+  (Object.keys(lightPalette.tones) as ToneName[]).map((tone) => {
+    const light = lightPalette.tones[tone];
+    return [
+      tone,
+      Object.fromEntries(
+        (Object.keys(light) as ToneRole[]).map((role) => [
+          role,
+          cssVar(cssVarNames.tone(tone, role), light[role]),
+        ]),
+      ),
+    ];
+  }),
+) as Readonly<Record<ToneName, Readonly<ToneRoles>>>;
+
+/**
+ * Non-inverting user avatar circle fills and monogram initial color.
+ * Avatars stay saturated with white initials in both light and dark themes
+ * (matching Google Account avatars) instead of inverting to pastel fills.
+ */
+export const avatarColors = {
+  fills: lightPalette.avatar.fills.map((value, index) =>
+    cssVar(cssVarNames.avatarFill(index), value),
+  ) as readonly string[],
+  onFill: cssVar(cssVarNames.avatarOnFill, lightPalette.avatar.onFill),
 } as const;
+
+/** A fully transparent color (e.g. "no chip fill"). */
+export const transparent = 'transparent';

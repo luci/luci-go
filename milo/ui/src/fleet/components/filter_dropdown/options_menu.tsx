@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, Button, Checkbox, colors, MenuItem } from '@mui/material';
+import { Box, Button, Checkbox, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import React, {
   useRef,
@@ -22,6 +22,7 @@ import React, {
 } from 'react';
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
+import { fleetColors } from '@/fleet/theme/tokens';
 import { OptionValue } from '@/fleet/types/option';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
 
@@ -194,13 +195,13 @@ export const OptionsMenu = forwardRef<OptionsMenuHandle, OptionsMenuProps>(
                     padding: '6px 12px',
                     ...(item.el.label === BLANK_VALUE && {
                       fontStyle: 'italic',
-                      color: colors.grey[700],
+                      color: fleetColors.textMuted,
                     }),
                     ...(item.el.inScope === false && {
-                      color: colors.grey[500],
+                      color: fleetColors.textDisabled,
                     }),
                     ...(item.el.isSignificant === false && {
-                      color: colors.grey[500],
+                      color: fleetColors.textDisabled,
                     }),
                     ...(isKeyboardNav && {
                       '&:hover:not(:focus):not(.Mui-focusVisible)': {

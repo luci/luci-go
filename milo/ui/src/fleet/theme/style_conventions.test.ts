@@ -19,15 +19,18 @@ import * as path from 'path';
  * Ratchet on raw style literals in Fleet Console components.
  *
  * All colors, radii, and shadows must come from `src/fleet/theme/` (see
- * theme/README.md). Legacy code still has some literals; these baselines stop
- * the count from growing. When you remove literals, LOWER the baseline. Never
- * raise it: use a token, recipe, or theme variant instead.
+ * theme/README.md). The zeroed color baselines serve as a fast regex backstop
+ * alongside the compile-time `fcon-rules/no-hardcoded-colors` ESLint rule.
+ * When you remove legacy `radius` literals, LOWER the baseline. Never raise it.
  */
 const BASELINE = {
-  rgba: 28,
+  rgba: 0,
   radius: 48,
-  hex: 12,
-  shadow: 5,
+  hex: 0,
+  shadow: 0,
+  hsl: 0,
+  namedColor: 0,
+  muiGrey: 0,
 };
 
 const FLEET_ROOT = path.resolve(__dirname, '..');
@@ -51,6 +54,13 @@ const PATTERNS: Record<keyof typeof BASELINE, RegExp> = {
   rgba: /rgba?\(\s*\d/gi,
   // boxShadow: '0 1px 2px ...' (theme shadow indexes like boxShadow: 1 are fine).
   shadow: /box-?shadow:\s*['"`](?!none|inherit|unset|initial)[^'"`]*\d+px/gi,
+  // hsl(217, 89%, 61%): use toneColors / fleetColors.
+  hsl: /hsla?\(\s*\d/gi,
+  // color: 'white', bgcolor: 'black', fill="red" ...: use fleetColors.
+  namedColor:
+    /\b(?:color|backgroundColor|background|bgcolor|borderColor|fill|stroke)[:=]\s*\{?\s*['"](?:white|black|red|green|blue|gr[ae]y|orange|yellow|purple|pink)['"]/gi,
+  // theme.palette.grey[400] or sx 'grey.200': MUI greys don't follow the theme.
+  muiGrey: /palette\.grey\[|['"]grey\.\d+['"]/g,
 };
 
 function listSourceFiles(dir: string): string[] {
@@ -62,13 +72,12 @@ function listSourceFiles(dir: string): string[] {
 }
 
 function countLiterals() {
-  const counts = { radius: 0, hex: 0, shadow: 0, rgba: 0 };
-  const offenders: Record<keyof typeof BASELINE, string[]> = {
-    radius: [],
-    hex: [],
-    shadow: [],
-    rgba: [],
-  };
+  const counts = Object.fromEntries(
+    Object.keys(BASELINE).map((k) => [k, 0]),
+  ) as Record<keyof typeof BASELINE, number>;
+  const offenders = Object.fromEntries(
+    Object.keys(BASELINE).map((k) => [k, [] as string[]]),
+  ) as Record<keyof typeof BASELINE, string[]>;
   for (const file of listSourceFiles(FLEET_ROOT)) {
     const rel = path.relative(FLEET_ROOT, file).split(path.sep).join('/');
     if (EXEMPT.some((re) => re.test(rel))) continue;
@@ -111,5 +120,53 @@ describe('Fleet styling conventions', () => {
       }
       expect(counts[key]).toBe(BASELINE[key]);
     }
+  });
+});
+
+/**
+ * Light/dark switching lives only in src/fleet/theme. Components consume
+ * theme-aware tokens and never branch on the active theme or reach for
+ * static color scales. These are hard failures, not a ratchet.
+ */
+const THEME_LOGIC_ALLOWED = [/^theme\//, /\.test\.tsx?$/, /^\.agents\//];
+
+const FORBIDDEN_THEME_LOGIC: Record<string, RegExp> = {
+  'raw hue scales (use toneColors/fleetColors from @/fleet/theme/tokens)':
+    /from ['"](?:@\/fleet\/theme|\.\.?(?:\/\.\.)*)\/colors['"]/,
+  'static MUI colors (use theme tokens)':
+    /from ['"]@mui\/material\/colors['"]|import\s+\{[^}]*\bcolors\b[^}]*\}\s+from\s+['"]@mui\/material['"]/,
+  'theme branching (palette.mode / isDark / color-scheme)':
+    /palette\.mode|\bisDark\b|prefers-color-scheme|useColorScheme|data-fleet-theme/,
+};
+
+/** Files that may read the theme choice (the theme picker). */
+const THEME_CHOICE_ALLOWED = [/^layouts\/settings_menu\.tsx$/];
+
+describe('Fleet theme boundary', () => {
+  const files = listSourceFiles(FLEET_ROOT)
+    .map((file) => ({
+      file,
+      rel: path.relative(FLEET_ROOT, file).split(path.sep).join('/'),
+    }))
+    .filter(({ rel }) => !THEME_LOGIC_ALLOWED.some((re) => re.test(rel)));
+
+  it.each(Object.entries(FORBIDDEN_THEME_LOGIC))(
+    'has no %s outside src/fleet/theme',
+    (_label, re) => {
+      const offenders = files
+        .filter(({ file }) => re.test(fs.readFileSync(file, 'utf8')))
+        .map(({ rel }) => rel);
+      expect(offenders).toEqual([]);
+    },
+  );
+
+  it('only reads the theme choice in the theme picker', () => {
+    const offenders = files
+      .filter(({ rel }) => !THEME_CHOICE_ALLOWED.some((re) => re.test(rel)))
+      .filter(({ file }) =>
+        /useFleetTheme\(/.test(fs.readFileSync(file, 'utf8')),
+      )
+      .map(({ rel }) => rel);
+    expect(offenders).toEqual([]);
   });
 });

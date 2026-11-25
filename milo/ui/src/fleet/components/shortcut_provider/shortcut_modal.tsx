@@ -27,6 +27,8 @@ import Typography from '@mui/material/Typography';
 import { styled } from '@mui/material/styles';
 import { useMemo, useState } from 'react';
 
+import { elevations, fleetColors } from '@/fleet/theme/tokens';
+
 import { ShortcutDefinition } from './context';
 import { useShortcut } from './hook';
 import { ShortcutSequence, formatShortcut } from './utils';
@@ -41,14 +43,14 @@ const KeyBadge = styled('span')(({ theme }) => ({
   minWidth: '20px',
   textAlign: 'center',
   borderRadius: '4px',
-  backgroundColor: theme.palette.grey[100],
-  border: `1px solid ${theme.palette.grey[300]}`,
+  backgroundColor: fleetColors.panelMuted,
+  border: `1px solid ${fleetColors.borderSubtle}`,
   color: theme.palette.text.primary,
   fontFamily: 'Roboto Mono, monospace',
   fontSize: '0.75rem',
   fontWeight: 500,
   margin: '0 2px',
-  boxShadow: '0 1px 0px rgba(0,0,0,0.1)',
+  boxShadow: elevations.input,
   lineHeight: '1.2rem',
 }));
 
@@ -116,7 +118,7 @@ export const ShortcutModal = ({
           aria-label="close"
           onClick={handleClose}
           sx={{
-            color: (theme) => theme.palette.grey[500],
+            color: fleetColors.textDisabled,
             padding: 0,
           }}
         >
@@ -188,7 +190,7 @@ export const ShortcutModal = ({
                                     <span
                                       style={{
                                         margin: '0 4px',
-                                        color: '#999',
+                                        color: fleetColors.textDisabled,
                                         fontSize: '0.75rem',
                                       }}
                                     >
@@ -201,7 +203,7 @@ export const ShortcutModal = ({
                                         <span
                                           style={{
                                             margin: '0 2px',
-                                            color: '#999',
+                                            color: fleetColors.textDisabled,
                                           }}
                                         >
                                           +

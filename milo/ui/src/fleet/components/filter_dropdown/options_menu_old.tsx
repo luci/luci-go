@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { Box, Checkbox, MenuItem, colors } from '@mui/material';
+import { Box, Checkbox, MenuItem } from '@mui/material';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   forwardRef,
@@ -22,6 +22,7 @@ import {
 } from 'react';
 
 import { BLANK_VALUE } from '@/fleet/constants/filters';
+import { fleetColors } from '@/fleet/theme/tokens';
 import { OptionValue } from '@/fleet/types/option';
 import { keyboardListNavigationHandler } from '@/fleet/utils';
 import { SortedElement } from '@/fleet/utils/fuzzy_sort';
@@ -146,7 +147,7 @@ export const OptionsMenuOld = forwardRef(function OptionsMenuOld(
                   padding: '6px 12px',
                   textOverflow: 'ellipsis',
                   ...(item.el.label === BLANK_VALUE && {
-                    color: colors.grey[500],
+                    color: fleetColors.textDisabled,
                   }),
                 }}
               >

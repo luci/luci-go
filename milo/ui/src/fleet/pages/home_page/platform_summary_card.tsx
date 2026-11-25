@@ -26,8 +26,8 @@ import { type ReactNode } from 'react';
 import { NavLink } from 'react-router';
 
 import { InfoTooltip } from '@/fleet/components/info_tooltip/info_tooltip';
-import { colors } from '@/fleet/theme/colors';
 import { metricTileSx } from '@/fleet/theme/recipes';
+import { toneColors } from '@/fleet/theme/tokens';
 
 // Health thresholds aligned with Fleet Console UX standards to indicate
 // platform health status (Healthy >= 90%, Warning >= 75%, Danger < 75%).
@@ -35,9 +35,15 @@ const HEALTH_THRESHOLD_HIGH = 90;
 const HEALTH_THRESHOLD_WARN = 75;
 
 const HEALTH_COLOR_MAP = {
-  high: { bg: colors.green[100], text: colors.green[800] },
-  warn: { bg: colors.yellow[100], text: colors.yellow[900] },
-  low: { bg: colors.red[100], text: colors.red[800] },
+  high: {
+    bg: toneColors.success.container,
+    text: toneColors.success.onContainer,
+  },
+  warn: {
+    bg: toneColors.warning.container,
+    text: toneColors.warning.onContainerStrong,
+  },
+  low: { bg: toneColors.error.container, text: toneColors.error.onContainer },
 } as const;
 
 const PermissionWarningTooltip = () => (

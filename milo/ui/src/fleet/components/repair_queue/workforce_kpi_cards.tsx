@@ -20,7 +20,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { Box, Paper, Skeleton, Typography } from '@mui/material';
 import { ElementType, ReactNode } from 'react';
 
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 
 import {
   DEFAULT_WORKFORCE_LABELS,
@@ -90,7 +90,7 @@ export const WorkforceKpiCards = ({
         subtitle={inProgressSubtitle}
         loading={loading}
         skeletonWidth={60}
-        valueColor={colors.orange[600]}
+        valueColor={toneColors.caution.main}
       />
     )}
     <KpiCard
@@ -129,7 +129,7 @@ const KpiCard = ({
     sx={{
       p: 2,
       borderRadius: '8px',
-      border: `1px solid ${colors.grey[300]}`,
+      border: `1px solid ${toneColors.neutral.border}`,
     }}
   >
     <Box

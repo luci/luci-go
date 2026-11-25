@@ -15,13 +15,14 @@
 import Chip from '@mui/material/Chip';
 
 import { useSettings } from '@/fleet/hooks/use_settings';
-import { colors } from '@/fleet/theme/colors';
 import {
   borders,
   controlHeights,
   fleetColors,
   fontSizes,
   statusTones,
+  toneColors,
+  transparent,
 } from '@/fleet/theme/tokens';
 
 export interface ChipComponentProps {
@@ -33,27 +34,45 @@ export interface ChipComponentProps {
 }
 
 const getSemanticTextColor = (bgColor?: string): string => {
-  if (!bgColor || bgColor === colors.transparent)
-    return fleetColors.textSecondary;
-  if (bgColor === colors.green[100] || bgColor === colors.green[50]) {
+  if (!bgColor || bgColor === transparent) return fleetColors.textSecondary;
+  if (
+    bgColor === toneColors.success.container ||
+    bgColor === toneColors.success.surface
+  ) {
     return statusTones.success.fg;
   }
   if (
-    bgColor === colors.orange[100] ||
-    bgColor === colors.yellow[100] ||
-    bgColor === colors.orange[50] ||
-    bgColor === colors.yellow[50]
+    bgColor === toneColors.caution.container ||
+    bgColor === toneColors.caution.surface
+  ) {
+    return toneColors.caution.onContainer;
+  }
+  if (
+    bgColor === toneColors.warning.container ||
+    bgColor === toneColors.warning.surface
   ) {
     return statusTones.warning.fg;
   }
-  if (bgColor === colors.red[100] || bgColor === colors.red[50]) {
+  if (
+    bgColor === toneColors.error.container ||
+    bgColor === toneColors.error.surface
+  ) {
     return statusTones.error.fg;
   }
-  if (bgColor === colors.purple[100] || bgColor === colors.purple[50]) {
+  if (
+    bgColor === toneColors.special.container ||
+    bgColor === toneColors.special.surface
+  ) {
     return statusTones.special.fg;
   }
-  if (bgColor === colors.blue[100] || bgColor === colors.blue[50]) {
+  if (
+    bgColor === toneColors.info.container ||
+    bgColor === toneColors.info.surface
+  ) {
     return statusTones.info.fg;
+  }
+  if (bgColor === fleetColors.unknownState) {
+    return fleetColors.onUnknownState;
   }
   return fleetColors.textPrimary;
 };
@@ -68,8 +87,7 @@ export const ChipComponent = ({
   const [settings] = useSettings();
   const density = settings?.table?.density;
 
-  const variant =
-    !color || color === colors.transparent ? 'outlined' : 'filled';
+  const variant = !color || color === transparent ? 'outlined' : 'filled';
 
   return (
     <Chip

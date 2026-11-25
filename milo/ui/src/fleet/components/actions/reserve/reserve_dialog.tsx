@@ -31,6 +31,7 @@ import {
 import { useState, useEffect } from 'react';
 
 import { generateChromeOsDeviceDetailsURL } from '@/fleet/constants/paths';
+import { statusTones } from '@/fleet/theme/tokens';
 import { FLEET_BUILDS_SWARMING_HOST } from '@/fleet/utils/builds';
 
 import CodeSnippet from '../../code_snippet/code_snippet';
@@ -224,7 +225,7 @@ export default function ReserveDialog({
                     View in Milo
                   </a>
                 ) : (
-                  <span style={{ color: 'red' }}>
+                  <span style={{ color: statusTones.error.fg }}>
                     Failed to schedule reserve:{' '}
                     {result.errorMessage || 'Unknown error'}
                   </span>

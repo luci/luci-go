@@ -260,7 +260,7 @@ export const HealthSlicesCard = ({
                 p: isExpanded ? '12px' : '0px',
                 border: isExpanded ? '1px solid' : 'none',
                 borderColor: isExpanded ? 'divider' : 'transparent',
-                boxShadow: isExpanded ? '0 16px 40px rgba(0,0,0,0.18)' : 'none',
+                boxShadow: isExpanded ? 12 : 0,
                 transition: 'box-shadow 0.15s ease, border-color 0.15s ease',
               }}
             >

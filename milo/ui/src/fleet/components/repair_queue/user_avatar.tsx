@@ -15,23 +15,12 @@
 import { Avatar, AvatarProps } from '@mui/material';
 import { forwardRef } from 'react';
 
-import { colors } from '@/fleet/theme/colors';
+import { avatarColors } from '@/fleet/theme/tokens';
 
 import { normalizeEmail, useUserPhoto } from './use_user_photo';
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const AVATAR_COLORS = [
-  colors.blue[700],
-  colors.green[700],
-  colors.purple[700],
-  colors.orange[700],
-  colors.red[700],
-  colors.cyan[800],
-  colors.pink[700],
-  colors.yellow[900],
-  colors.blue[900],
-  colors.orange[900],
-];
+export const AVATAR_COLORS = avatarColors.fills;
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const getAvatarColor = (identifier: string): string => {
@@ -68,6 +57,7 @@ export const UserAvatar = forwardRef<HTMLDivElement, UserAvatarProps>(
         sx={[
           {
             bgcolor: bgColor,
+            color: avatarColors.onFill,
             fontWeight: 700,
           },
           ...(Array.isArray(sx) ? sx : [sx]),

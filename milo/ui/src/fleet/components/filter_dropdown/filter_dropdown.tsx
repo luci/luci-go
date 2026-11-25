@@ -38,7 +38,7 @@ import {
 } from 'react';
 
 import { normalizeFilterKey } from '@/fleet/components/filters/normalize_filter_key';
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 import {
   hasAnyModifier,
   keyboardListNavigationHandler,
@@ -631,7 +631,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                       <Typography
                         tabIndex={-1}
                         variant="caption"
-                        color={colors.grey[700]}
+                        color={toneColors.neutral.mainStrong}
                         fontStyle="italic"
                         sx={{
                           paddingLeft: '16px',
@@ -660,7 +660,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                       otherFilterResults.length > 0 && (
                         <Typography
                           variant="caption"
-                          color={colors.grey[700]}
+                          color={toneColors.neutral.mainStrong}
                           fontStyle="italic"
                           sx={{
                             margin: '16px',
@@ -688,7 +688,7 @@ export const FilterDropdown = forwardRef(function FilterDropdownNew(
                     alignItems: 'center',
                     padding: '16px',
                     boxSizing: 'border-box',
-                    color: colors.grey[600],
+                    color: toneColors.neutral.main,
                   }}
                 >
                   No results

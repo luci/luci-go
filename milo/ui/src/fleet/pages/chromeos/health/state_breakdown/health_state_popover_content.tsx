@@ -18,7 +18,7 @@ import { useMemo } from 'react';
 
 import { healthToDeviceFilter } from '@/fleet/adapters/filter_adapters';
 import { FILTERS_PARAM_KEY } from '@/fleet/constants/param_keys';
-import { radii } from '@/fleet/theme/tokens';
+import { fleetColors, radii } from '@/fleet/theme/tokens';
 
 import { getHealthStatus } from '../health_status_utils';
 
@@ -228,7 +228,7 @@ export const HealthStatePopoverContent = ({
           borderRadius: radii.pill,
           overflow: 'hidden',
           width: '100%',
-          bgcolor: 'grey.200',
+          bgcolor: fleetColors.track,
           mb: 2,
         }}
       >

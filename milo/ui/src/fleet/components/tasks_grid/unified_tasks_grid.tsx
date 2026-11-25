@@ -34,9 +34,8 @@ import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { useFCDataTable } from '@/fleet/components/fc_data_table/use_fc_data_table';
 import { TaskResultPill } from '@/fleet/components/status_pill/status_pill';
 import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
-import { colors } from '@/fleet/theme/colors';
 import { surfaceCardClippedSx } from '@/fleet/theme/recipes';
-import { fleetColors, fontSizes } from '@/fleet/theme/tokens';
+import { fleetColors, fontSizes, toneColors } from '@/fleet/theme/tokens';
 import { prettyDateTime, prettySeconds } from '@/fleet/utils/dates';
 import { getRowClassName } from '@/fleet/utils/task_utils';
 import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
@@ -104,21 +103,21 @@ const getSourceColors = (source: TaskSource) => {
   switch (source) {
     case TaskSource.TASK_SOURCE_MOBILE_HARNESS:
       return {
-        borderColor: colors.green[700],
-        color: colors.green[900],
-        backgroundColor: colors.green[50],
+        borderColor: toneColors.success.mainStrong,
+        color: toneColors.success.onContainerStrong,
+        backgroundColor: toneColors.success.surface,
       };
     case TaskSource.TASK_SOURCE_SWARMING:
       return {
-        borderColor: colors.blue[700],
-        color: colors.blue[900],
-        backgroundColor: colors.blue[50],
+        borderColor: toneColors.info.mainStrong,
+        color: toneColors.info.onContainerStrong,
+        backgroundColor: toneColors.info.surface,
       };
     default:
       return {
-        borderColor: colors.grey[700],
-        color: colors.grey[900],
-        backgroundColor: colors.grey[100],
+        borderColor: toneColors.neutral.mainStrong,
+        color: toneColors.neutral.onContainerStrong,
+        backgroundColor: toneColors.neutral.container,
       };
   }
 };
@@ -214,7 +213,7 @@ export const UnifiedTaskDetailPanel = ({
       >
         <Typography
           component="dt"
-          sx={{ fontWeight: 500, color: colors.grey[700] }}
+          sx={{ fontWeight: 500, color: toneColors.neutral.mainStrong }}
         >
           Task ID
         </Typography>
@@ -224,7 +223,7 @@ export const UnifiedTaskDetailPanel = ({
 
         <Typography
           component="dt"
-          sx={{ fontWeight: 500, color: colors.grey[700] }}
+          sx={{ fontWeight: 500, color: toneColors.neutral.mainStrong }}
         >
           Source System
         </Typography>
@@ -234,7 +233,7 @@ export const UnifiedTaskDetailPanel = ({
 
         <Typography
           component="dt"
-          sx={{ fontWeight: 500, color: colors.grey[700] }}
+          sx={{ fontWeight: 500, color: toneColors.neutral.mainStrong }}
         >
           Status
         </Typography>
@@ -244,7 +243,7 @@ export const UnifiedTaskDetailPanel = ({
 
         <Typography
           component="dt"
-          sx={{ fontWeight: 500, color: colors.grey[700] }}
+          sx={{ fontWeight: 500, color: toneColors.neutral.mainStrong }}
         >
           Start Time
         </Typography>
@@ -254,7 +253,7 @@ export const UnifiedTaskDetailPanel = ({
 
         <Typography
           component="dt"
-          sx={{ fontWeight: 500, color: colors.grey[700] }}
+          sx={{ fontWeight: 500, color: toneColors.neutral.mainStrong }}
         >
           Duration
         </Typography>
@@ -266,7 +265,7 @@ export const UnifiedTaskDetailPanel = ({
           <>
             <Typography
               component="dt"
-              sx={{ fontWeight: 500, color: colors.grey[700] }}
+              sx={{ fontWeight: 500, color: toneColors.neutral.mainStrong }}
             >
               Build Version
             </Typography>
@@ -280,7 +279,7 @@ export const UnifiedTaskDetailPanel = ({
           <>
             <Typography
               component="dt"
-              sx={{ fontWeight: 500, color: colors.grey[700] }}
+              sx={{ fontWeight: 500, color: toneColors.neutral.mainStrong }}
             >
               Deep Link
             </Typography>

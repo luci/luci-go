@@ -16,7 +16,7 @@ import DoneIcon from '@mui/icons-material/Done';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningIcon from '@mui/icons-material/Warning';
 
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 import {
   RepairMetric,
   RepairMetric_Priority,
@@ -25,13 +25,23 @@ import {
 export const getPriorityIcon = (priority: RepairMetric_Priority) => {
   switch (priority) {
     case RepairMetric_Priority.NICE:
-      return <DoneIcon sx={{ color: colors.green[400], width: '20px' }} />;
+      return (
+        <DoneIcon
+          sx={{ color: toneColors.success.borderStrong, width: '20px' }}
+        />
+      );
     case RepairMetric_Priority.MISSING_DATA:
     case RepairMetric_Priority.DEVICES_REMOVED:
     case RepairMetric_Priority.WATCH:
-      return <WarningIcon sx={{ color: colors.yellow[900], width: '20px' }} />;
+      return (
+        <WarningIcon
+          sx={{ color: toneColors.warning.onContainerStrong, width: '20px' }}
+        />
+      );
     case RepairMetric_Priority.BREACHED:
-      return <ErrorIcon sx={{ color: colors.red[500], width: '20px' }} />;
+      return (
+        <ErrorIcon sx={{ color: toneColors.error.accent, width: '20px' }} />
+      );
   }
 };
 

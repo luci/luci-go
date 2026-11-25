@@ -14,7 +14,7 @@
 
 import { Typography, TypographyProps } from '@mui/material';
 
-import { colors } from '@/fleet/theme/colors';
+import { toneColors } from '@/fleet/theme/tokens';
 
 export interface HighlightCharacterProps extends TypographyProps {
   children: string;
@@ -52,15 +52,15 @@ export const HighlightCharacter = ({
             isHighlighted
               ? highlightVariant === 'background'
                 ? {
-                    backgroundColor: colors.yellow[200],
-                    color: colors.grey[900],
+                    backgroundColor: toneColors.warning.containerStrong,
+                    color: toneColors.warning.onContainerStrong,
                     borderTopLeftRadius: prevHighlighted ? 0 : 2,
                     borderBottomLeftRadius: prevHighlighted ? 0 : 2,
                     borderTopRightRadius: nextHighlighted ? 0 : 2,
                     borderBottomRightRadius: nextHighlighted ? 0 : 2,
                   }
                 : {
-                    color: colors.blue[600],
+                    color: toneColors.info.main,
                   }
               : {
                   color: '',

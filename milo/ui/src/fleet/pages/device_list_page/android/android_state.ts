@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { StateUnion } from '@/fleet/components/table/cell_with_chip';
-import { colors, unknownStateColor } from '@/fleet/theme/colors';
+import { fleetColors, toneColors } from '@/fleet/theme/tokens';
 
 export enum androidState {
   BUSY = 'BUSY',
@@ -35,18 +35,18 @@ export const getAndroidStatusColor = (status: StateUnion) => {
     case androidState.MISSING:
     case androidState.FAILED:
     case androidState.LAB_MISSING:
-      return colors.red[100];
+      return toneColors.error.container;
     case androidState.PREPPING:
     case androidState.INIT:
     case androidState.DIRTY:
-      return colors.yellow[100];
+      return toneColors.warning.container;
     case androidState.IDLE:
     case androidState.LAB_RUNNING:
-      return colors.green[100];
+      return toneColors.success.container;
     case androidState.BUSY:
     case androidState.LAMEDUCK:
-      return colors.blue[100];
+      return toneColors.info.container;
     default:
-      return unknownStateColor;
+      return fleetColors.unknownState;
   }
 };

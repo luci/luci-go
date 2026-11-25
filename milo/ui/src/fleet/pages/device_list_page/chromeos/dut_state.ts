@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { StateUnion } from '@/fleet/components/table/cell_with_chip';
-import { colors, unknownStateColor } from '@/fleet/theme/colors';
+import { fleetColors, toneColors, transparent } from '@/fleet/theme/tokens';
 
 export enum dutState {
   NEEDS_MANUAL_REPAIR = 'NEEDS_MANUAL_REPAIR',
@@ -47,25 +47,25 @@ export const formatDutStateLabel = formatDeviceStateLabel;
 export const getStatusColor = (status: StateUnion) => {
   switch (status.toUpperCase()) {
     case dutState.NEEDS_MANUAL_REPAIR:
-      return colors.red[100];
+      return toneColors.error.container;
     case dutState.NEEDS_DEPLOY:
     case dutState.REGISTERED:
     case dutState.NEEDS_REPLACEMENT:
-      return colors.yellow[100];
+      return toneColors.warning.container;
     case dutState.RESERVED:
-      return colors.purple[100];
+      return toneColors.special.container;
     case dutState.READY:
-      return colors.green[100];
+      return toneColors.success.container;
     // Both NEEDS_REPAIR and REPAIR_FAILED are automated recovery states that
     // automation typically recovers from without human intervention; reserve
     // red[100] for NEEDS_MANUAL_REPAIR where physical technician action is required.
     case dutState.NEEDS_REPAIR:
     case dutState.REPAIR_FAILED:
-      return colors.orange[100];
+      return toneColors.caution.container;
     case dutState.UNKNOWN:
-      return colors.transparent;
+      return transparent;
     default:
-      return unknownStateColor;
+      return fleetColors.unknownState;
   }
 };
 
@@ -79,14 +79,14 @@ export const getServoStateColor = (status: string): string => {
   switch (status.trim().toUpperCase()) {
     case 'WORKING':
     case 'OK':
-      return colors.green[100];
+      return toneColors.success.container;
     case 'NOT_APPLICABLE':
     case 'UNKNOWN':
     case 'N/A':
     case '':
-      return colors.transparent;
+      return transparent;
     default:
-      return colors.red[100];
+      return toneColors.error.container;
   }
 };
 
@@ -100,18 +100,18 @@ export const getServoUsbStateColor = (status: string): string => {
   switch (status.trim().toUpperCase()) {
     case 'NORMAL':
     case 'HARDWARE_NORMAL':
-      return colors.green[100];
+      return toneColors.success.container;
     case 'ACCEPTABLE':
     case 'HARDWARE_ACCEPTABLE':
-      return colors.yellow[100];
+      return toneColors.warning.container;
     case 'NOT_APPLICABLE':
     case 'HARDWARE_NOT_APPLICABLE':
     case 'UNKNOWN':
     case 'HARDWARE_UNKNOWN':
     case 'N/A':
     case '':
-      return colors.transparent;
+      return transparent;
     default:
-      return colors.red[100];
+      return toneColors.error.container;
   }
 };
