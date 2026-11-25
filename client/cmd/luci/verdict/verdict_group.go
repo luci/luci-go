@@ -24,11 +24,22 @@ type VerdictKey struct {
 }
 
 type VerdictGroup struct {
-	Key          VerdictKey
-	Variant      *pb.Variant
-	Results      []*pb.TestResult
-	Exonerations []*pb.TestExoneration
-	HasMore      bool
+	Key           VerdictKey
+	Variant       *pb.Variant
+	Results       []*pb.TestResult
+	AllResults    []*pb.TestResult
+	Exonerations  []*pb.TestExoneration
+	HasMore       bool
+	TotalResults  int
+	TotalMore     bool
+	TotalByParent map[string]int
+}
+
+func (g *VerdictGroup) allResults() []*pb.TestResult {
+	if len(g.AllResults) > 0 {
+		return g.AllResults
+	}
+	return g.Results
 }
 
 func (g *VerdictGroup) Status() string {
@@ -38,7 +49,7 @@ func (g *VerdictGroup) Status() string {
 	hasExecutionErrored := false
 	hasPrecluded := false
 
-	for _, r := range g.Results {
+	for _, r := range g.allResults() {
 		switch r.StatusV2 {
 		case pb.TestResult_PASSED:
 			hasPassed = true

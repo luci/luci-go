@@ -22,10 +22,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
@@ -38,8 +40,11 @@ import (
 type mockAggResultDBClient struct {
 	pb.ResultDBClient
 	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
 	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
 	queryTestVerdicts     func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error)
+	queryTestResults      func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error)
+	queryTestExonerations func(ctx context.Context, in *pb.QueryTestExonerationsRequest) (*pb.QueryTestExonerationsResponse, error)
 	queryWorkUnits        func(ctx context.Context, in *pb.QueryWorkUnitsRequest) (*pb.QueryWorkUnitsResponse, error)
 	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
 }
@@ -70,7 +75,24 @@ func (m *mockAggResultDBClient) GetRootInvocation(ctx context.Context, in *pb.Ge
 }
 
 func (m *mockAggResultDBClient) GetInvocation(ctx context.Context, in *pb.GetInvocationRequest, opts ...grpc.CallOption) (*pb.Invocation, error) {
+	if m.getInvocation != nil {
+		return m.getInvocation(ctx, in)
+	}
 	return &pb.Invocation{Name: in.Name}, nil
+}
+
+func (m *mockAggResultDBClient) QueryTestResults(ctx context.Context, in *pb.QueryTestResultsRequest, opts ...grpc.CallOption) (*pb.QueryTestResultsResponse, error) {
+	if m.queryTestResults != nil {
+		return m.queryTestResults(ctx, in)
+	}
+	return &pb.QueryTestResultsResponse{}, nil
+}
+
+func (m *mockAggResultDBClient) QueryTestExonerations(ctx context.Context, in *pb.QueryTestExonerationsRequest, opts ...grpc.CallOption) (*pb.QueryTestExonerationsResponse, error) {
+	if m.queryTestExonerations != nil {
+		return m.queryTestExonerations(ctx, in)
+	}
+	return &pb.QueryTestExonerationsResponse{}, nil
 }
 
 func (m *mockAggResultDBClient) QueryWorkUnits(ctx context.Context, in *pb.QueryWorkUnitsRequest, opts ...grpc.CallOption) (*pb.QueryWorkUnitsResponse, error) {
@@ -796,6 +818,209 @@ func TestPrintVerdictSummaryInlineArtifacts(t *testing.T) {
 			assert.Loosely(t, len(nZeroOut) > format.DefaultMaxOutputBytes, should.BeTrue)
 			assert.Loosely(t, nZeroOut, should.NotContainSubstring("bytes truncated"))
 			assert.Loosely(t, nZeroOut, should.ContainSubstring("AssertionError on attempt 49"))
+		})
+	})
+}
+
+func TestVerdictGetRunCountAndNotices(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`verdictGetRun pre-truncation run counts and invocation notices`, t, func(t *ftt.Test) {
+		t.Run(`prints pre-truncation per-task run count when runs exceed -max-results`, func(t *ftt.Test) {
+			testID := "ninja://chrome/test:unit_tests/MySuite.FlakyTest"
+			results := make([]*pb.TestResult, 0, 21)
+			for i := range 21 {
+				results = append(results, &pb.TestResult{
+					Name:        fmt.Sprintf("invocations/task-chromium-swarm.appspot.com-7c10345b3ef5ff11/tests/t/results/r-%02d", i),
+					TestId:      testID,
+					ResultId:    fmt.Sprintf("r-%02d", i),
+					VariantHash: "vhash1",
+					StatusV2:    pb.TestResult_FAILED,
+				})
+			}
+
+			client := &mockAggResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					return &pb.Invocation{
+						Name:  in.Name,
+						State: pb.Invocation_FINALIZED,
+					}, nil
+				},
+				queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+					assert.Loosely(t, in.PageSize, should.Equal(1000))
+					return &pb.QueryTestResultsResponse{TestResults: results}, nil
+				},
+			}
+
+			// Default (-max-results=10): shows "showing 10 of 21 results" and "showing 10 of 21 runs".
+			var buf bytes.Buffer
+			run := GetCmd(nil).CommandRun().(*verdictGetRun)
+			run.client = client
+			run.out = &buf
+			assert.Loosely(t, run.Run(nil, []string{"-invocationid", "build-123", "-testid", testID}, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Runs (showing 10 of 21 results, use -all to see all):"))
+			assert.Loosely(t, out, should.ContainSubstring("- Task 7c10345b3ef5ff11 (showing 10 of 21 runs):"))
+			assert.Loosely(t, out, should.ContainSubstring("result_id: r-09"))
+			assert.Loosely(t, out, should.NotContainSubstring("result_id: r-10"))
+
+			// With -all: shows all 21 runs without truncation.
+			var allBuf bytes.Buffer
+			allRun := GetCmd(nil).CommandRun().(*verdictGetRun)
+			allRun.client = client
+			allRun.out = &allBuf
+			assert.Loosely(t, allRun.Run(nil, []string{"-invocationid", "build-123", "-testid", testID, "-all"}, nil), should.Equal(0))
+			allOut := allBuf.String()
+			assert.Loosely(t, allOut, should.ContainSubstring("Runs (21):"))
+			assert.Loosely(t, allOut, should.ContainSubstring("- Task 7c10345b3ef5ff11 (21 runs):"))
+			assert.Loosely(t, allOut, should.ContainSubstring("result_id: r-20"))
+		})
+
+		t.Run(`appends + to top-level and per-task run counts when more than 1000 results exist`, func(t *ftt.Test) {
+			testID := "ninja://chrome/test:unit_tests/MySuite.ManyRuns"
+			results := make([]*pb.TestResult, 0, verdictRunCountFetchLimit)
+			for i := range verdictRunCountFetchLimit {
+				results = append(results, &pb.TestResult{
+					Name:        fmt.Sprintf("invocations/task-chromium-swarm.appspot.com-7c10345b3ef5ff11/tests/t/results/r-%04d", i),
+					TestId:      testID,
+					ResultId:    fmt.Sprintf("r-%04d", i),
+					VariantHash: "vhash1",
+					StatusV2:    pb.TestResult_FAILED,
+				})
+			}
+
+			client := &mockAggResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					return &pb.Invocation{Name: in.Name, State: pb.Invocation_FINALIZED}, nil
+				},
+				queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+					return &pb.QueryTestResultsResponse{
+						TestResults:   results,
+						NextPageToken: "page-2",
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			run := GetCmd(nil).CommandRun().(*verdictGetRun)
+			run.client = client
+			run.out = &buf
+			assert.Loosely(t, run.Run(nil, []string{"-invocationid", "build-123", "-testid", testID}, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Runs (showing 10 of 1000+ results, use -all to see all):"))
+			assert.Loosely(t, out, should.ContainSubstring("- Task 7c10345b3ef5ff11 (showing 10 of 1000+ runs):"))
+		})
+
+		t.Run(`computes verdict status and inline failure artifacts from AllResults even when differing outcome is beyond -max-results`, func(t *ftt.Test) {
+			testID := "ninja://chrome/test:unit_tests/MySuite.LateFailure"
+			results := make([]*pb.TestResult, 0, 12)
+			for i := range 10 {
+				results = append(results, &pb.TestResult{
+					Name:        fmt.Sprintf("invocations/task-chromium-swarm.appspot.com-7c10345b3ef5ff11/tests/t/results/r-%02d", i),
+					TestId:      testID,
+					ResultId:    fmt.Sprintf("r-%02d", i),
+					VariantHash: "vhash1",
+					StatusV2:    pb.TestResult_PASSED,
+				})
+			}
+			failName := "invocations/task-chromium-swarm.appspot.com-7c10345b3ef5ff11/tests/t/results/r-10"
+			results = append(results, &pb.TestResult{
+				Name:        failName,
+				TestId:      testID,
+				ResultId:    "r-10",
+				VariantHash: "vhash1",
+				StatusV2:    pb.TestResult_FAILED,
+			})
+
+			client := &mockAggResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					return &pb.Invocation{Name: in.Name, State: pb.Invocation_FINALIZED}, nil
+				},
+				queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+					return &pb.QueryTestResultsResponse{TestResults: results}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error) {
+					if in.Parent == failName {
+						return &pb.ListArtifactsResponse{
+							Artifacts: []*pb.Artifact{
+								{
+									Name:        failName + "/artifacts/crash.log",
+									ArtifactId:  "crash.log",
+									ContentType: "text/plain",
+									SizeBytes:   512,
+								},
+							},
+						}, nil
+					}
+					return &pb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			run := GetCmd(nil).CommandRun().(*verdictGetRun)
+			run.client = client
+			run.out = &buf
+			assert.Loosely(t, run.Run(nil, []string{"-invocationid", "build-flaky", "-testid", testID}, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Status:       FLAKY"))
+			assert.Loosely(t, out, should.ContainSubstring("Runs (showing 10 of 11 results, use -all to see all):"))
+			assert.Loosely(t, out, should.ContainSubstring("- Task 7c10345b3ef5ff11 (showing 10 of 11 runs):"))
+			assert.Loosely(t, out, should.ContainSubstring("crash.log"))
+		})
+
+		t.Run(`surfaces ACTIVE and >60-day retention notices when 0 results found`, func(t *ftt.Test) {
+			t.Run(`ACTIVE legacy invocation`, func(t *ftt.Test) {
+				client := &mockAggResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+						return nil, status.Error(codes.NotFound, "not found")
+					},
+					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+						return &pb.Invocation{
+							Name:  in.Name,
+							State: pb.Invocation_ACTIVE,
+						}, nil
+					},
+				}
+				var outBuf, errBuf bytes.Buffer
+				run := GetCmd(nil).CommandRun().(*verdictGetRun)
+				run.client = client
+				run.out = &outBuf
+				run.errOut = &errBuf
+				assert.Loosely(t, run.Run(nil, []string{"-invocationid", "build-active", "-testid", ":mod!junit:pkg:Cls#TestA"}, nil), should.Equal(1))
+				assert.Loosely(t, errBuf.String(), should.ContainSubstring(`Note: Invocation "build-active" is still ACTIVE (results may be incomplete; test execution is still in progress).`))
+			})
+
+			t.Run(`>60-day old legacy invocation`, func(t *ftt.Test) {
+				client := &mockAggResultDBClient{
+					getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+						return nil, status.Error(codes.NotFound, "not found")
+					},
+					getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+						return &pb.Invocation{
+							Name:       in.Name,
+							State:      pb.Invocation_FINALIZED,
+							CreateTime: timestamppb.New(time.Now().Add(-75 * 24 * time.Hour)),
+						}, nil
+					},
+				}
+				var outBuf, errBuf bytes.Buffer
+				run := GetCmd(nil).CommandRun().(*verdictGetRun)
+				run.client = client
+				run.out = &outBuf
+				run.errOut = &errBuf
+				assert.Loosely(t, run.Run(nil, []string{"-invocationid", "build-old", "-testid", ":mod!junit:pkg:Cls#TestA"}, nil), should.Equal(1))
+				assert.Loosely(t, errBuf.String(), should.ContainSubstring(`ResultDB retains expected/passing test results for 60 days`))
+				assert.Loosely(t, errBuf.String(), should.ContainSubstring(`luci analysis test-history`))
+			})
 		})
 	})
 }

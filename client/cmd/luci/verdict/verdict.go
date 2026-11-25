@@ -24,6 +24,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/maruel/subcommands"
 
@@ -62,7 +63,36 @@ func (r *verdictRun) Run(a subcommands.Application, args []string, env subcomman
 	}, args)
 }
 
-const defaultMaxVerdictResults = 10
+const (
+	defaultMaxVerdictResults  = 10
+	verdictRunCountFetchLimit = 1000
+	expectedResultRetention   = 60 * 24 * time.Hour
+)
+
+func formatExpiredExpectedResultsNotice(invID string, resolved *base.ResolvedInvocation) string {
+	if resolved == nil {
+		return ""
+	}
+	var createTime time.Time
+	if resolved.Legacy {
+		if ts := resolved.Invocation.GetCreateTime(); ts != nil {
+			createTime = ts.AsTime()
+		}
+	} else {
+		if ts := resolved.RootInvocation.GetCreateTime(); ts != nil {
+			createTime = ts.AsTime()
+		}
+	}
+	if createTime.IsZero() {
+		return ""
+	}
+	age := time.Since(createTime)
+	if age <= expectedResultRetention {
+		return ""
+	}
+	days := int(age / (24 * time.Hour))
+	return fmt.Sprintf("Note: Invocation %q is %d days old; ResultDB retains expected/passing test results for 60 days (use 'luci analysis test-history' to check longer-term pass history).\n", invID, days)
+}
 
 func GetCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
@@ -197,18 +227,26 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		extracted.Legacy = legacy
 	}
 
-	maxFetch := 0
+	maxDisplay := 0
+	fetchLimit := 0
 	if !r.allResults && r.maxResults > 0 {
-		maxFetch = r.maxResults
+		maxDisplay = r.maxResults
+		fetchLimit = max(r.maxResults, verdictRunCountFetchLimit)
 	}
 
-	verdictResults, exList, hasMore, err := QueryVerdictResultsAndExonerations(ctx, client, invID, r.testID, r.variantHash, legacy, maxFetch)
+	allResults, exList, fetchHasMore, err := QueryVerdictResultsAndExonerations(ctx, client, invID, r.testID, r.variantHash, legacy, fetchLimit)
 	if err != nil {
 		fmt.Fprintf(errOut, "failed to query verdict: %s\n", err)
 		return 1
 	}
-	if len(verdictResults) == 0 {
+	if len(allResults) == 0 {
 		fmt.Fprintf(errOut, "no results found for test %q in invocation %q (try 'luci verdict list -invocationid %s' to list failing verdicts in this invocation)\n", r.testID, invID, invID)
+		if notice := formatInvocationInProgressNotice(invID, resolved); notice != "" {
+			fmt.Fprint(errOut, notice)
+		}
+		if notice := formatExpiredExpectedResultsNotice(invID, resolved); notice != "" {
+			fmt.Fprint(errOut, notice)
+		}
 		if strings.HasSuffix(r.testID, "#.") || strings.HasSuffix(r.testID, ".#") || !strings.Contains(r.testID, "#") {
 			modName := strings.TrimSuffix(r.testID, "#.")
 			modName = strings.TrimSuffix(modName, ".#")
@@ -218,6 +256,19 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		return 1
 	}
 
+	totalResults := len(allResults)
+	totalByParent := make(map[string]int)
+	for _, tr := range allResults {
+		pg := format.GetParentGroup(tr.Name)
+		totalByParent[pg.ID]++
+	}
+	verdictResults := allResults
+	hasMore := fetchHasMore
+	if maxDisplay > 0 && len(verdictResults) > maxDisplay {
+		verdictResults = verdictResults[:maxDisplay]
+		hasMore = true
+	}
+
 	out := r.out
 	if out == nil {
 		out = os.Stdout
@@ -225,13 +276,20 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 	var derivedBuf bytes.Buffer
 	extracted.EnrichFromTestResult(verdictResults[0])
 	ids.PrintDerivedIDs(&derivedBuf, extracted)
+	if notice := formatInvocationInProgressNotice(invID, resolved); notice != "" {
+		derivedBuf.WriteString(notice)
+	}
 
 	vg := &VerdictGroup{
-		Key:          VerdictKey{TestID: verdictResults[0].TestId, VariantHash: r.variantHash},
-		Variant:      verdictResults[0].Variant,
-		Results:      verdictResults,
-		Exonerations: exList,
-		HasMore:      hasMore,
+		Key:           VerdictKey{TestID: verdictResults[0].TestId, VariantHash: r.variantHash},
+		Variant:       verdictResults[0].Variant,
+		Results:       verdictResults,
+		AllResults:    allResults,
+		Exonerations:  exList,
+		HasMore:       hasMore,
+		TotalResults:  totalResults,
+		TotalMore:     fetchHasMore,
+		TotalByParent: totalByParent,
 	}
 
 	renderVerdictSummary(ctx, out, vg, verdictSummaryOptions{
@@ -283,7 +341,7 @@ func renderVerdictSummary(ctx context.Context, out io.Writer, g *VerdictGroup, o
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		artFormatter = format.FetchVerdictInlineFailureArtifactFormatter(ctx, opts.rdbClient, opts.invID, g.Results, opts.legacy)
+		artFormatter = format.FetchVerdictInlineFailureArtifactFormatter(ctx, opts.rdbClient, opts.invID, g.allResults(), opts.legacy)
 	}()
 
 	var primaryBuf bytes.Buffer
@@ -342,13 +400,30 @@ func renderVerdictSummary(ctx context.Context, out io.Writer, g *VerdictGroup, o
 	}
 
 	if g.HasMore {
-		fmt.Fprintf(&primaryBuf, "Runs (showing %d results, use -all to see all):\n", len(g.Results))
+		if g.TotalResults > len(g.Results) {
+			totalStr := fmt.Sprintf("%d", g.TotalResults)
+			if g.TotalMore {
+				totalStr += "+"
+			}
+			fmt.Fprintf(&primaryBuf, "Runs (showing %d of %s results, use -all to see all):\n", len(g.Results), totalStr)
+		} else {
+			fmt.Fprintf(&primaryBuf, "Runs (showing %d results, use -all to see all):\n", len(g.Results))
+		}
 	} else {
 		fmt.Fprintf(&primaryBuf, "Runs (%d):\n", len(g.Results))
 	}
 	for _, grp := range groups {
 		runCountStr := ""
-		if len(grp.items) == 1 {
+		parentTotal := g.TotalByParent[grp.parent.ID]
+		if parentTotal > len(grp.items) {
+			if g.TotalMore {
+				runCountStr = fmt.Sprintf("showing %d of %d+ runs", len(grp.items), parentTotal)
+			} else {
+				runCountStr = fmt.Sprintf("showing %d of %d runs", len(grp.items), parentTotal)
+			}
+		} else if g.TotalMore {
+			runCountStr = fmt.Sprintf("%d+ runs", len(grp.items))
+		} else if len(grp.items) == 1 {
 			runCountStr = "1 run"
 		} else {
 			runCountStr = fmt.Sprintf("%d runs", len(grp.items))
