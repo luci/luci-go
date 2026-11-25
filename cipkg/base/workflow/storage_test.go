@@ -376,6 +376,145 @@ func TestStableStorage(t *testing.T) {
 			assert.Loosely(t, errors.Is(err, core.ErrPackageNotExist), should.BeTrue)
 			assert.Loosely(t, resolvedPkgs, should.Match([]string{"mid"}))
 		})
+
+		t.Run("ActionRef dependency preserves stable content ID across target renames", func(t *ftt.Test) {
+			makeWithRef := func(targetName, arg string) *core.Action {
+				target := &core.Action{
+					Name: targetName,
+					Spec: &core.Action_Command{
+						Command: &core.ActionCommand{Args: []string{arg}},
+					},
+				}
+				ref := &core.Action{
+					Name: "dep",
+					Deps: []*core.Action{target},
+					Spec: &core.Action_Ref{Ref: &core.ActionRef{}},
+				}
+				return &core.Action{
+					Name: "pkg",
+					Deps: []*core.Action{ref},
+					Spec: &core.Action_Command{
+						Command: &core.ActionCommand{Args: []string{"bin", actions.DepRef("dep")}},
+					},
+				}
+			}
+
+			remote := make(map[string]string)
+			pkgV1, err := ap.Process(ctx, "", pm1, makeWithRef("dep_git_1111", "v1"))
+			assert.NoErr(t, err)
+			refV1 := pkgV1.BuildDependencies[0]
+
+			s1 := NewStableStorage(ap, &testStorage{
+				fetch: func(_ context.Context, _ actions.Package, _ string) (string, error) {
+					return "", core.ErrPackageNotExist
+				},
+				upload: func(_ context.Context, p actions.Package, ids []string) (string, error) {
+					if p.Action.Name == "dep" {
+						return "same-dep-hash", nil
+					}
+					for _, id := range ids {
+						remote[id] = "pkg-hash"
+					}
+					return "pkg-hash", nil
+				},
+			})
+			_, err = s1.Upload(ctx, refV1, nil)
+			assert.NoErr(t, err)
+			_, err = s1.Upload(ctx, pkgV1, nil)
+			assert.NoErr(t, err)
+
+			// Build 2 changes target's natural name and args, but ref still has
+			// Action.Name == "dep" and uploads the same content hash.
+			pkgV2, err := ap.Process(ctx, "", pm2, makeWithRef("dep_git_2222", "v2"))
+			assert.NoErr(t, err)
+			refV2 := pkgV2.BuildDependencies[0]
+
+			s2 := NewStableStorage(ap, &testStorage{
+				fetch: func(_ context.Context, _ actions.Package, id string) (string, error) {
+					if h, ok := remote[id]; ok {
+						return h, nil
+					}
+					return "", core.ErrPackageNotExist
+				},
+				upload: func(_ context.Context, p actions.Package, _ []string) (string, error) {
+					if p.Action.Name == "dep" {
+						return "same-dep-hash", nil
+					}
+					return "pkg-hash", nil
+				},
+			})
+			_, err = s2.Upload(ctx, refV2, nil)
+			assert.NoErr(t, err)
+
+			hash, err := s2.Fetch(ctx, pkgV2, "")
+			assert.NoErr(t, err)
+			assert.Loosely(t, hash, should.Equal("pkg-hash"))
+		})
+
+		t.Run("ActionRef itself reuses target content hash on fallback", func(t *ftt.Test) {
+			makeRef := func(arg string) *core.Action {
+				target := &core.Action{
+					Name: "target",
+					Spec: &core.Action_Command{
+						Command: &core.ActionCommand{Args: []string{arg}},
+					},
+				}
+				return &core.Action{
+					Name: "alias",
+					Deps: []*core.Action{target},
+					Spec: &core.Action_Ref{Ref: &core.ActionRef{}},
+				}
+			}
+
+			remote := make(map[string]string)
+			refV1, err := ap.Process(ctx, "", pm1, makeRef("v1"))
+			assert.NoErr(t, err)
+			targetV1 := refV1.BuildDependencies[0]
+
+			s1 := NewStableStorage(ap, &testStorage{
+				fetch: func(_ context.Context, _ actions.Package, _ string) (string, error) {
+					return "", core.ErrPackageNotExist
+				},
+				upload: func(_ context.Context, p actions.Package, ids []string) (string, error) {
+					if p.Action.Name == "target" {
+						return "same-target-hash", nil
+					}
+					for _, id := range ids {
+						remote[id] = "alias-hash"
+					}
+					return "alias-hash", nil
+				},
+			})
+			_, err = s1.Upload(ctx, targetV1, nil)
+			assert.NoErr(t, err)
+			_, err = s1.Upload(ctx, refV1, nil)
+			assert.NoErr(t, err)
+
+			refV2, err := ap.Process(ctx, "", pm2, makeRef("v2"))
+			assert.NoErr(t, err)
+			targetV2 := refV2.BuildDependencies[0]
+
+			s2 := NewStableStorage(ap, &testStorage{
+				fetch: func(_ context.Context, _ actions.Package, id string) (string, error) {
+					if h, ok := remote[id]; ok {
+						return h, nil
+					}
+					return "", core.ErrPackageNotExist
+				},
+				upload: func(_ context.Context, p actions.Package, _ []string) (string, error) {
+					if p.Action.Name == "target" {
+						return "same-target-hash", nil
+					}
+					return "alias-hash", nil
+				},
+			})
+			_, err = s2.Upload(ctx, targetV2, nil)
+			assert.NoErr(t, err)
+
+			hash, err := s2.Fetch(ctx, refV2, "")
+			assert.NoErr(t, err)
+			assert.Loosely(t, hash, should.Equal("alias-hash"))
+		})
 	})
 }
 

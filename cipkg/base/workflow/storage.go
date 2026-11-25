@@ -131,13 +131,15 @@ func (s *StableStorage) transformDeps(ctx context.Context, buildPlat string, p a
 			return actions.Package{}, err
 		}
 		if hash != "" {
-			cid, err := core.GetDerivationID(&core.Derivation{
+			fixedDrv := &core.Derivation{
 				Name:        d.Action.GetName(),
 				FixedOutput: hash,
-			})
+			}
+			cid, err := core.GetDerivationID(fixedDrv)
 			if err != nil {
 				return actions.Package{}, err
 			}
+			d.Derivation = fixedDrv
 			d.DerivationID = cid
 			d.Handler = stableStubPM.Get(cid)
 			deps[i] = d

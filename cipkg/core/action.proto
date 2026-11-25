@@ -130,6 +130,8 @@ message Action {
 
     ActionCIPDExport cipd = 7;
 
+    ActionRef ref = 9;
+
     google.protobuf.Any extension = 99;
   }
 }

@@ -17,6 +17,7 @@ package actions
 import (
 	"context"
 	"errors"
+	"path/filepath"
 	"testing"
 
 	"google.golang.org/protobuf/types/known/anypb"
@@ -103,5 +104,74 @@ func TestTransform(t *testing.T) {
 		assert.Loosely(t, drv.Platform, should.Equal("linux-amd64"))
 		assert.Loosely(t, drv.Inputs, should.Match([]string{"dep-customid"}))
 		assert.Loosely(t, drv.Args, should.Match([]string{"bin", dep.Handler.OutputDirectory()}))
+	})
+
+	ftt.Run("Test ActionRef", t, func(t *ftt.Test) {
+		ctx := context.Background()
+		ap := NewActionProcessor()
+		pm := testutils.NewMockPackageManage("/storage")
+
+		target := &core.Action{
+			Name: "runc_url_deadbeef",
+			Metadata: &core.Action_Metadata{
+				Cipd: &core.Action_Metadata_CIPD{Name: "pkg/fetch"},
+			},
+			Spec: &core.Action_Command{
+				Command: &core.ActionCommand{Args: []string{"fetch"}},
+			},
+		}
+		ref := &core.Action{
+			Name: "runc",
+			Metadata: &core.Action_Metadata{
+				Cipd: &core.Action_Metadata_CIPD{Name: "pkg/linux-amd64"},
+			},
+			Deps: []*core.Action{target},
+			Spec: &core.Action_Ref{Ref: &core.ActionRef{}},
+		}
+
+		t.Run("preserves target derivation and derivation ID", func(t *ftt.Test) {
+			targetPkg, err := ap.Process(ctx, "linux-amd64", pm, target)
+			assert.NoErr(t, err)
+			refPkg, err := ap.Process(ctx, "linux-amd64", pm, ref)
+			assert.NoErr(t, err)
+
+			assert.Loosely(t, refPkg.Derivation, should.Match(targetPkg.Derivation))
+			assert.Loosely(t, refPkg.DerivationID, should.Equal(targetPkg.DerivationID))
+			assert.Loosely(t, refPkg.ActionID, should.NotEqual(targetPkg.ActionID))
+			assert.Loosely(t, refPkg.Handler.OutputDirectory(), should.Equal(targetPkg.Handler.OutputDirectory()))
+		})
+
+		t.Run("dependents reference ref by its action name", func(t *ftt.Test) {
+			consumer := &core.Action{
+				Name: "consumer",
+				Deps: []*core.Action{ref},
+				Spec: &core.Action_Command{
+					Command: &core.ActionCommand{
+						Args: []string{DepRef("runc", "bin", "runc")},
+					},
+				},
+			}
+			pkg, err := ap.Process(ctx, "linux-amd64", pm, consumer)
+			assert.NoErr(t, err)
+			refPkg := pkg.BuildDependencies[0]
+			assert.Loosely(t, pkg.Derivation.Args, should.Match([]string{
+				filepath.Join(refPkg.Handler.OutputDirectory(), "bin", "runc"),
+			}))
+		})
+
+		t.Run("requires exactly one dependency", func(t *ftt.Test) {
+			_, err := ap.Process(ctx, "linux-amd64", pm, &core.Action{
+				Name: "bad_zero",
+				Spec: &core.Action_Ref{Ref: &core.ActionRef{}},
+			})
+			assert.Loosely(t, err, should.ErrLike("must have exactly 1 dependency"))
+
+			_, err = ap.Process(ctx, "linux-amd64", pm, &core.Action{
+				Name: "bad_two",
+				Deps: []*core.Action{target, target},
+				Spec: &core.Action_Ref{Ref: &core.ActionRef{}},
+			})
+			assert.Loosely(t, err, should.ErrLike("must have exactly 1 dependency"))
+		})
 	})
 }

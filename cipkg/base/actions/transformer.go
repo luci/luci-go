@@ -176,6 +176,13 @@ func (ap *ActionProcessor) Transform(ctx context.Context, buildPlat string, a *c
 		return nil, fmt.Errorf("action name must conform %s: %s", packageNameRe, a)
 	}
 
+	if _, ok := a.Spec.(*core.Action_Ref); ok {
+		if len(deps) != 1 {
+			return nil, fmt.Errorf("%s: ref action must have exactly 1 dependency, got %d", a.Spec, len(deps))
+		}
+		return proto.CloneOf(deps[0].Derivation), nil
+	}
+
 	// Parse spec message
 	var (
 		spec proto.Message
