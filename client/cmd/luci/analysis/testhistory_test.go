@@ -94,6 +94,18 @@ func (m *mockTestVariantBranchesClient) Query(ctx context.Context, in *analysisp
 	return &analysispb.QueryTestVariantBranchResponse{}, nil
 }
 
+type mockAnalysisSchemasClient struct {
+	rdbpb.SchemasClient
+	getScheme func(ctx context.Context, in *rdbpb.GetSchemeRequest, opts ...grpc.CallOption) (*rdbpb.Scheme, error)
+}
+
+func (m *mockAnalysisSchemasClient) GetScheme(ctx context.Context, in *rdbpb.GetSchemeRequest, opts ...grpc.CallOption) (*rdbpb.Scheme, error) {
+	if m.getScheme != nil {
+		return m.getScheme(ctx, in, opts...)
+	}
+	return nil, status.Error(codes.NotFound, "not found")
+}
+
 type mockAnalysisRDBClient struct {
 	rdbpb.ResultDBClient
 	getRootInvocation func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error)
@@ -431,10 +443,11 @@ func TestAndroidSourceVerdictHistory(t *testing.T) {
 	fixedNow := time.Date(2026, 11, 19, 4, 0, 0, 0, time.UTC)
 
 	type androidEnv struct {
-		app subcommands.Application
-		th  analysispb.TestHistoryClient
-		tvb analysispb.TestVariantBranchesClient
-		rdb rdbpb.ResultDBClient
+		app     subcommands.Application
+		th      analysispb.TestHistoryClient
+		tvb     analysispb.TestVariantBranchesClient
+		rdb     rdbpb.ResultDBClient
+		schemas rdbpb.SchemasClient
 	}
 	runCmd := func(env androidEnv, args ...string) (int, string, string) {
 		var out, errOut bytes.Buffer
@@ -442,6 +455,7 @@ func TestAndroidSourceVerdictHistory(t *testing.T) {
 		run.thClient = env.th
 		run.tvbClient = env.tvb
 		run.rdbClient = env.rdb
+		run.schemasClient = env.schemas
 		run.out = &out
 		run.errOut = &errOut
 		run.now = fixedNow
@@ -927,6 +941,192 @@ func TestAndroidSourceVerdictHistory(t *testing.T) {
 			assert.Loosely(t, out2, should.ContainSubstring("sampled source verdict counts, partial stats (page cap reached))"))
 		})
 
+		t.Run("unregistered_scheme_tradefed_emits_scheme_hint_and_preserves_valid_suggestions", func(t *ftt.Test) {
+			const deadCandidate = ":binderRpcTest!junit:binderRpcTest32:BinderARpcNdk#Dead"
+			const realGTestJUnitID = ":binderRpcTest!junit:binderRpcTest64:BinderARpcNdk#ARpcAccessorNewDelete"
+			schemasMock := &mockAnalysisSchemasClient{
+				getScheme: func(ctx context.Context, in *rdbpb.GetSchemeRequest, opts ...grpc.CallOption) (*rdbpb.Scheme, error) {
+					return nil, status.Error(codes.NotFound, `scheme with ID "tradefed" not found`)
+				},
+			}
+			tvbMock := &mockTestVariantBranchesClient{
+				query: func(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error) {
+					if in.GetTestId() == realGTestJUnitID {
+						return &analysispb.QueryTestVariantBranchResponse{
+							TestVariantBranch: []*analysispb.TestVariantBranch{{VariantHash: "0123456789abcdef"}},
+						}, nil
+					}
+					return &analysispb.QueryTestVariantBranchResponse{}, nil
+				},
+			}
+			thMock := &mockTestHistoryClient{
+				queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+					return &analysispb.QueryTestsResponse{TestIds: []string{deadCandidate, realGTestJUnitID}}, nil
+				},
+			}
+
+			code, stdout, stderr := runCmd(
+				androidEnv{th: thMock, tvb: tvbMock, schemas: schemasMock},
+				"-project", "android",
+				"-modulename", "libkoru_get_svgelem_size_gtest",
+				"-scheme", "tradefed",
+				"-case", "binderRpcTest",
+			)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, stderr, should.BeEmpty)
+			assert.Loosely(t, stdout, should.ContainSubstring(`Hint: ResultDB has no "tradefed" scheme; Android TradeFed modules use -scheme junit, flat, mobly, or deqp`))
+			assert.Loosely(t, stdout, should.NotContainSubstring("ants_cli"))
+			assert.Loosely(t, stdout, should.ContainSubstring("Did you mean one of these test IDs?"))
+			assert.Loosely(t, stdout, should.NotContainSubstring(deadCandidate))
+			assert.Loosely(t, stdout, should.ContainSubstring(realGTestJUnitID))
+		})
+
+		t.Run("zero_row_android_suppresses_dead_end_did_you_mean_and_prints_contextual_hints", func(t *ftt.Test) {
+			const unindexedCandidate = `:CtsVoiceInteractionTestCases[foldable\:1\:HALF_OPENED]!junit:android.voiceinteraction.cts:DirectActionsTest#testPerformDirectAction`
+			const indexedSibling = `:CtsVoiceInteractionTestCases!junit:android.voiceinteraction.cts:DirectActionsTest#testPerformDirectActionHelper`
+			queryTestsCalls := 0
+			thMock := &mockTestHistoryClient{
+				queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+					queryTestsCalls++
+					return &analysispb.QueryTestsResponse{TestIds: []string{unindexedCandidate}}, nil
+				},
+			}
+			schemasMock := &mockAnalysisSchemasClient{
+				getScheme: func(ctx context.Context, in *rdbpb.GetSchemeRequest, opts ...grpc.CallOption) (*rdbpb.Scheme, error) {
+					return &rdbpb.Scheme{Id: "junit", HumanReadableName: "JUnit"}, nil
+				},
+			}
+
+			// 1. 0 branch rows anywhere -> suppresses dead-end suggestion and prints ants_cli hint;
+			// surviving candidate with registered scheme is probed once (no duplicate post-pass RPCs).
+			var mu sync.Mutex
+			probeCalls := make(map[string]int)
+			tvbProbeTracker := &mockTestVariantBranchesClient{
+				query: func(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error) {
+					mu.Lock()
+					probeCalls[in.GetTestId()]++
+					mu.Unlock()
+					if in.GetTestId() == indexedSibling {
+						return &analysispb.QueryTestVariantBranchResponse{
+							TestVariantBranch: []*analysispb.TestVariantBranch{{VariantHash: "1111111111111111"}},
+						}, nil
+					}
+					return &analysispb.QueryTestVariantBranchResponse{}, nil
+				},
+			}
+			code, stdout, _ := runCmd(androidEnv{th: thMock, tvb: tvbProbeTracker, schemas: schemasMock}, "-project", "android", "-testid", androidTestID)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, probeCalls[unindexedCandidate], should.Equal(1))
+			assert.Loosely(t, stdout, should.NotContainSubstring("Did you mean"))
+			assert.Loosely(t, stdout, should.ContainSubstring(`Hint: LUCI Analysis only indexes Android runs anchored to a submitted build (sources.submittedAndroidBuild) on branch "git_main".`))
+			assert.Loosely(t, stdout, should.ContainSubstring("retry with -branch <branch>"))
+			assert.Loosely(t, stdout, should.ContainSubstring("ants_cli test-history --test_identifier_id=<ID>"))
+
+			thSurviving := &mockTestHistoryClient{
+				queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+					return &analysispb.QueryTestsResponse{TestIds: []string{indexedSibling}}, nil
+				},
+			}
+			codeSurv, stdoutSurv, _ := runCmd(androidEnv{th: thSurviving, tvb: tvbProbeTracker, schemas: schemasMock}, "-project", "android", "-testid", androidTestID)
+			assert.Loosely(t, codeSurv, should.Equal(0))
+			assert.Loosely(t, probeCalls[indexedSibling], should.Equal(1))
+			assert.Loosely(t, stdoutSurv, should.ContainSubstring("Did you mean one of these test IDs?"))
+			assert.Loosely(t, stdoutSurv, should.ContainSubstring(indexedSibling))
+
+			// 2. Branch rows exist, but active segments ended > 7d ago -> skips leaf suggestion
+			// search, preserves -days 90 hint even if an indexed sibling exists (and even when
+			// -test-substring populates Other matching test IDs).
+			tvbOlderAndSibling := &mockTestVariantBranchesClient{
+				query: func(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error) {
+					switch in.GetTestId() {
+					case androidTestID:
+						return &analysispb.QueryTestVariantBranchResponse{
+							TestVariantBranch: []*analysispb.TestVariantBranch{
+								{
+									VariantHash: "0123456789abcdef",
+									Variant:     &analysispb.Variant{Def: map[string]string{"module_abi": "x86_64"}},
+									Segments: []*analysispb.Segment{
+										{
+											StartHour: timestamppb.New(fixedNow.Add(-40 * 24 * time.Hour)),
+											EndHour:   timestamppb.New(fixedNow.Add(-20 * 24 * time.Hour)),
+											Counts:    &analysispb.Segment_Counts{TotalVerdicts: 25},
+										},
+									},
+								},
+							},
+						}, nil
+					case indexedSibling:
+						return &analysispb.QueryTestVariantBranchResponse{
+							TestVariantBranch: []*analysispb.TestVariantBranch{{VariantHash: "1111111111111111"}},
+						}, nil
+					default:
+						return &analysispb.QueryTestVariantBranchResponse{}, nil
+					}
+				},
+			}
+			queryTestsCalls = 0
+			thWithSibling := &mockTestHistoryClient{
+				queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+					queryTestsCalls++
+					return &analysispb.QueryTestsResponse{
+						TestIds: []string{
+							androidTestID,
+							indexedSibling,
+						},
+					}, nil
+				},
+			}
+			code2, stdout2, _ := runCmd(androidEnv{th: thWithSibling, tvb: tvbOlderAndSibling, schemas: schemasMock}, "-project", "android", "-testid", androidTestID)
+			assert.Loosely(t, code2, should.Equal(0))
+			assert.Loosely(t, queryTestsCalls, should.Equal(0))
+			assert.Loosely(t, stdout2, should.ContainSubstring(`Hint: Test exists on branch "git_main", but active segments ended more than 7 days ago; retry with -days 90.`))
+			assert.Loosely(t, stdout2, should.NotContainSubstring("ants_cli"))
+
+			code2Sub, stdout2Sub, _ := runCmd(androidEnv{th: thWithSibling, tvb: tvbOlderAndSibling, schemas: schemasMock}, "-project", "android", "-test-substring", "DirectActionsTest#testPerformDirectAction")
+			assert.Loosely(t, code2Sub, should.Equal(0))
+			assert.Loosely(t, stdout2Sub, should.ContainSubstring(`Hint: Test exists on branch "git_main", but active segments ended more than 7 days ago; retry with -days 90.`))
+			assert.Loosely(t, stdout2Sub, should.ContainSubstring("Other matching test IDs:"))
+			assert.Loosely(t, stdout2Sub, should.ContainSubstring(indexedSibling))
+			assert.Loosely(t, stdout2Sub, should.NotContainSubstring("ants_cli"))
+
+			// 3. Branch rows exist, but -variant filter excluded them -> reports -variant mismatch.
+			code3, stdout3, _ := runCmd(androidEnv{th: thMock, tvb: tvbOlderAndSibling, schemas: schemasMock}, "-project", "android", "-testid", androidTestID, "-variant", "module_abi:riscv64")
+			assert.Loosely(t, code3, should.Equal(0))
+			assert.Loosely(t, stdout3, should.ContainSubstring(`Hint: Test exists on branch "git_main", but no variants matched the -variant filter.`))
+			assert.Loosely(t, stdout3, should.NotContainSubstring("ants_cli"))
+
+			// 4. -test-substring with 0 QueryTests matches and 0 leaf suggestions omits useless "-branch <branch>" retry hint,
+			// whereas when leaf suggestions existed in QueryTests and were filtered out on git_main, "-branch <branch>" IS shown.
+			code4Empty, stdout4Empty, _ := runCmd(androidEnv{th: &mockTestHistoryClient{}, tvb: &mockTestVariantBranchesClient{}, schemas: schemasMock}, "-project", "android", "-test-substring", "CompletelyUnknownTest#missing")
+			assert.Loosely(t, code4Empty, should.Equal(0))
+			assert.Loosely(t, stdout4Empty, should.NotContainSubstring("retry with -branch <branch>"))
+			assert.Loosely(t, stdout4Empty, should.ContainSubstring("ants_cli test-history"))
+
+			thLeafOnly := &mockTestHistoryClient{
+				queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+					if in.GetTestIdSubstring() == "testPerformDirectAction" {
+						return &analysispb.QueryTestsResponse{TestIds: []string{unindexedCandidate}}, nil
+					}
+					return &analysispb.QueryTestsResponse{}, nil
+				},
+			}
+			code4Filtered, stdout4Filtered, _ := runCmd(androidEnv{th: thLeafOnly, tvb: &mockTestVariantBranchesClient{}, schemas: schemasMock}, "-project", "android", "-test-substring", "WrongClass#testPerformDirectAction")
+			assert.Loosely(t, code4Filtered, should.Equal(0))
+			assert.Loosely(t, stdout4Filtered, should.ContainSubstring("retry with -branch <branch>"))
+
+			// 5. Non-Android project with misplaced "-branch git_main" emits Gitiles hint (not ants_cli),
+			// and Android realm with empty branch omits 'on branch ""'.
+			code5Gitiles, stdout5Gitiles, _ := runCmd(androidEnv{th: &mockTestHistoryClient{}, tvb: &mockTestVariantBranchesClient{}, schemas: schemasMock}, "-project", "chromium", "-branch", "git_main", "-testid", androidTestID)
+			assert.Loosely(t, code5Gitiles, should.Equal(0))
+			assert.Loosely(t, stdout5Gitiles, should.ContainSubstring("Hint: -branch queries Android Build source refs (e.g. -project android -branch git_main); omit -branch for Gitiles projects."))
+			assert.Loosely(t, stdout5Gitiles, should.NotContainSubstring("ants_cli"))
+
+			code5Arsp, stdout5Arsp, _ := runCmd(androidEnv{th: &mockTestHistoryClient{}, tvb: &mockTestVariantBranchesClient{}, schemas: schemasMock}, "-project", "arsp", "-testid", androidTestID)
+			assert.Loosely(t, code5Arsp, should.Equal(0))
+			assert.Loosely(t, stdout5Arsp, should.ContainSubstring("Hint: LUCI Analysis only indexes Android runs anchored to a submitted build (sources.submittedAndroidBuild).\n"))
+			assert.Loosely(t, stdout5Arsp, should.NotContainSubstring(`on branch ""`))
+		})
+
 		t.Run("validates_branch_flag_and_subrealm_conflict", func(t *ftt.Test) {
 			code1, _, err1 := runCmd(androidEnv{}, "-project", "android", "-branch", "   ", "-testid", androidTestID)
 			assert.Loosely(t, code1, should.Equal(1))
@@ -939,6 +1139,23 @@ func TestAndroidSourceVerdictHistory(t *testing.T) {
 			code3, _, err3 := runCmd(androidEnv{}, "-project", "android", "-branch", "git_main", "-subrealm", "presubmit", "-testid", androidTestID)
 			assert.Loosely(t, code3, should.Equal(1))
 			assert.Loosely(t, err3, should.ContainSubstring("-subrealm cannot be combined with -branch"))
+		})
+
+		t.Run("permission_denied_enriches_android_and_unmigrated_realm_errors", func(t *ftt.Test) {
+			thDenied := &mockTestHistoryClient{
+				queryStats: func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
+					return nil, status.Error(codes.PermissionDenied, `caller does not have permission in realm "`+in.GetProject()+`:@project"`)
+				},
+			}
+
+			code1, _, errAndroid := execTestHistoryCmd(thDenied, fixedNow, "-project", "android", "-testid", androidTestID)
+			assert.Loosely(t, code1, should.Equal(1))
+			assert.Loosely(t, errAndroid, should.ContainSubstring("mdb/android-build-access"))
+
+			code2, _, errArsp := execTestHistoryCmd(thDenied, fixedNow, "-project", "arsp", "-testid", androidTestID)
+			assert.Loosely(t, code2, should.Equal(1))
+			assert.Loosely(t, errArsp, should.ContainSubstring(`project "arsp" is not accessible in LUCI Analysis`))
+			assert.Loosely(t, errArsp, should.ContainSubstring("ants_cli test-history --test_identifier_id=<ID>"))
 		})
 	})
 }

@@ -25,9 +25,12 @@ import (
 	"unicode/utf8"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -1291,6 +1294,48 @@ func TestWorkUnitTiming(t *testing.T) {
 			assert.Loosely(t, ok, should.BeFalse)
 			assert.Loosely(t, running, should.BeFalse)
 			assert.Loosely(t, dur, should.Equal(time.Duration(0)))
+		})
+	})
+}
+
+type fakeSchemasClient struct {
+	rdbpb.SchemasClient
+	getSchemeFunc func(ctx context.Context, in *rdbpb.GetSchemeRequest, opts ...grpc.CallOption) (*rdbpb.Scheme, error)
+}
+
+func (f *fakeSchemasClient) GetScheme(ctx context.Context, in *rdbpb.GetSchemeRequest, opts ...grpc.CallOption) (*rdbpb.Scheme, error) {
+	if f.getSchemeFunc != nil {
+		return f.getSchemeFunc(ctx, in, opts...)
+	}
+	return nil, status.Error(codes.NotFound, "scheme not found")
+}
+
+func TestFprintTestIDWithAggregations(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("fprint_test_id_with_aggregations", t, func(t *ftt.Test) {
+		t.Run("unregistered_scheme_suppresses_warning_and_uses_fallback_labels", func(t *ftt.Test) {
+			ctx := logging.SetLevel(t.Context(), logging.Warning)
+			warningEnabledInRPC := true
+			schemasClient := &fakeSchemasClient{
+				getSchemeFunc: func(rpcCtx context.Context, in *rdbpb.GetSchemeRequest, opts ...grpc.CallOption) (*rdbpb.Scheme, error) {
+					warningEnabledInRPC = logging.IsLogging(rpcCtx, logging.Warning)
+					return nil, status.Error(codes.NotFound, `scheme with ID "tradefed" not found`)
+				},
+			}
+
+			var buf bytes.Buffer
+			FprintTestID(&buf, ctx, schemasClient, &rdbpb.TestResult{
+				TestId: ":libkoru_get_svgelem_size_gtest!tradefed::#binderRpcTest",
+				TestIdStructured: &rdbpb.TestIdentifier{
+					ModuleName:   "libkoru_get_svgelem_size_gtest",
+					ModuleScheme: "tradefed",
+					CaseName:     "binderRpcTest",
+				},
+			})
+
+			assert.Loosely(t, buf.String(), should.Equal("Test ID:\n  Module:    libkoru_get_svgelem_size_gtest (scheme: tradefed)\n  Case:      binderRpcTest\n"))
+			assert.Loosely(t, warningEnabledInRPC, should.BeFalse)
 		})
 	})
 }

@@ -16,16 +16,23 @@ package analysis
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/appstatus"
 	"go.chromium.org/luci/resultdb/pbutil"
 	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -36,6 +43,8 @@ const (
 	maxSourceVerdictVariants = 4
 	sourceVerdictPageSize    = 200
 	maxSourceVerdictPages    = 3
+	maxSuggestionBranchProbe = 5
+	antsCLIBinaryPath        = "/google/bin/releases/android/ants_cli/ants_cli"
 )
 
 type androidBranchHistoryOptions struct {
@@ -178,21 +187,24 @@ func fetchAndroidBranchHistory(ctx context.Context, opts androidBranchHistoryOpt
 	parsedStructured, _ := pbutil.ParseStructuredTestIdentifierForInput(opts.testID, nil)
 
 	return &testHistoryReport{
-		Project:           opts.project,
-		TestID:            opts.testID,
-		TestIDStructured:  parsedStructured,
-		SubRealm:          opts.subRealm,
-		Branch:            opts.branch,
-		BranchExplicit:    opts.branchExplicit,
-		SourceVerdictMode: true,
-		StatsSourceNote:   statsSourceNote,
-		Days:              days,
-		StatsTruncated:    truncated,
-		AllVerdictsPassed: verdictRes.allPassed,
-		NewerPassingCount: verdictRes.newerPassingCount,
-		TotalCounts:       totalCounts,
-		VariantStats:      stats,
-		Verdicts:          verdictRes.verdicts,
+		Project:                  opts.project,
+		TestID:                   opts.testID,
+		TestIDStructured:         parsedStructured,
+		SubRealm:                 opts.subRealm,
+		Branch:                   opts.branch,
+		BranchExplicit:           opts.branchExplicit,
+		SourceVerdictMode:        true,
+		StatsSourceNote:          statsSourceNote,
+		HasBranchRows:            branchRes.hasAnyBranchRows,
+		HasMatchedBranchVariants: len(branchRes.allMatchedHashes) > 0,
+		HasVariantFilter:         len(variantFilters) > 0,
+		Days:                     days,
+		StatsTruncated:           truncated,
+		AllVerdictsPassed:        verdictRes.allPassed,
+		NewerPassingCount:        verdictRes.newerPassingCount,
+		TotalCounts:              totalCounts,
+		VariantStats:             stats,
+		Verdicts:                 verdictRes.verdicts,
 	}, nil
 }
 
@@ -201,6 +213,7 @@ type branchStatsResult struct {
 	totalCounts           *rdbpb.TestAggregation_VerdictCounts
 	variantDefs           map[string]map[string]string
 	allMatchedHashes      []string
+	hasAnyBranchRows      bool
 	segmentsPrecedeWindow bool
 	truncated             bool
 }
@@ -225,6 +238,9 @@ func fetchTestVariantBranchStats(ctx context.Context, tvbClient analysispb.TestV
 		})
 		if err != nil {
 			return res, errors.Fmt("TestVariantBranches.Query RPC failed for %s / %s: %w", project, testID, err)
+		}
+		if len(resp.GetTestVariantBranch()) > 0 {
+			res.hasAnyBranchRows = true
 		}
 
 		for _, tvb := range resp.GetTestVariantBranch() {
@@ -582,4 +598,186 @@ func sortVerdictEntriesDesc(entries []testHistoryVerdictEntry) {
 		}
 		return entries[i].VariantHash < entries[j].VariantHash
 	})
+}
+
+// filterBranchSuggestions retains candidate test IDs that have
+// TestVariantBranch history on branch (probing up to maxSuggestionBranchProbe
+// top candidates concurrently). When branch is empty or tvbClient is nil (e.g.
+// in unit tests), candidates are returned unchanged.
+func filterBranchSuggestions(ctx context.Context, tvbClient analysispb.TestVariantBranchesClient, project, branch, dataRealm string, candidates []string) []string {
+	if len(candidates) == 0 || branch == "" || tvbClient == nil {
+		return candidates
+	}
+	probeCount := min(len(candidates), maxSuggestionBranchProbe)
+	keep := make([]bool, probeCount)
+	g, gCtx := errgroup.WithContext(ctx)
+	for i := 0; i < probeCount; i++ {
+		g.Go(func() error {
+			keep[i] = hasAndroidBranchHistory(gCtx, tvbClient, project, candidates[i], branch, dataRealm)
+			return nil
+		})
+	}
+	_ = g.Wait()
+
+	var verified []string
+	for i := 0; i < probeCount; i++ {
+		if keep[i] {
+			verified = append(verified, candidates[i])
+		}
+	}
+	return verified
+}
+
+func hasAndroidBranchHistory(ctx context.Context, tvbClient analysispb.TestVariantBranchesClient, project, testID, branch, dataRealm string) bool {
+	if tvbClient == nil {
+		return true
+	}
+	if branch == "" || testID == "" {
+		return false
+	}
+	probeCtx := logging.SetLevel(ctx, logging.Error)
+	resp, err := tvbClient.Query(probeCtx, &analysispb.QueryTestVariantBranchRequest{
+		Project:  project,
+		TestId:   testID,
+		Ref:      buildAndroidSourceRef(branch, dataRealm),
+		PageSize: 1,
+	})
+	return err == nil && len(resp.GetTestVariantBranch()) > 0
+}
+
+type cachingSchemasClient struct {
+	rdbpb.SchemasClient
+	cache map[string]cachedSchemeEntry
+}
+
+type cachedSchemeEntry struct {
+	scheme *rdbpb.Scheme
+	err    error
+}
+
+func newCachingSchemasClient(inner rdbpb.SchemasClient) rdbpb.SchemasClient {
+	if inner == nil {
+		return nil
+	}
+	return &cachingSchemasClient{
+		SchemasClient: inner,
+		cache:         make(map[string]cachedSchemeEntry),
+	}
+}
+
+func (c *cachingSchemasClient) GetScheme(ctx context.Context, in *rdbpb.GetSchemeRequest, opts ...grpc.CallOption) (*rdbpb.Scheme, error) {
+	name := in.GetName()
+	if hit, ok := c.cache[name]; ok {
+		return hit.scheme, hit.err
+	}
+	probeCtx := logging.SetLevel(ctx, logging.Error)
+	scheme, err := c.SchemasClient.GetScheme(probeCtx, in, opts...)
+	c.cache[name] = cachedSchemeEntry{scheme: scheme, err: err}
+	return scheme, err
+}
+
+func detectUnregisteredScheme(ctx context.Context, schemasClient rdbpb.SchemasClient, st *rdbpb.TestIdentifier) string {
+	scheme := st.GetModuleScheme()
+	if scheme == "" || scheme == "legacy" {
+		return ""
+	}
+	if schemasClient == nil {
+		if scheme == "tradefed" {
+			return scheme
+		}
+		return ""
+	}
+	probeCtx := logging.SetLevel(ctx, logging.Error)
+	_, err := schemasClient.GetScheme(probeCtx, &rdbpb.GetSchemeRequest{Name: "schema/schemes/" + scheme})
+	if err == nil {
+		return ""
+	}
+	code := status.Code(err)
+	if code == codes.Unknown {
+		code = appstatus.Code(err)
+	}
+	if code == codes.NotFound {
+		return scheme
+	}
+	return ""
+}
+
+func extractTargetTRID(target string) string {
+	trimmed := strings.TrimSpace(target)
+	if base.IsAntsTestResultID(trimmed) {
+		return trimmed
+	}
+	if _, trID := base.ExtractAntsURLComponents(trimmed); trID != "" {
+		return trID
+	}
+	return ""
+}
+
+func printZeroHistoryHints(out io.Writer, report *testHistoryReport) {
+	if report.UnregisteredScheme != "" {
+		if report.Project == "android" {
+			fmt.Fprintf(out, "\nHint: ResultDB has no %q scheme; Android TradeFed modules use -scheme junit, flat, mobly, or deqp (prefer -test-substring <Class#method> or 'luci ids <TR_or_ATI_URL>' instead of guessing -scheme).\n", report.UnregisteredScheme)
+		} else {
+			fmt.Fprintf(out, "\nHint: ResultDB has no %q scheme (common schemes: gtest, junit, flat, webtest, pyunit, tast; prefer -test-substring <Suite#Case> or 'luci ids <URL>' instead of guessing -scheme).\n", report.UnregisteredScheme)
+		}
+		return
+	}
+
+	branch := report.Branch
+	if branch == "" && report.Project == "android" {
+		branch = defaultAndroidBranch
+	}
+	if report.HasBranchRows {
+		if report.HasMatchedBranchVariants && report.Days < maxTestHistoryDays {
+			fmt.Fprintf(out, "\nHint: Test exists on branch %q, but active segments ended more than %d days ago; retry with -days %d.\n", branch, report.Days, maxTestHistoryDays)
+		} else if !report.HasMatchedBranchVariants && report.HasVariantFilter {
+			fmt.Fprintf(out, "\nHint: Test exists on branch %q, but no variants matched the -variant filter.\n", branch)
+		}
+		return
+	}
+	if len(report.DidYouMeanTestIDs) > 0 {
+		return
+	}
+
+	isAndroidContext := report.Project == "android" || report.Project == "arsp" || report.Project == "androidx" || report.TargetTRID != "" || report.TargetIsAndroid
+	if isAndroidContext {
+		trID := report.TargetTRID
+		if trID == "" {
+			trID = "TR<digits>"
+		}
+		if branch != "" {
+			fmt.Fprintf(out, "\nHint: LUCI Analysis only indexes Android runs anchored to a submitted build (sources.submittedAndroidBuild) on branch %q.\n", branch)
+		} else {
+			fmt.Fprintf(out, "\nHint: LUCI Analysis only indexes Android runs anchored to a submitted build (sources.submittedAndroidBuild).\n")
+		}
+		if !report.BranchExplicit && !report.SuppressBranchRetryHint {
+			fmt.Fprintf(out, "  - If this test runs on another Android branch, retry with -branch <branch>.\n")
+		}
+		fmt.Fprintf(out, "  - For unanchored ATP / ants-experiment runs, query AnTS directly:\n")
+		fmt.Fprintf(out, "      %s show-test --test_result_id=%s   # copy 'Test Identifier ID'\n", antsCLIBinaryPath, trID)
+		fmt.Fprintf(out, "      %s test-history --test_identifier_id=<ID>\n", antsCLIBinaryPath)
+		return
+	}
+
+	if branch != "" {
+		fmt.Fprintf(out, "\nHint: -branch queries Android Build source refs (e.g. -project android -branch git_main); omit -branch for Gitiles projects.\n")
+	}
+}
+
+func formatAnalysisError(err error, project, branch, target string) string {
+	if !base.IsPermissionDenied(err) {
+		return err.Error()
+	}
+	if project == "android" {
+		return fmt.Sprintf("%s (%s)", err, base.AndroidAccessHint)
+	}
+	if base.LooksLikeAndroidTarget(target) || branch != "" || project == "arsp" || project == "androidx" {
+		trID := extractTargetTRID(target)
+		if trID == "" {
+			trID = "TR<digits>"
+		}
+		return fmt.Sprintf("%s\nHint: project %q is not accessible in LUCI Analysis; for AnTS test history, run:\n  %s show-test --test_result_id=%s\n  %s test-history --test_identifier_id=<ID>",
+			err, project, antsCLIBinaryPath, trID, antsCLIBinaryPath)
+	}
+	return err.Error()
 }

@@ -150,25 +150,32 @@ type testHistoryVerdictEntry struct {
 }
 
 type testHistoryReport struct {
-	Project               string
-	TestID                string
-	TestIDStructured      *rdbpb.TestIdentifier
-	ResolvedFromSubstring string
-	MatchedTestIDCount    int
-	DidYouMeanTestIDs     []string
-	DidYouMeanNextStep    string
-	SubRealm              string
-	Branch                string
-	BranchExplicit        bool
-	SourceVerdictMode     bool
-	StatsSourceNote       string
-	Days                  int
-	StatsTruncated        bool
-	AllVerdictsPassed     bool
-	NewerPassingCount     int
-	TotalCounts           *rdbpb.TestAggregation_VerdictCounts
-	VariantStats          []variantStatsSummary
-	Verdicts              []testHistoryVerdictEntry
+	Project                  string
+	TestID                   string
+	TestIDStructured         *rdbpb.TestIdentifier
+	ResolvedFromSubstring    string
+	MatchedTestIDCount       int
+	DidYouMeanTestIDs        []string
+	DidYouMeanNextStep       string
+	SubRealm                 string
+	Branch                   string
+	BranchExplicit           bool
+	SourceVerdictMode        bool
+	StatsSourceNote          string
+	HasBranchRows            bool
+	HasMatchedBranchVariants bool
+	HasVariantFilter         bool
+	SuppressBranchRetryHint  bool
+	UnregisteredScheme       string
+	TargetTRID               string
+	TargetIsAndroid          bool
+	Days                     int
+	StatsTruncated           bool
+	AllVerdictsPassed        bool
+	NewerPassingCount        int
+	TotalCounts              *rdbpb.TestAggregation_VerdictCounts
+	VariantStats             []variantStatsSummary
+	Verdicts                 []testHistoryVerdictEntry
 }
 
 func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -354,6 +361,7 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 			_, schemasClient, _, _ = r.af.NewResultDBClient(ctx, chromeinfra.ResultDBHost)
 		}
 	}
+	schemasClient = newCachingSchemasClient(schemasClient)
 
 	now := r.now
 	if now.IsZero() {
@@ -366,6 +374,8 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		explicitBranch = r.branch
 	}
 	resolvedBranch := resolveAndroidBranch(project, explicitBranch, extractedBranch)
+	targetTRID := extractTargetTRID(target)
+	targetIsAndroid := base.LooksLikeAndroidTarget(target)
 	reRunOpts := reRunCommandOptions{
 		Project:        project,
 		SubRealm:       subRealm,
@@ -379,6 +389,9 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	}
 
 	applyLeafSuggestions := func(rep *testHistoryReport, query string) {
+		if rep.HasBranchRows {
+			return
+		}
 		if suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, query, r.caseInsensitive); len(suggestions) > 0 {
 			rep.DidYouMeanTestIDs = suggestions
 			rep.DidYouMeanNextStep = formatReRunCommand(reRunOpts, suggestions[0])
@@ -392,19 +405,21 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	if directSubstringMode {
 		searchRes, err := queryMatchingTests(ctx, thClient, project, subRealm, subQuery, r.caseInsensitive)
 		if err != nil {
-			fmt.Fprintf(errOut, "%s\n", err)
+			fmt.Fprintf(errOut, "%s\n", formatAnalysisError(err, project, resolvedBranch, target))
 			return 1
 		}
 		resolvedCandidate, ranked := rankAndResolveSubstringCandidates(searchRes.TestIDs, subQuery, searchRes.CaseInsensitive, searchRes.Truncated)
 		if len(ranked) == 0 {
+			rawSuggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, subQuery, r.caseInsensitive)
+			suggestions := filterBranchSuggestions(ctx, tvbClient, project, resolvedBranch, androidDataRealm, rawSuggestions)
 			var nextStep string
-			suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, subQuery, r.caseInsensitive)
 			if len(suggestions) > 0 {
 				nextStep = formatReRunCommand(reRunOpts, suggestions[0])
 			}
 			clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
 			ids.PrintDerivedIDs(out, extracted)
-			printNoSubstringMatches(out, reRunOpts, displayQuery, suggestions, nextStep)
+			branchFilteredAll := len(rawSuggestions) > 0 && len(suggestions) == 0
+			printNoSubstringMatches(out, reRunOpts, displayQuery, targetTRID, targetIsAndroid, suggestions, nextStep, branchFilteredAll)
 			return 0
 		}
 		if resolvedCandidate == "" {
@@ -459,7 +474,7 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 
 	report, err := queryHistory(resolvedTestID)
 	if err != nil {
-		fmt.Fprintf(errOut, "%s\n", err)
+		fmt.Fprintf(errOut, "%s\n", formatAnalysisError(err, project, resolvedBranch, target))
 		return 1
 	}
 	report.ResolvedFromSubstring = resolvedFromSubstring
@@ -469,6 +484,10 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	}
 
 	if len(report.VariantStats) == 0 && len(report.Verdicts) == 0 {
+		report.UnregisteredScheme = detectUnregisteredScheme(ctx, schemasClient, report.TestIDStructured)
+		report.TargetTRID = targetTRID
+		report.TargetIsAndroid = targetIsAndroid
+
 		if !directSubstringMode && !canonicalInput && validateTestIDSubstring("-testid", resolvedTestID) == nil {
 			// Non-canonical -testid (e.g. 'Class#method' or 'Suite.Case') had 0 Spanner rows;
 			// fall back to TestHistory.QueryTests discovery.
@@ -486,11 +505,16 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 					subQuery := resolvedTestID
 					resolvedReport, hErr := queryHistory(resolvedCandidate)
 					if hErr != nil {
-						fmt.Fprintf(errOut, "%s\n", hErr)
+						fmt.Fprintf(errOut, "%s\n", formatAnalysisError(hErr, project, resolvedBranch, target))
 						return 1
 					}
 					resolvedReport.ResolvedFromSubstring = subQuery
 					resolvedReport.MatchedTestIDCount = len(ranked)
+					if len(resolvedReport.VariantStats) == 0 && len(resolvedReport.Verdicts) == 0 {
+						resolvedReport.UnregisteredScheme = detectUnregisteredScheme(ctx, schemasClient, resolvedReport.TestIDStructured)
+						resolvedReport.TargetTRID = targetTRID
+						resolvedReport.TargetIsAndroid = targetIsAndroid
+					}
 					populateAlternateMatches(resolvedReport, ranked, reRunOpts)
 					report = resolvedReport
 					resolvedTestID = resolvedCandidate
@@ -505,8 +529,18 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 			}
 		} else if canonicalInput && len(r.variants) == 0 {
 			// Canonical test ID had 0 Spanner rows and no variant filter narrowed it:
-			// never auto-resolve to a superstring, only offer leaf suggestions.
+			// never auto-resolve to a superstring, only offer verified leaf suggestions.
 			applyLeafSuggestions(report, resolvedTestID)
+		}
+
+		if len(report.VariantStats) == 0 && len(report.Verdicts) == 0 && resolvedBranch != "" && len(report.DidYouMeanTestIDs) > 0 {
+			verified := filterBranchSuggestions(ctx, tvbClient, project, resolvedBranch, androidDataRealm, report.DidYouMeanTestIDs)
+			report.DidYouMeanTestIDs = verified
+			if len(verified) > 0 {
+				report.DidYouMeanNextStep = formatReRunCommand(reRunOpts, verified[0])
+			} else {
+				report.DidYouMeanNextStep = ""
+			}
 		}
 	}
 
@@ -928,6 +962,7 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 
 	if len(report.VariantStats) == 0 && len(report.Verdicts) == 0 {
 		fmt.Fprintf(out, "\nNo test history found in the last %d days.\n", report.Days)
+		printZeroHistoryHints(out, report)
 		heading := "Did you mean one of these test IDs?"
 		if report.ResolvedFromSubstring != "" {
 			heading = "Other matching test IDs:"

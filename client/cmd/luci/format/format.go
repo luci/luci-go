@@ -245,7 +245,10 @@ func FprintTestIDWithAggregations(out io.Writer, ctx context.Context, schemasCli
 		var scheme *rdbpb.Scheme
 		var err error
 		if schemasClient != nil {
-			scheme, err = schemasClient.GetScheme(ctx, &rdbpb.GetSchemeRequest{Name: "schema/schemes/" + st.ModuleScheme})
+			// Suppress pRPC Warning logs when callers pass an unregistered or
+			// custom scheme (e.g. -scheme tradefed); falls back to generic labels.
+			probeCtx := logging.SetLevel(ctx, logging.Error)
+			scheme, err = schemasClient.GetScheme(probeCtx, &rdbpb.GetSchemeRequest{Name: "schema/schemes/" + st.ModuleScheme})
 		}
 		if err == nil && scheme != nil {
 			modLabel := "Module"

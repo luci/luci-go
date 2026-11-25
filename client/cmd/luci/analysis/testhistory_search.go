@@ -776,9 +776,20 @@ func printSubstringSearchHeader(out io.Writer, project, subRealm, branch, query 
 	fmt.Fprintf(out, "Query:     %q\n", query)
 }
 
-func printNoSubstringMatches(out io.Writer, opts reRunCommandOptions, query string, suggestions []string, nextStep string) {
+func printNoSubstringMatches(out io.Writer, opts reRunCommandOptions, query, targetTRID string, targetIsAndroid bool, suggestions []string, nextStep string, branchFilteredAll bool) {
 	printSubstringSearchHeader(out, opts.Project, opts.SubRealm, opts.Branch, query)
 	fmt.Fprintf(out, "\nNo matching test IDs found in the last 90 days.\n")
+	if len(suggestions) == 0 {
+		printZeroHistoryHints(out, &testHistoryReport{
+			Project:                 opts.Project,
+			Branch:                  opts.Branch,
+			BranchExplicit:          opts.BranchExplicit,
+			SuppressBranchRetryHint: !branchFilteredAll,
+			TargetTRID:              targetTRID,
+			TargetIsAndroid:         targetIsAndroid,
+		})
+		return
+	}
 	printDidYouMeanSuggestions(out, "Did you mean one of these test IDs?", suggestions, maxDidYouMeanSuggestions, nextStep)
 }
 
