@@ -25,6 +25,8 @@ import {
   DeleteAndroidPriorityRuleResponse,
   ExportAndroidDevicesToCSVRequest,
   ExportAndroidDevicesToCSVResponse,
+  GetAndroidWorkforceActivityRequest,
+  GetAndroidWorkforceActivityResponse,
   ListAndroidDevicesRequest,
   ListAndroidDevicesResponse,
   ListAndroidPriorityRulesRequest,
@@ -454,6 +456,7 @@ export interface FleetConsole {
   CreateAndroidPriorityRule(request: CreateAndroidPriorityRuleRequest): Promise<CreateAndroidPriorityRuleResponse>;
   UpdateAndroidPriorityRule(request: UpdateAndroidPriorityRuleRequest): Promise<UpdateAndroidPriorityRuleResponse>;
   DeleteAndroidPriorityRule(request: DeleteAndroidPriorityRuleRequest): Promise<DeleteAndroidPriorityRuleResponse>;
+  GetAndroidWorkforceActivity(request: GetAndroidWorkforceActivityRequest): Promise<GetAndroidWorkforceActivityResponse>;
   CreatePhysicalSite(request: CreatePhysicalSiteRequest): Promise<CreatePhysicalSiteResponse>;
   ListPhysicalSites(request: ListPhysicalSitesRequest): Promise<ListPhysicalSitesResponse>;
   UpdatePhysicalSite(request: UpdatePhysicalSiteRequest): Promise<UpdatePhysicalSiteResponse>;
@@ -542,6 +545,7 @@ export class FleetConsoleClientImpl implements FleetConsole {
     this.CreateAndroidPriorityRule = this.CreateAndroidPriorityRule.bind(this);
     this.UpdateAndroidPriorityRule = this.UpdateAndroidPriorityRule.bind(this);
     this.DeleteAndroidPriorityRule = this.DeleteAndroidPriorityRule.bind(this);
+    this.GetAndroidWorkforceActivity = this.GetAndroidWorkforceActivity.bind(this);
     this.CreatePhysicalSite = this.CreatePhysicalSite.bind(this);
     this.ListPhysicalSites = this.ListPhysicalSites.bind(this);
     this.UpdatePhysicalSite = this.UpdatePhysicalSite.bind(this);
@@ -999,6 +1003,12 @@ export class FleetConsoleClientImpl implements FleetConsole {
     const data = DeleteAndroidPriorityRuleRequest.toJSON(request);
     const promise = this.rpc.request(this.service, "DeleteAndroidPriorityRule", data);
     return promise.then((data) => DeleteAndroidPriorityRuleResponse.fromJSON(data));
+  }
+
+  GetAndroidWorkforceActivity(request: GetAndroidWorkforceActivityRequest): Promise<GetAndroidWorkforceActivityResponse> {
+    const data = GetAndroidWorkforceActivityRequest.toJSON(request);
+    const promise = this.rpc.request(this.service, "GetAndroidWorkforceActivity", data);
+    return promise.then((data) => GetAndroidWorkforceActivityResponse.fromJSON(data));
   }
 
   CreatePhysicalSite(request: CreatePhysicalSiteRequest): Promise<CreatePhysicalSiteResponse> {

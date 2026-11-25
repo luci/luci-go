@@ -95,6 +95,7 @@ export interface FleetConsoleMockFixtures {
   CreateAndroidPriorityRule: unknown;
   UpdateAndroidPriorityRule: unknown;
   DeleteAndroidPriorityRule: unknown;
+  GetAndroidWorkforceActivity: unknown;
   GetDefaultQuota: unknown;
   SetDefaultQuota: unknown;
   ListIrmIncidents: unknown;
@@ -795,6 +796,33 @@ const DEFAULT_FIXTURES: FleetConsoleMockFixtures = {
         avgQueuePickupRank: 1.2,
         completedRepairs: 11,
         avgDuration: { seconds: '1440', nanos: 0 },
+      },
+    ],
+  },
+  GetAndroidWorkforceActivity: {
+    activeRepairers: 2,
+    totalPriorityPointsCleared: 1420,
+    avgQueuePickupRank: 1.5,
+    inProgressRepairs: 1,
+    avgRepairTime: { seconds: '1500', nanos: 0 },
+    technicians: [
+      {
+        id: 'andrew',
+        name: 'Andrew Miller',
+        email: 'andrew@google.com',
+        claimedDevices: [
+          {
+            deviceId: 'demo-android-device-1',
+            score: 250,
+            duration: { seconds: '1800', nanos: 0 },
+            taskId: '101',
+          },
+        ],
+        priorityScoreCleared: 720,
+        avgPtsPerDevice: 90,
+        avgQueuePickupRank: 1.5,
+        completedRepairs: 8,
+        avgDuration: { seconds: '1500', nanos: 0 },
       },
     ],
   },

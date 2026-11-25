@@ -6,6 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { Duration } from "../../../../../google/protobuf/duration.pb";
 import { Timestamp } from "../../../../../google/protobuf/timestamp.pb";
 import {
   HealthCategory,
@@ -413,6 +414,99 @@ export interface DeleteAndroidPriorityRuleRequest {
 }
 
 export interface DeleteAndroidPriorityRuleResponse {
+}
+
+export interface GetAndroidWorkforceActivityRequest {
+  /** Required. UNSPECIFIED is rejected with INVALID_ARGUMENT. */
+  readonly workspace: AndroidWorkspace;
+  /**
+   * Timeframe window for activity metrics.
+   * If TIMEFRAME_UNSPECIFIED, defaults to TIMEFRAME_1D.
+   */
+  readonly timeframe: GetAndroidWorkforceActivityRequest_Timeframe;
+}
+
+export enum GetAndroidWorkforceActivityRequest_Timeframe {
+  TIMEFRAME_UNSPECIFIED = 0,
+  TIMEFRAME_1D = 1,
+  TIMEFRAME_7D = 2,
+  TIMEFRAME_30D = 3,
+  TIMEFRAME_YTD = 4,
+}
+
+export function getAndroidWorkforceActivityRequest_TimeframeFromJSON(
+  object: any,
+): GetAndroidWorkforceActivityRequest_Timeframe {
+  switch (object) {
+    case 0:
+    case "TIMEFRAME_UNSPECIFIED":
+      return GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_UNSPECIFIED;
+    case 1:
+    case "TIMEFRAME_1D":
+      return GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_1D;
+    case 2:
+    case "TIMEFRAME_7D":
+      return GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_7D;
+    case 3:
+    case "TIMEFRAME_30D":
+      return GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_30D;
+    case 4:
+    case "TIMEFRAME_YTD":
+      return GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_YTD;
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum GetAndroidWorkforceActivityRequest_Timeframe",
+      );
+  }
+}
+
+export function getAndroidWorkforceActivityRequest_TimeframeToJSON(
+  object: GetAndroidWorkforceActivityRequest_Timeframe,
+): string {
+  switch (object) {
+    case GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_UNSPECIFIED:
+      return "TIMEFRAME_UNSPECIFIED";
+    case GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_1D:
+      return "TIMEFRAME_1D";
+    case GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_7D:
+      return "TIMEFRAME_7D";
+    case GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_30D:
+      return "TIMEFRAME_30D";
+    case GetAndroidWorkforceActivityRequest_Timeframe.TIMEFRAME_YTD:
+      return "TIMEFRAME_YTD";
+    default:
+      throw new globalThis.Error(
+        "Unrecognized enum value " + object + " for enum GetAndroidWorkforceActivityRequest_Timeframe",
+      );
+  }
+}
+
+export interface ClaimedAndroidDevice {
+  readonly deviceId: string;
+  readonly score: number;
+  readonly duration: Duration | undefined;
+  readonly taskId: string;
+}
+
+export interface AndroidTechnicianActivity {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly claimedDevices: readonly ClaimedAndroidDevice[];
+  readonly priorityScoreCleared: number;
+  readonly avgPtsPerDevice: number;
+  readonly avgQueuePickupRank: number;
+  readonly completedRepairs: number;
+  readonly avgDuration: Duration | undefined;
+}
+
+export interface GetAndroidWorkforceActivityResponse {
+  readonly activeRepairers: number;
+  readonly totalPriorityPointsCleared: number;
+  readonly avgQueuePickupRank: number;
+  readonly inProgressRepairs: number;
+  readonly avgRepairTime: Duration | undefined;
+  readonly technicians: readonly AndroidTechnicianActivity[];
 }
 
 function createBaseAndroidDevice(): AndroidDevice {
@@ -4348,6 +4442,631 @@ export const DeleteAndroidPriorityRuleResponse: MessageFns<DeleteAndroidPriority
   },
   fromPartial(_: DeepPartial<DeleteAndroidPriorityRuleResponse>): DeleteAndroidPriorityRuleResponse {
     const message = createBaseDeleteAndroidPriorityRuleResponse() as any;
+    return message;
+  },
+};
+
+function createBaseGetAndroidWorkforceActivityRequest(): GetAndroidWorkforceActivityRequest {
+  return { workspace: 0, timeframe: 0 };
+}
+
+export const GetAndroidWorkforceActivityRequest: MessageFns<GetAndroidWorkforceActivityRequest> = {
+  encode(message: GetAndroidWorkforceActivityRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.workspace !== 0) {
+      writer.uint32(8).int32(message.workspace);
+    }
+    if (message.timeframe !== 0) {
+      writer.uint32(16).int32(message.timeframe);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetAndroidWorkforceActivityRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseGetAndroidWorkforceActivityRequest() as any;
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 8) {
+              break;
+            }
+
+            message.workspace = reader.int32() as any;
+            continue;
+          }
+          case 2: {
+            if (tag !== 16) {
+              break;
+            }
+
+            message.timeframe = reader.int32() as any;
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): GetAndroidWorkforceActivityRequest {
+    return {
+      workspace: isSet(object.workspace) ? androidWorkspaceFromJSON(object.workspace) : 0,
+      timeframe: isSet(object.timeframe) ? getAndroidWorkforceActivityRequest_TimeframeFromJSON(object.timeframe) : 0,
+    };
+  },
+
+  toJSON(message: GetAndroidWorkforceActivityRequest): unknown {
+    const obj: any = {};
+    if (message.workspace !== 0) {
+      obj.workspace = androidWorkspaceToJSON(message.workspace);
+    }
+    if (message.timeframe !== 0) {
+      obj.timeframe = getAndroidWorkforceActivityRequest_TimeframeToJSON(message.timeframe);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetAndroidWorkforceActivityRequest>): GetAndroidWorkforceActivityRequest {
+    return GetAndroidWorkforceActivityRequest.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetAndroidWorkforceActivityRequest>): GetAndroidWorkforceActivityRequest {
+    const message = createBaseGetAndroidWorkforceActivityRequest() as any;
+    message.workspace = object.workspace ?? 0;
+    message.timeframe = object.timeframe ?? 0;
+    return message;
+  },
+};
+
+function createBaseClaimedAndroidDevice(): ClaimedAndroidDevice {
+  return { deviceId: "", score: 0, duration: undefined, taskId: "0" };
+}
+
+export const ClaimedAndroidDevice: MessageFns<ClaimedAndroidDevice> = {
+  encode(message: ClaimedAndroidDevice, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.deviceId !== "") {
+      writer.uint32(10).string(message.deviceId);
+    }
+    if (message.score !== 0) {
+      writer.uint32(16).int32(message.score);
+    }
+    if (message.duration !== undefined) {
+      Duration.encode(message.duration, writer.uint32(26).fork()).join();
+    }
+    if (message.taskId !== "0") {
+      writer.uint32(32).int64(message.taskId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ClaimedAndroidDevice {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseClaimedAndroidDevice() as any;
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.deviceId = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 16) {
+              break;
+            }
+
+            message.score = reader.int32();
+            continue;
+          }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.duration = Duration.decode(reader, reader.uint32());
+            continue;
+          }
+          case 4: {
+            if (tag !== 32) {
+              break;
+            }
+
+            message.taskId = reader.int64().toString();
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): ClaimedAndroidDevice {
+    return {
+      deviceId: isSet(object.deviceId)
+        ? globalThis.String(object.deviceId)
+        : isSet(object.device_id)
+        ? globalThis.String(object.device_id)
+        : "",
+      score: isSet(object.score) ? globalThis.Number(object.score) : 0,
+      duration: isSet(object.duration) ? Duration.fromJSON(object.duration) : undefined,
+      taskId: isSet(object.taskId)
+        ? globalThis.String(object.taskId)
+        : isSet(object.task_id)
+        ? globalThis.String(object.task_id)
+        : "0",
+    };
+  },
+
+  toJSON(message: ClaimedAndroidDevice): unknown {
+    const obj: any = {};
+    if (message.deviceId !== "") {
+      obj.deviceId = message.deviceId;
+    }
+    if (message.score !== 0) {
+      obj.score = Math.round(message.score);
+    }
+    if (message.duration !== undefined) {
+      obj.duration = Duration.toJSON(message.duration);
+    }
+    if (message.taskId !== "0") {
+      obj.taskId = message.taskId;
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<ClaimedAndroidDevice>): ClaimedAndroidDevice {
+    return ClaimedAndroidDevice.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<ClaimedAndroidDevice>): ClaimedAndroidDevice {
+    const message = createBaseClaimedAndroidDevice() as any;
+    message.deviceId = object.deviceId ?? "";
+    message.score = object.score ?? 0;
+    message.duration = (object.duration !== undefined && object.duration !== null)
+      ? Duration.fromPartial(object.duration)
+      : undefined;
+    message.taskId = object.taskId ?? "0";
+    return message;
+  },
+};
+
+function createBaseAndroidTechnicianActivity(): AndroidTechnicianActivity {
+  return {
+    id: "",
+    name: "",
+    email: "",
+    claimedDevices: [],
+    priorityScoreCleared: 0,
+    avgPtsPerDevice: 0,
+    avgQueuePickupRank: 0,
+    completedRepairs: 0,
+    avgDuration: undefined,
+  };
+}
+
+export const AndroidTechnicianActivity: MessageFns<AndroidTechnicianActivity> = {
+  encode(message: AndroidTechnicianActivity, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    if (message.name !== "") {
+      writer.uint32(18).string(message.name);
+    }
+    if (message.email !== "") {
+      writer.uint32(26).string(message.email);
+    }
+    for (const v of message.claimedDevices) {
+      ClaimedAndroidDevice.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.priorityScoreCleared !== 0) {
+      writer.uint32(40).int32(message.priorityScoreCleared);
+    }
+    if (message.avgPtsPerDevice !== 0) {
+      writer.uint32(48).int32(message.avgPtsPerDevice);
+    }
+    if (message.avgQueuePickupRank !== 0) {
+      writer.uint32(57).double(message.avgQueuePickupRank);
+    }
+    if (message.completedRepairs !== 0) {
+      writer.uint32(64).int32(message.completedRepairs);
+    }
+    if (message.avgDuration !== undefined) {
+      Duration.encode(message.avgDuration, writer.uint32(74).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AndroidTechnicianActivity {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseAndroidTechnicianActivity() as any;
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 10) {
+              break;
+            }
+
+            message.id = reader.string();
+            continue;
+          }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.name = reader.string();
+            continue;
+          }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.email = reader.string();
+            continue;
+          }
+          case 4: {
+            if (tag !== 34) {
+              break;
+            }
+
+            message.claimedDevices.push(ClaimedAndroidDevice.decode(reader, reader.uint32()));
+            continue;
+          }
+          case 5: {
+            if (tag !== 40) {
+              break;
+            }
+
+            message.priorityScoreCleared = reader.int32();
+            continue;
+          }
+          case 6: {
+            if (tag !== 48) {
+              break;
+            }
+
+            message.avgPtsPerDevice = reader.int32();
+            continue;
+          }
+          case 7: {
+            if (tag !== 57) {
+              break;
+            }
+
+            message.avgQueuePickupRank = reader.double();
+            continue;
+          }
+          case 8: {
+            if (tag !== 64) {
+              break;
+            }
+
+            message.completedRepairs = reader.int32();
+            continue;
+          }
+          case 9: {
+            if (tag !== 74) {
+              break;
+            }
+
+            message.avgDuration = Duration.decode(reader, reader.uint32());
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): AndroidTechnicianActivity {
+    return {
+      id: isSet(object.id) ? globalThis.String(object.id) : "",
+      name: isSet(object.name) ? globalThis.String(object.name) : "",
+      email: isSet(object.email) ? globalThis.String(object.email) : "",
+      claimedDevices: globalThis.Array.isArray(object?.claimedDevices)
+        ? object.claimedDevices.map((e: any) => ClaimedAndroidDevice.fromJSON(e))
+        : globalThis.Array.isArray(object?.claimed_devices)
+        ? object.claimed_devices.map((e: any) => ClaimedAndroidDevice.fromJSON(e))
+        : [],
+      priorityScoreCleared: isSet(object.priorityScoreCleared)
+        ? globalThis.Number(object.priorityScoreCleared)
+        : isSet(object.priority_score_cleared)
+        ? globalThis.Number(object.priority_score_cleared)
+        : 0,
+      avgPtsPerDevice: isSet(object.avgPtsPerDevice)
+        ? globalThis.Number(object.avgPtsPerDevice)
+        : isSet(object.avg_pts_per_device)
+        ? globalThis.Number(object.avg_pts_per_device)
+        : 0,
+      avgQueuePickupRank: isSet(object.avgQueuePickupRank)
+        ? globalThis.Number(object.avgQueuePickupRank)
+        : isSet(object.avg_queue_pickup_rank)
+        ? globalThis.Number(object.avg_queue_pickup_rank)
+        : 0,
+      completedRepairs: isSet(object.completedRepairs)
+        ? globalThis.Number(object.completedRepairs)
+        : isSet(object.completed_repairs)
+        ? globalThis.Number(object.completed_repairs)
+        : 0,
+      avgDuration: isSet(object.avgDuration)
+        ? Duration.fromJSON(object.avgDuration)
+        : isSet(object.avg_duration)
+        ? Duration.fromJSON(object.avg_duration)
+        : undefined,
+    };
+  },
+
+  toJSON(message: AndroidTechnicianActivity): unknown {
+    const obj: any = {};
+    if (message.id !== "") {
+      obj.id = message.id;
+    }
+    if (message.name !== "") {
+      obj.name = message.name;
+    }
+    if (message.email !== "") {
+      obj.email = message.email;
+    }
+    if (message.claimedDevices?.length) {
+      obj.claimedDevices = message.claimedDevices.map((e) => ClaimedAndroidDevice.toJSON(e));
+    }
+    if (message.priorityScoreCleared !== 0) {
+      obj.priorityScoreCleared = Math.round(message.priorityScoreCleared);
+    }
+    if (message.avgPtsPerDevice !== 0) {
+      obj.avgPtsPerDevice = Math.round(message.avgPtsPerDevice);
+    }
+    if (message.avgQueuePickupRank !== 0) {
+      obj.avgQueuePickupRank = message.avgQueuePickupRank;
+    }
+    if (message.completedRepairs !== 0) {
+      obj.completedRepairs = Math.round(message.completedRepairs);
+    }
+    if (message.avgDuration !== undefined) {
+      obj.avgDuration = Duration.toJSON(message.avgDuration);
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<AndroidTechnicianActivity>): AndroidTechnicianActivity {
+    return AndroidTechnicianActivity.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<AndroidTechnicianActivity>): AndroidTechnicianActivity {
+    const message = createBaseAndroidTechnicianActivity() as any;
+    message.id = object.id ?? "";
+    message.name = object.name ?? "";
+    message.email = object.email ?? "";
+    message.claimedDevices = object.claimedDevices?.map((e) => ClaimedAndroidDevice.fromPartial(e)) || [];
+    message.priorityScoreCleared = object.priorityScoreCleared ?? 0;
+    message.avgPtsPerDevice = object.avgPtsPerDevice ?? 0;
+    message.avgQueuePickupRank = object.avgQueuePickupRank ?? 0;
+    message.completedRepairs = object.completedRepairs ?? 0;
+    message.avgDuration = (object.avgDuration !== undefined && object.avgDuration !== null)
+      ? Duration.fromPartial(object.avgDuration)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseGetAndroidWorkforceActivityResponse(): GetAndroidWorkforceActivityResponse {
+  return {
+    activeRepairers: 0,
+    totalPriorityPointsCleared: 0,
+    avgQueuePickupRank: 0,
+    inProgressRepairs: 0,
+    avgRepairTime: undefined,
+    technicians: [],
+  };
+}
+
+export const GetAndroidWorkforceActivityResponse: MessageFns<GetAndroidWorkforceActivityResponse> = {
+  encode(message: GetAndroidWorkforceActivityResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.activeRepairers !== 0) {
+      writer.uint32(8).int32(message.activeRepairers);
+    }
+    if (message.totalPriorityPointsCleared !== 0) {
+      writer.uint32(16).int32(message.totalPriorityPointsCleared);
+    }
+    if (message.avgQueuePickupRank !== 0) {
+      writer.uint32(25).double(message.avgQueuePickupRank);
+    }
+    if (message.inProgressRepairs !== 0) {
+      writer.uint32(32).int32(message.inProgressRepairs);
+    }
+    if (message.avgRepairTime !== undefined) {
+      Duration.encode(message.avgRepairTime, writer.uint32(42).fork()).join();
+    }
+    for (const v of message.technicians) {
+      AndroidTechnicianActivity.encode(v!, writer.uint32(50).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetAndroidWorkforceActivityResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+    if (previousRecursionDepth >= 100) {
+      throw new globalThis.Error("protobuf decode recursion limit exceeded");
+    }
+    (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+    try {
+      const end = length === undefined ? reader.len : reader.pos + length;
+      const message = createBaseGetAndroidWorkforceActivityResponse() as any;
+      while (reader.pos < end) {
+        const tag = reader.uint32();
+        switch (tag >>> 3) {
+          case 1: {
+            if (tag !== 8) {
+              break;
+            }
+
+            message.activeRepairers = reader.int32();
+            continue;
+          }
+          case 2: {
+            if (tag !== 16) {
+              break;
+            }
+
+            message.totalPriorityPointsCleared = reader.int32();
+            continue;
+          }
+          case 3: {
+            if (tag !== 25) {
+              break;
+            }
+
+            message.avgQueuePickupRank = reader.double();
+            continue;
+          }
+          case 4: {
+            if (tag !== 32) {
+              break;
+            }
+
+            message.inProgressRepairs = reader.int32();
+            continue;
+          }
+          case 5: {
+            if (tag !== 42) {
+              break;
+            }
+
+            message.avgRepairTime = Duration.decode(reader, reader.uint32());
+            continue;
+          }
+          case 6: {
+            if (tag !== 50) {
+              break;
+            }
+
+            message.technicians.push(AndroidTechnicianActivity.decode(reader, reader.uint32()));
+            continue;
+          }
+        }
+        if ((tag & 7) === 4 || tag === 0) {
+          break;
+        }
+        reader.skip(tag & 7);
+      }
+      return message;
+    } finally {
+      (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+    }
+  },
+
+  fromJSON(object: any): GetAndroidWorkforceActivityResponse {
+    return {
+      activeRepairers: isSet(object.activeRepairers)
+        ? globalThis.Number(object.activeRepairers)
+        : isSet(object.active_repairers)
+        ? globalThis.Number(object.active_repairers)
+        : 0,
+      totalPriorityPointsCleared: isSet(object.totalPriorityPointsCleared)
+        ? globalThis.Number(object.totalPriorityPointsCleared)
+        : isSet(object.total_priority_points_cleared)
+        ? globalThis.Number(object.total_priority_points_cleared)
+        : 0,
+      avgQueuePickupRank: isSet(object.avgQueuePickupRank)
+        ? globalThis.Number(object.avgQueuePickupRank)
+        : isSet(object.avg_queue_pickup_rank)
+        ? globalThis.Number(object.avg_queue_pickup_rank)
+        : 0,
+      inProgressRepairs: isSet(object.inProgressRepairs)
+        ? globalThis.Number(object.inProgressRepairs)
+        : isSet(object.in_progress_repairs)
+        ? globalThis.Number(object.in_progress_repairs)
+        : 0,
+      avgRepairTime: isSet(object.avgRepairTime)
+        ? Duration.fromJSON(object.avgRepairTime)
+        : isSet(object.avg_repair_time)
+        ? Duration.fromJSON(object.avg_repair_time)
+        : undefined,
+      technicians: globalThis.Array.isArray(object?.technicians)
+        ? object.technicians.map((e: any) => AndroidTechnicianActivity.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetAndroidWorkforceActivityResponse): unknown {
+    const obj: any = {};
+    if (message.activeRepairers !== 0) {
+      obj.activeRepairers = Math.round(message.activeRepairers);
+    }
+    if (message.totalPriorityPointsCleared !== 0) {
+      obj.totalPriorityPointsCleared = Math.round(message.totalPriorityPointsCleared);
+    }
+    if (message.avgQueuePickupRank !== 0) {
+      obj.avgQueuePickupRank = message.avgQueuePickupRank;
+    }
+    if (message.inProgressRepairs !== 0) {
+      obj.inProgressRepairs = Math.round(message.inProgressRepairs);
+    }
+    if (message.avgRepairTime !== undefined) {
+      obj.avgRepairTime = Duration.toJSON(message.avgRepairTime);
+    }
+    if (message.technicians?.length) {
+      obj.technicians = message.technicians.map((e) => AndroidTechnicianActivity.toJSON(e));
+    }
+    return obj;
+  },
+
+  create(base?: DeepPartial<GetAndroidWorkforceActivityResponse>): GetAndroidWorkforceActivityResponse {
+    return GetAndroidWorkforceActivityResponse.fromPartial(base ?? {});
+  },
+  fromPartial(object: DeepPartial<GetAndroidWorkforceActivityResponse>): GetAndroidWorkforceActivityResponse {
+    const message = createBaseGetAndroidWorkforceActivityResponse() as any;
+    message.activeRepairers = object.activeRepairers ?? 0;
+    message.totalPriorityPointsCleared = object.totalPriorityPointsCleared ?? 0;
+    message.avgQueuePickupRank = object.avgQueuePickupRank ?? 0;
+    message.inProgressRepairs = object.inProgressRepairs ?? 0;
+    message.avgRepairTime = (object.avgRepairTime !== undefined && object.avgRepairTime !== null)
+      ? Duration.fromPartial(object.avgRepairTime)
+      : undefined;
+    message.technicians = object.technicians?.map((e) => AndroidTechnicianActivity.fromPartial(e)) || [];
     return message;
   },
 };
