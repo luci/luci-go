@@ -93,6 +93,7 @@ If the user journey already has a matching document in `recipes/` (e.g. [`priori
    JSON_EOF
    ```
 3. Inspect screenshot output using `view_file` and compare the rendered UI state against the recipe's **Visual Verification Checklist**.
+4. If the change touches colors or surfaces, repeat in dark mode (`localStorage.setItem('fleet-console-theme', 'dark')` or the header toggle button) and check that text, borders, and status pills stay readable.
 
 ---
 

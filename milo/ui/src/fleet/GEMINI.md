@@ -60,6 +60,7 @@ The canonical guide is [theme/README.md](./theme/README.md). In short:
 - **Accessibility (a11y)**: Never set `outline: 'none'` on `:focus-visible` (use `focusRingSx` / `metricTileSx` / `subMetricRowSx`), always include `aria-label` on icon-only `<IconButton>`s, and preserve WCAG AA (`>= 4.5:1`) contrast without `opacity` dimming.
 - **Call-site `sx` is for layout only** (margin, padding, gap, flex). A missing look means a missing token or recipe: add it to `src/fleet/theme/`, then use it.
 - `src/fleet/theme/style_conventions.test.ts` fails if raw literals in `src/fleet` grow. Do not raise its baseline; lower it when you remove literals.
+- **Light and dark themes**: every color has a light and a dark value in `theme/palettes.ts` (the only file with color values). Components use `fleetColors`, `statusTones`, `toneColors`, and `healthStateColors` from `@/fleet/theme/tokens` (CSS variables that follow the active theme) and never check which theme is active (no `palette.mode`, no `isDark`). New colors go into both palettes. Users toggle Light ↔ Dark from the header icon button or pick Light / Dark / Auto under **Theme** in the ⋮ settings menu (stored in `localStorage['fleet-console-theme']`).
 
 ### 4c. Frontend Interaction, Accessibility & Review Invariants
 - **Cursor Semantics vs. Click Affordance**: Use `cursor: 'help'` (or `'default'`) on tooltip-only triggers, read-only chips, and progress bars that have no click action. Reserve `cursor: 'pointer'` strictly for clickable controls.

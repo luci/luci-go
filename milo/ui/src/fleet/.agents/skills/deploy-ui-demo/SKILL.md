@@ -142,6 +142,7 @@ curl -s "https://${MY_VERSION}-dot-luci-milo-dev.appspot.com/ui_version.js"
 2. **Construct a Direct Action Deep Link**: Include the exact `/ui/fleet/p/<platform>/...` route and query parameters (`?c=<col>&filters=<aip160>&ff=<flag>:on`) so the reviewer sees the UI element in action immediately on click.
 3. **Capture & Upload Separate Unedited Full-App `Before` and `After` Screenshots (`1600x1180`)**:
    - Capture `before.png` from `https://luci-milo-dev.appspot.com/ui/fleet/p/...` and `after.png` from `https://${MY_VERSION}-dot-luci-milo-dev.appspot.com/ui/fleet/p/...` at `1600x1180` showing the **real, unedited Fleet Console App Engine UI shell** (top AppBar + populated table/page).
+   - For color, surface, or status-chip changes, capture a second pair in dark mode (set `localStorage.setItem('fleet-console-theme', 'dark')` or click the header theme toggle) and add `&dark_before=<id>&dark_after=<id>` to the `UI Diff:` link.
    - **Strictly Forbidden**: Never render standalone HTML mockup cards, never stitch side-by-side images (`sbs.png`), never mount temporary `"Preview Harness"` components in the app, never edit the DOM in DevTools, and never upload a crashed React error banner as a `Before:` screenshot.
    - **Googlers**: Upload `before.png` and `after.png` via `snipit` (`http://screen/<id>`) and build `UI Diff: http://go/ui-diff?before=<before_id>&after=<after_id>&title=<Title>`.
    - **External / Open-Source Contributors**: Attach `before.png` and `after.png` on the linked issue tracker and paste the URLs in the CL description.

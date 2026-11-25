@@ -98,6 +98,7 @@ Progress:
        `https://<short-version>-dot-luci-milo-dev.appspot.com/ui/fleet/p/chromeos/devices?c=id&c=dut_state`
    - **3b. Capture Individual Full-App `Before` and `After` Screenshots & Build `http://go/ui-diff` Link**:
      - Capture full-app (`1600x1180`) `before.png` (from `https://luci-milo-dev.appspot.com/ui/fleet/p/...`) and `after.png` (from `https://<short-version>-dot-luci-milo-dev.appspot.com/ui/fleet/p/...`) showing the real Fleet Console UI shell (never stitch side-by-side images or render isolated HTML cards).
+     - **Dark mode**: For color, surface, or status-chip changes, capture the same pair again in dark mode (`localStorage.setItem('fleet-console-theme', 'dark')` or the header toggle) and add `&dark_before=<id>&dark_after=<id>` to the `UI Diff:` link.
      - **Uploading Screenshots (Googlers vs. Open-Source Contributors)**:
        - **Googlers**: Upload each `Before` and `After` PNG using `snipit` (`http://screen/<id>`) and construct the interactive diff link:
          `UI Diff: http://go/ui-diff?before=<before_id>&after=<after_id>&title=<Title>`

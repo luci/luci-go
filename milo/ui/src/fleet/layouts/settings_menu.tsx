@@ -13,17 +13,22 @@
 // limitations under the License.
 
 import { MoreVert } from '@mui/icons-material';
+import BrightnessAutoOutlined from '@mui/icons-material/BrightnessAutoOutlined';
+import CheckIcon from '@mui/icons-material/Check';
+import DarkModeOutlined from '@mui/icons-material/DarkModeOutlined';
 import DescriptionIcon from '@mui/icons-material/Description';
 import LaunchIcon from '@mui/icons-material/Launch';
+import LightModeOutlined from '@mui/icons-material/LightModeOutlined';
 import {
+  Divider,
   IconButton,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
+  Typography,
 } from '@mui/material';
-import { Divider } from '@mui/material';
-import { MouseEvent, useState } from 'react';
+import { MouseEvent, ReactNode, useState } from 'react';
 import { Link } from 'react-router';
 
 import {
@@ -32,11 +37,42 @@ import {
   ROLLBACK_DURATION_WEEK,
 } from '@/common/components/version_control';
 import { VersionInfo } from '@/common/components/version_info';
+import {
+  FleetThemeChoice,
+  useFleetTheme,
+} from '@/fleet/theme/fleet_theme_context';
 
 const isNewUI = UI_VERSION_TYPE === 'new-ui';
 
+const THEME_OPTIONS: {
+  id: FleetThemeChoice;
+  label: string;
+  title: string;
+  icon: ReactNode;
+}[] = [
+  {
+    id: 'light',
+    label: 'Light',
+    title: 'Light theme',
+    icon: <LightModeOutlined fontSize="small" />,
+  },
+  {
+    id: 'dark',
+    label: 'Dark',
+    title: 'Dark theme',
+    icon: <DarkModeOutlined fontSize="small" />,
+  },
+  {
+    id: 'auto',
+    label: 'Auto (system)',
+    title: 'Follow your system setting',
+    icon: <BrightnessAutoOutlined fontSize="small" />,
+  },
+];
+
 export function SettingsMenu() {
   const switchVersion = useSwitchVersion();
+  const fleetTheme = useFleetTheme();
   const switchVersionTitle = isNewUI
     ? `Switch to the LUCI UI version released ${ROLLBACK_DURATION_WEEK} weeks ago.`
     : 'Switch to the current active version of LUCI UI.';
@@ -120,6 +156,41 @@ export function SettingsMenu() {
           </ListItemIcon>
           <ListItemText>Backend Promoter</ListItemText>
         </MenuItem>
+        {fleetTheme && <Divider />}
+        {fleetTheme && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            component="li"
+            role="presentation"
+            sx={{ px: 2, pt: 0.5, pb: 0.25, display: 'block' }}
+          >
+            Theme
+          </Typography>
+        )}
+        {fleetTheme &&
+          THEME_OPTIONS.map(({ id, label, title, icon }) => {
+            const selected = fleetTheme.choice === id;
+            return (
+              <MenuItem
+                key={id}
+                role="menuitemradio"
+                aria-checked={selected}
+                selected={selected}
+                title={title}
+                onClick={() => {
+                  fleetTheme.setChoice(id, 'settings_menu');
+                  handleCloseMenu();
+                }}
+              >
+                <ListItemIcon>{icon}</ListItemIcon>
+                <ListItemText>{label}</ListItemText>
+                {selected && (
+                  <CheckIcon fontSize="small" sx={{ ml: 2 }} aria-hidden />
+                )}
+              </MenuItem>
+            );
+          })}
         <Divider />
         <VersionInfo />
       </Menu>

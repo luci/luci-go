@@ -52,7 +52,7 @@ Persona Competitors Example:
 2. Persona B: "High-Density Enterprise Ops Specialist"
    - Focus: Maximum operational data density, 1-click quick-action triage bars, compact data tables, and zero visual fluff.
 3. Persona C: "Ergonomics & Accessibility Specialist"
-   - Focus: WCAG AA color contrast, low cognitive load, keyboard focus rings, accessible touch targets (≥32px), and clear status badges.
+   - Focus: WCAG AA color contrast in both light and dark themes, low cognitive load, keyboard focus rings, accessible touch targets (≥32px), and clear status badges.
 ```
 
 Each competitor subagent must output a complete high-fidelity design specification covering:

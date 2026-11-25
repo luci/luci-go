@@ -26,6 +26,12 @@ export interface FleetEventPayload extends EventPayload {
   columnId?: string;
   /** Whether the column is visible after the action. */
   visible?: boolean;
+  /** The active resolved UI theme ('light' or 'dark') when the event fired. */
+  theme?: string;
+  /** The user's selected theme setting ('light', 'dark', or 'auto'). */
+  themeChoice?: string;
+  /** The resolved theme after a theme change ('light' or 'dark'). */
+  themeResolved?: string;
 }
 
 /**
@@ -42,8 +48,14 @@ export function useFleetAnalytics() {
           ? platformToURL(currentPlatform)
           : undefined;
 
+      const activeTheme =
+        typeof document !== 'undefined'
+          ? document.documentElement.dataset.fleetTheme
+          : undefined;
+
       baseTrackEvent(eventName, {
         platform: platformStr,
+        ...(activeTheme ? { theme: activeTheme } : {}),
         ...payload,
       });
     },

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Box, ThemeProvider, styled } from '@mui/material';
+import { Box, styled } from '@mui/material';
 import { Settings } from 'luxon';
 import { Outlet, useNavigate } from 'react-router';
 import { useLocalStorage } from 'react-use';
@@ -41,7 +41,8 @@ import {
 
 import { ShortcutProvider } from '../components/shortcut_provider';
 import { IndexedDBPersistClientProvider, SettingsProvider } from '../context';
-import { theme } from '../theme/theme';
+import { FleetThemeProvider } from '../theme/fleet_theme_provider';
+import { canvasBackdropSx } from '../theme/recipes';
 import { fleetColors } from '../theme/tokens';
 
 import { Header } from './header';
@@ -125,9 +126,7 @@ const FleetLayoutContent = () => {
 
   return (
     <ScrollingBase
-      sx={{
-        backgroundColor: fleetColors.canvas,
-      }}
+      sx={canvasBackdropSx}
       onClickCapture={trackExternalLinkClick}
     >
       <link rel="icon" href={bassFavicon} />
@@ -158,7 +157,15 @@ const FleetLayoutContent = () => {
       >
         <Sidebar open={sidebarOpen} />
       </Sticky>
-      <Sticky top sx={{ gridArea: 'footer' }}>
+      <Sticky
+        top
+        sx={{
+          gridArea: 'footer',
+          // The shared footer hard-codes its link color to the light theme's
+          // textPrimary; follow the active Fleet theme instead.
+          '& a': { color: fleetColors.textPrimary },
+        }}
+      >
         <PrivacyFooter />
       </Sticky>
       <StickyOffset component="main" sx={{ gridArea: 'main' }}>
@@ -172,13 +179,13 @@ const FleetLayoutContent = () => {
 export const FleetLayout = () => {
   return (
     <IndexedDBPersistClientProvider>
-      <ThemeProvider theme={theme}>
+      <FleetThemeProvider>
         <SettingsProvider>
           <ShortcutProvider>
             <FleetLayoutContent />
           </ShortcutProvider>
         </SettingsProvider>
-      </ThemeProvider>
+      </FleetThemeProvider>
     </IndexedDBPersistClientProvider>
   );
 };

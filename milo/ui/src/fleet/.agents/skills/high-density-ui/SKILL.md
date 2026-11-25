@@ -34,7 +34,8 @@ Use this skill when designing or modifying complex dashboards and tables in Flee
 > colors, radii, borders, shadows, font sizes, and control heights come from
 > `src/fleet/theme/`. Never inline a style literal in a component.
 
+- **Light, Dark & Auto themes**: Tokens (`fleetColors`, `statusTones`, `toneColors`, `healthStateColors`, recipes, MUI palette keys like `'text.secondary'`) resolve to `--fc-*` CSS variables, so the same component renders correctly in every theme. Never branch on the theme in a component (`palette.mode === 'dark'`, `useFleetTheme()`), and never pass tokens to `alpha()`/`darken()` (they are `var()` strings). A new color is a new role with light and dark values in `theme/palettes.ts`; `theme/tokens.test.ts` enforces `>= 4.5:1` text contrast in both. Check styling changes in both light and dark modes (`localStorage['fleet-console-theme']` or the header toggle).
 - **Shared pieces first**: `<Button variant="toolbar">` (32px pill) for table toolbars and page headers, `<Chip variant="filter">`, `<StatusPill>` for states, `surfaceCardSx` / `MetricsContainer` for panels, `useFCDataTable` for tables.
 - **Padding**: Use compact MUI spacing units (`p: 0.5` to `p: 3`) for grid items and table cells. Padding is layout, so it may live at the call site.
 - **Typography**: Use `<Typography>` variants (`body2` = 13px for dense text, `caption` = 12px). Don't set `fontSize` directly.
-- **Layout**: Prefer horizontal arrangements and compact grids. Keep one surface level: white cards on the `fleetColors.canvas` page, never card-in-card.
+- **Layout**: Prefer horizontal arrangements and compact grids. Keep one surface level: `surfaceCardSx` cards on the `fleetColors.canvas` page, never card-in-card.

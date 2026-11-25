@@ -43,7 +43,7 @@ When spawning a review subagent via `invoke_subagent`, evaluate the changes acro
 - **Feature & Domain Boundary Integrity**: Does the design respect domain boundaries (e.g. keeping inventory devices, repair tasks, catalog specs, and resource requests cleanly separated while providing seamless deep-links)?
 
 ### 2. Staff UX & Visual Designer
-- **Visual Token Compliance**: Adherence to native Fleet Console design tokens (elevation `0`/`1`, clean `1px solid ${theme.palette.divider}` borders, Google Sans / Roboto typography scale, cohesive HSL color palettes).
+- **Visual Token Compliance**: Adherence to native Fleet Console design tokens (elevation `0`/`1`, clean `1px solid ${theme.palette.divider}` borders, Google Sans / Roboto typography scale, colors only from `fleetColors` / `statusTones` / `toneColors` / `healthStateColors` so the UI holds up in both light and dark themes, checked via `localStorage['fleet-console-theme']` or the header toggle).
 - **Card Nesting & Layout Hierarchy**: Follow layout spacing and container grouping rules in [writing-and-ux-principles](../writing-and-ux-principles/SKILL.md) and [high-density-ui](../high-density-ui/SKILL.md) (zero card-within-a-card heavy nesting, zero text overlap or button clipping).
 - **Laws of UX & Gestalt Laws**: Compliance with [writing-and-ux-principles](../writing-and-ux-principles/SKILL.md) (Hick's Law decision time, Fitts's Law touch targets, Miller's Law / Cowan's limit metric chunking, Gestalt Proximity & Common Region).
 

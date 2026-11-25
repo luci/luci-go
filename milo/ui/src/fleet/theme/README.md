@@ -7,23 +7,27 @@ emerges, add a token or recipe here so the rest of the app can reuse it.
 
 | File | What it holds | When you touch it |
 | --- | --- | --- |
-| [`tokens.ts`](./tokens.ts) | Raw design tokens: `radii`, `fleetColors`, `borders`, `elevations`, `fontFamilies`, `fontSizes`, `controlHeights`, `iconSizes`, `statusTones`. | Only to add a missing token, with a comment on when to use it. |
+| [`palettes.ts`](./palettes.ts) | **The only place with color values.** The `lightPalette` and `darkPalette` objects give every color role a value. | To add or change a color, always in both palettes. |
+| [`tokens.ts`](./tokens.ts) | Design tokens: `radii`, `fleetColors`, `statusTones`, `toneColors`, `healthStateColors`, `avatarColors`, `borders`, `elevations`, `fontFamilies`, `fontSizes`, `controlHeights`, `iconSizes`. Color tokens are CSS `var()` references that follow the active theme. | Only to add a missing token, with a comment on when to use it. |
+| [`fleet_theme_provider.tsx`](./fleet_theme_provider.tsx), [`fleet_theme_context.ts`](./fleet_theme_context.ts) | `FleetThemeProvider` (picks Light / Dark / Auto, writes the palette as CSS variables, provides the MUI theme) and `useFleetTheme()`. | Rarely. This is the only code that knows which theme is active. |
 | [`theme.tsx`](./theme.tsx) | MUI theme: palette, typography, and component variants/overrides (`Button variant="toolbar"`, `Chip variant="filter"`, Tabs, Paper, Card, Tooltip, MenuItem). | When many components need the same look. |
 | [`recipes.ts`](./recipes.ts) | `sx` recipes for layouts and interactive tiles the theme can't express: `surfaceCardSx`, `surfaceCardClippedSx`, `tonalPanelSx`, `pageHeaderSx`, `dockedTabStripSx`, `tabPanelSx`, `actionRowSx`, `pillInputSx`, `iconButtonSx`, `metricTileSx`, `subMetricRowSx`, `focusRingSx`. | When a layout or interactive surface pattern repeats on 2+ pages. |
-| [`colors.ts`](./colors.ts) | Legacy hue scales (`colors.blue[600]` ...). | Don't add to it. Prefer `fleetColors` roles. |
+| [`colors.ts`](./colors.ts) | Raw light Material hue scales that back the light `toneColors`. Theme internals only; components can't import it. | Never from a component. |
 
 ## Rules
 
 1. **No raw style literals in components.** No hex colors, no
    `borderRadius: '8px'`, no `boxShadow: '0 1px ...'`, no `fontSize: '0.8125rem'`.
    Import a token, a recipe, or use a theme variant. `'50%'` for circles is fine.
-   `style_conventions.test.ts` fails the build if the count of raw literals in
-   `src/fleet` grows.
+   The FCon-only ESLint rule `fcon-rules/no-hardcoded-colors` (in
+   `src/fleet/eslint_config.js`) blocks raw color literals and legacy color
+   imports at lint time, and `style_conventions.test.ts` fails the build if the
+   count of raw literals in `src/fleet` grows.
 2. **Three radii only.** `radii.sm` (6px) for small inner elements,
    `radii.md` (12px) for every surface container, `radii.pill` for anything
    pill-shaped (buttons, chips, status pills, search bars).
-3. **One surface level.** Content sits in a white `surfaceCardSx` card on the
-   `fleetColors.canvas` page. Never nest a bordered card directly inside
+3. **One surface level.** Content sits in a `surfaceCardSx` card
+   (`fleetColors.surface`) on the `fleetColors.canvas` page. Never nest a bordered card directly inside
    another bordered card. Use `tonalPanelSx` for a nested group.
 4. **Reach for the shared piece first:**
 
@@ -54,6 +58,61 @@ emerges, add a token or recipe here so the rest of the app can reuse it.
    `!important` (column header resize handles in
    `fc_data_table/fleet_column_header.styles.ts`).
 
+## Light / Dark / Auto
+
+Fleet Console has a light and a dark theme. Users can toggle Light ↔ Dark from
+the header icon button or pick **Theme → Light / Dark / Auto** in the ⋮
+settings menu (Auto follows the OS setting). The choice is stored in
+localStorage (`fleet-console-theme`), and the resolved theme is exposed as
+`data-fleet-theme` on `<html>` for debugging and screenshots.
+
+How it works:
+
+1. [`palettes.ts`](./palettes.ts) holds every color value, as two objects
+   (`lightPalette`, `darkPalette`) with the same semantic roles.
+2. [`tokens.ts`](./tokens.ts) turns each role into a CSS variable reference
+   with the light value as fallback, e.g.
+   `fleetColors.surface === 'var(--fc-surface, #ffffff)'`.
+3. `FleetThemeProvider` (in `FleetLayout`) writes the dark palette as
+   `--fc-*` custom properties on `:root` when dark is active, along with the
+   shared LUCI CSS variables, and provides the matching MUI theme from
+   `createFleetTheme(palette)`. Light sets no variables, so it renders exactly
+   as before.
+
+Rules:
+
+- **Never branch on the theme in a component.** No `theme.palette.mode`, no
+  `isDark`, no `prefers-color-scheme`, no `useFleetTheme()` (only the
+  settings menu reads it). If something should look different in dark, give
+  it a role whose dark value differs. `style_conventions.test.ts` fails on
+  theme branching outside `src/fleet/theme/`.
+- **Only theme-aware colors.** Use `fleetColors.*`, `statusTones.*`,
+  `toneColors.*`, `healthStateColors.*`, `avatarColors.*`, or MUI palette keys
+  (`'text.secondary'`, `'primary.main'`). No hex, `rgb()`, `hsl()`, named
+  colors, `@mui/material/colors`, `theme.palette.grey`, or imports of
+  `colors.ts` in components; the conventions test enforces this.
+
+Which token?
+
+| Need | Use |
+| --- | --- |
+| Page, card, header, sidebar backgrounds; borders; text | `fleetColors` (`canvas`, `surface`, `shell`, `border`, `textPrimary`, ...) |
+| Task / device state pill | `<StatusPill tone=...>` or `statusTones[tone]` |
+| Chips, indicators, chart series with more steps or a decorative hue | `toneColors[tone][role]`, e.g. `toneColors.success.container` + `toneColors.success.onContainer` |
+| User avatars (non-inverting saturated fills + white initial) | `avatarColors.fills` + `avatarColors.onFill` |
+| ChromeOS health spectrum | `healthStateColors` |
+
+### Add a color
+
+1. Pick a semantic name for what it's for (`infoBanner`, `track`), not what
+   it looks like (`lightBlue`).
+2. Add it to `FleetColorRoles` in `palettes.ts` with a doc comment, and give it
+   a value in **both** `lightPalette.colors` and `darkPalette.colors`. For a
+   new tone role, extend `ToneRoles` and both tone builders.
+3. Use it as `fleetColors.<name>`. `tokens.test.ts` checks that both palettes
+   define every variable and that text and status pairs meet WCAG AA
+   (4.5:1) in both themes; add your pair there if it's text.
+
 ## Gotchas
 
 - **`<Button variant="toolbar">` ignores `size`.** Use `color="inherit"` for
@@ -67,9 +126,9 @@ emerges, add a token or recipe here so the rest of the app can reuse it.
 - **`MetricsContainer`** lives in `@/fleet/constants/css_snippets` for
   historical reasons; it is the card recipe for metric panes and uses the same
   tokens as `surfaceCardSx`.
-- **Two color modules:** `fleetColors` (roles, in `tokens.ts`) is what new
-  code uses. `colors` (hue scales, in `colors.ts`) is legacy; don't alias it
-  as `fleetColors`.
+- **Never pass color tokens to `alpha()`, `darken()` or `lighten()`.** They
+  are CSS variables, so MUI can't parse them. Use `theme.palette` (concrete
+  values for the active theme) or add a role to the palettes.
 
 ## Example
 

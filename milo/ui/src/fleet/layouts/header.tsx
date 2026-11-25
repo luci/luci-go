@@ -41,6 +41,7 @@ import fleetConsoleMascot from '@/fleet/assets/pngs/fleet-console-mascot.png';
 import { PlatformSelector } from '@/fleet/components/platform_selector';
 import { useFleetAnalytics } from '@/fleet/hooks/use_fleet_analytics';
 import { iconButtonSx } from '@/fleet/theme/recipes';
+import { ThemeToggleButton } from '@/fleet/theme/theme_toggle_button';
 import {
   borders,
   elevations,
@@ -96,7 +97,7 @@ export const Header = ({
       css={{
         display: 'flex',
         justifyContent: 'space-between',
-        backgroundColor: fleetColors.surface,
+        backgroundColor: fleetColors.shell,
         borderBottom: borders.default,
         boxShadow: elevations.input,
         padding: '0 20px',
@@ -197,6 +198,7 @@ export const Header = ({
             <ExtensionOutlined />
           </IconButton>
         </Tooltip>
+        <ThemeToggleButton />
         <AvailableFlags />
         <SettingsMenu />
         <Divider
