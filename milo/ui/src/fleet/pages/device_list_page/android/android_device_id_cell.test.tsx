@@ -20,9 +20,14 @@ import { FakeContextProvider } from '@/testing_tools/fakes/fake_context_provider
 
 import { AndroidDeviceIdCell } from './android_device_id_cell';
 
-const NavigatedFromLink = () => {
-  const { state } = useLocation();
-  return <div data-testid="navigated-from">{state?.navigatedFromLink}</div>;
+const NavigatedTarget = () => {
+  const { search, state } = useLocation();
+  return (
+    <div>
+      <div data-testid="navigated-from">{state?.navigatedFromLink}</div>
+      <div data-testid="navigated-search">{search}</div>
+    </div>
+  );
 };
 
 describe('AndroidDeviceIdCell', () => {
@@ -35,7 +40,7 @@ describe('AndroidDeviceIdCell', () => {
         siblingRoutes={[
           {
             path: '/ui/fleet/p/pixel/devices/:id',
-            element: <NavigatedFromLink />,
+            element: <NavigatedTarget />,
           },
         ]}
         routerOptions={{ initialEntries: ['/ui/fleet/p/pixel/repairs?page=2'] }}
@@ -48,6 +53,34 @@ describe('AndroidDeviceIdCell', () => {
 
     expect(screen.getByTestId('navigated-from')).toHaveTextContent(
       '/ui/fleet/p/pixel/repairs?page=2',
+    );
+    expect(screen.getByTestId('navigated-search')).toHaveTextContent('');
+  });
+
+  it('appends machine_type query param when machineType is provided', () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/p/android/repairs"
+        siblingRoutes={[
+          {
+            path: '/ui/fleet/p/android/devices/:id',
+            element: <NavigatedTarget />,
+          },
+        ]}
+        routerOptions={{ initialEntries: ['/ui/fleet/p/android/repairs'] }}
+      >
+        <AndroidDeviceIdCell
+          deviceId="shared-id-1"
+          workspace="Android"
+          machineType="host"
+        />
+      </FakeContextProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('link', { name: 'shared-id-1' }));
+
+    expect(screen.getByTestId('navigated-search')).toHaveTextContent(
+      '?machine_type=host',
     );
   });
 });

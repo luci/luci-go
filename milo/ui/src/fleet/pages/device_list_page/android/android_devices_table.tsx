@@ -66,6 +66,11 @@ interface AndroidTableProps {
   combinedAip160: string;
 }
 
+const getAndroidDeviceRowId = (row: AndroidDevice): string => {
+  const machineType = row.omnilabSpec?.labels?.['fc_machine_type']?.values?.[0];
+  return machineType ? `${row.id}:${machineType}` : row.id;
+};
+
 export const AndroidDevicesTable = ({
   mrtColumnManager,
   workspace,
@@ -89,11 +94,11 @@ export const AndroidDevicesTable = ({
 
   const [_, setSearchParams] = useSyncedSearchParams();
 
-  // Clear row selection when the active filter query changes to prevent
-  // performing bulk actions on hidden/invisible rows.
+  // Clear row selection when the active query, workspace, or pagination changes
+  // to prevent performing bulk actions on hidden/invisible rows.
   useEffect(() => {
     setRowSelection({});
-  }, [combinedAip160, workspace]);
+  }, [combinedAip160, workspace, pageToken, pageSize]);
 
   const request = useMemo(
     () =>
@@ -167,16 +172,22 @@ export const AndroidDevicesTable = ({
               table={table}
               filter={combinedAip160}
               fileName={`fleet_console_${workspace.toLowerCase()}_devices`}
-              onExport={(cols, filterStr, ids) =>
-                client.ExportAndroidDevicesToCSV(
+              onExport={(cols, filterStr, ids) => {
+                const exportedIds =
+                  ids === undefined
+                    ? undefined
+                    : selectedDevices.length > 0
+                      ? selectedDevices.map((d) => d.id)
+                      : table.getRowModel().rows.map((row) => row.original.id);
+                return client.ExportAndroidDevicesToCSV(
                   ExportAndroidDevicesToCSVRequest.fromPartial({
                     columns: cols,
                     orderBy: orderByParam,
                     filter: filterStr,
-                    ids,
+                    ids: exportedIds,
                   }),
-                )
-              }
+                );
+              }}
             />
           </FleetTopToolbar>
         );
@@ -189,7 +200,7 @@ export const AndroidDevicesTable = ({
           pagerCtx={pagerCtx}
         />
       ),
-      getRowId: (row: AndroidDevice) => row.id,
+      getRowId: getAndroidDeviceRowId,
       onRowSelectionChange: setRowSelection,
       onSortingChange,
       enablePagination: false,

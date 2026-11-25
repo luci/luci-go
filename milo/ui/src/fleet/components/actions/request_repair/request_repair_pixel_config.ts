@@ -63,7 +63,11 @@ export const generatePixelRestorationTitle = (
 };
 
 export const generatePixelDeviceDetails = (device: AndroidDevice): string => {
-  const fcUrl = rawMd(generateDeviceDetailsURL(PIXEL_PLATFORM, device.id));
+  const machineType =
+    device.omnilabSpec?.labels?.['fc_machine_type']?.values?.[0] || undefined;
+  const fcUrl = rawMd(
+    generateDeviceDetailsURL(PIXEL_PLATFORM, device.id, machineType),
+  );
   const mhUrl = rawMd(getMobileHarnessLink(device));
   const hostname =
     device.omnilabSpec?.labels?.['hostname']?.values?.[0] ||
@@ -134,7 +138,11 @@ export const generatePixelDevicesTable = (
       return md`| ${d.id} | ${hostname} | ${runTarget} | ${state} | [View in MH](${mhUrl}) |`;
     }
 
-    const fcUrl = rawMd(generateDeviceDetailsURL(PIXEL_PLATFORM, d.id));
+    const machineType =
+      d.omnilabSpec?.labels?.['fc_machine_type']?.values?.[0] || undefined;
+    const fcUrl = rawMd(
+      generateDeviceDetailsURL(PIXEL_PLATFORM, d.id, machineType),
+    );
     return md`| [${d.id}](${fcUrl}) | ${hostname} | ${runTarget} | ${state} | [View in MH](${mhUrl}) |`;
   });
 

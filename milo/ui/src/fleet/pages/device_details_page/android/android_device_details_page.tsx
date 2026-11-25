@@ -34,6 +34,7 @@ import AlertWithFeedback from '@/fleet/components/feedback/alert_with_feedback';
 import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { PlatformNotAvailable } from '@/fleet/components/platform_not_available';
 import { useShortcut } from '@/fleet/components/shortcut_provider';
+import { MACHINE_TYPE_PARAM_KEY } from '@/fleet/constants/param_keys';
 import {
   generateDeviceListURL,
   ANDROID_PLATFORM,
@@ -49,6 +50,7 @@ import { isTyping } from '@/fleet/utils/field_typing';
 import { getMobileHarnessLink } from '@/fleet/utils/mobile_harness';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { TrackLeafRoutePageView } from '@/generic_libs/components/google_analytics';
+import { useSyncedSearchParams } from '@/generic_libs/hooks/synced_search_params';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import {
@@ -81,11 +83,14 @@ export const AndroidDeviceDetailsPage = ({
   workspace: AndroidPageWorkspace;
 }) => {
   const { id = '' } = useParams();
+  const [searchParams] = useSyncedSearchParams();
+  const machineType = searchParams.get(MACHINE_TYPE_PARAM_KEY) || undefined;
   const [deviceIdInputValue, setDeviceIdInputValue] = useState(id);
   const navigate = useNavigate();
   const { error, isError, isLoading, device } = useAndroidDeviceData(
     id,
     workspace,
+    machineType,
   );
 
   const navigatedFromLink = useNavigatedFromLink();

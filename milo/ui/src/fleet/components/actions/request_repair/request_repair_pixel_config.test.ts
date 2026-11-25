@@ -208,7 +208,7 @@ describe('request_repair_pixel_config', () => {
 
       expect(details).toContain('* **Device:** [device\\-001]');
       expect(details).toContain(
-        generateDeviceDetailsURL(PIXEL_PLATFORM, 'device-001'),
+        generateDeviceDetailsURL(PIXEL_PLATFORM, 'device-001', 'device'),
       );
       expect(details).toContain('**Hostname:** host\\-001\\.mock\\-lab\\-mtv');
       expect(details).toContain('**Host IP:** 10\\.0\\.0\\.1');
@@ -247,6 +247,9 @@ describe('request_repair_pixel_config', () => {
       const link = getMobileHarnessLink(hostDev);
       expect(link).toBe(
         'https://mobileharness-fe.corp.google.com/labdetailview/my-host/10.1.1.1',
+      );
+      expect(generatePixelDeviceDetails(hostDev)).toContain(
+        generateDeviceDetailsURL(PIXEL_PLATFORM, 'host-machine-1', 'host'),
       );
     });
 

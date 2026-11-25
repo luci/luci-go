@@ -16,6 +16,8 @@ import {
   platformToJSON,
 } from '../../proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { MACHINE_TYPE_PARAM_KEY } from './param_keys';
+
 export const FLEET_CONSOLE_BASE_URL = '/ui/fleet';
 
 export const PLATFORM_SUBROUTE = 'p/:platform';
@@ -74,8 +76,18 @@ export const generateHealthURL = (platform: string) => {
   return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${HEALTH_SUBROUTE}`;
 };
 
-export const generateDeviceDetailsURL = (platform: string, id: string) => {
-  return `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${DEVICES_SUBROUTE}/${id}`;
+export const generateDeviceDetailsURL = (
+  platform: string,
+  id: string,
+  machineType?: string,
+) => {
+  const baseUrl = `${FLEET_CONSOLE_BASE_URL}/p/${platform}/${DEVICES_SUBROUTE}/${id}`;
+  if (!machineType) {
+    return baseUrl;
+  }
+  return `${baseUrl}?${new URLSearchParams({
+    [MACHINE_TYPE_PARAM_KEY]: machineType,
+  }).toString()}`;
 };
 
 export const getCurrentFleetPathnameWithParams = () =>
@@ -142,14 +154,20 @@ export const generateChromeOsDeviceDetailsURL = (id: string) => {
   return generateDeviceDetailsURL(CHROMEOS_PLATFORM, id);
 };
 
-export const generateAndroidDeviceDetailsURL = (id: string) => {
-  return generateDeviceDetailsURL(ANDROID_PLATFORM, id);
+export const generateAndroidDeviceDetailsURL = (
+  id: string,
+  machineType?: string,
+) => {
+  return generateDeviceDetailsURL(ANDROID_PLATFORM, id, machineType);
 };
 
 export const generateBrowserDeviceDetailsURL = (id: string) => {
   return generateDeviceDetailsURL(CHROMIUM_PLATFORM, id);
 };
 
-export const generatePixelDeviceDetailsURL = (id: string) => {
-  return generateDeviceDetailsURL(PIXEL_PLATFORM, id);
+export const generatePixelDeviceDetailsURL = (
+  id: string,
+  machineType?: string,
+) => {
+  return generateDeviceDetailsURL(PIXEL_PLATFORM, id, machineType);
 };

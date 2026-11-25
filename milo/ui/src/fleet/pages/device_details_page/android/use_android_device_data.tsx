@@ -36,18 +36,28 @@ export type UseAndroidDeviceDataResult = {
 export const useAndroidDeviceData = (
   deviceId: string,
   workspace: AndroidPageWorkspace,
+  machineType?: string,
 ): UseAndroidDeviceDataResult => {
   const queryClient = useQueryClient();
-  const listDevicesQueryKey = useListAndroidDevicesQueryKey();
+  const listDevicesQueryKey = useListAndroidDevicesQueryKey(
+    undefined,
+    workspace,
+  );
 
   const queriesData = queryClient.getQueriesData<ListAndroidDevicesResponse>({
     queryKey: listDevicesQueryKey,
   });
 
   const idFilter = `id = "${escapeAipValue(deviceId)}"`;
+  const identityFilter = machineType
+    ? combineAipFilters(
+        idFilter,
+        `fc_machine_type = "${escapeAipValue(machineType)}"`,
+      )
+    : idFilter;
   const request = ListAndroidDevicesRequest.fromPartial({
     pageSize: 1,
-    filter: combineAipFilters(workspaces[workspace].baseFilter, idFilter),
+    filter: combineAipFilters(workspaces[workspace].baseFilter, identityFilter),
   });
   const { data, error, isError, isLoading } = useAndroidDevices(
     request,
@@ -65,7 +75,14 @@ export const useAndroidDeviceData = (
 
   if (isLoading) {
     for (const query of queriesData) {
-      const cachedDevice = query[1]?.devices?.find((d) => d.id === deviceId);
+      const cachedDevice = query[1]?.devices?.find((d) => {
+        if (d.id !== deviceId) return false;
+        if (!machineType) return true;
+        return (
+          d.omnilabSpec?.labels?.['fc_machine_type']?.values?.[0] ===
+          machineType
+        );
+      });
       if (cachedDevice) {
         return {
           isError: false,

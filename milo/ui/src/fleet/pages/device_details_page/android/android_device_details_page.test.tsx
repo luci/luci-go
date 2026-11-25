@@ -96,4 +96,54 @@ describe('AndroidDeviceDetailsPage', () => {
     expect(screen.queryByText('[object Object]')).not.toBeInTheDocument();
     expect(rowTexts[ufsIdx]).not.toContain('[object Object]');
   });
+
+  it('forwards machine_type query param to useAndroidDeviceData', () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/p/:platform/devices/:id"
+        routerOptions={{
+          initialEntries: [
+            '/ui/fleet/p/android/devices/android-device-42?machine_type=host',
+          ],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <AndroidDeviceDetailsPage workspace="Android" />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(deviceDataModule.useAndroidDeviceData).toHaveBeenCalledWith(
+      'android-device-42',
+      'Android',
+      'host',
+    );
+  });
+
+  it('forwards machine_type query param in Pixel workspace', () => {
+    render(
+      <FakeContextProvider
+        mountedPath="/ui/fleet/p/:platform/devices/:id"
+        routerOptions={{
+          initialEntries: [
+            '/ui/fleet/p/pixel/devices/pixel-host-1?machine_type=host',
+          ],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <AndroidDeviceDetailsPage workspace="Pixel" />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(deviceDataModule.useAndroidDeviceData).toHaveBeenCalledWith(
+      'pixel-host-1',
+      'Pixel',
+      'host',
+    );
+  });
 });

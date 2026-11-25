@@ -297,4 +297,265 @@ describe('<AndroidDevicesPage /> Integration', () => {
       screen.queryByTestId('file-restoration-bug-button'),
     ).not.toBeInTheDocument();
   });
+
+  it.each([
+    { workspace: 'Android' as const, platformPath: 'android' },
+    { workspace: 'Pixel' as const, platformPath: 'pixel' },
+  ])(
+    'disambiguates shared host and device IDs for row selection and details links in $workspace workspace',
+    async ({ workspace, platformPath }) => {
+      const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+      const baseClient = mockUseFleetConsoleClient.mock.results[0]?.value ?? {};
+      mockUseFleetConsoleClient.mockReturnValue({
+        ...baseClient,
+        CountAndroidDevices: {
+          query: () => ({
+            queryKey: ['CountAndroidDevices'],
+            queryFn: async () => mockHealthResponse,
+          }),
+        },
+        CountDevices: {
+          query: () => ({
+            queryKey: ['CountDevices'],
+            queryFn: async () => ({
+              androidCount: {
+                totalDevices: 1,
+                totalHosts: 1,
+              },
+            }),
+          }),
+        },
+        GetDeviceDimensions: {
+          query: () => ({
+            queryKey: ['GetDeviceDimensions'],
+            queryFn: async () => ({ baseDimensions: {}, labels: {} }),
+          }),
+        },
+        ListAndroidDevices: {
+          query: () => ({
+            queryKey: ['ListAndroidDevices', workspace, 'shared-id'],
+            queryFn: async () => ({
+              devices: [
+                {
+                  id: 'shared-id',
+                  runTarget: 'pixel9',
+                  realm: 'test-realm',
+                  healthCategory: 'HEALTH_CATEGORY_IN_SERVICE',
+                  omnilabSpec: {
+                    labels: {
+                      fc_machine_type: { values: ['device'] },
+                      lab_name: { values: ['mock-pixel-lab'] },
+                    },
+                  },
+                },
+                {
+                  id: 'shared-id',
+                  runTarget: '',
+                  realm: 'test-realm',
+                  healthCategory: 'HEALTH_CATEGORY_NEED_MANUAL_REPAIR',
+                  omnilabSpec: {
+                    labels: {
+                      fc_machine_type: { values: ['host'] },
+                      lab_name: { values: ['mock-pixel-lab'] },
+                    },
+                  },
+                },
+              ],
+              totalSize: 2,
+              nextPageToken: '',
+            }),
+          }),
+        },
+      });
+
+      render(
+        <FakeContextProvider
+          mountedPath="/p/:platform/devices"
+          routerOptions={{
+            initialEntries: [`/p/${platformPath}/devices`],
+          }}
+        >
+          <SettingsProvider>
+            <ShortcutProvider>
+              <AndroidDevicesPage workspace={workspace} />
+            </ShortcutProvider>
+          </SettingsProvider>
+        </FakeContextProvider>,
+      );
+
+      const links = await screen.findAllByRole('link', { name: 'shared-id' });
+      expect(links).toHaveLength(2);
+      expect(links.map((l) => l.getAttribute('href'))).toEqual([
+        `/ui/fleet/p/${platformPath}/devices/shared-id?machine_type=device`,
+        `/ui/fleet/p/${platformPath}/devices/shared-id?machine_type=host`,
+      ]);
+
+      const deviceCheckbox = screen.getByTestId(
+        'select-checkbox-shared-id:device',
+      ) as HTMLInputElement;
+      const hostCheckbox = screen.getByTestId(
+        'select-checkbox-shared-id:host',
+      ) as HTMLInputElement;
+      expect(deviceCheckbox.checked).toBe(false);
+      expect(hostCheckbox.checked).toBe(false);
+
+      fireEvent.click(hostCheckbox);
+      expect(hostCheckbox.checked).toBe(true);
+      expect(deviceCheckbox.checked).toBe(false);
+    },
+  );
+
+  const setupPaginatedDevicesMock = () => {
+    const mockUseFleetConsoleClient = useFleetConsoleClient as jest.Mock;
+    const baseClient = mockUseFleetConsoleClient.mock.results[0]?.value ?? {};
+    mockUseFleetConsoleClient.mockReturnValue({
+      ...baseClient,
+      CountAndroidDevices: {
+        query: () => ({
+          queryKey: ['CountAndroidDevices'],
+          queryFn: async () => mockHealthResponse,
+        }),
+      },
+      CountDevices: {
+        query: () => ({
+          queryKey: ['CountDevices'],
+          queryFn: async () => ({
+            androidCount: {
+              totalDevices: 200,
+              totalHosts: 0,
+            },
+          }),
+        }),
+      },
+      GetDeviceDimensions: {
+        query: () => ({
+          queryKey: ['GetDeviceDimensions'],
+          queryFn: async () => ({ baseDimensions: {}, labels: {} }),
+        }),
+      },
+      ListAndroidDevices: {
+        query: (req: { pageToken?: string; pageSize?: number }) => ({
+          queryKey: ['ListAndroidDevices', req.pageToken, req.pageSize],
+          queryFn: async () =>
+            req.pageToken === 'page-2'
+              ? {
+                  devices: [
+                    {
+                      id: 'dev-page-2',
+                      runTarget: 'pixel9',
+                      realm: 'test-realm',
+                      healthCategory: 'HEALTH_CATEGORY_IN_SERVICE',
+                      omnilabSpec: {
+                        labels: {
+                          fc_machine_type: { values: ['device'] },
+                          lab_name: { values: ['mock-pixel-lab'] },
+                        },
+                      },
+                    },
+                  ],
+                  totalSize: 200,
+                  nextPageToken: '',
+                }
+              : {
+                  devices: [
+                    {
+                      id: 'dev-page-1',
+                      runTarget: 'pixel8',
+                      realm: 'test-realm',
+                      healthCategory: 'HEALTH_CATEGORY_IN_SERVICE',
+                      omnilabSpec: {
+                        labels: {
+                          fc_machine_type: { values: ['device'] },
+                          lab_name: { values: ['mock-pixel-lab'] },
+                        },
+                      },
+                    },
+                  ],
+                  totalSize: 200,
+                  nextPageToken: 'page-2',
+                },
+        }),
+      },
+    });
+  };
+
+  it('clears row selection when navigating to another page', async () => {
+    setupPaginatedDevicesMock();
+
+    render(
+      <FakeContextProvider
+        mountedPath="/p/:platform/devices"
+        routerOptions={{
+          initialEntries: ['/p/pixel/devices'],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <AndroidDevicesPage workspace="Pixel" />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(await screen.findByText('dev-page-1')).toBeInTheDocument();
+
+    const page1Checkbox = screen.getByTestId(
+      'select-checkbox-dev-page-1:device',
+    ) as HTMLInputElement;
+    fireEvent.click(page1Checkbox);
+    expect(page1Checkbox.checked).toBe(true);
+
+    // Navigating to page 2 should clear rowSelection so Export menu resets.
+    fireEvent.click(screen.getByLabelText('Go to next page'));
+    expect(await screen.findByText('dev-page-2')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Export'));
+    expect(
+      await screen.findByText('Export current page (CSV)'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Export selected (CSV)')).not.toBeInTheDocument();
+  });
+
+  it('clears row selection when changing page size', async () => {
+    setupPaginatedDevicesMock();
+
+    render(
+      <FakeContextProvider
+        mountedPath="/p/:platform/devices"
+        routerOptions={{
+          initialEntries: ['/p/pixel/devices'],
+        }}
+      >
+        <SettingsProvider>
+          <ShortcutProvider>
+            <AndroidDevicesPage workspace="Pixel" />
+          </ShortcutProvider>
+        </SettingsProvider>
+      </FakeContextProvider>,
+    );
+
+    expect(await screen.findByText('dev-page-1')).toBeInTheDocument();
+
+    const page1Checkbox = screen.getByTestId(
+      'select-checkbox-dev-page-1:device',
+    ) as HTMLInputElement;
+    fireEvent.click(page1Checkbox);
+    expect(page1Checkbox.checked).toBe(true);
+
+    // Change page size on page 1 (pageToken stays empty) to exercise pageSize.
+    fireEvent.mouseDown(screen.getByLabelText(/Rows per page/i));
+    fireEvent.click(await screen.findByText('25'));
+
+    expect(await screen.findByText('dev-page-1')).toBeInTheDocument();
+    const page1CheckboxAfterResize = screen.getByTestId(
+      'select-checkbox-dev-page-1:device',
+    ) as HTMLInputElement;
+    expect(page1CheckboxAfterResize.checked).toBe(false);
+
+    fireEvent.click(screen.getByText('Export'));
+    expect(
+      await screen.findByText('Export current page (CSV)'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Export selected (CSV)')).not.toBeInTheDocument();
+  });
 });

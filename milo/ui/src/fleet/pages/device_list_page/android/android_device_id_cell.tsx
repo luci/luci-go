@@ -28,6 +28,11 @@ export interface AndroidDeviceIdCellProps {
   readonly deviceId: string;
   readonly workspace: AndroidPageWorkspace;
   /**
+   * Disambiguates `android_devices` rows that share an `id` across
+   * `fc_machine_type` values (`host` vs `device`).
+   */
+  readonly machineType?: string;
+  /**
    * Mobile Harness page to open. Defaults to the Mobile Harness device list
    * filtered down to `deviceId`.
    */
@@ -42,11 +47,13 @@ export interface AndroidDeviceIdCellProps {
 export const AndroidDeviceIdCell = ({
   deviceId,
   workspace,
+  machineType,
   mhLink,
 }: AndroidDeviceIdCellProps) => {
   const internalLink = generateDeviceDetailsURL(
     workspaces[workspace].baseUrl,
     deviceId,
+    machineType,
   );
 
   const href = mhLink || getMobileHarnessDeviceListLink(deviceId);

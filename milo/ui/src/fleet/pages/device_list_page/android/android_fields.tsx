@@ -136,11 +136,14 @@ export const getAndroidColumnOverrides: (
       if (!d) return (value as React.ReactNode) ?? null;
 
       const mhLink = getMobileHarnessLink(d);
+      const machineType =
+        d.omnilabSpec?.labels?.['fc_machine_type']?.values?.[0] || undefined;
 
       return (
         <AndroidDeviceIdCell
           deviceId={d.id}
           workspace={workspace}
+          machineType={machineType}
           mhLink={mhLink}
         />
       );

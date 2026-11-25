@@ -133,6 +133,9 @@ export const useAndroidRepairQueueColumns = (
           <AndroidDeviceIdCell
             deviceId={row.original.deviceId}
             workspace={workspace}
+            machineType={
+              androidMachineTypeLabel(row.original.fcMachineType) || undefined
+            }
             mhLink={
               isAndroidHost(row.original.fcMachineType)
                 ? getMobileHarnessHostListLink(row.original.deviceId)

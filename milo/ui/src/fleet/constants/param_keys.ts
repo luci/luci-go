@@ -17,3 +17,5 @@ export const COLUMNS_PARAM_KEY = 'c';
 export const PAGE_TOKEN_PARAM_KEY = 'cursor';
 
 export const FILTERS_PARAM_KEY = 'filters';
+
+export const MACHINE_TYPE_PARAM_KEY = 'machine_type';
