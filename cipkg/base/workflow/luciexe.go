@@ -66,12 +66,20 @@ func NewRootStep(ctx context.Context, name, id string) *RootStep {
 // ID is the unique ID for the root step.
 func (r *RootStep) ID() string { return r.id }
 
+type activeRootKey struct{}
+
+type activeRoot struct {
+	root *RootStep
+	step *build.Step
+}
+
 func (r *RootStep) runRoot(ctx context.Context, name string) {
 	defer close(r.ended)
 
 	s, ctx := build.ScheduleStep(ctx, name)
 	defer func() { s.End(r.Err()) }()
 
+	ctx = context.WithValue(ctx, activeRootKey{}, activeRoot{root: r, step: s})
 	for sub := range r.substep {
 		err := sub.fn(ctx, s)
 		r.errs = append(r.errs, err)
@@ -97,9 +105,16 @@ func (r *RootStep) IsEnded() bool {
 // RunSubstep execute the SubstepFn in the root step environment with its
 // context and *build.Step. Substep still needs to create its own step context
 // by calling build.StartStep in SubstepFn.
+//
+// If ctx is already executing inside this RootStep, sub is invoked directly
+// using ctx so nested substeps attach under the current step without
+// deadlocking.
 func (r *RootStep) RunSubstep(ctx context.Context, sub SubstepFn) error {
 	if r.IsEnded() {
 		return fmt.Errorf("root step ended")
+	}
+	if cur, ok := ctx.Value(activeRootKey{}).(activeRoot); ok && cur.root == r {
+		return sub(ctx, cur.step)
 	}
 	r.initFn()
 
