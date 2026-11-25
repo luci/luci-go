@@ -289,7 +289,141 @@ describe('buildFilterString', () => {
       },
     ];
     const result = buildFilterString(filters);
-    expect(result).toBe('build_type IN ("Postsubmit", "Presubmit")');
+    expect(result).toBe(
+      '(build_type = "Postsubmit" OR build_type = "Presubmit")',
+    );
+  });
+
+  it('expands IN operator with a single value to an equality', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'build_target',
+        displayName: 'Build Target',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['komodo-trunk_staging-userdebug'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe('build_target = "komodo-trunk_staging-userdebug"');
+  });
+
+  it('combines IN filters with other filters using AND', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'build_target',
+        displayName: 'Build Target',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['a', 'b"c'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+      {
+        id: '2',
+        column: 'build_branch',
+        displayName: 'Build Branch',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['git_main'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe(
+      '(build_target = "a" OR build_target = "b\\"c") AND build_branch = "git_main"',
+    );
+  });
+
+  it('expands NOT_IN operator to inequalities joined by AND', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: Column.BUILD_TYPE,
+        displayName: 'Build Type',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['Postsubmit', 'Presubmit'],
+            filterOperator: PerfFilterDefault_FilterOperator.NOT_IN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe(
+      'build_type != "Postsubmit" AND build_type != "Presubmit"',
+    );
+  });
+
+  it('does not quote values of numeric IN filters', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'build_id',
+        displayName: 'Build ID',
+        dataSpecId: 'data-spec-id',
+        numberInput: {
+          defaultValue: {
+            values: ['100', '200'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe('(build_id = 100 OR build_id = 200)');
+  });
+
+  it('escapes backslashes before double quotes in IN filter values', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'build_target',
+        displayName: 'Build Target',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['foo\\', 'a\\"b'],
+            filterOperator: PerfFilterDefault_FilterOperator.IN,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe(
+      '(build_target = "foo\\\\" OR build_target = "a\\\\\\"b")',
+    );
+  });
+
+  it('escapes backslashes before double quotes in single-value filters', () => {
+    const filters: PerfFilter[] = [
+      {
+        id: '1',
+        column: 'build_target',
+        displayName: 'Build Target',
+        dataSpecId: 'data-spec-id',
+        textInput: {
+          defaultValue: {
+            values: ['a\\"b'],
+            filterOperator: PerfFilterDefault_FilterOperator.EQUAL,
+          },
+        },
+      },
+    ];
+    const result = buildFilterString(filters);
+    expect(result).toBe('build_target = "a\\\\\\"b"');
   });
 
   it('resolves IN_PAST on text input filters to an absolute timestamp', () => {

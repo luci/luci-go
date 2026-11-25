@@ -260,6 +260,14 @@ export const parseSingleFilter = (
 };
 
 /**
+ * Escapes a value for use inside a double-quoted AIP-160 string literal.
+ * Backslashes are escaped first so that the escape added for a double quote
+ * is not itself escaped.
+ */
+const escapeFilterString = (val: string): string =>
+  val.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+/**
  * Builds an AIP-160 compliant filter string for specified columns based on
  * provided global and widget-level filters.
  *
@@ -299,12 +307,17 @@ export const buildFilterString = (
         f.operator === PerfFilterDefault_FilterOperator.IN ||
         f.operator === PerfFilterDefault_FilterOperator.NOT_IN
       ) {
-        const opStr =
-          f.operator === PerfFilterDefault_FilterOperator.IN ? 'IN' : 'NOT IN';
-        const formattedVals = vals
-          .map((v) => (f.type === 'number' ? v : `"${v.replace(/"/g, '\\"')}"`))
-          .join(', ');
-        return `${f.column} ${opStr} (${formattedVals})`;
+        // AIP-160 has no IN operator, so expand IN to an OR of equalities and
+        // NOT IN to an AND of inequalities on the same column.
+        const isIn = f.operator === PerfFilterDefault_FilterOperator.IN;
+        const conditions = vals.map((v) => {
+          const formattedVal =
+            f.type === 'number' ? v : `"${escapeFilterString(v)}"`;
+          return `${f.column} ${isIn ? '=' : '!='} ${formattedVal}`;
+        });
+        return isIn && conditions.length > 1
+          ? `(${conditions.join(' OR ')})`
+          : conditions.join(' AND ');
       }
 
       const val = vals[0] ?? '';
@@ -362,7 +375,7 @@ export const buildFilterString = (
             opStr = '=';
             break;
         }
-        const formattedVal = finalVal.replace(/"/g, '\\"');
+        const formattedVal = escapeFilterString(finalVal);
         return `${f.column} ${opStr} "${formattedVal}"`;
       }
     })
