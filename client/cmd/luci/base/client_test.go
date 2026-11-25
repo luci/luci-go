@@ -16,13 +16,13 @@ package base
 
 import (
 	"context"
+	"flag"
 	"testing"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
@@ -30,10 +30,19 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
+func newTestAuthFlags(t testing.TB) *AuthFlags {
+	t.Helper()
+	opts := chromeinfra.DefaultAuthOptions()
+	opts.SecretsDir = t.TempDir()
+	af := &AuthFlags{DefaultOpts: opts}
+	af.Register(flag.NewFlagSet("test", flag.ContinueOnError))
+	return af
+}
+
 func TestNewAnalysisClients(t *testing.T) {
 	ftt.Run(`NewAnalysisClients`, t, func(t *ftt.Test) {
 		ctx := context.Background()
-		af := &AuthFlags{DefaultOpts: auth.Options{SecretsDir: t.TempDir()}}
+		af := newTestAuthFlags(t)
 
 		// Without Parse(), NewAnalysisClients returns an error.
 		_, _, _, err := af.NewAnalysisClients(ctx, chromeinfra.AnalysisHost)
@@ -49,10 +58,28 @@ func TestNewAnalysisClients(t *testing.T) {
 	})
 }
 
+func TestNewTestHistoryClients(t *testing.T) {
+	ftt.Run("new_test_history_clients", t, func(t *ftt.Test) {
+		ctx := t.Context()
+		af := newTestAuthFlags(t)
+
+		// Without Parse(), NewTestHistoryClients returns an error.
+		_, _, err := af.NewTestHistoryClients(ctx, chromeinfra.AnalysisHost)
+		assert.Loosely(t, err, should.NotBeNil)
+
+		// After Parse(), NewTestHistoryClients returns both pRPC clients.
+		assert.Loosely(t, af.Parse(), should.BeNil)
+		thClient, tvbClient, err := af.NewTestHistoryClients(ctx, chromeinfra.AnalysisHost)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, thClient, should.NotBeNil)
+		assert.Loosely(t, tvbClient, should.NotBeNil)
+	})
+}
+
 func TestNewNotifyClients(t *testing.T) {
 	ftt.Run(`NewNotifyClients`, t, func(t *ftt.Test) {
 		ctx := t.Context()
-		af := &AuthFlags{DefaultOpts: auth.Options{SecretsDir: t.TempDir()}}
+		af := newTestAuthFlags(t)
 
 		// Without Parse(), NewNotifyClients returns an error.
 		_, _, err := af.NewNotifyClients(ctx, chromeinfra.NotifyHost)

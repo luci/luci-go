@@ -17,9 +17,13 @@ package analysis
 import (
 	"bytes"
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/maruel/subcommands"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -27,17 +31,20 @@ import (
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
 	"go.chromium.org/luci/client/cmd/luci/base"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	rdbpb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
 type mockTestHistoryClient struct {
 	analysispb.TestHistoryClient
-	queryStats    func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error)
-	query         func(ctx context.Context, in *analysispb.QueryTestHistoryRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryResponse, error)
-	queryVariants func(ctx context.Context, in *analysispb.QueryVariantsRequest, opts ...grpc.CallOption) (*analysispb.QueryVariantsResponse, error)
-	queryTests    func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error)
+	queryStats          func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error)
+	query               func(ctx context.Context, in *analysispb.QueryTestHistoryRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryResponse, error)
+	queryVariants       func(ctx context.Context, in *analysispb.QueryVariantsRequest, opts ...grpc.CallOption) (*analysispb.QueryVariantsResponse, error)
+	queryTests          func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error)
+	querySourceVerdicts func(ctx context.Context, in *analysispb.QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*analysispb.QuerySourceVerdictsV2Response, error)
 }
 
 func (m *mockTestHistoryClient) QueryStats(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
@@ -66,6 +73,45 @@ func (m *mockTestHistoryClient) QueryTests(ctx context.Context, in *analysispb.Q
 		return m.queryTests(ctx, in, opts...)
 	}
 	return &analysispb.QueryTestsResponse{}, nil
+}
+
+func (m *mockTestHistoryClient) QuerySourceVerdicts(ctx context.Context, in *analysispb.QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*analysispb.QuerySourceVerdictsV2Response, error) {
+	if m.querySourceVerdicts != nil {
+		return m.querySourceVerdicts(ctx, in, opts...)
+	}
+	return &analysispb.QuerySourceVerdictsV2Response{}, nil
+}
+
+type mockTestVariantBranchesClient struct {
+	analysispb.TestVariantBranchesClient
+	query func(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error)
+}
+
+func (m *mockTestVariantBranchesClient) Query(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error) {
+	if m.query != nil {
+		return m.query(ctx, in, opts...)
+	}
+	return &analysispb.QueryTestVariantBranchResponse{}, nil
+}
+
+type mockAnalysisRDBClient struct {
+	rdbpb.ResultDBClient
+	getRootInvocation func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error)
+	queryTestVerdicts func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestVerdictsResponse, error)
+}
+
+func (m *mockAnalysisRDBClient) GetRootInvocation(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
+	if m.getRootInvocation != nil {
+		return m.getRootInvocation(ctx, in, opts...)
+	}
+	return &rdbpb.RootInvocation{}, nil
+}
+
+func (m *mockAnalysisRDBClient) QueryTestVerdicts(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestVerdictsResponse, error) {
+	if m.queryTestVerdicts != nil {
+		return m.queryTestVerdicts(ctx, in, opts...)
+	}
+	return &rdbpb.QueryTestVerdictsResponse{}, nil
 }
 
 func execTestHistoryCmd(thMock *mockTestHistoryClient, fixedNow time.Time, args ...string) (int, string, string) {
@@ -375,6 +421,524 @@ func TestTestHistorySubcommand(t *testing.T) {
 			assert.Loosely(t, out.String(), should.ContainSubstring("Project:           turquoise"))
 			assert.Loosely(t, out.String(), should.ContainSubstring("Test ID:           fuchsia-pkg://fuchsia.com/netstack#meta/test.cm"))
 			assert.Loosely(t, out.String(), should.ContainSubstring("Window:    last 14d"))
+		})
+	})
+}
+
+func TestAndroidSourceVerdictHistory(t *testing.T) {
+	t.Parallel()
+
+	fixedNow := time.Date(2026, 11, 19, 4, 0, 0, 0, time.UTC)
+
+	type androidEnv struct {
+		app subcommands.Application
+		th  analysispb.TestHistoryClient
+		tvb analysispb.TestVariantBranchesClient
+		rdb rdbpb.ResultDBClient
+	}
+	runCmd := func(env androidEnv, args ...string) (int, string, string) {
+		var out, errOut bytes.Buffer
+		run := TestHistoryCmd(&base.AuthFlags{}).CommandRun().(*testHistoryRun)
+		run.thClient = env.th
+		run.tvbClient = env.tvb
+		run.rdbClient = env.rdb
+		run.out = &out
+		run.errOut = &errOut
+		run.now = fixedNow
+		code := run.Run(env.app, args, nil)
+		return code, out.String(), errOut.String()
+	}
+
+	ftt.Run("android_source_verdict_history", t, func(t *ftt.Test) {
+		const androidTestID = ":CtsVoiceInteractionTestCases!junit:android.voiceinteraction.cts:DirectActionsTest#testPerformDirectAction"
+
+		t.Run("falls_back_to_test_variant_branches_and_source_verdicts", func(t *ftt.Test) {
+			const hashX86 = "a1b2c3d4e5f60718"
+			const hashArm64 = "b2c3d4e5f6071829"
+			var capturedBranch string
+			tvbMock := &mockTestVariantBranchesClient{
+				query: func(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error) {
+					capturedBranch = in.GetRef().GetAndroidBuild().GetBranch()
+					assert.Loosely(t, in.GetRef().GetAndroidBuild().GetDataRealm(), should.Equal("prod"))
+					return &analysispb.QueryTestVariantBranchResponse{
+						TestVariantBranch: []*analysispb.TestVariantBranch{
+							{
+								VariantHash: hashX86,
+								Variant:     &analysispb.Variant{Def: map[string]string{"module_abi": "x86_64"}},
+								Segments: []*analysispb.Segment{
+									{
+										StartHour: timestamppb.New(fixedNow.Add(-20 * 24 * time.Hour)),
+										EndHour:   timestamppb.New(fixedNow.Add(-2 * time.Hour)),
+										Counts: &analysispb.Segment_Counts{
+											TotalVerdicts:      120,
+											FlakyVerdicts:      8,
+											UnexpectedVerdicts: 2,
+										},
+									},
+									{
+										// Older segment outside 7d window should be excluded.
+										StartHour: timestamppb.New(fixedNow.Add(-60 * 24 * time.Hour)),
+										EndHour:   timestamppb.New(fixedNow.Add(-40 * 24 * time.Hour)),
+										Counts: &analysispb.Segment_Counts{
+											TotalVerdicts:      999,
+											UnexpectedVerdicts: 50,
+										},
+									},
+								},
+							},
+							{
+								VariantHash: hashArm64,
+								Variant:     &analysispb.Variant{Def: map[string]string{"module_abi": "arm64-v8a"}},
+								Segments: []*analysispb.Segment{
+									{
+										StartHour: timestamppb.New(fixedNow.Add(-5 * 24 * time.Hour)),
+										EndHour:   timestamppb.New(fixedNow.Add(-1 * time.Hour)),
+										Counts: &analysispb.Segment_Counts{
+											TotalVerdicts: 80,
+										},
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			thMock := &mockTestHistoryClient{
+				querySourceVerdicts: func(ctx context.Context, in *analysispb.QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*analysispb.QuerySourceVerdictsV2Response, error) {
+					switch in.GetTestIdFlat().GetVariantHash() {
+					case hashX86:
+						return &analysispb.QuerySourceVerdictsV2Response{
+							SourceVerdicts: []*analysispb.SourceVerdict{
+								{
+									Position: 12900100,
+									InvocationVerdicts: []*analysispb.SourceVerdict_InvocationTestVerdict{
+										{
+											RootInvocation: "rootInvocations/ants-i100000000000000001",
+											PartitionTime:  timestamppb.New(fixedNow.Add(-30 * time.Minute)),
+											Status:         analysispb.TestVerdict_PASSED,
+										},
+									},
+								},
+								{
+									Position: 12900050,
+									InvocationVerdicts: []*analysispb.SourceVerdict_InvocationTestVerdict{
+										{
+											RootInvocation: "rootInvocations/ants-i100000000000000002",
+											PartitionTime:  timestamppb.New(fixedNow.Add(-6 * time.Hour)),
+											Status:         analysispb.TestVerdict_FLAKY,
+										},
+										{
+											// Out-of-window verdict (>7d old) should be skipped.
+											RootInvocation: "rootInvocations/ants-i100000000000000099",
+											PartitionTime:  timestamppb.New(fixedNow.Add(-15 * 24 * time.Hour)),
+											Status:         analysispb.TestVerdict_FAILED,
+										},
+									},
+								},
+							},
+						}, nil
+					case hashArm64:
+						// Unsubmitted presubmit CL failure on a 100%-passing postsubmit
+						// variant must be annotated (presubmit CL) and must not stamp
+						// last non-passing onto the [80 passed] postsubmit stats row.
+						return &analysispb.QuerySourceVerdictsV2Response{
+							SourceVerdicts: []*analysispb.SourceVerdict{
+								{
+									Position: 12900090,
+									InvocationVerdicts: []*analysispb.SourceVerdict_InvocationTestVerdict{
+										{
+											RootInvocation: "rootInvocations/ants-i100000000000000055",
+											PartitionTime:  timestamppb.New(fixedNow.Add(-2 * time.Hour)),
+											Status:         analysispb.TestVerdict_FAILED,
+											Changelists: []*analysispb.Changelist{
+												{Host: "android-review.googlesource.com", Change: 12345},
+											},
+										},
+									},
+								},
+							},
+						}, nil
+					default:
+						return &analysispb.QuerySourceVerdictsV2Response{}, nil
+					}
+				},
+			}
+
+			code, stdout, stderr := runCmd(androidEnv{th: thMock, tvb: tvbMock}, "-project", "android", "-testid", androidTestID)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, stderr, should.BeEmpty)
+			assert.Loosely(t, capturedBranch, should.Equal("git_main"))
+			assert.Loosely(t, stdout, should.ContainSubstring("Project:   android\nBranch:    git_main\n"))
+			assert.Loosely(t, stdout, should.ContainSubstring("Variants (2 total, 1 with non-passing verdicts, branch segment counts; active segments start before window) [2 failed, 8 flaky, 190 passed]:"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- [2 failed, 8 flaky, 110 passed] module_abi=x86_64 (hash: a1b2c3d4e5f60718, last non-passing: 2026-11-18)"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- [80 passed] module_abi=arm64-v8a (hash: b2c3d4e5f6071829)\n"))
+			assert.Loosely(t, stdout, should.ContainSubstring("Recent Non-Passing Verdicts (showing 1; 1 newer verdicts passed since latest non-passing):"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- FLAKY ants-i100000000000000002 [2026-11-18T22:00:00Z]"))
+			assert.Loosely(t, stdout, should.NotContainSubstring("ants-i100000000000000099"))
+			assert.Loosely(t, stdout, should.ContainSubstring(`luci verdict get -invocationid ants-i100000000000000002 -testid "`+androidTestID+`" -varianthash a1b2c3d4e5f60718`))
+
+			// Verify -variant filter narrows Android TestVariantBranches, surfaces
+			// (presubmit CL) annotation, and never stamps last non-passing on [80 passed].
+			code, stdout, stderr = runCmd(androidEnv{th: thMock, tvb: tvbMock}, "-project", "android", "-testid", androidTestID, "-variant", "module_abi:arm64-v8a")
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, stderr, should.BeEmpty)
+			assert.Loosely(t, stdout, should.ContainSubstring("Variants (1 total, 0 with non-passing verdicts, branch segment counts) [80 passed]:"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- [80 passed] module_abi=arm64-v8a (hash: b2c3d4e5f6071829)\n"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- FAILED (presubmit CL) ants-i100000000000000055 [2026-11-19T02:00:00Z]"))
+		})
+
+		t.Run("extracts_project_and_branch_from_positional_ati_url_including_presubmit_only", func(t *ftt.Test) {
+			antsSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{
+					"testResultId": "TR67230470437261916",
+					"invocationId": "I46700010657835987",
+					"workUnitId": "WU75000271333595955",
+					"testStatus": "FAIL",
+					"testIdentifier": {
+						"testClass": "com.android.devicehealthchecks.SystemCheck",
+						"method": "system_tombstone"
+					}
+				}`))
+			}))
+			defer antsSrv.Close()
+
+			app := &cli.Application{
+				Name: "luci",
+				Context: func(ctx context.Context) context.Context {
+					return base.WithAntsHTTPClient(t.Context(), antsSrv.Client(), antsSrv.URL)
+				},
+			}
+
+			const tombstoneID = ":no-module-name!junit:com.android.devicehealthchecks:SystemCheck#system_tombstone"
+			rdbMock := &mockAnalysisRDBClient{
+				getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
+					return &rdbpb.RootInvocation{
+						Name:  in.GetName(),
+						Realm: "android:presubmit",
+						Sources: &rdbpb.Sources{
+							BaseSources: &rdbpb.Sources_SubmittedAndroidBuild{
+								SubmittedAndroidBuild: &rdbpb.SubmittedAndroidBuild{
+									DataRealm: "prod",
+									Branch:    "git_trunk-release",
+									BuildId:   12888888,
+								},
+							},
+						},
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestVerdictsResponse, error) {
+					return &rdbpb.QueryTestVerdictsResponse{
+						TestVerdicts: []*rdbpb.TestVerdict{
+							{
+								TestId: tombstoneID,
+								Results: []*rdbpb.TestResult{
+									{
+										Name:        "rootInvocations/ants-i46700010657835987/workUnits/ants-wu75000271333595955/tests/t1/results/r1",
+										ResultId:    "r1",
+										VariantHash: "e3b0c44298fc1c14",
+										StatusV2:    rdbpb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+
+			var mu sync.Mutex
+			var queriedBranch string
+			var queriedHashes []string
+			// Case 1: Presubmit-only test where TestVariantBranches has 0 rows; falls back
+			// to extracted VariantHash and labels stats as "sampled source verdict counts".
+			thMock := &mockTestHistoryClient{
+				querySourceVerdicts: func(ctx context.Context, in *analysispb.QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*analysispb.QuerySourceVerdictsV2Response, error) {
+					vh := in.GetTestIdFlat().GetVariantHash()
+					mu.Lock()
+					queriedBranch = in.GetSourceRef().GetAndroidBuild().GetBranch()
+					queriedHashes = append(queriedHashes, vh)
+					mu.Unlock()
+					if vh == "e3b0c44298fc1c14" {
+						return &analysispb.QuerySourceVerdictsV2Response{
+							SourceVerdicts: []*analysispb.SourceVerdict{
+								{
+									Position: 12888888,
+									InvocationVerdicts: []*analysispb.SourceVerdict_InvocationTestVerdict{
+										{
+											RootInvocation: "rootInvocations/ants-i46700010657835987",
+											PartitionTime:  timestamppb.New(fixedNow.Add(-1 * time.Hour)),
+											Status:         analysispb.TestVerdict_FAILED,
+										},
+									},
+								},
+							},
+						}, nil
+					}
+					return &analysispb.QuerySourceVerdictsV2Response{}, nil
+				},
+			}
+
+			atiURL := "https://android-build.corp.google.com/test_investigate/test/TR67230470437261916/"
+			code, stdout, stderr := runCmd(androidEnv{app: app, rdb: rdbMock, th: thMock, tvb: &mockTestVariantBranchesClient{}}, "-days", "30", atiURL)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, stderr, should.BeEmpty)
+			assert.Loosely(t, queriedBranch, should.Equal("git_trunk-release"))
+			assert.Loosely(t, queriedHashes, should.Match([]string{"e3b0c44298fc1c14"}))
+			assert.Loosely(t, stdout, should.ContainSubstring("Project:           android\nBranch:            git_trunk-release\n"))
+			assert.Loosely(t, stdout, should.ContainSubstring("Project:   android\nBranch:    git_trunk-release\n"))
+			assert.Loosely(t, stdout, should.ContainSubstring("sampled source verdict counts"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- FAILED ants-i46700010657835987"))
+
+			// Case 2: Even when TestVariantBranches has >= 4 healthy postsubmit variants,
+			// positional ATI fallbackVariantHash ("e3b0c44298fc1c14") is still queried!
+			tvbManyHealthy := &mockTestVariantBranchesClient{
+				query: func(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error) {
+					var branches []*analysispb.TestVariantBranch
+					for _, h := range []string{"0000000000000001", "0000000000000002", "0000000000000003", "0000000000000004", "0000000000000005"} {
+						branches = append(branches, &analysispb.TestVariantBranch{
+							VariantHash: h,
+							Segments: []*analysispb.Segment{
+								{
+									StartHour: timestamppb.New(fixedNow.Add(-2 * 24 * time.Hour)),
+									EndHour:   timestamppb.New(fixedNow.Add(-1 * time.Hour)),
+									Counts:    &analysispb.Segment_Counts{TotalVerdicts: 50},
+								},
+							},
+						})
+					}
+					return &analysispb.QueryTestVariantBranchResponse{TestVariantBranch: branches}, nil
+				},
+			}
+			code2, stdout2, stderr2 := runCmd(androidEnv{app: app, rdb: rdbMock, th: thMock, tvb: tvbManyHealthy}, "-days", "30", atiURL)
+			assert.Loosely(t, code2, should.Equal(0))
+			assert.Loosely(t, stderr2, should.BeEmpty)
+			assert.Loosely(t, stdout2, should.ContainSubstring("- FAILED ants-i46700010657835987"))
+
+			// Case 3: Target-extracted non-default branch ("git_trunk-release") is preserved in
+			// Next step re-run commands (and omits conflicting -subrealm) when disambiguating.
+			invURL := "https://android-build.corp.google.com/test_investigate/invocation/I46700010657835987/"
+			thDisambig := &mockTestHistoryClient{
+				queryTests: func(ctx context.Context, in *analysispb.QueryTestsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestsResponse, error) {
+					return &analysispb.QueryTestsResponse{
+						TestIds: []string{tombstoneID + "_A", tombstoneID + "_B"},
+					}, nil
+				},
+			}
+			code3, stdout3, stderr3 := runCmd(androidEnv{app: app, rdb: rdbMock, th: thDisambig, tvb: &mockTestVariantBranchesClient{}}, "-subrealm", "presubmit", "-test-substring", "system_tombstone", invURL)
+			assert.Loosely(t, code3, should.Equal(0))
+			assert.Loosely(t, stderr3, should.BeEmpty)
+			assert.Loosely(t, stdout3, should.ContainSubstring("-branch git_trunk-release"))
+			assert.Loosely(t, stdout3, should.NotContainSubstring("-subrealm presubmit"))
+		})
+
+		t.Run("supports_explicit_branch_multipage_pagination_and_dirty_sources", func(t *ftt.Test) {
+			const varHash = "0123456789abcdef"
+			var seenBranch, seenDataRealm string
+			rdbStaging := &mockAnalysisRDBClient{
+				getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
+					return &rdbpb.RootInvocation{
+						Name:  in.GetName(),
+						Realm: "android:ci",
+						Sources: &rdbpb.Sources{
+							BaseSources: &rdbpb.Sources_SubmittedAndroidBuild{
+								SubmittedAndroidBuild: &rdbpb.SubmittedAndroidBuild{
+									DataRealm: "staging",
+									Branch:    "git_main",
+									BuildId:   12900000,
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			tvbMock := &mockTestVariantBranchesClient{
+				query: func(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error) {
+					seenBranch = in.GetRef().GetAndroidBuild().GetBranch()
+					seenDataRealm = in.GetRef().GetAndroidBuild().GetDataRealm()
+					return &analysispb.QueryTestVariantBranchResponse{
+						TestVariantBranch: []*analysispb.TestVariantBranch{
+							{
+								VariantHash: varHash,
+								Variant:     &analysispb.Variant{Def: map[string]string{"module_abi": "x86_64"}},
+								Segments: []*analysispb.Segment{
+									{
+										StartHour: timestamppb.New(fixedNow.Add(-3 * 24 * time.Hour)),
+										EndHour:   timestamppb.New(fixedNow.Add(-1 * time.Hour)),
+										Counts: &analysispb.Segment_Counts{
+											TotalVerdicts:      10,
+											UnexpectedVerdicts: 1,
+										},
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			// Page 0 has >= limit (2) passing verdicts; Page 1 has a clean FAILED verdict and
+			// a dirty-sources FAILED verdict. Variant has nonPassingCount() > 0, so pagination
+			// must continue to Page 1 instead of stopping at Page 0.
+			thMock := &mockTestHistoryClient{
+				querySourceVerdicts: func(ctx context.Context, in *analysispb.QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*analysispb.QuerySourceVerdictsV2Response, error) {
+					if in.GetPageToken() == "" {
+						return &analysispb.QuerySourceVerdictsV2Response{
+							NextPageToken: "page-1",
+							SourceVerdicts: []*analysispb.SourceVerdict{
+								{
+									Position: 12900010,
+									InvocationVerdicts: []*analysispb.SourceVerdict_InvocationTestVerdict{
+										{
+											RootInvocation: "rootInvocations/ants-i200000000000000001",
+											PartitionTime:  timestamppb.New(fixedNow.Add(-10 * time.Minute)),
+											Status:         analysispb.TestVerdict_PASSED,
+										},
+										{
+											RootInvocation: "rootInvocations/ants-i200000000000000002",
+											PartitionTime:  timestamppb.New(fixedNow.Add(-20 * time.Minute)),
+											Status:         analysispb.TestVerdict_PASSED,
+										},
+									},
+								},
+							},
+						}, nil
+					}
+					return &analysispb.QuerySourceVerdictsV2Response{
+						SourceVerdicts: []*analysispb.SourceVerdict{
+							{
+								Position: 12900005,
+								InvocationVerdicts: []*analysispb.SourceVerdict_InvocationTestVerdict{
+									{
+										RootInvocation: "rootInvocations/ants-i200000000000000003",
+										PartitionTime:  timestamppb.New(fixedNow.Add(-2 * time.Hour)),
+										Status:         analysispb.TestVerdict_FAILED,
+										IsSourcesDirty: true,
+									},
+									{
+										RootInvocation: "rootInvocations/ants-i200000000000000004",
+										PartitionTime:  timestamppb.New(fixedNow.Add(-26 * time.Hour)),
+										Status:         analysispb.TestVerdict_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+
+			// Explicit -branch overrides target-extracted branch ("git_main" -> "git_udc-release")
+			// while still preserving target-extracted non-"prod" DataRealm ("staging").
+			code, stdout, stderr := runCmd(
+				androidEnv{rdb: rdbStaging, th: thMock, tvb: tvbMock},
+				"-branch", "git_udc-release",
+				"-testid", androidTestID,
+				"-limit", "2",
+				"ants-i46700010657835987",
+			)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, stderr, should.BeEmpty)
+			assert.Loosely(t, seenBranch, should.Equal("git_udc-release"))
+			assert.Loosely(t, seenDataRealm, should.Equal("staging"))
+			assert.Loosely(t, stdout, should.ContainSubstring("Branch:            git_udc-release\n"))
+			assert.Loosely(t, stdout, should.ContainSubstring("Project:   android\nBranch:    git_udc-release\n"))
+			assert.Loosely(t, stdout, should.ContainSubstring("(hash: 0123456789abcdef, last non-passing: 2026-11-18)"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- FAILED (dirty sources) ants-i200000000000000003"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- FAILED ants-i200000000000000004"))
+		})
+
+		t.Run("sampled_source_verdict_truncation_distinguishes_limit_from_page_cap", func(t *ftt.Test) {
+			const varHash = "fedcba9876543210"
+			rdbTarget := &mockAnalysisRDBClient{
+				getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest, opts ...grpc.CallOption) (*rdbpb.RootInvocation, error) {
+					return &rdbpb.RootInvocation{
+						Name:  in.GetName(),
+						Realm: "android:presubmit",
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *rdbpb.QueryTestVerdictsRequest, opts ...grpc.CallOption) (*rdbpb.QueryTestVerdictsResponse, error) {
+					return &rdbpb.QueryTestVerdictsResponse{
+						TestVerdicts: []*rdbpb.TestVerdict{
+							{
+								TestId: androidTestID,
+								Results: []*rdbpb.TestResult{
+									{
+										Name:        "rootInvocations/ants-i46700010657835987/workUnits/ants-wu75000271333595955/tests/t1/results/r1",
+										ResultId:    "r1",
+										VariantHash: varHash,
+										StatusV2:    rdbpb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			antsSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{
+					"testResultId": "TR99999999999999999",
+					"invocationId": "I46700010657835987",
+					"workUnitId": "WU75000271333595955",
+					"testStatus": "FAIL",
+					"testIdentifier": {"module": "CtsVoiceInteractionTestCases", "testClass": "android.voiceinteraction.cts.DirectActionsTest", "method": "testPerformDirectAction"}
+				}`))
+			}))
+			defer antsSrv.Close()
+			app := &cli.Application{
+				Name: "luci",
+				Context: func(ctx context.Context) context.Context {
+					return base.WithAntsHTTPClient(t.Context(), antsSrv.Client(), antsSrv.URL)
+				},
+			}
+
+			pagesCalled := 0
+			thPaged := &mockTestHistoryClient{
+				querySourceVerdicts: func(ctx context.Context, in *analysispb.QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*analysispb.QuerySourceVerdictsV2Response, error) {
+					pagesCalled++
+					return &analysispb.QuerySourceVerdictsV2Response{
+						NextPageToken: "more",
+						SourceVerdicts: []*analysispb.SourceVerdict{
+							{
+								Position: int64(100 - pagesCalled),
+								InvocationVerdicts: []*analysispb.SourceVerdict_InvocationTestVerdict{
+									{
+										RootInvocation: "rootInvocations/ants-i300",
+										PartitionTime:  timestamppb.New(fixedNow.Add(-time.Duration(pagesCalled) * time.Hour)),
+										Status:         analysispb.TestVerdict_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+
+			// 1. Stopping at -limit=1 on page 0 must NOT report "partial stats (page cap reached)".
+			code1, out1, _ := runCmd(androidEnv{app: app, rdb: rdbTarget, th: thPaged, tvb: &mockTestVariantBranchesClient{}}, "-limit", "1", "TR99999999999999999")
+			assert.Loosely(t, code1, should.Equal(0))
+			assert.Loosely(t, pagesCalled, should.Equal(1))
+			assert.Loosely(t, out1, should.ContainSubstring("sampled source verdict counts)"))
+			assert.Loosely(t, out1, should.NotContainSubstring("partial stats (page cap reached)"))
+
+			// 2. Exhausting maxSourceVerdictPages (3 pages) with -limit=0 MUST report "partial stats (page cap reached)".
+			pagesCalled = 0
+			code2, out2, _ := runCmd(androidEnv{app: app, rdb: rdbTarget, th: thPaged, tvb: &mockTestVariantBranchesClient{}}, "-limit", "0", "TR99999999999999999")
+			assert.Loosely(t, code2, should.Equal(0))
+			assert.Loosely(t, pagesCalled, should.Equal(maxSourceVerdictPages))
+			assert.Loosely(t, out2, should.ContainSubstring("sampled source verdict counts, partial stats (page cap reached))"))
+		})
+
+		t.Run("validates_branch_flag_and_subrealm_conflict", func(t *ftt.Test) {
+			code1, _, err1 := runCmd(androidEnv{}, "-project", "android", "-branch", "   ", "-testid", androidTestID)
+			assert.Loosely(t, code1, should.Equal(1))
+			assert.Loosely(t, err1, should.ContainSubstring("flag -branch cannot be empty"))
+
+			code2, _, err2 := runCmd(androidEnv{}, "-project", "chromium", "-branch", "refs/heads/main", "-testid", androidTestID)
+			assert.Loosely(t, code2, should.Equal(1))
+			assert.Loosely(t, err2, should.ContainSubstring("expected an Android Build branch name (e.g. git_main), not a Gitiles ref"))
+
+			code3, _, err3 := runCmd(androidEnv{}, "-project", "android", "-branch", "git_main", "-subrealm", "presubmit", "-testid", androidTestID)
+			assert.Loosely(t, code3, should.Equal(1))
+			assert.Loosely(t, err3, should.ContainSubstring("-subrealm cannot be combined with -branch"))
 		})
 	})
 }

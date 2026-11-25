@@ -499,7 +499,11 @@ func TestTestHistorySubstringSearch(t *testing.T) {
 					many[i] = fmt.Sprintf("://mod\\:tests!gtest::Suite#Case%02d", i)
 				}
 				var disambigBuf bytes.Buffer
-				printSubstringDisambiguation(&disambigBuf, "chromium", "", "Case", many, false, nil, false, 7, false, 10)
+				printSubstringDisambiguation(&disambigBuf, "Case", many, false, reRunCommandOptions{
+					Project: "chromium",
+					Days:    7,
+					Limit:   10,
+				})
 				assert.Loosely(t, disambigBuf.String(), should.ContainSubstring("... +3 more matching test IDs"))
 				assert.Loosely(t, disambigBuf.String(), should.ContainSubstring(
 					"luci analysis test-history -project chromium -testid '://mod\\:tests!gtest::Suite#Case00'\n"))

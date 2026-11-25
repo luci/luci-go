@@ -20,7 +20,6 @@ import (
 	"io"
 	"os"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 
@@ -51,16 +50,19 @@ const (
 // TestHistoryCmd returns the subcommand for `luci analysis test-history`.
 func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "test-history [-project <project>] [-testid <test_id> | -test-substring <substr> [-case-insensitive] | -modulename <mod> -scheme <scheme> -case <case> [-coarse <coarse>] [-fine <fine>]] [-variant <k:v>] [-days <n>] [-limit <n>] [-subrealm <realm>] [<target>]",
+		UsageLine: "test-history [-project <project>] [-branch <branch>] [-testid <test_id> | -test-substring <substr> [-case-insensitive] | -modulename <mod> -scheme <scheme> -case <case> [-coarse <coarse>] [-fine <fine>]] [-variant <k:v>] [-days <n>] [-limit <n>] [-subrealm <realm>] [<target>]",
 		ShortDesc: "Summarize cross-build pass/flaky/failed stats and recent verdicts for a test ID",
 		LongDesc: "Query LUCI Analysis TestHistory for a test ID across recent builds to inspect per-variant\n" +
-			"pass, flaky, failed, and exonerated counts (TestHistory.QueryStats) alongside recent verdicts\n" +
-			"(TestHistory.Query) with -invocationid and -varianthash flags ready for 'luci verdict get'.\n\n" +
-			"Accepts a positional URL/ID <target>, a flat/encoded/partial -testid, a partial -test-substring\n" +
-			"(resolved via TestHistory.QueryTests), or structured test ID flags (-modulename, -scheme, -coarse, -fine, -case).\n\n" +
+			"pass, flaky, failed, and exonerated counts (TestHistory.QueryStats, or TestVariantBranches.Query\n" +
+			"for Android branches) alongside recent verdicts (TestHistory.Query / QuerySourceVerdicts)\n" +
+			"with -invocationid and -varianthash flags ready for 'luci verdict get'.\n\n" +
+			"Accepts a positional URL/ID <target> (including Milo test history URLs and Android ATI URLs / TR IDs),\n" +
+			"a flat/encoded/partial -testid, a partial -test-substring (resolved via TestHistory.QueryTests),\n" +
+			"or structured test ID flags (-modulename, -scheme, -coarse, -fine, -case).\n\n" +
 			"Examples:\n" +
 			"  luci analysis test-history https://ci.chromium.org/ui/test/turquoise/fuchsia-pkg%3A%2F%2Ffuchsia.com%2Fnetstack-fidl-test%23meta%2Fnetstack-fidl-test.cm\n" +
-			"  luci analysis test-history -project turquoise -testid \"fuchsia-pkg://fuchsia.com/netstack-fidl-test#meta/netstack-fidl-test.cm\"\n" +
+			"  luci analysis test-history https://android-build.corp.google.com/test_investigate/invocation/I123/test/TR456/\n" +
+			"  luci analysis test-history -project android -test-substring \"DirectActionsTest#testPerformDirectAction\"\n" +
 			"  luci analysis test-history -project chromium -test-substring \"WebAppBrowserTest#BrowserDisplayNotInstallable\"\n" +
 			"  luci analysis test-history -project chromium -modulename \"//chrome/test:browser_tests\" -scheme gtest -fine WebAppBrowserTest -case \"BrowserDisplayNotInstallable/All.0\"",
 		CommandRun: func() subcommands.CommandRun {
@@ -73,14 +75,15 @@ func TestHistoryCmd(af *base.AuthFlags) *subcommands.Command {
 				r.af.Register(&r.Flags)
 			}
 			r.Flags.StringVar(&r.host, "host", chromeinfra.AnalysisHost, "LUCI Analysis host")
-			r.Flags.StringVar(&r.project, "project", "", "LUCI project (required, e.g. chromium, turquoise)")
+			r.Flags.StringVar(&r.project, "project", "", "LUCI project (required, e.g. chromium, turquoise, android)")
+			r.Flags.StringVar(&r.branch, "branch", "", "Android build branch for source-position test history (default: git_main for -project android)")
 			r.Flags.StringVar(&r.testID, "testid", "", "Flat, structured, or partial test ID to query history for")
 			r.Flags.StringVar(&r.testID, "test-id", "", "Alias for -testid")
 			r.Flags.StringVar(&r.testSubstring, "test-substring", "", "Substring of test ID or test name to search via TestHistory.QueryTests (e.g. Suite#Case or Suite.Case)")
 			r.Flags.BoolVar(&r.caseInsensitive, "case-insensitive", false, "Match -test-substring (or partial -testid fallback) case-insensitively")
 			r.Flags.StringVar(&r.moduleName, "modulename", "", "Structured test ID module name (e.g. //chrome/test:browser_tests)")
 			r.Flags.StringVar(&r.moduleName, "module-name", "", "Alias for -modulename")
-			r.Flags.StringVar(&r.moduleScheme, "scheme", "", "Structured test ID scheme (e.g. gtest, junit, webtest)")
+			r.Flags.StringVar(&r.moduleScheme, "scheme", "", "Structured test ID scheme (e.g. gtest, junit, flat, webtest)")
 			r.Flags.StringVar(&r.moduleScheme, "modulescheme", "", "Alias for -scheme")
 			r.Flags.StringVar(&r.moduleScheme, "module-scheme", "", "Alias for -scheme")
 			r.Flags.StringVar(&r.coarseName, "coarse", "", "Structured test ID coarse name (e.g. package name)")
@@ -100,6 +103,7 @@ type testHistoryRun struct {
 	subcommands.CommandRunBase
 	af              *base.AuthFlags
 	thClient        analysispb.TestHistoryClient
+	tvbClient       analysispb.TestVariantBranchesClient
 	rdbClient       rdbpb.ResultDBClient
 	schemasClient   rdbpb.SchemasClient
 	out             io.Writer
@@ -107,6 +111,7 @@ type testHistoryRun struct {
 	now             time.Time
 	host            string
 	project         string
+	branch          string
 	testID          string
 	testSubstring   string
 	caseInsensitive bool
@@ -134,12 +139,14 @@ func (s *variantStatsSummary) nonPassingCount() int32 {
 }
 
 type testHistoryVerdictEntry struct {
-	InvocationID  string
-	VariantHash   string
-	Variant       map[string]string
-	Status        string
-	Exonerated    bool
-	PartitionTime string
+	InvocationID   string
+	VariantHash    string
+	Variant        map[string]string
+	Status         string
+	Exonerated     bool
+	HasChangelists bool
+	IsSourcesDirty bool
+	PartitionTime  string
 }
 
 type testHistoryReport struct {
@@ -151,6 +158,10 @@ type testHistoryReport struct {
 	DidYouMeanTestIDs     []string
 	DidYouMeanNextStep    string
 	SubRealm              string
+	Branch                string
+	BranchExplicit        bool
+	SourceVerdictMode     bool
+	StatsSourceNote       string
 	Days                  int
 	StatsTruncated        bool
 	AllVerdictsPassed     bool
@@ -183,6 +194,7 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 
 	limitExplicit := false
 	daysExplicit := false
+	branchExplicit := false
 	testIDExplicit := false
 	testSubstringExplicit := false
 	for _, setFlag := range flagSetNames(&r.Flags) {
@@ -191,11 +203,25 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 			limitExplicit = true
 		case "days":
 			daysExplicit = true
+		case "branch":
+			branchExplicit = true
 		case "testid", "test-id":
 			testIDExplicit = true
 		case "test-substring":
 			testSubstringExplicit = true
 		}
+	}
+
+	if branchExplicit {
+		if err := validateAndroidBranchFlag(r.branch); err != nil {
+			fmt.Fprintf(errOut, "%s\n", err)
+			return 1
+		}
+		if strings.TrimSpace(r.subRealm) != "" {
+			fmt.Fprintf(errOut, "-subrealm cannot be combined with -branch (Android branch history is scoped by branch)\n")
+			return 1
+		}
+		r.branch = strings.TrimSpace(r.branch)
 	}
 
 	ctx := cli.GetContext(a, r, env)
@@ -204,18 +230,27 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	testSubstring := strings.TrimSpace(r.testSubstring)
 	hasTestSubstring := testSubstringExplicit || testSubstring != ""
 	hasStructuredFlags := strings.TrimSpace(r.moduleName) != "" || strings.TrimSpace(r.moduleScheme) != "" || strings.TrimSpace(r.coarseName) != "" || strings.TrimSpace(r.fineName) != "" || strings.TrimSpace(r.caseName) != ""
-	var testIDBinding *string
+	var testIDBinding, branchBinding *string
+	var extractedBranch, androidDataRealm string
 	if !hasStructuredFlags && !hasTestSubstring {
 		testIDBinding = &r.testID
 	}
+	if !branchExplicit {
+		branchBinding = &extractedBranch
+	}
 
 	extracted, err := ids.ExtractWithAuth(ctx, r.af, r.rdbClient, nil, target, ids.TargetBindings{
-		Project: &r.project,
-		TestID:  testIDBinding,
+		Project:          &r.project,
+		Branch:           branchBinding,
+		AndroidDataRealm: &androidDataRealm,
+		TestID:           testIDBinding,
 	})
 	if err != nil {
 		fmt.Fprintf(errOut, "failed to extract IDs from %q: %s\n", target, err)
 		return 1
+	}
+	if branchExplicit && extracted != nil && extracted.Branch != "" {
+		extracted.Branch = r.branch
 	}
 
 	fromPositionalTarget := extracted != nil && extracted.TestID != "" && !explicitTestID
@@ -299,6 +334,7 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	}
 
 	thClient := r.thClient
+	tvbClient := r.tvbClient
 	if thClient == nil {
 		if r.af == nil {
 			fmt.Fprintf(errOut, "auth flags not configured\n")
@@ -309,7 +345,7 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 			return 1
 		}
 		var errClient error
-		_, _, thClient, errClient = r.af.NewAnalysisClients(ctx, r.host)
+		thClient, tvbClient, errClient = r.af.NewTestHistoryClients(ctx, r.host)
 		if errClient != nil {
 			fmt.Fprintf(errOut, "%s\n", errClient)
 			return 1
@@ -325,6 +361,29 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	}
 	now = now.UTC()
 	subRealm := normalizeSubRealm(project, r.subRealm)
+	var explicitBranch string
+	if branchExplicit {
+		explicitBranch = r.branch
+	}
+	resolvedBranch := resolveAndroidBranch(project, explicitBranch, extractedBranch)
+	reRunOpts := reRunCommandOptions{
+		Project:        project,
+		SubRealm:       subRealm,
+		Branch:         resolvedBranch,
+		BranchExplicit: branchExplicit,
+		Variants:       r.variants,
+		DaysExplicit:   daysExplicit,
+		Days:           r.days,
+		LimitExplicit:  limitExplicit,
+		Limit:          r.limit,
+	}
+
+	applyLeafSuggestions := func(rep *testHistoryReport, query string) {
+		if suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, query, r.caseInsensitive); len(suggestions) > 0 {
+			rep.DidYouMeanTestIDs = suggestions
+			rep.DidYouMeanNextStep = formatReRunCommand(reRunOpts, suggestions[0])
+		}
+	}
 
 	var resolvedFromSubstring string
 	var resolvedRanked []string
@@ -341,17 +400,17 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 			var nextStep string
 			suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, subQuery, r.caseInsensitive)
 			if len(suggestions) > 0 {
-				nextStep = formatTestHistoryReRunCommand(project, suggestions[0], subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+				nextStep = formatReRunCommand(reRunOpts, suggestions[0])
 			}
 			clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
 			ids.PrintDerivedIDs(out, extracted)
-			printNoSubstringMatches(out, project, subRealm, displayQuery, suggestions, nextStep)
+			printNoSubstringMatches(out, reRunOpts, displayQuery, suggestions, nextStep)
 			return 0
 		}
 		if resolvedCandidate == "" {
 			clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
 			ids.PrintDerivedIDs(out, extracted)
-			printSubstringDisambiguation(out, project, subRealm, displayQuery, ranked, searchRes.Truncated, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+			printSubstringDisambiguation(out, displayQuery, ranked, searchRes.Truncated, reRunOpts)
 			return 0
 		}
 
@@ -360,18 +419,45 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		resolvedRanked = ranked
 	}
 
-	report, err := fetchTestHistory(
-		ctx,
-		thClient,
-		project,
-		resolvedTestID,
-		subRealm,
-		r.variants,
-		r.days,
-		r.limit,
-		!limitExplicit,
-		now,
-	)
+	queryHistory := func(candidateTestID string) (*testHistoryReport, error) {
+		var fallbackVarHash string
+		if fromPositionalTarget && extracted != nil && candidateTestID == extracted.TestID {
+			fallbackVarHash = extracted.VariantHash
+		}
+		branchOpts := androidBranchHistoryOptions{
+			thClient:            thClient,
+			tvbClient:           tvbClient,
+			project:             project,
+			testID:              candidateTestID,
+			subRealm:            subRealm,
+			branch:              resolvedBranch,
+			branchExplicit:      branchExplicit,
+			dataRealm:           androidDataRealm,
+			rawVariants:         r.variants,
+			fallbackVariantHash: fallbackVarHash,
+			days:                r.days,
+			limit:               r.limit,
+			adaptive:            !limitExplicit,
+			now:                 now,
+		}
+		if branchExplicit && resolvedBranch != "" {
+			return fetchAndroidBranchHistory(ctx, branchOpts)
+		}
+		rep, hErr := fetchTestHistory(ctx, thClient, project, candidateTestID, subRealm, r.variants, r.days, r.limit, !limitExplicit, now)
+		if hErr != nil {
+			return nil, hErr
+		}
+		if len(rep.VariantStats) == 0 && len(rep.Verdicts) == 0 && resolvedBranch != "" {
+			if tvbClient != nil || fallbackVarHash != "" {
+				return fetchAndroidBranchHistory(ctx, branchOpts)
+			}
+			rep.Branch = resolvedBranch
+			rep.BranchExplicit = branchExplicit
+		}
+		return rep, nil
+	}
+
+	report, err := queryHistory(resolvedTestID)
 	if err != nil {
 		fmt.Fprintf(errOut, "%s\n", err)
 		return 1
@@ -379,7 +465,7 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 	report.ResolvedFromSubstring = resolvedFromSubstring
 	if len(resolvedRanked) > 0 {
 		report.MatchedTestIDCount = len(resolvedRanked)
-		populateAlternateMatches(report, resolvedRanked, project, subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+		populateAlternateMatches(report, resolvedRanked, reRunOpts)
 	}
 
 	if len(report.VariantStats) == 0 && len(report.Verdicts) == 0 {
@@ -391,45 +477,36 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 				switch {
 				case slices.Contains(ranked, resolvedTestID):
 					if len(r.variants) == 0 {
-						populateAlternateMatches(report, ranked, project, subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+						populateAlternateMatches(report, ranked, reRunOpts)
 						if len(report.DidYouMeanTestIDs) == 0 {
-							if suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, resolvedTestID, r.caseInsensitive); len(suggestions) > 0 {
-								report.DidYouMeanTestIDs = suggestions
-								report.DidYouMeanNextStep = formatTestHistoryReRunCommand(project, suggestions[0], subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
-							}
+							applyLeafSuggestions(report, resolvedTestID)
 						}
 					}
 				case resolvedCandidate != "" && resolvedCandidate != resolvedTestID:
 					subQuery := resolvedTestID
-					resolvedReport, hErr := fetchTestHistory(ctx, thClient, project, resolvedCandidate, subRealm, r.variants, r.days, r.limit, !limitExplicit, now)
+					resolvedReport, hErr := queryHistory(resolvedCandidate)
 					if hErr != nil {
 						fmt.Fprintf(errOut, "%s\n", hErr)
 						return 1
 					}
 					resolvedReport.ResolvedFromSubstring = subQuery
 					resolvedReport.MatchedTestIDCount = len(ranked)
-					populateAlternateMatches(resolvedReport, ranked, project, subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+					populateAlternateMatches(resolvedReport, ranked, reRunOpts)
 					report = resolvedReport
 					resolvedTestID = resolvedCandidate
 				case resolvedCandidate == "" && len(ranked) > 0:
 					clearUnresolvedExtractedTestID(extracted, fromPositionalTarget)
 					ids.PrintDerivedIDs(out, extracted)
-					printSubstringDisambiguation(out, project, subRealm, resolvedTestID, ranked, searchRes.Truncated, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
+					printSubstringDisambiguation(out, resolvedTestID, ranked, searchRes.Truncated, reRunOpts)
 					return 0
 				case len(ranked) == 0 && len(r.variants) == 0:
-					if suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, resolvedTestID, r.caseInsensitive); len(suggestions) > 0 {
-						report.DidYouMeanTestIDs = suggestions
-						report.DidYouMeanNextStep = formatTestHistoryReRunCommand(project, suggestions[0], subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
-					}
+					applyLeafSuggestions(report, resolvedTestID)
 				}
 			}
 		} else if canonicalInput && len(r.variants) == 0 {
 			// Canonical test ID had 0 Spanner rows and no variant filter narrowed it:
-			// never auto-resolve to a superstring, only offer best-effort leaf suggestions.
-			if suggestions := fetchLeafSuggestions(ctx, thClient, project, subRealm, resolvedTestID, r.caseInsensitive); len(suggestions) > 0 {
-				report.DidYouMeanTestIDs = suggestions
-				report.DidYouMeanNextStep = formatTestHistoryReRunCommand(project, suggestions[0], subRealm, r.variants, daysExplicit, r.days, limitExplicit, r.limit)
-			}
+			// never auto-resolve to a superstring, only offer leaf suggestions.
+			applyLeafSuggestions(report, resolvedTestID)
 		}
 	}
 
@@ -449,6 +526,8 @@ func enrichExtractedWithTestID(extracted *ids.ExtractedIDs, resolvedTestID strin
 	if extracted.TestID != resolvedTestID {
 		hadTestID := extracted.TestID != ""
 		extracted.TestID = resolvedTestID
+		extracted.VariantHash = ""
+		extracted.ResultID = ""
 		if m := base.ExtractModuleNameFromTestID(resolvedTestID); m != "" || hadTestID {
 			extracted.ModuleName = m
 		}
@@ -713,21 +792,12 @@ func fetchVariantStats(ctx context.Context, client analysispb.TestHistoryClient,
 
 	result := make([]variantStatsSummary, 0, len(byHash))
 	for _, s := range byHash {
-		c := s.Counts
-		s.Total = c.Passed + c.Flaky + c.Failed + c.ExecutionErrored + c.Precluded + c.Skipped + c.Exonerated
+		s.Total = int32(format.VerdictCountsTotal(s.Counts))
 		result = append(result, *s)
 	}
-	// Order variants with the highest failure/flake volume first so problematic variants
-	// stand out immediately when a test runs across dozens of builders/boards.
-	sort.Slice(result, func(i, j int) bool {
-		if result[i].nonPassingCount() != result[j].nonPassingCount() {
-			return result[i].nonPassingCount() > result[j].nonPassingCount()
-		}
-		if result[i].Total != result[j].Total {
-			return result[i].Total > result[j].Total
-		}
-		return result[i].VariantHash < result[j].VariantHash
-	})
+	// Order variants with the highest failure/flake volume first so problematic
+	// variants stand out immediately across dozens of builders/boards.
+	sortVariantStatsSummaries(result)
 	return result, totalCounts, truncated, nil
 }
 
@@ -833,7 +903,14 @@ func classifyVerdictStatus(tv *analysispb.TestVerdict) (label string, nonPassing
 func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rdbpb.SchemasClient, report *testHistoryReport) error {
 	fmt.Fprintf(out, "Project:   %s\n", report.Project)
 	if report.SubRealm != "" {
-		fmt.Fprintf(out, "SubRealm:  %s\n", report.SubRealm)
+		if report.SourceVerdictMode {
+			fmt.Fprintf(out, "SubRealm:  %s (applied to test search only; branch history spans all realms)\n", report.SubRealm)
+		} else {
+			fmt.Fprintf(out, "SubRealm:  %s\n", report.SubRealm)
+		}
+	}
+	if report.Branch != "" {
+		fmt.Fprintf(out, "Branch:    %s\n", report.Branch)
 	}
 	if report.ResolvedFromSubstring != "" {
 		if report.MatchedTestIDCount > 1 {
@@ -867,9 +944,18 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 			}
 		}
 		overallInline := format.FormatVerdictCountsInline(report.TotalCounts)
-		truncNote := ""
+		var statsNotes []string
+		if report.StatsSourceNote != "" {
+			statsNotes = append(statsNotes, report.StatsSourceNote)
+		} else if report.SourceVerdictMode {
+			statsNotes = append(statsNotes, "branch segment counts")
+		}
 		if report.StatsTruncated {
-			truncNote = ", partial stats (page cap reached)"
+			statsNotes = append(statsNotes, "partial stats (page cap reached)")
+		}
+		truncNote := ""
+		if len(statsNotes) > 0 {
+			truncNote = ", " + strings.Join(statsNotes, ", ")
 		}
 		fmt.Fprintf(out, "\nVariants (%d total, %d with non-passing verdicts%s) %s:\n",
 			len(report.VariantStats), nonPassingVariants, truncNote, overallInline)
@@ -914,6 +1000,11 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 			statusDisplay := v.Status
 			if v.Exonerated && statusDisplay != "EXONERATED" {
 				statusDisplay += " (EXONERATED)"
+			}
+			if v.HasChangelists {
+				statusDisplay += " (presubmit CL)"
+			} else if v.IsSourcesDirty {
+				statusDisplay += " (dirty sources)"
 			}
 			timeSuffix := ""
 			if v.PartitionTime != "" {

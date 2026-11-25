@@ -36,30 +36,32 @@ import (
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
-// NewResultDBClient creates authenticated ResultDB and Schemas pRPC clients.
-func (af *AuthFlags) NewResultDBClient(ctx context.Context, host string) (pb.ResultDBClient, pb.SchemasClient, *http.Client, error) {
+func (af *AuthFlags) newPRPCClient(ctx context.Context, host string) (*prpc.Client, *http.Client, error) {
 	httpClient, err := af.NewHTTPClient(ctx)
 	if err != nil {
-		return nil, nil, nil, errors.Fmt("failed to create http client: %w", err)
+		return nil, nil, errors.Fmt("failed to create http client: %w", err)
 	}
-	prpcClient := &prpc.Client{
+	return &prpc.Client{
 		C:       httpClient,
 		Host:    host,
 		Options: prpc.DefaultOptions(),
+	}, httpClient, nil
+}
+
+// NewResultDBClient creates authenticated ResultDB and Schemas pRPC clients.
+func (af *AuthFlags) NewResultDBClient(ctx context.Context, host string) (pb.ResultDBClient, pb.SchemasClient, *http.Client, error) {
+	prpcClient, httpClient, err := af.newPRPCClient(ctx, host)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 	return pb.NewResultDBClient(prpcClient), pb.NewSchemasClient(prpcClient), httpClient, nil
 }
 
 // NewBuildsClient creates an authenticated Buildbucket Builds pRPC client.
 func (af *AuthFlags) NewBuildsClient(ctx context.Context, host string) (grpcpb.BuildsClient, *http.Client, error) {
-	httpClient, err := af.NewHTTPClient(ctx)
+	prpcClient, httpClient, err := af.newPRPCClient(ctx, host)
 	if err != nil {
-		return nil, nil, errors.Fmt("failed to create http client: %w", err)
-	}
-	prpcClient := &prpc.Client{
-		C:       httpClient,
-		Host:    host,
-		Options: prpc.DefaultOptions(),
+		return nil, nil, err
 	}
 	return grpcpb.NewBuildsClient(prpcClient), httpClient, nil
 }
@@ -81,14 +83,9 @@ func (af *AuthFlags) NewGerritClient(ctx context.Context, host string) (gerritpb
 
 // NewLogDogClient creates an authenticated LogDog Logs pRPC client.
 func (af *AuthFlags) NewLogDogClient(ctx context.Context, host string) (logdog.LogsClient, error) {
-	httpClient, err := af.NewHTTPClient(ctx)
+	prpcClient, _, err := af.newPRPCClient(ctx, host)
 	if err != nil {
-		return nil, errors.Fmt("failed to create http client: %w", err)
-	}
-	prpcClient := &prpc.Client{
-		C:       httpClient,
-		Host:    host,
-		Options: prpc.DefaultOptions(),
+		return nil, err
 	}
 	return logdog.NewLogsClient(prpcClient), nil
 }
@@ -97,30 +94,31 @@ func (af *AuthFlags) NewLogDogClient(ctx context.Context, host string) (logdog.L
 // pRPC clients sharing a single underlying HTTP transport against host (typically
 // chromeinfra.AnalysisHost, i.e. "analysis.api.luci.app").
 func (af *AuthFlags) NewAnalysisClients(ctx context.Context, host string) (analysispb.RulesClient, analysispb.ClustersClient, analysispb.TestHistoryClient, error) {
-	httpClient, err := af.NewHTTPClient(ctx)
+	prpcClient, _, err := af.newPRPCClient(ctx, host)
 	if err != nil {
-		return nil, nil, nil, errors.Fmt("failed to create http client: %w", err)
-	}
-	prpcClient := &prpc.Client{
-		C:       httpClient,
-		Host:    host,
-		Options: prpc.DefaultOptions(),
+		return nil, nil, nil, err
 	}
 	return analysispb.NewRulesClient(prpcClient), analysispb.NewClustersClient(prpcClient), analysispb.NewTestHistoryClient(prpcClient), nil
+}
+
+// NewTestHistoryClients creates authenticated LUCI Analysis TestHistory and
+// TestVariantBranches pRPC clients sharing a single underlying HTTP transport
+// against host (typically chromeinfra.AnalysisHost, i.e. "analysis.api.luci.app").
+func (af *AuthFlags) NewTestHistoryClients(ctx context.Context, host string) (analysispb.TestHistoryClient, analysispb.TestVariantBranchesClient, error) {
+	prpcClient, _, err := af.newPRPCClient(ctx, host)
+	if err != nil {
+		return nil, nil, err
+	}
+	return analysispb.NewTestHistoryClient(prpcClient), analysispb.NewTestVariantBranchesClient(prpcClient), nil
 }
 
 // NewNotifyClients creates authenticated LUCI Notify Builders and AlertGroups
 // pRPC clients sharing a single underlying HTTP transport against host (typically
 // chromeinfra.NotifyHost, i.e. "notify.api.luci.app").
 func (af *AuthFlags) NewNotifyClients(ctx context.Context, host string) (lucinotifypb.BuildersClient, lucinotifypb.AlertGroupsClient, error) {
-	httpClient, err := af.NewHTTPClient(ctx)
+	prpcClient, _, err := af.newPRPCClient(ctx, host)
 	if err != nil {
-		return nil, nil, errors.Fmt("failed to create http client: %w", err)
-	}
-	prpcClient := &prpc.Client{
-		C:       httpClient,
-		Host:    host,
-		Options: prpc.DefaultOptions(),
+		return nil, nil, err
 	}
 	return lucinotifypb.NewBuildersClient(prpcClient), lucinotifypb.NewAlertGroupsClient(prpcClient), nil
 }

@@ -707,16 +707,19 @@ func extractLeafSuggestionToken(query string) string {
 	return leaf
 }
 
-func populateAlternateMatches(
-	report *testHistoryReport,
-	ranked []string,
-	project, subRealm string,
-	variants []string,
-	daysExplicit bool,
-	days int,
-	limitExplicit bool,
-	limit int,
-) {
+type reRunCommandOptions struct {
+	Project        string
+	SubRealm       string
+	Branch         string
+	BranchExplicit bool
+	Variants       []string
+	DaysExplicit   bool
+	Days           int
+	LimitExplicit  bool
+	Limit          int
+}
+
+func populateAlternateMatches(report *testHistoryReport, ranked []string, opts reRunCommandOptions) {
 	if report == nil || len(ranked) <= 1 {
 		return
 	}
@@ -735,64 +738,55 @@ func populateAlternateMatches(
 	others = append(others, legacyCounterparts...)
 	if len(others) > 0 {
 		report.DidYouMeanTestIDs = others
-		report.DidYouMeanNextStep = formatTestHistoryReRunCommand(project, others[0], subRealm, variants, daysExplicit, days, limitExplicit, limit)
+		report.DidYouMeanNextStep = formatReRunCommand(opts, others[0])
 	}
 }
 
-func formatTestHistoryReRunCommand(
-	project, testID, subRealm string,
-	variants []string,
-	daysExplicit bool,
-	days int,
-	limitExplicit bool,
-	limit int,
-) string {
-	parts := []string{"luci", "analysis", "test-history", "-project", base.ShellQuoteIfNeeded(project)}
-	if subRealm != "" {
-		parts = append(parts, "-subrealm", base.ShellQuoteIfNeeded(subRealm))
+func formatReRunCommand(opts reRunCommandOptions, testID string) string {
+	parts := []string{"luci", "analysis", "test-history", "-project", base.ShellQuoteIfNeeded(opts.Project)}
+	defaultBranch := resolveAndroidBranch(opts.Project, "", "")
+	emitBranch := opts.Branch != "" && (opts.BranchExplicit || opts.Branch != defaultBranch)
+	if opts.SubRealm != "" && !emitBranch {
+		parts = append(parts, "-subrealm", base.ShellQuoteIfNeeded(opts.SubRealm))
 	}
-	for _, v := range variants {
+	if emitBranch {
+		parts = append(parts, "-branch", base.ShellQuoteIfNeeded(opts.Branch))
+	}
+	for _, v := range opts.Variants {
 		parts = append(parts, "-variant", base.ShellQuoteIfNeeded(v))
 	}
-	if daysExplicit {
-		parts = append(parts, "-days", fmt.Sprintf("%d", days))
+	if opts.DaysExplicit {
+		parts = append(parts, "-days", fmt.Sprintf("%d", opts.Days))
 	}
-	if limitExplicit {
-		parts = append(parts, "-limit", fmt.Sprintf("%d", limit))
+	if opts.LimitExplicit {
+		parts = append(parts, "-limit", fmt.Sprintf("%d", opts.Limit))
 	}
 	parts = append(parts, "-testid", base.ShellQuoteIfNeeded(testID))
 	return strings.Join(parts, " ")
 }
 
-func printSubstringSearchHeader(out io.Writer, project, subRealm, query string) {
+func printSubstringSearchHeader(out io.Writer, project, subRealm, branch, query string) {
 	fmt.Fprintf(out, "Project:   %s\n", project)
 	if subRealm != "" {
 		fmt.Fprintf(out, "SubRealm:  %s\n", subRealm)
 	}
+	if branch != "" {
+		fmt.Fprintf(out, "Branch:    %s\n", branch)
+	}
 	fmt.Fprintf(out, "Query:     %q\n", query)
 }
 
-func printNoSubstringMatches(out io.Writer, project, subRealm, query string, suggestions []string, nextStep string) {
-	printSubstringSearchHeader(out, project, subRealm, query)
+func printNoSubstringMatches(out io.Writer, opts reRunCommandOptions, query string, suggestions []string, nextStep string) {
+	printSubstringSearchHeader(out, opts.Project, opts.SubRealm, opts.Branch, query)
 	fmt.Fprintf(out, "\nNo matching test IDs found in the last 90 days.\n")
 	printDidYouMeanSuggestions(out, "Did you mean one of these test IDs?", suggestions, maxDidYouMeanSuggestions, nextStep)
 }
 
-func printSubstringDisambiguation(
-	out io.Writer,
-	project, subRealm, query string,
-	ranked []string,
-	truncated bool,
-	variants []string,
-	daysExplicit bool,
-	days int,
-	limitExplicit bool,
-	limit int,
-) {
+func printSubstringDisambiguation(out io.Writer, query string, ranked []string, truncated bool, opts reRunCommandOptions) {
 	if len(ranked) == 0 {
 		return
 	}
-	printSubstringSearchHeader(out, project, subRealm, query)
+	printSubstringSearchHeader(out, opts.Project, opts.SubRealm, opts.Branch, query)
 
 	countDesc := fmt.Sprintf("%d", len(ranked))
 	if truncated {
@@ -801,7 +795,7 @@ func printSubstringDisambiguation(
 	heading := fmt.Sprintf("Multiple matching test IDs found (%s); specify exact -testid to view history:", countDesc)
 	printCappedTestIDList(out, heading, ranked, maxMatchingTestsShown, " (pass a more specific -test-substring to narrow)")
 
-	nextCmd := formatTestHistoryReRunCommand(project, ranked[0], subRealm, variants, daysExplicit, days, limitExplicit, limit)
+	nextCmd := formatReRunCommand(opts, ranked[0])
 	fmt.Fprintf(out, "\nNext step:\n  %s\n", nextCmd)
 }
 
