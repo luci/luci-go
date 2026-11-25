@@ -1521,6 +1521,149 @@ func TestPrintExtractedIDs(t *testing.T) {
 			assert.Loosely(t, boundRot, should.Equal("chrome-browser-release"))
 			assert.Loosely(t, boundAG, should.Equal("ag-12345"))
 		})
+
+		t.Run("extract_ants_project_and_branch", func(t *ftt.Test) {
+			ctx := t.Context()
+			srv := newMockAntsServer()
+			defer srv.Close()
+			ctx = base.WithAntsHTTPClient(ctx, srv.Client(), srv.URL)
+
+			// 1. ATI URL with SubmittedAndroidBuild populates Project (from Realm) and Branch.
+			clientSubmitted := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:  in.GetName(),
+						Realm: "android:postsubmit",
+						Sources: &pb.Sources{
+							BaseSources: &pb.Sources_SubmittedAndroidBuild{
+								SubmittedAndroidBuild: &pb.SubmittedAndroidBuild{
+									DataRealm: "prod",
+									Branch:    "git_udc-release",
+									BuildId:   12345678,
+								},
+							},
+						},
+					}, nil
+				},
+				queryTestVerdicts: func(ctx context.Context, in *pb.QueryTestVerdictsRequest) (*pb.QueryTestVerdictsResponse, error) {
+					return &pb.QueryTestVerdictsResponse{
+						TestVerdicts: []*pb.TestVerdict{
+							{
+								TestId: ":CellBroadcastServiceTests!junit:test#testResetAreaInfoWithDefaultSubChanged",
+								Results: []*pb.TestResult{
+									{
+										Name:        "rootInvocations/ants-i77100010600769898/workUnits/ants-wu17100269020689387/tests/t1/results/r1",
+										ResultId:    "r1",
+										VariantHash: "varhash123",
+										StatusV2:    pb.TestResult_FAILED,
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+
+			atiURL := "https://android-build.corp.google.com/test_investigate/invocation/I77100010600769898/test/TR13830335277435395/"
+			var boundProj, boundBranch, boundDataRealm, boundTestID string
+			extracted, err := ExtractWithAuth(ctx, nil, clientSubmitted, nil, atiURL, TargetBindings{
+				Project:          &boundProj,
+				Branch:           &boundBranch,
+				AndroidDataRealm: &boundDataRealm,
+				TestID:           &boundTestID,
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, boundProj, should.Equal("android"))
+			assert.Loosely(t, boundBranch, should.Equal("git_udc-release"))
+			assert.Loosely(t, boundDataRealm, should.Equal("prod"))
+			assert.Loosely(t, boundTestID, should.Equal(":CellBroadcastServiceTests!junit:test#testResetAreaInfoWithDefaultSubChanged"))
+
+			var textBuf, jsonBuf bytes.Buffer
+			assert.Loosely(t, printExtractedIDs(&textBuf, extracted, false), should.BeNil)
+			assert.Loosely(t, textBuf.String(), should.ContainSubstring("Project:           android\n"))
+			assert.Loosely(t, textBuf.String(), should.ContainSubstring("Branch:            git_udc-release\n"))
+			assert.Loosely(t, printExtractedIDs(&jsonBuf, extracted, true), should.BeNil)
+			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"project": "android"`))
+			assert.Loosely(t, jsonBuf.String(), should.ContainSubstring(`"branch": "git_udc-release"`))
+
+			// 2. Falls back to PrimaryBuild.AndroidBuild when SubmittedAndroidBuild is unset,
+			// and preserves non-"android" realm prefix (e.g. "arsp:ci" -> "arsp").
+			clientPrimaryOnly := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return &pb.RootInvocation{
+						Name:  in.GetName(),
+						Realm: "arsp:ci",
+						PrimaryBuild: &pb.BuildDescriptor{
+							Definition: &pb.BuildDescriptor_AndroidBuild{
+								AndroidBuild: &pb.AndroidBuildDescriptor{
+									DataRealm: "prod",
+									Branch:    "git_main",
+								},
+							},
+						},
+					}, nil
+				},
+			}
+			idsPrimary, err := ExtractIDs(ctx, clientPrimaryOnly, nil, "I77100010600769898", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsPrimary.Project, should.Equal("arsp"))
+			assert.Loosely(t, idsPrimary.Branch, should.Equal("git_main"))
+
+			// 3. Offline / nil ResultDB client still defaults Project to "android" on AnTS targets.
+			idsOffline, err := ExtractIDs(ctx, nil, nil, "ants-i77100010600769898", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsOffline.Project, should.Equal("android"))
+			assert.Loosely(t, idsOffline.Branch, should.Equal(""))
+
+			// 4. PermissionDenied on TR target calls GetRootInvocation once (no duplicate retries)
+			// and extracts denied realm project.
+			getRootCalls := 0
+			getInvCalls := 0
+			clientDenied := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					getRootCalls++
+					return nil, status.Error(codes.PermissionDenied, `caller lacks permission in realm "androidx:ci"`)
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					getInvCalls++
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+			}
+			idsDenied, err := ExtractIDs(ctx, clientDenied, nil, "TR13830335277435395", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, idsDenied.Project, should.Equal("androidx"))
+			assert.Loosely(t, getRootCalls, should.Equal(1))
+			assert.Loosely(t, getInvCalls, should.Equal(0))
+
+			// 5. ExtractWithAuth with a non-nil rdbClient and only InvocationID / TestID bound
+			// makes 0 GetRootInvocation calls and does not synthesize Project: "android".
+			noMetaRootCalls := 0
+			clientNoMeta := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					noMetaRootCalls++
+					return &pb.RootInvocation{Name: in.GetName(), Realm: "arsp:ci"}, nil
+				},
+				queryTestVerdicts: clientSubmitted.queryTestVerdicts,
+			}
+			var boundInvID string
+			idsInvOnly, err := ExtractWithAuth(ctx, nil, clientNoMeta, nil, "I77100010600769898", TargetBindings{
+				InvocationID: &boundInvID,
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, boundInvID, should.Equal("ants-i77100010600769898"))
+			assert.Loosely(t, idsInvOnly.Project, should.Equal(""))
+			assert.Loosely(t, noMetaRootCalls, should.Equal(0))
+
+			var boundInvID2, boundTestID2 string
+			idsTRNoMeta, err := ExtractWithAuth(ctx, nil, clientNoMeta, nil, atiURL, TargetBindings{
+				InvocationID: &boundInvID2,
+				TestID:       &boundTestID2,
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, boundTestID2, should.Equal(":CellBroadcastServiceTests!junit:test#testResetAreaInfoWithDefaultSubChanged"))
+			assert.Loosely(t, idsTRNoMeta.Project, should.Equal(""))
+			assert.Loosely(t, noMetaRootCalls, should.Equal(0))
+		})
 	})
 }
 

@@ -23,6 +23,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -32,6 +33,7 @@ import (
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -40,6 +42,7 @@ import (
 type ExtractedIDs struct {
 	BugID              string `json:"bug_id,omitempty"`
 	Project            string `json:"project,omitempty"`
+	Branch             string `json:"branch,omitempty"`
 	RuleID             string `json:"rule_id,omitempty"`
 	ClusterAlgorithm   string `json:"cluster_algorithm,omitempty"`
 	ClusterID          string `json:"cluster_id,omitempty"`
@@ -59,11 +62,12 @@ type ExtractedIDs struct {
 	SummaryPlaceholder bool   `json:"summary_placeholder,omitempty"`
 	Legacy             bool   `json:"legacy,omitempty"`
 
-	// builder, buildNumber, and logdogStreamPath are unexported internal fields used during ID extraction
-	// to query Buildbucket for the build ID or canonical step/log names. They are not output.
+	// Unexported internal fields used during ID extraction; not output by `luci ids`.
 	builder           string
 	buildNumber       int
 	logdogStreamPath  string
+	androidDataRealm  string
+	rootInvResolved   bool
 	lookupMiloVerdict bool
 	miloMatchFunc     func(*pb.TestResult) bool
 }
@@ -72,6 +76,7 @@ type ExtractedIDs struct {
 func (e *ExtractedIDs) IsEmpty() bool {
 	return e.BugID == "" &&
 		e.Project == "" &&
+		e.Branch == "" &&
 		e.RuleID == "" &&
 		e.ClusterAlgorithm == "" &&
 		e.ClusterID == "" &&
@@ -96,7 +101,7 @@ func Cmd(af *base.AuthFlags) *subcommands.Command {
 		UsageLine: "ids [-json] <target>",
 		ShortDesc: "Extract resource IDs from a URL or resource name",
 		LongDesc: "Parse a URL or resource name (including Milo / Buildbucket / LogDog / LUCI Analysis / LUCI Notify monitoring URLs, Gerrit CL URLs / shorthands, ResultDB / LUCI Analysis / LUCI Notify resource names, bug URLs / shorthands, and AnTS / ATI URLs)\n" +
-			"and extract the canonical IDs (-bugid, -project, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash, -rotation, -id)\n" +
+			"and extract the canonical IDs (-bugid, -project, -branch, -ruleid, -clusteralgorithm, -clusterid, -buildid, -invocationid, -step, -log, -workunitid, -testid, -resultid, -artifactid, -varianthash, -rotation, -id)\n" +
 			"for use with other commands.",
 		CommandRun: func() subcommands.CommandRun {
 			r := &idsRun{af: af}
@@ -138,7 +143,14 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 
 	ctx := cli.GetContext(a, r, env)
 
-	extracted, err := extractIDs(ctx, r.af, r.rdbClient, r.bbClient, r.host, r.bbHost, target, false, true)
+	extracted, err := extractIDs(ctx, target, extractOptions{
+		af:            r.af,
+		rdbClient:     r.rdbClient,
+		bbClient:      r.bbClient,
+		host:          r.host,
+		bbHost:        r.bbHost,
+		resolveLegacy: true,
+	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to extract IDs: %s\n", err)
 		return 1
@@ -169,6 +181,8 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 type TargetBindings struct {
 	BugID                              *string
 	Project                            *string
+	Branch                             *string
+	AndroidDataRealm                   *string
 	RuleID                             *string
 	ClusterAlgorithm                   *string
 	ClusterID                          *string
@@ -232,6 +246,8 @@ func (e *ExtractedIDs) Apply(b TargetBindings) {
 		}
 	}
 	bind(b.Project, &e.Project)
+	bind(b.Branch, &e.Branch)
+	bind(b.AndroidDataRealm, &e.androidDataRealm)
 	bind(b.BuildID, &e.BuildID)
 	if b.BuildIDInt64 != nil {
 		if *b.BuildIDInt64 <= 0 && e.BuildID != "" {
@@ -358,7 +374,17 @@ func ExtractWithAuth(ctx context.Context, af *base.AuthFlags, rdbClient pb.Resul
 	if raw == "" {
 		return nil, nil
 	}
-	extracted, err := extractIDs(ctx, af, rdbClient, bbClient, b.ResultDBHost, b.BuildbucketHost, raw, false, false)
+	resolveAntsMeta := (b.Project != nil && *b.Project == "") ||
+		(b.Branch != nil && *b.Branch == "") ||
+		(b.AndroidDataRealm != nil && *b.AndroidDataRealm == "")
+	extracted, err := extractIDs(ctx, raw, extractOptions{
+		af:              af,
+		rdbClient:       rdbClient,
+		bbClient:        bbClient,
+		host:            b.ResultDBHost,
+		bbHost:          b.BuildbucketHost,
+		resolveAntsMeta: resolveAntsMeta,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -509,6 +535,9 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 	if extracted.Project != "" {
 		fmt.Fprintf(out, "Project:           %s\n", extracted.Project)
 	}
+	if extracted.Branch != "" {
+		fmt.Fprintf(out, "Branch:            %s\n", extracted.Branch)
+	}
 	if extracted.RuleID != "" {
 		fmt.Fprintf(out, "Rule ID:           %s\n", extracted.RuleID)
 	}
@@ -579,17 +608,38 @@ func printExtractedIDs(out io.Writer, extracted *ExtractedIDs, jsonOut bool) err
 
 // ExtractIDs parses target string and extracts all available resource IDs.
 func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcpb.BuildsClient, raw string, legacy bool) (*ExtractedIDs, error) {
-	return extractIDs(ctx, nil, rdbClient, bbClient, "", "", raw, legacy, true)
+	return extractIDs(ctx, raw, extractOptions{
+		rdbClient:     rdbClient,
+		bbClient:      bbClient,
+		legacy:        legacy,
+		resolveLegacy: true,
+	})
 }
 
-func extractIDs(ctx context.Context, af *base.AuthFlags, rdbClient pb.ResultDBClient, bbClient grpcpb.BuildsClient, host, bbHost, raw string, legacy, resolveLegacy bool) (*ExtractedIDs, error) {
+type extractOptions struct {
+	af              *base.AuthFlags
+	rdbClient       pb.ResultDBClient
+	bbClient        grpcpb.BuildsClient
+	host            string
+	bbHost          string
+	legacy          bool
+	resolveLegacy   bool
+	resolveAntsMeta bool
+}
+
+func extractIDs(ctx context.Context, raw string, opts extractOptions) (*ExtractedIDs, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return nil, errors.New("empty target")
 	}
+	af := opts.af
+	rdbClient := opts.rdbClient
+	bbClient := opts.bbClient
+	host := opts.host
 	if host == "" {
 		host = chromeinfra.ResultDBHost
 	}
+	bbHost := opts.bbHost
 	if bbHost == "" {
 		bbHost = chromeinfra.BuildbucketHost
 	}
@@ -627,7 +677,8 @@ func extractIDs(ctx context.Context, af *base.AuthFlags, rdbClient pb.ResultDBCl
 	}
 
 	// 2. Android Test Investigate (ATI) URL or AnTS target
-	if ok, err := extractFromAntsTarget(ctx, ensureRDBClient, raw, extracted); err != nil {
+	wantAntsMeta := opts.resolveLegacy || opts.resolveAntsMeta
+	if ok, err := extractFromAntsTarget(ctx, ensureRDBClient, raw, wantAntsMeta, extracted); err != nil {
 		return nil, err
 	} else if !ok && !extractFromLogDogBuildURL(raw, extracted) && !extractFromLUCIAnalysisTarget(raw, extracted) && !extractFromLUCINotifyTarget(raw, extracted) {
 		clean := base.TrimResourceURL(raw)
@@ -683,28 +734,45 @@ func extractIDs(ctx context.Context, af *base.AuthFlags, rdbClient pb.ResultDBCl
 
 	populateBuildIDFromInvocation(extracted)
 
-	if (extracted.lookupMiloVerdict || resolveLegacy) && extracted.InvocationID != "" {
+	isAntsInv := base.IsAntsInvocationID(extracted.InvocationID)
+	if isAntsInv && wantAntsMeta {
+		if !extracted.rootInvResolved {
+			ctx, rdbClient = ensureRDBClient()
+			if rdbClient != nil {
+				resolveAntsRootInvocation(ctx, rdbClient, extracted)
+			}
+		}
+		if extracted.Project == "" {
+			extracted.Project = "android"
+		}
+	}
+
+	needResolve := !isAntsInv && (extracted.lookupMiloVerdict || opts.resolveLegacy) && extracted.InvocationID != ""
+	if needResolve {
 		ctx, rdbClient = ensureRDBClient()
 	}
 
-	if (extracted.lookupMiloVerdict || resolveLegacy) && rdbClient != nil && extracted.InvocationID != "" {
+	if needResolve && rdbClient != nil {
 		if resolved, err := base.ResolveInvocation(ctx, rdbClient, extracted.InvocationID); err == nil && resolved != nil {
 			extracted.Legacy = resolved.Legacy
 		}
-	} else if legacy {
+	} else if opts.legacy && !isAntsInv {
 		extracted.Legacy = true
 	}
 
-	if extracted.lookupMiloVerdict && rdbClient != nil && extracted.InvocationID != "" {
-		results, _, _, errQuery := base.QueryVerdictResultsAndExonerations(ctx, rdbClient, extracted.InvocationID, extracted.TestID, extracted.VariantHash, extracted.Legacy, 1000)
-		if errQuery == nil {
-			for _, tr := range results {
-				if extracted.miloMatchFunc == nil || extracted.miloMatchFunc(tr) {
-					extracted.TestID = tr.TestId
-					if extracted.ResultID == "" {
-						extracted.ResultID = tr.ResultId
+	if extracted.lookupMiloVerdict && extracted.InvocationID != "" {
+		ctx, rdbClient = ensureRDBClient()
+		if rdbClient != nil {
+			results, _, _, errQuery := base.QueryVerdictResultsAndExonerations(ctx, rdbClient, extracted.InvocationID, extracted.TestID, extracted.VariantHash, extracted.Legacy, 1000)
+			if errQuery == nil {
+				for _, tr := range results {
+					if extracted.miloMatchFunc == nil || extracted.miloMatchFunc(tr) {
+						extracted.TestID = tr.TestId
+						if extracted.ResultID == "" {
+							extracted.ResultID = tr.ResultId
+						}
+						break
 					}
-					break
 				}
 			}
 		}
@@ -761,7 +829,7 @@ func extractQueryParams(raw string, extracted *ExtractedIDs) {
 
 // extractFromAntsTarget handles AnTS/ATI targets: standalone invocation/work-unit IDs,
 // ATI URLs, and AnTS TR IDs.
-func extractFromAntsTarget(ctx context.Context, ensureRDBClient func() (context.Context, pb.ResultDBClient), raw string, extracted *ExtractedIDs) (bool, error) {
+func extractFromAntsTarget(ctx context.Context, ensureRDBClient func() (context.Context, pb.ResultDBClient), raw string, wantAntsMeta bool, extracted *ExtractedIDs) (bool, error) {
 	if base.IsAntsInvocationID(raw) {
 		extracted.InvocationID = base.NormalizeInvocation(raw)
 		return true, nil
@@ -850,7 +918,8 @@ func extractFromAntsTarget(ctx context.Context, ensureRDBClient func() (context.
 		extracted.WorkUnitID = base.NormalizeWorkUnit(info.WorkUnitID)
 	}
 
-	// If this is a module error or has no method name, extract only InvocationID, WorkUnitID, and ModuleName (or mark as SummaryPlaceholder).
+	// If this is a module error or has no method name, extract only InvocationID,
+	// WorkUnitID, and ModuleName (or mark as SummaryPlaceholder).
 	if info.IsModuleError || info.MethodName == "" {
 		if info.ModuleName == "" {
 			extracted.SummaryPlaceholder = true
@@ -860,11 +929,36 @@ func extractFromAntsTarget(ctx context.Context, ensureRDBClient func() (context.
 		return true, nil
 	}
 
-	// Query ResultDB to resolve canonical TestID, ResultID, VariantHash
+	// Query ResultDB to resolve canonical TestID/ResultID/VariantHash (and
+	// RootInvocation realm/branch metadata in parallel when requested).
 	if client != nil && extracted.InvocationID != "" {
-		results, _, errQuery := queryAntsResultDBVerdict(ctx, client, extracted.InvocationID, info)
-		if errQuery != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to query ResultDB for canonical test ID: %s\n", errQuery)
+		var (
+			results []*pb.TestResult
+			errQ    error
+		)
+		if wantAntsMeta {
+			var (
+				rootInv *pb.RootInvocation
+				rootErr error
+				wg      sync.WaitGroup
+			)
+			extracted.rootInvResolved = true
+			wg.Add(2)
+			go func() {
+				defer wg.Done()
+				results, _, errQ = queryAntsResultDBVerdict(ctx, client, extracted.InvocationID, info)
+			}()
+			go func() {
+				defer wg.Done()
+				rootInv, rootErr = fetchAntsRootInvocation(ctx, client, extracted.InvocationID)
+			}()
+			wg.Wait()
+			enrichFromAntsRootInvocation(extracted, rootInv, rootErr)
+		} else {
+			results, _, errQ = queryAntsResultDBVerdict(ctx, client, extracted.InvocationID, info)
+		}
+		if errQ != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to query ResultDB for canonical test ID: %s\n", errQ)
 		} else if len(results) > 0 {
 			extracted.TestID = results[0].TestId
 			extracted.VariantHash = results[0].VariantHash
@@ -888,6 +982,48 @@ func extractFromAntsTarget(ctx context.Context, ensureRDBClient func() (context.
 	}
 
 	return true, nil
+}
+
+func resolveAntsRootInvocation(ctx context.Context, client pb.ResultDBClient, extracted *ExtractedIDs) {
+	extracted.rootInvResolved = true
+	rootInv, rootErr := fetchAntsRootInvocation(ctx, client, extracted.InvocationID)
+	enrichFromAntsRootInvocation(extracted, rootInv, rootErr)
+}
+
+func fetchAntsRootInvocation(ctx context.Context, client pb.ResultDBClient, invID string) (*pb.RootInvocation, error) {
+	probeCtx := logging.SetLevel(ctx, logging.Error)
+	return client.GetRootInvocation(probeCtx, &pb.GetRootInvocationRequest{
+		Name: "rootInvocations/" + base.NormalizeInvocation(invID),
+	})
+}
+
+func enrichFromAntsRootInvocation(extracted *ExtractedIDs, rootInv *pb.RootInvocation, rootErr error) {
+	if extracted == nil {
+		return
+	}
+	if rootInv != nil && rootErr == nil {
+		if extracted.Project == "" {
+			if proj, _, ok := strings.Cut(rootInv.GetRealm(), ":"); ok && proj != "" {
+				extracted.Project = proj
+			}
+		}
+		branch := rootInv.GetSources().GetSubmittedAndroidBuild().GetBranch()
+		dataRealm := rootInv.GetSources().GetSubmittedAndroidBuild().GetDataRealm()
+		if branch == "" {
+			branch = rootInv.GetPrimaryBuild().GetAndroidBuild().GetBranch()
+			dataRealm = rootInv.GetPrimaryBuild().GetAndroidBuild().GetDataRealm()
+		}
+		if extracted.Branch == "" {
+			extracted.Branch = branch
+		}
+		if extracted.androidDataRealm == "" {
+			extracted.androidDataRealm = dataRealm
+		}
+	} else if base.IsPermissionDenied(rootErr) && extracted.Project == "" {
+		if proj, _ := base.ExtractDeniedProjectAndRealm(rootErr); proj != "" {
+			extracted.Project = proj
+		}
+	}
 }
 
 // extractFromMiloModuleURL handles Milo module URLs without test cases: .../modules/<module>
