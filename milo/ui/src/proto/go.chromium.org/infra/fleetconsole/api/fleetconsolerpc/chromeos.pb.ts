@@ -759,6 +759,7 @@ export interface ListRepairQueueRequest {
   readonly pageToken: string;
   readonly filter: string;
   readonly lab?: string;
+  readonly siteId?: string;
 }
 
 export interface RepairQueueItem {
@@ -813,6 +814,7 @@ export interface ClaimRepairTaskRequest {
    * the current etag of the task, the request will fail with ABORTED.
    */
   readonly etag: string;
+  readonly siteId?: string;
 }
 
 export interface ClaimRepairTaskResponse {
@@ -837,10 +839,12 @@ export interface PriorityRule {
   readonly expressionAip160: string;
   readonly weight: string;
   readonly lab?: string;
+  readonly siteId?: string;
 }
 
 export interface ListPriorityRulesRequest {
   readonly lab?: string;
+  readonly siteId?: string;
 }
 
 export interface ListPriorityRulesResponse {
@@ -918,6 +922,7 @@ export interface GetWorkforceActivityRequest {
    */
   readonly timeframe: GetWorkforceActivityRequest_Timeframe;
   readonly lab?: string;
+  readonly siteId?: string;
 }
 
 export enum GetWorkforceActivityRequest_Timeframe {
@@ -6882,7 +6887,7 @@ export const UpdateChromeOSDeviceResponse: MessageFns<UpdateChromeOSDeviceRespon
 };
 
 function createBaseListRepairQueueRequest(): ListRepairQueueRequest {
-  return { pageSize: 0, pageToken: "", filter: "", lab: "" };
+  return { pageSize: 0, pageToken: "", filter: "", lab: "", siteId: "" };
 }
 
 export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
@@ -6898,6 +6903,9 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     }
     if (message.lab !== undefined && message.lab !== "") {
       writer.uint32(42).string(message.lab);
+    }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      writer.uint32(50).string(message.siteId);
     }
     return writer;
   },
@@ -6947,6 +6955,14 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
             message.lab = reader.string();
             continue;
           }
+          case 6: {
+            if (tag !== 50) {
+              break;
+            }
+
+            message.siteId = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -6973,6 +6989,11 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
         : "",
       filter: isSet(object.filter) ? globalThis.String(object.filter) : "",
       lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
+      siteId: isSet(object.siteId)
+        ? globalThis.String(object.siteId)
+        : isSet(object.site_id)
+        ? globalThis.String(object.site_id)
+        : "",
     };
   },
 
@@ -6990,6 +7011,9 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     if (message.lab !== undefined && message.lab !== "") {
       obj.lab = message.lab;
     }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      obj.siteId = message.siteId;
+    }
     return obj;
   },
 
@@ -7002,6 +7026,7 @@ export const ListRepairQueueRequest: MessageFns<ListRepairQueueRequest> = {
     message.pageToken = object.pageToken ?? "";
     message.filter = object.filter ?? "";
     message.lab = object.lab ?? "";
+    message.siteId = object.siteId ?? "";
     return message;
   },
 };
@@ -7646,7 +7671,7 @@ export const ListRepairQueueResponse: MessageFns<ListRepairQueueResponse> = {
 };
 
 function createBaseClaimRepairTaskRequest(): ClaimRepairTaskRequest {
-  return { taskId: "0", etag: "" };
+  return { taskId: "0", etag: "", siteId: "" };
 }
 
 export const ClaimRepairTaskRequest: MessageFns<ClaimRepairTaskRequest> = {
@@ -7656,6 +7681,9 @@ export const ClaimRepairTaskRequest: MessageFns<ClaimRepairTaskRequest> = {
     }
     if (message.etag !== "") {
       writer.uint32(18).string(message.etag);
+    }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      writer.uint32(26).string(message.siteId);
     }
     return writer;
   },
@@ -7689,6 +7717,14 @@ export const ClaimRepairTaskRequest: MessageFns<ClaimRepairTaskRequest> = {
             message.etag = reader.string();
             continue;
           }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.siteId = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -7709,6 +7745,11 @@ export const ClaimRepairTaskRequest: MessageFns<ClaimRepairTaskRequest> = {
         ? globalThis.String(object.task_id)
         : "0",
       etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
+      siteId: isSet(object.siteId)
+        ? globalThis.String(object.siteId)
+        : isSet(object.site_id)
+        ? globalThis.String(object.site_id)
+        : "",
     };
   },
 
@@ -7720,6 +7761,9 @@ export const ClaimRepairTaskRequest: MessageFns<ClaimRepairTaskRequest> = {
     if (message.etag !== "") {
       obj.etag = message.etag;
     }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      obj.siteId = message.siteId;
+    }
     return obj;
   },
 
@@ -7730,6 +7774,7 @@ export const ClaimRepairTaskRequest: MessageFns<ClaimRepairTaskRequest> = {
     const message = createBaseClaimRepairTaskRequest() as any;
     message.taskId = object.taskId ?? "0";
     message.etag = object.etag ?? "";
+    message.siteId = object.siteId ?? "";
     return message;
   },
 };
@@ -7974,7 +8019,7 @@ export const UnclaimRepairTaskResponse: MessageFns<UnclaimRepairTaskResponse> = 
 };
 
 function createBasePriorityRule(): PriorityRule {
-  return { id: "0", expressionAip160: "", weight: "0", lab: "" };
+  return { id: "0", expressionAip160: "", weight: "0", lab: "", siteId: "" };
 }
 
 export const PriorityRule: MessageFns<PriorityRule> = {
@@ -7990,6 +8035,9 @@ export const PriorityRule: MessageFns<PriorityRule> = {
     }
     if (message.lab !== undefined && message.lab !== "") {
       writer.uint32(34).string(message.lab);
+    }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      writer.uint32(42).string(message.siteId);
     }
     return writer;
   },
@@ -8039,6 +8087,14 @@ export const PriorityRule: MessageFns<PriorityRule> = {
             message.lab = reader.string();
             continue;
           }
+          case 5: {
+            if (tag !== 42) {
+              break;
+            }
+
+            message.siteId = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -8061,6 +8117,11 @@ export const PriorityRule: MessageFns<PriorityRule> = {
         : "",
       weight: isSet(object.weight) ? globalThis.String(object.weight) : "0",
       lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
+      siteId: isSet(object.siteId)
+        ? globalThis.String(object.siteId)
+        : isSet(object.site_id)
+        ? globalThis.String(object.site_id)
+        : "",
     };
   },
 
@@ -8078,6 +8139,9 @@ export const PriorityRule: MessageFns<PriorityRule> = {
     if (message.lab !== undefined && message.lab !== "") {
       obj.lab = message.lab;
     }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      obj.siteId = message.siteId;
+    }
     return obj;
   },
 
@@ -8090,18 +8154,22 @@ export const PriorityRule: MessageFns<PriorityRule> = {
     message.expressionAip160 = object.expressionAip160 ?? "";
     message.weight = object.weight ?? "0";
     message.lab = object.lab ?? "";
+    message.siteId = object.siteId ?? "";
     return message;
   },
 };
 
 function createBaseListPriorityRulesRequest(): ListPriorityRulesRequest {
-  return { lab: "" };
+  return { lab: "", siteId: "" };
 }
 
 export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
   encode(message: ListPriorityRulesRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.lab !== undefined && message.lab !== "") {
       writer.uint32(10).string(message.lab);
+    }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      writer.uint32(18).string(message.siteId);
     }
     return writer;
   },
@@ -8127,6 +8195,14 @@ export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
             message.lab = reader.string();
             continue;
           }
+          case 2: {
+            if (tag !== 18) {
+              break;
+            }
+
+            message.siteId = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -8142,6 +8218,11 @@ export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
   fromJSON(object: any): ListPriorityRulesRequest {
     return {
       lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
+      siteId: isSet(object.siteId)
+        ? globalThis.String(object.siteId)
+        : isSet(object.site_id)
+        ? globalThis.String(object.site_id)
+        : "",
     };
   },
 
@@ -8149,6 +8230,9 @@ export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
     const obj: any = {};
     if (message.lab !== undefined && message.lab !== "") {
       obj.lab = message.lab;
+    }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      obj.siteId = message.siteId;
     }
     return obj;
   },
@@ -8159,6 +8243,7 @@ export const ListPriorityRulesRequest: MessageFns<ListPriorityRulesRequest> = {
   fromPartial(object: DeepPartial<ListPriorityRulesRequest>): ListPriorityRulesRequest {
     const message = createBaseListPriorityRulesRequest() as any;
     message.lab = object.lab ?? "";
+    message.siteId = object.siteId ?? "";
     return message;
   },
 };
@@ -9359,7 +9444,7 @@ export const SetDefaultQuotaResponse: MessageFns<SetDefaultQuotaResponse> = {
 };
 
 function createBaseGetWorkforceActivityRequest(): GetWorkforceActivityRequest {
-  return { timeframe: 0, lab: "" };
+  return { timeframe: 0, lab: "", siteId: "" };
 }
 
 export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest> = {
@@ -9369,6 +9454,9 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
     }
     if (message.lab !== undefined && message.lab !== "") {
       writer.uint32(18).string(message.lab);
+    }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      writer.uint32(26).string(message.siteId);
     }
     return writer;
   },
@@ -9402,6 +9490,14 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
             message.lab = reader.string();
             continue;
           }
+          case 3: {
+            if (tag !== 26) {
+              break;
+            }
+
+            message.siteId = reader.string();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -9418,6 +9514,11 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
     return {
       timeframe: isSet(object.timeframe) ? getWorkforceActivityRequest_TimeframeFromJSON(object.timeframe) : 0,
       lab: isSet(object.lab) ? globalThis.String(object.lab) : "",
+      siteId: isSet(object.siteId)
+        ? globalThis.String(object.siteId)
+        : isSet(object.site_id)
+        ? globalThis.String(object.site_id)
+        : "",
     };
   },
 
@@ -9429,6 +9530,9 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
     if (message.lab !== undefined && message.lab !== "") {
       obj.lab = message.lab;
     }
+    if (message.siteId !== undefined && message.siteId !== "") {
+      obj.siteId = message.siteId;
+    }
     return obj;
   },
 
@@ -9439,6 +9543,7 @@ export const GetWorkforceActivityRequest: MessageFns<GetWorkforceActivityRequest
     const message = createBaseGetWorkforceActivityRequest() as any;
     message.timeframe = object.timeframe ?? 0;
     message.lab = object.lab ?? "";
+    message.siteId = object.siteId ?? "";
     return message;
   },
 };
