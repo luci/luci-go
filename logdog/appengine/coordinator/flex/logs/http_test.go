@@ -24,6 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/testing/ftt"
@@ -396,5 +399,46 @@ func TestViewerURL(t *testing.T) {
 				assert.Loosely(t, strings.Contains(body, "Back to build"), should.BeFalse, truth.Explain("case %s should omit Back to build link", tc.name))
 			})
 		}
+	})
+}
+
+func TestWriteErrorPage(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("writeErrorPage", t, func(t *ftt.Test) {
+		c, _ := ct.Install(t.Context())
+
+		renderError := func(err error, format string) *httptest.ResponseRecorder {
+			resp := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, "/logs/proj-foo/testing/+/foo/bar", nil).WithContext(c)
+			writeErrorPage(&router.Context{
+				Writer:  resp,
+				Request: req,
+			}, err, logData{options: userOptions{format: format}})
+			return resp
+		}
+
+		notFoundErr := errors.Fmt("start fetch: %w", status.Error(codes.NotFound, "stream path not found"))
+		const wantNotFoundMsg = "Log stream not found. It may be empty or expired."
+
+		t.Run("NotFound HTML", func(t *ftt.Test) {
+			resp := renderError(notFoundErr, formatHTMLFull)
+			assert.Loosely(t, resp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, resp.Body.String(), should.ContainSubstring(wantNotFoundMsg))
+			assert.Loosely(t, resp.Body.String(), should.NotContainSubstring("start fetch"))
+		})
+
+		t.Run("NotFound raw", func(t *ftt.Test) {
+			resp := renderError(notFoundErr, formatRAW)
+			assert.Loosely(t, resp.Code, should.Equal(http.StatusNotFound))
+			assert.Loosely(t, resp.Body.String(), should.Equal(wantNotFoundMsg))
+		})
+
+		t.Run("PermissionDenied raw", func(t *ftt.Test) {
+			err := errors.Fmt("start fetch: %w", status.Error(codes.PermissionDenied, "access denied"))
+			resp := renderError(err, formatRAW)
+			assert.Loosely(t, resp.Code, should.Equal(http.StatusForbidden))
+			assert.Loosely(t, resp.Body.String(), should.ContainSubstring("ERROR: start fetch:"))
+		})
 	})
 }

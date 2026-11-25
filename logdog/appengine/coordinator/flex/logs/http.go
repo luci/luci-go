@@ -615,6 +615,10 @@ func writeFooter(ctx *router.Context, start time.Time, err error, isHTML bool) {
 		// Pass
 	case grpcutil.Code(err) == codes.Internal:
 		message = "LogDog encountered error while serving logs."
+	case grpcutil.Code(err) == codes.NotFound:
+		// LogDog's butler does not register streams that receive no data, so
+		// empty logs look identical to missing or expired streams here.
+		message = "Log stream not found. It may be empty or expired."
 	default:
 		message = fmt.Sprintf("ERROR: %s", err)
 	}
