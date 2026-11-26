@@ -23,6 +23,8 @@ import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
 
 export const TYPE_URL_LEGACY_WORKNODE_STAGE =
   'type.googleapis.com/wireless.android.launchcontrol.WorkNodeStage';
+export const TYPE_URL_WORKNODE_BRIDGE =
+  'type.googleapis.com/wireless.android.launchcontrol.WorkNodeBridge';
 export const TYPE_URL_LEGACY_WORKNODE =
   'type.googleapis.com/wireless.android.launchcontrol.WorkNode';
 export const TYPE_URL_LEGACY_WORKPRODUCT =

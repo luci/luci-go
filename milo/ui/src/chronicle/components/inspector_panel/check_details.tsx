@@ -13,13 +13,20 @@
 // limitations under the License.
 
 import { Box, Chip, Divider, Typography } from '@mui/material';
+import { useContext, useMemo } from 'react';
 
+import {
+  AssignmentType,
+  getStageAssignments,
+} from '@/chronicle/utils/assignment_utils';
 import { toString } from '@/chronicle/utils/id';
 import { renderTimestamp } from '@/chronicle/utils/time_utils';
 import { Check } from '@/proto/turboci/graph/orchestrator/v1/check.pb';
 import { checkKindToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_kind.pb';
 import { checkStateToJSON } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { ValueData } from '@/proto/turboci/graph/orchestrator/v1/value_data.pb';
+
+import { ChronicleContext } from '../context';
 
 import { AnyDetails } from './any_details';
 import { DetailRow } from './detail_row';
@@ -37,6 +44,8 @@ export function CheckDetails({
   valueDataMap,
   renderMode,
 }: CheckDetailsProps) {
+  const { graph } = useContext(ChronicleContext);
+
   const dependencyIds = (check.dependencies?.edges || [])
     .map((edge) => {
       const idObj = edge.check?.identifier || edge.stage?.identifier;
@@ -44,6 +53,29 @@ export function CheckDetails({
     })
     .filter((id) => !!id)
     .sort();
+
+  // Stages that work on this check (reverse of the stage's assignments).
+  const checkId = check.identifier?.id;
+  const { plannedBy, executedBy } = useMemo(() => {
+    const plannedBy: string[] = [];
+    const executedBy: string[] = [];
+    if (checkId && graph) {
+      for (const stage of graph.stages) {
+        if (!stage.identifier?.id) continue;
+        const assignment = getStageAssignments(stage).find(
+          (a) => a.checkId === checkId,
+        );
+        if (!assignment) continue;
+        const stageIdStr = toString(stage.identifier);
+        if (assignment.type === AssignmentType.EDITING) {
+          plannedBy.push(stageIdStr);
+        } else if (assignment.type === AssignmentType.EXECUTION) {
+          executedBy.push(stageIdStr);
+        }
+      }
+    }
+    return { plannedBy: plannedBy.sort(), executedBy: executedBy.sort() };
+  }, [graph, checkId]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -72,6 +104,24 @@ export function CheckDetails({
             <DetailRow
               label="Dependencies"
               value={dependencyIds.map((id) => (
+                <Chip key={id} label={id} size="small" />
+              ))}
+            />
+          )}
+
+          {plannedBy.length > 0 && (
+            <DetailRow
+              label="Planned by"
+              value={plannedBy.map((id) => (
+                <Chip key={id} label={id} size="small" />
+              ))}
+            />
+          )}
+
+          {executedBy.length > 0 && (
+            <DetailRow
+              label="Executed by"
+              value={executedBy.map((id) => (
                 <Chip key={id} label={id} size="small" />
               ))}
             />

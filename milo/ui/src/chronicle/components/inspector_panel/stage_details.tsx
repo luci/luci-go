@@ -15,6 +15,11 @@
 import { Box, Chip, Divider, Typography } from '@mui/material';
 import { useMemo } from 'react';
 
+import {
+  AssignmentType,
+  getStageAssignments,
+  isStageAssignmentEdge,
+} from '@/chronicle/utils/assignment_utils';
 import { getStageLabel, isWorknodeStage } from '@/chronicle/utils/check_utils';
 import { toString } from '@/chronicle/utils/id';
 import {
@@ -56,18 +61,33 @@ export function StageDetails({
     [isWorknode, stage, valueDataMap],
   );
 
-  const assignmentIds = (stage.assignments || [])
-    .map((a) => (a.target ? toString(a.target) : ''))
-    .filter((id) => !!id)
-    .sort();
+  const { dependencyIds, editingIds, executionIds } = useMemo(() => {
+    const editingIds: string[] = [];
+    const executionIds: string[] = [];
+    for (const assignment of getStageAssignments(stage)) {
+      const targetStr = toString(assignment.target);
+      if (assignment.type === AssignmentType.EDITING) {
+        editingIds.push(targetStr);
+      } else if (assignment.type === AssignmentType.EXECUTION) {
+        executionIds.push(targetStr);
+      }
+    }
 
-  const dependencyIds = (stage.dependencies?.edges || [])
-    .map((edge) => {
-      const idObj = edge.check?.identifier || edge.stage?.identifier;
-      return idObj ? toString(idObj) : '';
-    })
-    .filter((id) => !!id)
-    .sort();
+    const dependencyIds = (stage.dependencies?.edges ?? [])
+      .filter((edge) => !isStageAssignmentEdge(stage, edge))
+      .map((edge) => {
+        const idObj = edge.check?.identifier || edge.stage?.identifier;
+        return idObj ? toString(idObj) : '';
+      })
+      .filter(Boolean)
+      .sort();
+
+    return {
+      dependencyIds,
+      editingIds: editingIds.sort(),
+      executionIds: executionIds.sort(),
+    };
+  }, [stage]);
 
   const createTs = stage.stateHistory?.find(
     (s) => s.state === StageState.STAGE_STATE_PLANNED,
@@ -125,10 +145,19 @@ export function StageDetails({
             />
           )}
 
-          {assignmentIds.length > 0 && (
+          {editingIds.length > 0 && (
             <DetailRow
-              label="Assignments"
-              value={assignmentIds.map((id) => (
+              label="Plans (editing)"
+              value={editingIds.map((id) => (
+                <Chip key={id} label={id} size="small" />
+              ))}
+            />
+          )}
+
+          {executionIds.length > 0 && (
+            <DetailRow
+              label="Executes"
+              value={executionIds.map((id) => (
                 <Chip key={id} label={id} size="small" />
               ))}
             />

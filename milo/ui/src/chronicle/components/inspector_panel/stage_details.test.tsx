@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
-import { TYPE_URL_LEGACY_WORKNODE_STAGE } from '@/chronicle/utils/legacy_worknode';
+import {
+  TYPE_URL_LEGACY_WORKNODE_STAGE,
+  TYPE_URL_WORKNODE_BRIDGE,
+} from '@/chronicle/utils/legacy_worknode';
+import { CheckState } from '@/proto/turboci/graph/orchestrator/v1/check_state.pb';
 import { OmitReason } from '@/proto/turboci/graph/orchestrator/v1/omit_reason.pb';
 import { Stage } from '@/proto/turboci/graph/orchestrator/v1/stage.pb';
 import { StageAttemptState } from '@/proto/turboci/graph/orchestrator/v1/stage_attempt_state.pb';
@@ -295,5 +299,88 @@ describe('StageDetails', () => {
 
     expect(screen.getByText('Attempt 1')).toBeInTheDocument();
     expect(screen.queryByText('Progress')).not.toBeInTheDocument();
+  });
+
+  describe('assignments', () => {
+    const valueDataMap = new Map<string, ValueData>();
+    const wp = { id: 'wp' };
+
+    it('renders Plans (editing) and Executes rows and keeps only non-assignment edges in Dependencies', () => {
+      const stage = Stage.fromPartial({
+        identifier: { workPlan: wp, id: 'S_mixed' },
+        state: StageState.STAGE_STATE_ATTEMPTING,
+        dependencies: {
+          edges: [
+            {
+              check: {
+                identifier: { workPlan: wp, id: 'C_plan' },
+                condition: { onState: CheckState.CHECK_STATE_PLANNING },
+              },
+            },
+            {
+              check: {
+                identifier: { workPlan: wp, id: 'C_exec_wait' },
+                condition: { onState: CheckState.CHECK_STATE_WAITING },
+              },
+            },
+            {
+              check: {
+                identifier: { workPlan: wp, id: 'C_final' },
+                condition: { onState: CheckState.CHECK_STATE_FINAL },
+              },
+            },
+            {
+              stage: {
+                identifier: {
+                  workPlan: wp,
+                  id: 'S_upstream',
+                  isWorknode: false,
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      render(<StageDetails view={stage} valueDataMap={valueDataMap} />);
+
+      const plansRow = within(
+        screen.getByText('Plans (editing)').parentElement!,
+      );
+      expect(plansRow.getByText('Lwp:CC_plan')).toBeInTheDocument();
+
+      const executesRow = within(screen.getByText('Executes').parentElement!);
+      expect(executesRow.getByText('Lwp:CC_exec_wait')).toBeInTheDocument();
+
+      const deps = within(screen.getByText('Dependencies').parentElement!);
+      expect(deps.getByText('Lwp:CC_final')).toBeInTheDocument();
+      expect(deps.getByText('Lwp:SS_upstream')).toBeInTheDocument();
+      expect(deps.getAllByText(/^Lwp:/)).toHaveLength(2);
+    });
+
+    it('keeps WAITING check edges in Dependencies for WorkNodeBridge stages', () => {
+      const bridgeStage = Stage.fromPartial({
+        identifier: { workPlan: wp, id: 'bridge-1', isWorknode: true },
+        state: StageState.STAGE_STATE_FINAL,
+        args: { typeUrl: TYPE_URL_WORKNODE_BRIDGE },
+        dependencies: {
+          edges: [
+            {
+              check: {
+                identifier: { workPlan: wp, id: 'C_build' },
+                condition: { onState: CheckState.CHECK_STATE_WAITING },
+              },
+            },
+          ],
+        },
+      });
+
+      render(<StageDetails view={bridgeStage} valueDataMap={valueDataMap} />);
+
+      expect(screen.getByText('Dependencies')).toBeInTheDocument();
+      expect(screen.getByText('Lwp:CC_build')).toBeInTheDocument();
+      expect(screen.queryByText('Executes')).not.toBeInTheDocument();
+      expect(screen.queryByText('Plans (editing)')).not.toBeInTheDocument();
+    });
   });
 });
