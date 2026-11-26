@@ -25,6 +25,7 @@ import {
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
 
 import { ANDROID_REPAIR_QUEUE_QUERY_KEY } from './use_android_repair_queue';
+import { ANDROID_WORKFORCE_ACTIVITY_QUERY_KEY } from './use_android_workforce_activity';
 import {
   useClaimAndroidRepairTask,
   useUnclaimAndroidRepairTask,
@@ -161,6 +162,9 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: ANDROID_REPAIR_QUEUE_QUERY_KEY,
       });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ANDROID_WORKFORCE_ACTIVITY_QUERY_KEY,
+      });
     });
 
     it('rolls back optimistic update on error', async () => {
@@ -244,6 +248,9 @@ describe('useClaimAndroidRepairTask and useUnclaimAndroidRepairTask', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: ANDROID_REPAIR_QUEUE_QUERY_KEY,
+      });
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ANDROID_WORKFORCE_ACTIVITY_QUERY_KEY,
       });
     });
 

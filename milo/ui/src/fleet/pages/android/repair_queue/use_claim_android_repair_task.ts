@@ -24,6 +24,7 @@ import {
 } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { ANDROID_REPAIR_QUEUE_QUERY_KEY } from './use_android_repair_queue';
+import { ANDROID_WORKFORCE_ACTIVITY_QUERY_KEY } from './use_android_workforce_activity';
 
 interface UseAndroidRepairTaskMutationOptions {
   onError?: (err: Error) => void;
@@ -41,6 +42,7 @@ export const useClaimAndroidRepairTask = (
     AndroidRepairQueueItem
   >({
     queryKey: ANDROID_REPAIR_QUEUE_QUERY_KEY,
+    invalidateQueryKeys: [ANDROID_WORKFORCE_ACTIVITY_QUERY_KEY],
     mutationFn: (req: ClaimAndroidRepairTaskRequest) =>
       client.ClaimAndroidRepairTask(req),
     updateItem: (item) => ({
@@ -63,6 +65,7 @@ export const useUnclaimAndroidRepairTask = (
     AndroidRepairQueueItem
   >({
     queryKey: ANDROID_REPAIR_QUEUE_QUERY_KEY,
+    invalidateQueryKeys: [ANDROID_WORKFORCE_ACTIVITY_QUERY_KEY],
     mutationFn: (req: UnclaimAndroidRepairTaskRequest) =>
       client.UnclaimAndroidRepairTask(req),
     updateItem: (item) => ({
