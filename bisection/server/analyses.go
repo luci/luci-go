@@ -32,6 +32,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -41,10 +42,13 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/gae/service/datastore"
 	rdbpbutil "go.chromium.org/luci/resultdb/pbutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/realms"
 
 	"go.chromium.org/luci/bisection/analysis"
 	"go.chromium.org/luci/bisection/compilefailureanalysis/nthsection"
 	"go.chromium.org/luci/bisection/compilefailuredetection"
+	"go.chromium.org/luci/bisection/internal/buildbucket"
 	"go.chromium.org/luci/bisection/internal/tracing"
 	"go.chromium.org/luci/bisection/llm"
 	"go.chromium.org/luci/bisection/model"
@@ -112,16 +116,17 @@ func (server *AnalysesServer) GetAnalysis(c context.Context, req *pb.GetAnalysis
 
 // QueryAnalysis returns the analysis given a query
 func (server *AnalysesServer) QueryAnalysis(c context.Context, req *pb.QueryAnalysisRequest) (*pb.QueryAnalysisResponse, error) {
-	c, err := server.ACL(c, "QueryAnalysis", req)
+	// Checking the requested build's realm is also sufficient when
+	// GetAnalysisForBuild follows CompileFailure.MergedFailureKey: failures are
+	// only merged by matching firstFailedBuild.Id from SearchOlderBuilds on the
+	// same builder, so merged builds always belong to the same <project>:<bucket>
+	// realm.
+	c, err := server.verifyQueryAnalysisPermissions(c, req)
 	if err != nil {
 		return nil, err
 	}
 	if err := validateQueryAnalysisRequest(req); err != nil {
 		return nil, err
-	}
-	// Include "generate_build_files" failures as well.
-	if req.BuildFailure.FailedStepName != "compile" && req.BuildFailure.FailedStepName != "generate_build_files" {
-		return nil, status.Errorf(codes.InvalidArgument, "failed_step_name: only compile and generate_build_files are supported")
 	}
 	bbid := req.BuildFailure.GetBbid()
 	c = loggingutil.SetQueryBBID(c, bbid)
@@ -151,7 +156,7 @@ func (server *AnalysesServer) QueryAnalysis(c context.Context, req *pb.QueryAnal
 
 // TriggerAnalysis triggers an analysis for a failure
 func (server *AnalysesServer) TriggerAnalysis(c context.Context, req *pb.TriggerAnalysisRequest) (*pb.TriggerAnalysisResponse, error) {
-	c, err := server.ACL(c, "TriggerAnalysis", req)
+	c, err := server.verifyTriggerAnalysisPermissions(c, req)
 	if err != nil {
 		return nil, err
 	}
@@ -951,24 +956,127 @@ func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspe
 	return verificationDetails, nil
 }
 
-// validateQueryAnalysisRequest checks if the request is valid.
-func validateQueryAnalysisRequest(req *pb.QueryAnalysisRequest) error {
-	if req.BuildFailure == nil {
+func validateBuildFailureBBID(bf *pb.BuildFailure) error {
+	if bf == nil {
 		return status.Errorf(codes.InvalidArgument, "BuildFailure must not be empty")
 	}
-	if req.BuildFailure.GetBbid() == 0 {
+	bbid := bf.GetBbid()
+	if bbid == 0 {
 		return status.Errorf(codes.InvalidArgument, "BuildFailure bbid must not be empty")
+	}
+	if bbid < 0 {
+		return status.Errorf(codes.InvalidArgument, "BuildFailure bbid must be positive")
 	}
 	return nil
 }
 
+// verifyBuildGetPermission verifies that the caller has buildbucket.builds.get
+// permission on the requested build's <project>:<bucket> realm.
+// It returns codes.NotFound when the caller lacks permission (matching the
+// build-not-found case) to avoid leaking whether a build exists.
+func verifyBuildGetPermission(c context.Context, bbid int64) error {
+	build, err := buildbucket.GetBuild(c, bbid, &buildbucketpb.BuildMask{
+		Fields: &fieldmaskpb.FieldMask{
+			Paths: []string{"id", "builder"},
+		},
+	})
+	if err != nil {
+		code := status.Code(err)
+		switch code {
+		case codes.NotFound:
+			return status.Error(codes.NotFound, "build not found")
+		case codes.Canceled:
+			return status.Error(codes.Canceled, "request canceled")
+		case codes.Unavailable, codes.DeadlineExceeded, codes.ResourceExhausted:
+			logging.Errorf(c, "Transient error fetching build %d from Buildbucket: %s", bbid, err)
+			return status.Error(code, "failed to verify access to build")
+		default:
+			logging.Errorf(c, "Failed to fetch build %d from Buildbucket: %s", bbid, err)
+			return status.Error(codes.Internal, "failed to verify access to build")
+		}
+	}
+
+	project := build.GetBuilder().GetProject()
+	bucket := build.GetBuilder().GetBucket()
+	if project == "" || bucket == "" {
+		logging.Errorf(c, "Build %d has empty project or bucket", bbid)
+		return status.Error(codes.Internal, "failed to verify access to build")
+	}
+	realm := realms.Join(project, bucket)
+	switch allowed, err := auth.HasPermission(c, bbperms.BuildsGet, realm, nil); {
+	case err != nil:
+		logging.Errorf(c, "Failed to check permission %s in realm %q for build %d: %s", bbperms.BuildsGet, realm, bbid, err)
+		return status.Error(codes.Internal, "failed to check permission")
+	case !allowed:
+		// Return NotFound instead of PermissionDenied to avoid leaking whether
+		// the build exists.
+		return status.Error(codes.NotFound, "build not found")
+	}
+	return nil
+}
+
+// verifyQueryAnalysisPermissions verifies that the caller has permission to
+// query analyses for the requested build.
+func (server *AnalysesServer) verifyQueryAnalysisPermissions(c context.Context, req *pb.QueryAnalysisRequest) (context.Context, error) {
+	c, err := server.ACL(c, "QueryAnalysis", req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only perform validation that is necessary for performing authorization
+	// checks; full request validation occurs after these checks pass.
+	if err := validateBuildFailureBBID(req.GetBuildFailure()); err != nil {
+		return nil, err
+	}
+
+	// TODO(b/537393319): This is a temporary solution to resolve the
+	// vulnerability flagged in b/537393319. The long-term solution should
+	// set up an access model for LUCI Bisection resources.
+	if err := verifyBuildGetPermission(c, req.BuildFailure.GetBbid()); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// validateQueryAnalysisRequest checks if the request is valid.
+func validateQueryAnalysisRequest(req *pb.QueryAnalysisRequest) error {
+	if err := validateBuildFailureBBID(req.GetBuildFailure()); err != nil {
+		return err
+	}
+	// Include "generate_build_files" failures as well.
+	if req.BuildFailure.FailedStepName != "compile" && req.BuildFailure.FailedStepName != "generate_build_files" {
+		return status.Errorf(codes.InvalidArgument, "failed_step_name: only compile and generate_build_files are supported")
+	}
+	return nil
+}
+
+// verifyTriggerAnalysisPermissions verifies that the caller has permission to
+// trigger an analysis for the requested build.
+func (server *AnalysesServer) verifyTriggerAnalysisPermissions(c context.Context, req *pb.TriggerAnalysisRequest) (context.Context, error) {
+	c, err := server.ACL(c, "TriggerAnalysis", req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Only perform validation that is necessary for performing authorization
+	// checks; full request validation occurs after these checks pass.
+	if err := validateBuildFailureBBID(req.GetBuildFailure()); err != nil {
+		return nil, err
+	}
+
+	// TODO(b/537393319): This is a temporary solution to resolve the
+	// vulnerability flagged in b/537393319. The long-term solution should
+	// set up an access model for LUCI Bisection resources.
+	if err := verifyBuildGetPermission(c, req.BuildFailure.GetBbid()); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
 // validateTriggerAnalysisRequest checks if the request is valid.
 func validateTriggerAnalysisRequest(req *pb.TriggerAnalysisRequest) error {
-	if req.BuildFailure == nil {
-		return status.Errorf(codes.InvalidArgument, "BuildFailure must not be empty")
-	}
-	if req.BuildFailure.GetBbid() == 0 {
-		return status.Errorf(codes.InvalidArgument, "BuildFailure bbid must not be empty")
+	if err := validateBuildFailureBBID(req.GetBuildFailure()); err != nil {
+		return err
 	}
 	// Only "generate_build_files" and "compile" failures are allowed.
 	if req.BuildFailure.FailedStepName != "compile" && req.BuildFailure.FailedStepName != "generate_build_files" {

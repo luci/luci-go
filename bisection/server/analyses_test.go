@@ -25,9 +25,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	analysispb "go.chromium.org/luci/analysis/proto/v1"
+	"go.chromium.org/luci/buildbucket/bbperms"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
@@ -35,6 +37,8 @@ import (
 	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/secrets"
 
 	"go.chromium.org/luci/bisection/analysis"
@@ -96,6 +100,27 @@ func TestQueryAnalysis(t *testing.T) {
 	testutil.UpdateIndices(c)
 	datastore.GetTestable(c).AutoIndex(true)
 
+	authorizedCtx := func(c context.Context) context.Context {
+		return auth.WithState(c, &authtest.FakeState{
+			Identity: "user:caller@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{
+					Realm:      "chromium:ci",
+					Permission: bbperms.BuildsGet,
+				},
+			},
+		})
+	}
+	chromiumCIBuild := func(id int64) *buildbucketpb.Build {
+		return &buildbucketpb.Build{
+			Id: id,
+			Builder: &buildbucketpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "ci",
+			},
+		}
+	}
+
 	ftt.Run("No BuildFailure Info", t, func(t *ftt.Test) {
 		req := &pb.QueryAnalysisRequest{}
 		_, err := server.QueryAnalysis(c, req)
@@ -110,7 +135,81 @@ func TestQueryAnalysis(t *testing.T) {
 		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
 	})
 
+	ftt.Run("Negative bbid", t, func(t *ftt.Test) {
+		req := &pb.QueryAnalysisRequest{BuildFailure: &pb.BuildFailure{Bbid: -1}}
+		_, err := server.QueryAnalysis(c, req)
+		assert.Loosely(t, err, should.NotBeNil)
+		assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+	})
+
+	ftt.Run("Caller lacks builds.get permission", t, func(t *ftt.Test) {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c := mc.Ctx
+
+		// Seed an analysis in Datastore to verify unauthorized callers cannot read it.
+		failedBuild := &model.LuciFailedBuild{
+			Id:               555,
+			BuildFailureType: pb.BuildFailureType_COMPILE,
+		}
+		assert.Loosely(t, datastore.Put(c, failedBuild), should.BeNil)
+		compileFailure := &model.CompileFailure{
+			Id:    555,
+			Build: datastore.KeyForObj(c, failedBuild),
+		}
+		assert.Loosely(t, datastore.Put(c, compileFailure), should.BeNil)
+		compileFailureAnalysis := &model.CompileFailureAnalysis{
+			CompileFailure:     datastore.KeyForObj(c, compileFailure),
+			FirstFailedBuildId: 555,
+		}
+		assert.Loosely(t, datastore.Put(c, compileFailureAnalysis), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		req := &pb.QueryAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
+				FailedStepName: "compile",
+				Bbid:           555,
+			},
+		}
+
+		t.Run("Buildbucket returns NotFound", func(t *ftt.Test) {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(nil, status.Errorf(codes.NotFound, "not found")).Times(1)
+
+			_, err := server.QueryAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.NotFound))
+		})
+
+		t.Run("Caller only has builds.getLimited", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:caller@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGetLimited,
+					},
+				},
+			})
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(chromiumCIBuild(555), nil).Times(1)
+
+			_, err := server.QueryAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+		})
+	})
+
 	ftt.Run("Unsupported step", t, func(t *ftt.Test) {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(authorizedCtx(c), ctl)
+		c := mc.Ctx
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(chromiumCIBuild(123), nil).Times(1)
+
 		req := &pb.QueryAnalysisRequest{
 			BuildFailure: &pb.BuildFailure{
 				FailedStepName: "some step",
@@ -123,6 +222,13 @@ func TestQueryAnalysis(t *testing.T) {
 	})
 
 	ftt.Run("No analysis found", t, func(t *ftt.Test) {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(authorizedCtx(c), ctl)
+		c := mc.Ctx
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(chromiumCIBuild(123), nil).Times(1)
+
 		req := &pb.QueryAnalysisRequest{
 			BuildFailure: &pb.BuildFailure{
 				FailedStepName: "compile",
@@ -135,6 +241,13 @@ func TestQueryAnalysis(t *testing.T) {
 	})
 
 	ftt.Run("Analysis found", t, func(t *ftt.Test) {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(authorizedCtx(c), ctl)
+		c := mc.Ctx
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(chromiumCIBuild(123), nil).Times(1)
+
 		// Prepares datastore
 		failedBuild := &model.LuciFailedBuild{
 			Id: 123,
@@ -563,6 +676,13 @@ func TestQueryAnalysis(t *testing.T) {
 	})
 
 	ftt.Run("Analysis found for generate_build_files", t, func(t *ftt.Test) {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(authorizedCtx(c), ctl)
+		c := mc.Ctx
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(chromiumCIBuild(124), nil).Times(1)
+
 		// Prepares datastore
 		failedBuild := &model.LuciFailedBuild{
 			Id:               124,
@@ -598,6 +718,13 @@ func TestQueryAnalysis(t *testing.T) {
 	})
 
 	ftt.Run("Analysis found for a similar failure", t, func(t *ftt.Test) {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(authorizedCtx(c), ctl)
+		c := mc.Ctx
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(chromiumCIBuild(123), nil).Times(1)
+
 		// Prepares datastore
 		basedFailedBuild := &model.LuciFailedBuild{
 			Id: 122,
@@ -642,6 +769,19 @@ func TestQueryAnalysis(t *testing.T) {
 		res, err := server.QueryAnalysis(c, req)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(res.Analyses), should.Equal(1))
+
+		t.Run("Denied caller cannot read merged analysis", func(t *ftt.Test) {
+			deniedCtx := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:outsider@example.com",
+			})
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(chromiumCIBuild(123), nil).Times(1)
+
+			_, err := server.QueryAnalysis(deniedCtx, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+		})
 	})
 }
 
@@ -1782,6 +1922,382 @@ func makeFakeTestVariantBranch(i int, segments []*analysispb.Segment) *analysisp
 	}
 }
 
+func testGroupACL(ctx context.Context, methodName string, req proto.Message) (context.Context, error) {
+	yes, err := auth.IsMember(ctx, "luci-bisection-access")
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error when checking group membership")
+	}
+	if !yes {
+		return nil, status.Errorf(codes.PermissionDenied, "%s does not have access to method %s of GoFindit", auth.CurrentIdentity(ctx), methodName)
+	}
+	return ctx, nil
+}
+
+func TestVerifyBuildGetPermission(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("verifyBuildGetPermission", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+
+		expectedReq := &buildbucketpb.GetBuildRequest{
+			Id: 123,
+			Mask: &buildbucketpb.BuildMask{
+				Fields: &fieldmaskpb.FieldMask{
+					Paths: []string{"id", "builder"},
+				},
+			},
+		}
+
+		chromiumCIBuild := &buildbucketpb.Build{
+			Id: 123,
+			Builder: &buildbucketpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "ci",
+				Builder: "linux-rel",
+			},
+		}
+
+		t.Run("Caller has full builds.get permission", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:caller@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGet,
+					},
+				},
+			})
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Eq(expectedReq), gomock.Any()).
+				Return(chromiumCIBuild, nil).Times(1)
+
+			err := verifyBuildGetPermission(c, 123)
+			assert.Loosely(t, err, should.BeNil)
+		})
+
+		t.Run("Caller only has builds.getLimited permission", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:caller@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGetLimited,
+					},
+				},
+			})
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Eq(expectedReq), gomock.Any()).
+				Return(chromiumCIBuild, nil).Times(1)
+
+			err := verifyBuildGetPermission(c, 123)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+		})
+
+		t.Run("Caller lacks permission on target realm returns NotFound without leaking realm", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:caller@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGet,
+					},
+				},
+			})
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Eq(expectedReq), gomock.Any()).
+				Return(&buildbucketpb.Build{
+					Id: 123,
+					Builder: &buildbucketpb.BuilderID{
+						Project: "secret-project",
+						Bucket:  "internal",
+					},
+				}, nil).Times(1)
+
+			err := verifyBuildGetPermission(c, 123)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+		})
+
+		t.Run("Build has empty project or bucket", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:caller@example.com",
+			})
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Eq(expectedReq), gomock.Any()).
+				Return(&buildbucketpb.Build{Id: 123}, nil).Times(1)
+
+			err := verifyBuildGetPermission(c, 123)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.Internal))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("failed to verify access to build"))
+		})
+
+		t.Run("Buildbucket returns NotFound", func(t *ftt.Test) {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Eq(expectedReq), gomock.Any()).
+				Return(nil, status.Errorf(codes.NotFound, "not found")).Times(1)
+
+			err := verifyBuildGetPermission(c, 123)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+		})
+
+		t.Run("Buildbucket returns Canceled", func(t *ftt.Test) {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Eq(expectedReq), gomock.Any()).
+				Return(nil, status.Errorf(codes.Canceled, "raw upstream detail")).Times(1)
+
+			err := verifyBuildGetPermission(c, 123)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.Canceled))
+			assert.Loosely(t, status.Convert(err).Message(), should.NotContainSubstring("raw upstream detail"))
+		})
+
+		t.Run("Transient Buildbucket errors preserve code without leaking details", func(t *ftt.Test) {
+			for _, code := range []codes.Code{codes.Unavailable, codes.DeadlineExceeded, codes.ResourceExhausted} {
+				mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Eq(expectedReq), gomock.Any()).
+					Return(nil, status.Errorf(code, "raw upstream detail")).Times(1)
+
+				err := verifyBuildGetPermission(c, 123)
+				assert.Loosely(t, status.Code(err), should.Equal(code))
+				assert.Loosely(t, status.Convert(err).Message(), should.NotContainSubstring("raw upstream detail"))
+			}
+		})
+
+		t.Run("Non-transient Buildbucket error returns Internal without leaking details", func(t *ftt.Test) {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Eq(expectedReq), gomock.Any()).
+				Return(nil, status.Errorf(codes.PermissionDenied, "raw upstream detail")).Times(1)
+
+			err := verifyBuildGetPermission(c, 123)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.Internal))
+			assert.Loosely(t, status.Convert(err).Message(), should.NotContainSubstring("raw upstream detail"))
+		})
+	})
+}
+
+func TestVerifyQueryAnalysisPermissions(t *testing.T) {
+	t.Parallel()
+
+	server := &AnalysesServer{
+		ACL:          testGroupACL,
+		CloudProject: "test-project",
+	}
+
+	ftt.Run("verifyQueryAnalysisPermissions", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+
+		validReq := &pb.QueryAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
+				Bbid:           123,
+				FailedStepName: "compile",
+			},
+		}
+
+		t.Run("Caller not in access group", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:outsider@example.com",
+			})
+
+			// Rejects before validating request or calling Buildbucket.
+			_, err := server.verifyQueryAnalysisPermissions(c, &pb.QueryAnalysisRequest{})
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+		})
+
+		t.Run("Invalid BuildFailure or bbid", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity:       "user:caller@example.com",
+				IdentityGroups: []string{"luci-bisection-access"},
+			})
+
+			_, err := server.verifyQueryAnalysisPermissions(c, &pb.QueryAnalysisRequest{})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+
+			_, err = server.verifyQueryAnalysisPermissions(c, &pb.QueryAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{Bbid: 0},
+			})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+
+			_, err = server.verifyQueryAnalysisPermissions(c, &pb.QueryAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{Bbid: -10},
+			})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+		})
+
+		t.Run("Caller only has builds.getLimited permission", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity:       "user:caller@example.com",
+				IdentityGroups: []string{"luci-bisection-access"},
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGetLimited,
+					},
+				},
+			})
+
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
+			}, nil).Times(1)
+
+			_, err := server.verifyQueryAnalysisPermissions(c, validReq)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+		})
+
+		t.Run("Authorized caller with builds.get permission", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity:       "user:caller@example.com",
+				IdentityGroups: []string{"luci-bisection-access"},
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGet,
+					},
+				},
+			})
+
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
+			}, nil).Times(1)
+
+			gotCtx, err := server.verifyQueryAnalysisPermissions(c, validReq)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gotCtx, should.NotBeNil)
+		})
+	})
+}
+
+func TestVerifyTriggerAnalysisPermissions(t *testing.T) {
+	t.Parallel()
+
+	server := &AnalysesServer{
+		ACL:          testGroupACL,
+		CloudProject: "test-project",
+	}
+
+	ftt.Run("verifyTriggerAnalysisPermissions", t, func(t *ftt.Test) {
+		c := memory.Use(context.Background())
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+
+		validReq := &pb.TriggerAnalysisRequest{
+			BuildFailure: &pb.BuildFailure{
+				Bbid:           123,
+				FailedStepName: "compile",
+			},
+		}
+
+		t.Run("Caller not in access group", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:outsider@example.com",
+			})
+
+			// Rejects before validating request or calling Buildbucket.
+			_, err := server.verifyTriggerAnalysisPermissions(c, &pb.TriggerAnalysisRequest{})
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.PermissionDenied))
+		})
+
+		t.Run("Invalid BuildFailure or bbid", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity:       "user:caller@example.com",
+				IdentityGroups: []string{"luci-bisection-access"},
+			})
+
+			_, err := server.verifyTriggerAnalysisPermissions(c, &pb.TriggerAnalysisRequest{})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+
+			_, err = server.verifyTriggerAnalysisPermissions(c, &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{Bbid: 0},
+			})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+
+			_, err = server.verifyTriggerAnalysisPermissions(c, &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{Bbid: -10},
+			})
+			assert.Loosely(t, status.Code(err), should.Equal(codes.InvalidArgument))
+		})
+
+		t.Run("Caller only has builds.getLimited permission", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity:       "user:caller@example.com",
+				IdentityGroups: []string{"luci-bisection-access"},
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGetLimited,
+					},
+				},
+			})
+
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
+			}, nil).Times(1)
+
+			_, err := server.verifyTriggerAnalysisPermissions(c, validReq)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+		})
+
+		t.Run("Build not found in Buildbucket", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity:       "user:caller@example.com",
+				IdentityGroups: []string{"luci-bisection-access"},
+			})
+
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(nil, status.Errorf(codes.NotFound, "not found")).Times(1)
+
+			_, err := server.verifyTriggerAnalysisPermissions(c, validReq)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+		})
+
+		t.Run("Authorized caller with builds.get permission", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity:       "user:caller@example.com",
+				IdentityGroups: []string{"luci-bisection-access"},
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGet,
+					},
+				},
+			})
+
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
+			}, nil).Times(1)
+
+			gotCtx, err := server.verifyTriggerAnalysisPermissions(c, validReq)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, gotCtx, should.NotBeNil)
+		})
+	})
+}
+
 func TestTriggerAnalysis(t *testing.T) {
 	t.Parallel()
 	server := &AnalysesServer{
@@ -1789,8 +2305,24 @@ func TestTriggerAnalysis(t *testing.T) {
 		CloudProject: "test-project",
 	}
 
+	authorizedCtx := func(c context.Context) context.Context {
+		return auth.WithState(c, &authtest.FakeState{
+			Identity: "user:caller@example.com",
+			IdentityPermissions: []authtest.RealmPermission{
+				{
+					Realm:      "chromium:ci",
+					Permission: bbperms.BuildsGet,
+				},
+			},
+		})
+	}
+
 	ftt.Run("Validation Errors", t, func(t *ftt.Test) {
-		c := memory.Use(context.Background())
+		c := authorizedCtx(memory.Use(context.Background()))
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
 
 		t.Run("No BuildFailure Info", func(t *ftt.Test) {
 			req := &pb.TriggerAnalysisRequest{}
@@ -1810,7 +2342,28 @@ func TestTriggerAnalysis(t *testing.T) {
 			assert.Loosely(t, status.Convert(err).Message(), should.ContainSubstring("bbid must not be empty"))
 		})
 
+		t.Run("Negative bbid", func(t *ftt.Test) {
+			req := &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{
+					Bbid:           -1,
+					FailedStepName: "compile",
+				},
+			}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.InvalidArgument))
+			assert.Loosely(t, status.Convert(err).Message(), should.ContainSubstring("bbid must be positive"))
+		})
+
 		t.Run("Unsupported step", func(t *ftt.Test) {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
+			}, nil).Times(1)
+
 			req := &pb.TriggerAnalysisRequest{
 				BuildFailure: &pb.BuildFailure{
 					FailedStepName: "some_unsupported_step",
@@ -1824,8 +2377,68 @@ func TestTriggerAnalysis(t *testing.T) {
 		})
 	})
 
-	ftt.Run("Build Does Not Meet Criteria", t, func(t *ftt.Test) {
+	ftt.Run("Permission Checks", t, func(t *ftt.Test) {
 		c := memory.Use(context.Background())
+		testutil.UpdateIndices(c)
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+
+		t.Run("Buildbucket denies access without persisting Datastore entities", func(t *ftt.Test) {
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(nil, status.Errorf(codes.NotFound, "not found")).Times(1)
+
+			req := &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{
+					FailedStepName: "compile",
+					Bbid:           800000001,
+				},
+			}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+
+			// Verify nothing was persisted to Datastore.
+			assert.Loosely(t, datastore.Get(c, &model.LuciFailedBuild{Id: 800000001}), should.Equal(datastore.ErrNoSuchEntity))
+		})
+
+		t.Run("BuildsGetLimited-only caller denied without persisting Datastore entities", func(t *ftt.Test) {
+			c := auth.WithState(c, &authtest.FakeState{
+				Identity: "user:caller@example.com",
+				IdentityPermissions: []authtest.RealmPermission{
+					{
+						Realm:      "chromium:ci",
+						Permission: bbperms.BuildsGetLimited,
+					},
+				},
+			})
+			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+				Id: 800000002,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
+			}, nil).Times(1)
+
+			req := &pb.TriggerAnalysisRequest{
+				BuildFailure: &pb.BuildFailure{
+					FailedStepName: "compile",
+					Bbid:           800000002,
+				},
+			}
+			_, err := server.TriggerAnalysis(c, req)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, status.Code(err), should.Equal(codes.NotFound))
+			assert.Loosely(t, status.Convert(err).Message(), should.Equal("build not found"))
+
+			// Verify nothing was persisted to Datastore.
+			assert.Loosely(t, datastore.Get(c, &model.LuciFailedBuild{Id: 800000002}), should.Equal(datastore.ErrNoSuchEntity))
+		})
+	})
+
+	ftt.Run("Build Does Not Meet Criteria", t, func(t *ftt.Test) {
+		c := authorizedCtx(memory.Use(context.Background()))
 		testutil.UpdateIndices(c)
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
@@ -1845,13 +2458,17 @@ func TestTriggerAnalysis(t *testing.T) {
 			}
 			_, err := server.TriggerAnalysis(c, req)
 			assert.Loosely(t, err, should.NotBeNil)
-			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.Internal))
+			assert.Loosely(t, status.Convert(err).Code(), should.Equal(codes.NotFound))
 		})
 
 		t.Run("Build without compile failure", func(t *ftt.Test) {
 			// Mock GetBuild to return a build without compile failure
 			build := &buildbucketpb.Build{
-				Id:     123,
+				Id: 123,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
 				Status: buildbucketpb.Status_SUCCESS,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -1861,7 +2478,7 @@ func TestTriggerAnalysis(t *testing.T) {
 				},
 			}
 			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
-				Return(build, nil).Times(1)
+				Return(build, nil).Times(2)
 
 			req := &pb.TriggerAnalysisRequest{
 				BuildFailure: &pb.BuildFailure{
@@ -1878,7 +2495,11 @@ func TestTriggerAnalysis(t *testing.T) {
 		t.Run("Cannot find regression range", func(t *ftt.Test) {
 			// Mock GetBuild to return a failed build
 			build := &buildbucketpb.Build{
-				Id:     124,
+				Id: 124,
+				Builder: &buildbucketpb.BuilderID{
+					Project: "chromium",
+					Bucket:  "ci",
+				},
 				Status: buildbucketpb.Status_FAILURE,
 				Steps: []*buildbucketpb.Step{
 					{
@@ -1896,7 +2517,7 @@ func TestTriggerAnalysis(t *testing.T) {
 				},
 			}
 			mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).
-				Return(build, nil).Times(1)
+				Return(build, nil).Times(2)
 
 			// Mock SearchBuilds to return no passed builds (cannot find regression range)
 			searchRes := &buildbucketpb.SearchBuildsResponse{
@@ -1918,7 +2539,19 @@ func TestTriggerAnalysis(t *testing.T) {
 	})
 
 	ftt.Run("Empty step name is not allowed", t, func(t *ftt.Test) {
-		c := memory.Use(context.Background())
+		c := authorizedCtx(memory.Use(context.Background()))
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		mc := buildbucket.NewMockedClient(c, ctl)
+		c = mc.Ctx
+
+		mc.Client.EXPECT().GetBuild(gomock.Any(), gomock.Any(), gomock.Any()).Return(&buildbucketpb.Build{
+			Id: 123,
+			Builder: &buildbucketpb.BuilderID{
+				Project: "chromium",
+				Bucket:  "ci",
+			},
+		}, nil).Times(1)
 
 		req := &pb.TriggerAnalysisRequest{
 			BuildFailure: &pb.BuildFailure{
