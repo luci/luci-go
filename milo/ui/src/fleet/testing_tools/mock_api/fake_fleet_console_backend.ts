@@ -18,6 +18,8 @@ import {
   FleetConsole,
 } from '../../../proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
+import { createAndroidPriorityRulesFake } from './fake_android_priority_rules';
+import { createAndroidRepairQueueFake } from './fake_android_repair_queue';
 import { createIrmFake } from './fake_irm';
 import { createPhysicalSitesFake } from './fake_physical_sites';
 import {
@@ -30,6 +32,8 @@ import { createRepairQueueFake } from './fake_repair_queue';
 import { FleetConsoleMockAPI } from './mock_api_handler';
 
 export {
+  createAndroidPriorityRulesFake,
+  createAndroidRepairQueueFake,
   createIrmFake,
   createPhysicalSitesFake,
   createPriorityRulesFake,
@@ -109,6 +113,13 @@ export function createFakeFleetConsoleBackend(
     getCurrentUserEmail: () =>
       authState.email || authState.identity.replace(/^user:/, ''),
   });
+  const androidPriorityRules = createAndroidPriorityRulesFake(matchesFilter);
+  const androidRepairQueue = createAndroidRepairQueueFake({
+    androidPriorityRules,
+    matchesFilter,
+    getCurrentUserEmail: () =>
+      authState.email || authState.identity.replace(/^user:/, ''),
+  });
   const irm = createIrmFake();
   const physicalSites = createPhysicalSitesFake();
   const permissions = createPermissionsFake();
@@ -124,6 +135,8 @@ export function createFakeFleetConsoleBackend(
   const endpoints: Record<string, RpcJsonHandler> = {
     ...priorityRules.handlers,
     ...repairQueue.handlers,
+    ...androidPriorityRules.handlers,
+    ...androidRepairQueue.handlers,
     ...irm.handlers,
     ...physicalSites.handlers,
     ...permissions.handlers,
@@ -133,6 +146,12 @@ export function createFakeFleetConsoleBackend(
     authState = { ...DEFAULT_AUTH_STATE };
     priorityRules.seed([]);
     repairQueue.seed({
+      repairQueueItems: [],
+      totalSize: 0,
+      nextPageToken: '',
+    });
+    androidPriorityRules.seed([]);
+    androidRepairQueue.seed({
       repairQueueItems: [],
       totalSize: 0,
       nextPageToken: '',
@@ -151,6 +170,8 @@ export function createFakeFleetConsoleBackend(
   return {
     priorityRules,
     repairQueue,
+    androidPriorityRules,
+    androidRepairQueue,
     irm,
     physicalSites,
     permissions,

@@ -1120,13 +1120,32 @@ export class FleetConsoleMockAPI {
                 return op === ':' ? lv.includes(targetVal) : lv === targetVal;
               });
       } else if (root in item) {
-        const fv = String(item[root] ?? '').toLowerCase();
-        matched =
-          targetVal === '*'
-            ? Boolean(item[root])
-            : op === ':'
-              ? fv.includes(targetVal)
-              : fv === targetVal || fv.endsWith(`_${targetVal}`);
+        const rawVal = item[root];
+        if (op === '<' || op === '<=' || op === '>' || op === '>=') {
+          const lhs = Number(rawVal);
+          const rhs = Number(targetVal);
+          matched =
+            rawVal !== undefined &&
+            rawVal !== null &&
+            rawVal !== '' &&
+            !Number.isNaN(lhs) &&
+            !Number.isNaN(rhs) &&
+            (op === '<'
+              ? lhs < rhs
+              : op === '<='
+                ? lhs <= rhs
+                : op === '>'
+                  ? lhs > rhs
+                  : lhs >= rhs);
+        } else {
+          const fv = String(rawVal ?? '').toLowerCase();
+          matched =
+            targetVal === '*'
+              ? Boolean(rawVal)
+              : op === ':'
+                ? fv.includes(targetVal)
+                : fv === targetVal || fv.endsWith(`_${targetVal}`);
+        }
       } else {
         matched = JSON.stringify(item).toLowerCase().includes(targetVal);
       }
