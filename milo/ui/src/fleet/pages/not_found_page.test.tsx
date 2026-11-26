@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 
 import { ANONYMOUS_IDENTITY } from '@/common/api/auth_state';
 import { FakeAuthStateProvider } from '@/testing_tools/fakes/fake_auth_state_provider';
@@ -22,9 +24,11 @@ import { PageNotFoundPage } from './not_found_page';
 describe('<PageNotFoundPage />', () => {
   it('shows the sign-in notice when the user is not signed in', async () => {
     render(
-      <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
-        <PageNotFoundPage />
-      </FakeAuthStateProvider>,
+      <MemoryRouter>
+        <FakeAuthStateProvider value={{ identity: ANONYMOUS_IDENTITY }}>
+          <PageNotFoundPage />
+        </FakeAuthStateProvider>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText(/Page not found/)).toBeVisible();
@@ -44,14 +48,16 @@ describe('<PageNotFoundPage />', () => {
 
   it('hides the sign-in notice when the user is already signed in', async () => {
     render(
-      <FakeAuthStateProvider
-        value={{
-          identity: 'user:tester@google.com',
-          email: 'tester@google.com',
-        }}
-      >
-        <PageNotFoundPage />
-      </FakeAuthStateProvider>,
+      <MemoryRouter>
+        <FakeAuthStateProvider
+          value={{
+            identity: 'user:tester@google.com',
+            email: 'tester@google.com',
+          }}
+        >
+          <PageNotFoundPage />
+        </FakeAuthStateProvider>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText(/Page not found/)).toBeVisible();
@@ -60,5 +66,36 @@ describe('<PageNotFoundPage />', () => {
         /Some pages require sign-in or access permissions to view/i,
       ),
     ).not.toBeInTheDocument();
+  });
+
+  it('launches and exits the 10-Second Bass 404 speedrun mini-game', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <FakeAuthStateProvider
+          value={{
+            identity: 'user:tester@google.com',
+            email: 'tester@google.com',
+          }}
+        >
+          <PageNotFoundPage />
+        </FakeAuthStateProvider>
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      screen.getByRole('button', {
+        name: /Play 10-Second Bass 404 speedrun game/i,
+      }),
+    );
+
+    expect(await screen.findByText('10-SECOND BASS')).toBeVisible();
+    expect(
+      screen.getByLabelText('10-Second Bass speedrun arena'),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole('button', { name: /Exit game/i }));
+
+    expect(screen.getByText(/Page not found/)).toBeVisible();
   });
 });
