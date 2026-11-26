@@ -60,7 +60,6 @@ type androidBranchHistoryOptions struct {
 	fallbackVariantHash string
 	days                int
 	limit               int
-	adaptive            bool
 	now                 time.Time
 }
 
@@ -129,6 +128,9 @@ func fetchAndroidBranchHistory(ctx context.Context, opts androidBranchHistoryOpt
 	if err != nil {
 		return nil, err
 	}
+	if err := validateTestHistoryVariantFilters(variantFilters, true); err != nil {
+		return nil, err
+	}
 
 	now := opts.now.UTC()
 	earliest := now.Add(-time.Duration(days) * 24 * time.Hour)
@@ -150,13 +152,19 @@ func fetchAndroidBranchHistory(ctx context.Context, opts androidBranchHistoryOpt
 		}
 	}
 	candidateHashes := selectSourceVerdictVariantHashes(stats, branchRes.variantDefs, branchRes.allMatchedHashes, variantFilters, opts.fallbackVariantHash)
-
-	effectiveLimit := opts.limit
-	if opts.adaptive && effectiveLimit > 0 {
-		effectiveLimit = adaptiveExampleLimit(effectiveLimit, max(1, len(stats)))
+	queriedHashes := make(map[string]bool, len(candidateHashes))
+	for _, h := range candidateHashes {
+		queriedHashes[h] = true
+	}
+	hasUnqueriedFailingVariants := false
+	for h := range postsubmitNonPassingHashes {
+		if !queriedHashes[h] {
+			hasUnqueriedFailingVariants = true
+			break
+		}
 	}
 
-	verdictRes, err := fetchSourceVerdictTimeline(ctx, opts.thClient, opts.project, opts.testID, sourceRef, candidateHashes, branchRes.variantDefs, earliest, now, effectiveLimit, hasPostsubmitStats, postsubmitNonPassingHashes)
+	verdictRes, err := fetchSourceVerdictTimeline(ctx, opts.thClient, opts.project, opts.testID, sourceRef, candidateHashes, branchRes.variantDefs, earliest, now, opts.limit, hasPostsubmitStats, postsubmitNonPassingHashes)
 	if err != nil {
 		return nil, err
 	}
@@ -184,6 +192,16 @@ func fetchAndroidBranchHistory(ctx context.Context, opts androidBranchHistoryOpt
 		truncated = truncated || verdictRes.truncated
 	}
 
+	var omittedNonPassing int
+	var omittedNonPassingPlus bool
+	if !verdictRes.allPassed && len(verdictRes.verdicts) > 0 {
+		omittedNonPassing = max(0, verdictRes.observedNonPassing-len(verdictRes.verdicts))
+		omittedNonPassingPlus = verdictRes.hasMoreNonPassingPages || hasUnqueriedFailingVariants
+	}
+	verdictsPageCapped := (verdictRes.truncated || hasUnqueriedFailingVariants) &&
+		!verdictRes.anyStoppedAtLimit &&
+		verdictRes.observedNonPassing <= len(verdictRes.verdicts)
+
 	parsedStructured, _ := pbutil.ParseStructuredTestIdentifierForInput(opts.testID, nil)
 
 	return &testHistoryReport{
@@ -202,6 +220,9 @@ func fetchAndroidBranchHistory(ctx context.Context, opts androidBranchHistoryOpt
 		StatsTruncated:           truncated,
 		AllVerdictsPassed:        verdictRes.allPassed,
 		NewerPassingCount:        verdictRes.newerPassingCount,
+		OmittedNonPassing:        omittedNonPassing,
+		OmittedNonPassingPlus:    omittedNonPassingPlus,
+		VerdictsPageCapped:       verdictsPageCapped,
 		TotalCounts:              totalCounts,
 		VariantStats:             stats,
 		Verdicts:                 verdictRes.verdicts,
@@ -364,21 +385,26 @@ type sourceVerdictTimelineResult struct {
 	verdicts                    []testHistoryVerdictEntry
 	allPassed                   bool
 	newerPassingCount           int
+	observedNonPassing          int
 	cleanLatestNonPassingByHash map[string]string
 	observedStats               []variantStatsSummary
 	observedTotalCounts         *rdbpb.TestAggregation_VerdictCounts
 	truncated                   bool
+	hasMoreNonPassingPages      bool
+	anyStoppedAtLimit           bool
 }
 
 type perVariantSourceVerdicts struct {
-	variantHash           string
-	cleanNonPassing       []testHistoryVerdictEntry
-	unsubmittedNonPassing []testHistoryVerdictEntry
-	passing               []testHistoryVerdictEntry
-	cleanLatestNonPassing string
-	anyLatestNonPassing   string
-	counts                *rdbpb.TestAggregation_VerdictCounts
-	truncated             bool
+	variantHash            string
+	cleanNonPassing        []testHistoryVerdictEntry
+	unsubmittedNonPassing  []testHistoryVerdictEntry
+	passing                []testHistoryVerdictEntry
+	cleanLatestNonPassing  string
+	anyLatestNonPassing    string
+	counts                 *rdbpb.TestAggregation_VerdictCounts
+	truncated              bool
+	hasMoreNonPassingPages bool
+	stoppedAtLimit         bool
 }
 
 func fetchSourceVerdictTimeline(ctx context.Context, thClient analysispb.TestHistoryClient, project, testID string, ref *analysispb.SourceRef, hashes []string, variantDefs map[string]map[string]string, earliest, now time.Time, limit int, hasPostsubmitStats bool, postsubmitNonPassingHashes map[string]bool) (*sourceVerdictTimelineResult, error) {
@@ -419,6 +445,12 @@ func fetchSourceVerdictTimeline(ctx context.Context, thClient analysispb.TestHis
 		if pv.truncated {
 			out.truncated = true
 		}
+		if pv.hasMoreNonPassingPages {
+			out.hasMoreNonPassingPages = true
+		}
+		if pv.stoppedAtLimit {
+			out.anyStoppedAtLimit = true
+		}
 		if total := int32(format.VerdictCountsTotal(pv.counts)); total > 0 {
 			out.observedStats = append(out.observedStats, variantStatsSummary{
 				VariantHash:          pv.variantHash,
@@ -448,6 +480,7 @@ func fetchSourceVerdictTimeline(ctx context.Context, thClient analysispb.TestHis
 	}
 
 	if len(selectedNonPassing) > 0 {
+		out.observedNonPassing = len(selectedNonPassing)
 		if newestTime := selectedNonPassing[0].PartitionTime; newestTime != "" {
 			for _, p := range allPassing {
 				if p.PartitionTime > newestTime {
@@ -552,11 +585,21 @@ func queryVariantSourceVerdicts(ctx context.Context, thClient analysispb.TestHis
 		reachedLimit := limit > 0 && nonPassingCount >= limit
 		enoughPassesOnly := hasPostsubmitStats && !expectPostsubmitNonPassing && len(pv.cleanNonPassing) == 0 && len(pv.unsubmittedNonPassing) == 0 && limit > 0 && len(pv.passing) >= limit
 		outOfWindow := sawBeforeEarliest && !pageHadInWindow
-		if reachedLimit || enoughPassesOnly || outOfWindow || resp.GetNextPageToken() == "" {
+		hasNextPage := resp.GetNextPageToken() != ""
+		if reachedLimit || enoughPassesOnly || outOfWindow || !hasNextPage {
+			if reachedLimit && hasNextPage && !outOfWindow {
+				pv.hasMoreNonPassingPages = true
+				if page == maxSourceVerdictPages-1 {
+					pv.truncated = true
+				} else {
+					pv.stoppedAtLimit = true
+				}
+			}
 			break
 		}
 		if page == maxSourceVerdictPages-1 {
 			pv.truncated = true
+			pv.hasMoreNonPassingPages = true
 		}
 		pageToken = resp.GetNextPageToken()
 	}

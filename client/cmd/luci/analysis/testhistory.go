@@ -135,7 +135,7 @@ type variantStatsSummary struct {
 }
 
 func (s *variantStatsSummary) nonPassingCount() int32 {
-	return s.Counts.Failed + s.Counts.ExecutionErrored + s.Counts.Precluded + s.Counts.Flaky + s.Counts.Exonerated
+	return s.Counts.GetFailed() + s.Counts.GetExecutionErrored() + s.Counts.GetPrecluded() + s.Counts.GetFlaky() + s.Counts.GetExonerated()
 }
 
 type testHistoryVerdictEntry struct {
@@ -173,6 +173,11 @@ type testHistoryReport struct {
 	StatsTruncated           bool
 	AllVerdictsPassed        bool
 	NewerPassingCount        int
+	OmittedNonPassing        int
+	OmittedNonPassingPlus    bool
+	VerdictsPageCapped       bool
+	PresubmitVariantHashes   map[string]bool
+	SubmittedVariantHashes   map[string]bool
 	TotalCounts              *rdbpb.TestAggregation_VerdictCounts
 	VariantStats             []variantStatsSummary
 	Verdicts                 []testHistoryVerdictEntry
@@ -335,7 +340,12 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 		fmt.Fprintf(errOut, "-days must be positive, got %d\n", r.days)
 		return 1
 	}
-	if _, err := parseVariantFilters(r.variants); err != nil {
+	variantFilters, err := parseVariantFilters(r.variants)
+	if err != nil {
+		fmt.Fprintf(errOut, "%s\n", err)
+		return 1
+	}
+	if err := validateTestHistoryVariantFilters(variantFilters, branchExplicit || strings.TrimSpace(extractedBranch) != "" || project == "android"); err != nil {
 		fmt.Fprintf(errOut, "%s\n", err)
 		return 1
 	}
@@ -452,13 +462,12 @@ func (r *testHistoryRun) Run(a subcommands.Application, args []string, env subco
 			fallbackVariantHash: fallbackVarHash,
 			days:                r.days,
 			limit:               r.limit,
-			adaptive:            !limitExplicit,
 			now:                 now,
 		}
 		if branchExplicit && resolvedBranch != "" {
 			return fetchAndroidBranchHistory(ctx, branchOpts)
 		}
-		rep, hErr := fetchTestHistory(ctx, thClient, project, candidateTestID, subRealm, r.variants, r.days, r.limit, !limitExplicit, now)
+		rep, hErr := fetchTestHistory(ctx, thClient, project, candidateTestID, subRealm, r.variants, r.days, r.limit, now)
 		if hErr != nil {
 			return nil, hErr
 		}
@@ -625,7 +634,6 @@ func fetchTestHistory(
 	projectFlag, testIDFlag, subRealmFlag string,
 	rawVariants []string,
 	daysFlag, limitFlag int,
-	adaptive bool,
 	now time.Time,
 ) (*testHistoryReport, error) {
 	project := strings.TrimSpace(projectFlag)
@@ -649,6 +657,9 @@ func fetchTestHistory(
 
 	variantFilters, err := parseVariantFilters(rawVariants)
 	if err != nil {
+		return nil, err
+	}
+	if err := validateTestHistoryVariantFilters(variantFilters, false); err != nil {
 		return nil, err
 	}
 
@@ -681,30 +692,42 @@ func fetchTestHistory(
 		return nil, err
 	}
 
-	effectiveLimit := limitFlag
-	if adaptive && effectiveLimit > 0 {
-		effectiveLimit = adaptiveExampleLimit(effectiveLimit, len(stats))
-	}
-
-	verdicts, allPassed, newerPassingCount, err := fetchVerdictTimeline(ctx, thClient, project, testID, predicate, variantDefs, effectiveLimit)
+	verdictRes, err := fetchVerdictTimeline(ctx, thClient, project, testID, predicate, variantDefs, limitFlag)
 	if err != nil {
 		return nil, err
+	}
+
+	var omittedNonPassing int
+	var omittedNonPassingPlus bool
+	if !verdictRes.allPassed {
+		omittedNonPassing, omittedNonPassingPlus = computeOmittedNonPassing(
+			len(verdictRes.verdicts),
+			verdictRes.observedNonPassing,
+			verdictRes.hasMorePages,
+			totalCounts,
+			statsTruncated,
+		)
 	}
 
 	parsedStructured, _ := pbutil.ParseStructuredTestIdentifierForInput(testID, nil)
 
 	report := &testHistoryReport{
-		Project:           project,
-		TestID:            testID,
-		TestIDStructured:  parsedStructured,
-		SubRealm:          subRealm,
-		Days:              days,
-		StatsTruncated:    statsTruncated,
-		AllVerdictsPassed: allPassed,
-		NewerPassingCount: newerPassingCount,
-		TotalCounts:       totalCounts,
-		VariantStats:      stats,
-		Verdicts:          verdicts,
+		Project:                project,
+		TestID:                 testID,
+		TestIDStructured:       parsedStructured,
+		SubRealm:               subRealm,
+		Days:                   days,
+		StatsTruncated:         statsTruncated,
+		AllVerdictsPassed:      verdictRes.allPassed,
+		NewerPassingCount:      verdictRes.newerPassingCount,
+		OmittedNonPassing:      omittedNonPassing,
+		OmittedNonPassingPlus:  omittedNonPassingPlus,
+		VerdictsPageCapped:     verdictRes.hitPageCap && verdictRes.observedNonPassing <= len(verdictRes.verdicts),
+		PresubmitVariantHashes: verdictRes.presubmitVariantHashes,
+		SubmittedVariantHashes: verdictRes.submittedVariantHashes,
+		TotalCounts:            totalCounts,
+		VariantStats:           stats,
+		Verdicts:               verdictRes.verdicts,
 	}
 
 	return report, nil
@@ -835,13 +858,28 @@ func fetchVariantStats(ctx context.Context, client analysispb.TestHistoryClient,
 	return result, totalCounts, truncated, nil
 }
 
+type verdictTimelineResult struct {
+	verdicts               []testHistoryVerdictEntry
+	allPassed              bool
+	newerPassingCount      int
+	observedNonPassing     int
+	hasMorePages           bool
+	hitPageCap             bool
+	presubmitVariantHashes map[string]bool
+	submittedVariantHashes map[string]bool
+}
+
 // fetchVerdictTimeline calls TestHistory.Query ordered by partition_time DESC and returns
 // recent non-passing verdicts (falling back to recent passing verdicts when all runs passed),
-// along with the number of newer passing verdicts observed ahead of the newest non-passing verdict.
-func fetchVerdictTimeline(ctx context.Context, client analysispb.TestHistoryClient, project, testID string, predicate *analysispb.TestVerdictPredicate, variantDefs map[string]map[string]string, limit int) ([]testHistoryVerdictEntry, bool, int, error) {
+// along with newer passing counts, per-variant changelist presence, and pagination metadata.
+func fetchVerdictTimeline(ctx context.Context, client analysispb.TestHistoryClient, project, testID string, predicate *analysispb.TestVerdictPredicate, variantDefs map[string]map[string]string, limit int) (verdictTimelineResult, error) {
 	var nonPassing []testHistoryVerdictEntry
 	var fallbackPassing []testHistoryVerdictEntry
+	presubmitHashes := make(map[string]bool)
+	submittedHashes := make(map[string]bool)
 	newerPassing := 0
+	hasMorePages := false
+	hitPageCap := false
 	pageToken := ""
 	for page := 0; page < maxTestHistoryPages; page++ {
 		resp, err := client.Query(ctx, &analysispb.QueryTestHistoryRequest{
@@ -852,7 +890,7 @@ func fetchVerdictTimeline(ctx context.Context, client analysispb.TestHistoryClie
 			PageToken: pageToken,
 		})
 		if err != nil {
-			return nil, false, 0, errors.Fmt("TestHistory.Query RPC failed for %s / %s: %w", project, testID, err)
+			return verdictTimelineResult{}, errors.Fmt("TestHistory.Query RPC failed for %s / %s: %w", project, testID, err)
 		}
 		for _, tv := range resp.GetVerdicts() {
 			statusLabel, isNonPassing, isExonerated := classifyVerdictStatus(tv)
@@ -860,13 +898,22 @@ func fetchVerdictTimeline(ctx context.Context, client analysispb.TestHistoryClie
 			if tv.GetPartitionTime() != nil {
 				partTime = tv.GetPartitionTime().AsTime().UTC().Format(time.RFC3339)
 			}
+			hasCL := len(tv.GetChangelists()) > 0
+			if h := tv.GetVariantHash(); h != "" {
+				if hasCL {
+					presubmitHashes[h] = true
+				} else {
+					submittedHashes[h] = true
+				}
+			}
 			entry := testHistoryVerdictEntry{
-				InvocationID:  base.NormalizeInvocation(tv.GetInvocationId()),
-				VariantHash:   tv.GetVariantHash(),
-				Variant:       variantDefs[tv.GetVariantHash()],
-				Status:        statusLabel,
-				Exonerated:    isExonerated,
-				PartitionTime: partTime,
+				InvocationID:   base.NormalizeInvocation(tv.GetInvocationId()),
+				VariantHash:    tv.GetVariantHash(),
+				Variant:        variantDefs[tv.GetVariantHash()],
+				Status:         statusLabel,
+				Exonerated:     isExonerated,
+				HasChangelists: hasCL,
+				PartitionTime:  partTime,
 			}
 			if isNonPassing {
 				nonPassing = append(nonPassing, entry)
@@ -879,20 +926,62 @@ func fetchVerdictTimeline(ctx context.Context, client analysispb.TestHistoryClie
 				}
 			}
 		}
+		hasMorePages = resp.GetNextPageToken() != ""
 		// Keep paginating if high-volume PASSED verdicts pushed earlier failures onto subsequent pages.
-		if (limit > 0 && len(nonPassing) >= limit) || resp.GetNextPageToken() == "" {
+		if (limit > 0 && len(nonPassing) >= limit) || !hasMorePages {
+			if page == maxTestHistoryPages-1 && hasMorePages {
+				hitPageCap = true
+			}
 			break
+		}
+		if page == maxTestHistoryPages-1 {
+			hitPageCap = true
 		}
 		pageToken = resp.GetNextPageToken()
 	}
 
+	observedNonPassing := len(nonPassing)
 	if len(nonPassing) > 0 {
 		if limit > 0 && len(nonPassing) > limit {
 			nonPassing = nonPassing[:limit]
 		}
-		return nonPassing, false, newerPassing, nil
+		return verdictTimelineResult{
+			verdicts:               nonPassing,
+			newerPassingCount:      newerPassing,
+			observedNonPassing:     observedNonPassing,
+			hasMorePages:           hasMorePages,
+			hitPageCap:             hitPageCap,
+			presubmitVariantHashes: presubmitHashes,
+			submittedVariantHashes: submittedHashes,
+		}, nil
 	}
-	return fallbackPassing, len(fallbackPassing) > 0, 0, nil
+	return verdictTimelineResult{
+		verdicts:               fallbackPassing,
+		allPassed:              len(fallbackPassing) > 0,
+		hasMorePages:           hasMorePages,
+		hitPageCap:             hitPageCap,
+		presubmitVariantHashes: presubmitHashes,
+		submittedVariantHashes: submittedHashes,
+	}, nil
+}
+
+// computeOmittedNonPassing returns how many non-passing verdicts in the window were omitted
+// beyond shownCount, and whether the omitted count is a lower bound (`+`).
+func computeOmittedNonPassing(shownCount, observedNonPassing int, hasMorePages bool, totalCounts *rdbpb.TestAggregation_VerdictCounts, statsTruncated bool) (int, bool) {
+	if shownCount == 0 {
+		return 0, false
+	}
+	if !hasMorePages {
+		return max(0, observedNonPassing-shownCount), false
+	}
+	statsNonPassing := int(totalCounts.GetFailed() + totalCounts.GetExecutionErrored() + totalCounts.GetPrecluded() + totalCounts.GetFlaky() + totalCounts.GetExonerated())
+	if !statsTruncated && statsNonPassing > 0 && statsNonPassing == observedNonPassing && observedNonPassing <= shownCount {
+		return 0, false
+	}
+	if statsNonPassing > observedNonPassing || (statsNonPassing == observedNonPassing && statsNonPassing > 0 && !statsTruncated) {
+		return statsNonPassing - shownCount, statsTruncated
+	}
+	return max(0, observedNonPassing-shownCount), hasMorePages
 }
 
 // classifyVerdictStatus maps LUCI Analysis TestVerdict v2 status (+ fallback v1 status)
@@ -971,39 +1060,74 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 		return nil
 	}
 
+	var presubmitVariantHashes, submittedVariantHashes map[string]bool
+	if !report.SourceVerdictMode {
+		presubmitVariantHashes = report.PresubmitVariantHashes
+		submittedVariantHashes = report.SubmittedVariantHashes
+		if presubmitVariantHashes == nil && submittedVariantHashes == nil {
+			presubmitVariantHashes = make(map[string]bool)
+			submittedVariantHashes = make(map[string]bool)
+			for _, v := range report.Verdicts {
+				if v.VariantHash == "" {
+					continue
+				}
+				if v.HasChangelists {
+					presubmitVariantHashes[v.VariantHash] = true
+				} else {
+					submittedVariantHashes[v.VariantHash] = true
+				}
+			}
+		}
+	}
+
 	if len(report.VariantStats) > 0 {
 		nonPassingVariants := 0
+		skippedOnlyVariants := 0
 		for _, s := range report.VariantStats {
 			if s.nonPassingCount() > 0 {
 				nonPassingVariants++
+			} else if s.Counts.GetPassed() == 0 && s.Counts.GetSkipped() > 0 {
+				skippedOnlyVariants++
 			}
 		}
 		overallInline := format.FormatVerdictCountsInline(report.TotalCounts)
-		var statsNotes []string
+		var headerNotes []string
+		if skippedOnlyVariants > 0 {
+			headerNotes = append(headerNotes, fmt.Sprintf("%d skipped-only", skippedOnlyVariants))
+		}
 		if report.StatsSourceNote != "" {
-			statsNotes = append(statsNotes, report.StatsSourceNote)
+			headerNotes = append(headerNotes, report.StatsSourceNote)
 		} else if report.SourceVerdictMode {
-			statsNotes = append(statsNotes, "branch segment counts")
+			headerNotes = append(headerNotes, "branch segment counts")
 		}
 		if report.StatsTruncated {
-			statsNotes = append(statsNotes, "partial stats (page cap reached)")
+			headerNotes = append(headerNotes, "partial stats (page cap reached)")
 		}
-		truncNote := ""
-		if len(statsNotes) > 0 {
-			truncNote = ", " + strings.Join(statsNotes, ", ")
+		extraHeader := ""
+		if len(headerNotes) > 0 {
+			extraHeader = ", " + strings.Join(headerNotes, ", ")
 		}
 		fmt.Fprintf(out, "\nVariants (%d total, %d with non-passing verdicts%s) %s:\n",
-			len(report.VariantStats), nonPassingVariants, truncNote, overallInline)
+			len(report.VariantStats), nonPassingVariants, extraHeader, overallInline)
 
 		shownStats := report.VariantStats
-		extraStats := 0
+		var hiddenStats []variantStatsSummary
 		if len(shownStats) > maxVariantRowsShown {
-			extraStats = len(shownStats) - maxVariantRowsShown
+			hiddenStats = shownStats[maxVariantRowsShown:]
 			shownStats = shownStats[:maxVariantRowsShown]
 		}
 		for _, s := range shownStats {
 			countsStr := format.FormatVerdictCountsInline(s.Counts)
 			var metaParts []string
+			if !report.SourceVerdictMode {
+				hasPresubmit := presubmitVariantHashes[s.VariantHash]
+				hasSubmitted := submittedVariantHashes[s.VariantHash]
+				if hasPresubmit && !hasSubmitted {
+					metaParts = append(metaParts, "presubmit")
+				} else if hasPresubmit && hasSubmitted {
+					metaParts = append(metaParts, "presubmit+submitted")
+				}
+			}
 			metaParts = append(metaParts, "hash: "+s.VariantHash)
 			if report.Days > 1 && s.LatestNonPassingDate != "" {
 				metaParts = append(metaParts, "last non-passing: "+s.LatestNonPassingDate)
@@ -1014,8 +1138,19 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 			}
 			fmt.Fprintf(out, "- %s%s (%s)\n", countsStr, varStr, strings.Join(metaParts, ", "))
 		}
-		if extraStats > 0 {
-			fmt.Fprintf(out, "  ... +%d more variants (pass -variant <k:v> to narrow)\n", extraStats)
+		mixedSubmission := !report.SourceVerdictMode && len(presubmitVariantHashes) > 0 && len(submittedVariantHashes) > 0 && report.SubRealm == ""
+		if len(hiddenStats) > 0 {
+			narrowHint := "pass -variant <k:v> to narrow"
+			if mixedSubmission {
+				narrowHint = "pass -variant <k:v> or -subrealm <realm> to narrow"
+			}
+			if breakdown := formatHiddenVariantsBreakdown(hiddenStats); breakdown != "" {
+				fmt.Fprintf(out, "  ... +%d more variants (%s; %s)\n", len(hiddenStats), breakdown, narrowHint)
+			} else {
+				fmt.Fprintf(out, "  ... +%d more variants (%s)\n", len(hiddenStats), narrowHint)
+			}
+		} else if mixedSubmission {
+			fmt.Fprintf(out, "  Tip: pass -subrealm <realm> to isolate presubmit vs postsubmit realm history\n")
 		}
 	}
 
@@ -1025,11 +1160,8 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 	} else {
 		if report.AllVerdictsPassed {
 			fmt.Fprintf(out, "\nRecent Passing Verdicts (no failing/flaky verdicts in window; showing %d):\n", len(report.Verdicts))
-		} else if report.NewerPassingCount > 0 {
-			fmt.Fprintf(out, "\nRecent Non-Passing Verdicts (showing %d; %d newer verdicts passed since latest non-passing):\n",
-				len(report.Verdicts), report.NewerPassingCount)
 		} else {
-			fmt.Fprintf(out, "\nRecent Non-Passing Verdicts (showing %d):\n", len(report.Verdicts))
+			fmt.Fprintf(out, "\nRecent Non-Passing Verdicts (%s):\n", formatNonPassingVerdictsHeading(report))
 		}
 		for _, v := range report.Verdicts {
 			statusDisplay := v.Status
@@ -1069,4 +1201,90 @@ func printTestHistoryReport(ctx context.Context, out io.Writer, schemasClient rd
 		}
 	}
 	return nil
+}
+
+// validateTestHistoryVariantFilters rejects empty or synthetic `(unset)` filters that cannot
+// match present key:value pairs in LUCI Analysis VariantPredicate.Contains.
+func validateTestHistoryVariantFilters(filters map[string]string, branchMode bool) error {
+	if len(filters) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(filters))
+	for k := range filters {
+		keys = append(keys, k)
+	}
+	slices.Sort(keys)
+	for _, k := range keys {
+		v := filters[k]
+		if v == "" || v == "(unset)" {
+			if branchMode {
+				return errors.Fmt("invalid -variant filter for %s %q: test-history cannot match unset variant keys via -variant", k, v)
+			}
+			return errors.Fmt("invalid -variant filter for %s %q: test-history cannot match unset variant keys via -variant; pass -subrealm <realm> to filter by realm instead", k, v)
+		}
+	}
+	return nil
+}
+
+// formatHiddenVariantsBreakdown summarizes status categories across variants omitted past
+// maxVariantRowsShown so disabled-test (`skipped-only`) and passing builders remain visible.
+func formatHiddenVariantsBreakdown(hidden []variantStatsSummary) string {
+	var nonPassing, passingOnly, passingSkipped, skippedOnly int
+	for _, s := range hidden {
+		switch {
+		case s.nonPassingCount() > 0:
+			nonPassing++
+		case s.Counts.GetPassed() > 0 && s.Counts.GetSkipped() > 0:
+			passingSkipped++
+		case s.Counts.GetSkipped() > 0:
+			skippedOnly++
+		case s.Counts.GetPassed() > 0:
+			passingOnly++
+		}
+	}
+	var parts []string
+	if nonPassing > 0 {
+		parts = append(parts, fmt.Sprintf("%d with non-passing", nonPassing))
+	}
+	if passingOnly > 0 {
+		parts = append(parts, fmt.Sprintf("%d passing-only", passingOnly))
+	}
+	if passingSkipped > 0 {
+		parts = append(parts, fmt.Sprintf("%d passing+skipped", passingSkipped))
+	}
+	if skippedOnly > 0 {
+		parts = append(parts, fmt.Sprintf("%d skipped-only", skippedOnly))
+	}
+	return strings.Join(parts, ", ")
+}
+
+func formatNonPassingVerdictsHeading(report *testHistoryReport) string {
+	shown := len(report.Verdicts)
+	var showingClause string
+	switch {
+	case report.OmittedNonPassing > 0:
+		plus := ""
+		if report.OmittedNonPassingPlus {
+			plus = "+"
+		}
+		total := shown + report.OmittedNonPassing
+		showingClause = fmt.Sprintf("showing %d of %d%s, %d%s omitted", shown, total, plus, report.OmittedNonPassing, plus)
+	case report.OmittedNonPassingPlus:
+		showingClause = fmt.Sprintf("showing %d, more omitted", shown)
+	default:
+		showingClause = fmt.Sprintf("showing %d", shown)
+	}
+
+	clauses := []string{showingClause}
+	if report.NewerPassingCount > 0 {
+		clauses = append(clauses, fmt.Sprintf("%d newer verdicts passed since latest non-passing", report.NewerPassingCount))
+	}
+	if report.OmittedNonPassing > 0 || report.OmittedNonPassingPlus {
+		if report.VerdictsPageCapped {
+			clauses = append(clauses, "page cap reached; pass -variant <k:v> or smaller -days to narrow")
+		} else {
+			clauses = append(clauses, "pass -limit 0 for all")
+		}
+	}
+	return strings.Join(clauses, "; ")
 }

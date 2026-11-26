@@ -17,6 +17,7 @@ package analysis
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -172,19 +173,19 @@ func TestTestHistorySubcommand(t *testing.T) {
 		})
 
 		t.Run("Validates required flags and structured test ID resolution", func(t *ftt.Test) {
-			_, err := fetchTestHistory(ctx, nil, "", "", "", nil, 7, defaultTestHistoryLimit, true, fixedNow)
+			_, err := fetchTestHistory(ctx, nil, "", "", "", nil, 7, defaultTestHistoryLimit, fixedNow)
 			assert.Loosely(t, err, should.ErrLike("missing required -project flag"))
 
-			_, err = fetchTestHistory(ctx, nil, "projects/turquoise", "", "", nil, 7, defaultTestHistoryLimit, true, fixedNow)
+			_, err = fetchTestHistory(ctx, nil, "projects/turquoise", "", "", nil, 7, defaultTestHistoryLimit, fixedNow)
 			assert.Loosely(t, err, should.ErrLike("expected a bare ID"))
 
-			_, err = fetchTestHistory(ctx, nil, "turquoise", "", "", nil, 7, defaultTestHistoryLimit, true, fixedNow)
+			_, err = fetchTestHistory(ctx, nil, "turquoise", "", "", nil, 7, defaultTestHistoryLimit, fixedNow)
 			assert.Loosely(t, err, should.ErrLike("missing required -testid flag"))
 
-			_, err = fetchTestHistory(ctx, nil, "turquoise", "my_test", "", nil, 0, defaultTestHistoryLimit, true, fixedNow)
+			_, err = fetchTestHistory(ctx, nil, "turquoise", "my_test", "", nil, 0, defaultTestHistoryLimit, fixedNow)
 			assert.Loosely(t, err, should.ErrLike("-days must be positive"))
 
-			_, err = fetchTestHistory(ctx, nil, "turquoise", "my_test", "", []string{"missing_separator"}, 7, defaultTestHistoryLimit, true, fixedNow)
+			_, err = fetchTestHistory(ctx, nil, "turquoise", "my_test", "", []string{"missing_separator"}, 7, defaultTestHistoryLimit, fixedNow)
 			assert.Loosely(t, err, should.ErrLike("invalid -variant filter"))
 
 			// Structured test ID resolution
@@ -300,7 +301,6 @@ func TestTestHistorySubcommand(t *testing.T) {
 				[]string{"board:vim3"},
 				120, // verifies clamping to 90d max TTL
 				defaultTestHistoryLimit,
-				false,
 				fixedNow,
 			)
 			assert.Loosely(t, err, should.BeNil)
@@ -378,7 +378,6 @@ func TestTestHistorySubcommand(t *testing.T) {
 				nil,
 				7,
 				defaultTestHistoryLimit,
-				false,
 				fixedNow,
 			)
 			assert.Loosely(t, err, should.BeNil)
@@ -433,6 +432,249 @@ func TestTestHistorySubcommand(t *testing.T) {
 			assert.Loosely(t, out.String(), should.ContainSubstring("Project:           turquoise"))
 			assert.Loosely(t, out.String(), should.ContainSubstring("Test ID:           fuchsia-pkg://fuchsia.com/netstack#meta/test.cm"))
 			assert.Loosely(t, out.String(), should.ContainSubstring("Window:    last 14d"))
+		})
+
+		t.Run("many_variants_truncation_and_presubmit_labels", func(t *ftt.Test) {
+			var variantInfos []*analysispb.QueryVariantsResponse_VariantInfo
+			var statGroups []*analysispb.QueryTestHistoryStatsResponse_Group
+
+			// 1: presubmit failing builder (CL verdicts only)
+			variantInfos = append(variantInfos, &analysispb.QueryVariantsResponse_VariantInfo{
+				VariantHash: "hash-try-win",
+				Variant:     &analysispb.Variant{Def: map[string]string{"builder": "win-rel", "os": "Windows-10", "test_suite": "browser_tests"}},
+			})
+			statGroups = append(statGroups, &analysispb.QueryTestHistoryStatsResponse_Group{
+				PartitionTime: timestamppb.New(fixedNow.Add(-6 * time.Hour)),
+				VariantHash:   "hash-try-win",
+				VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Failed: 60, Passed: 400},
+			})
+
+			// 2: shared presubmit+submitted builder (both CL and non-CL verdicts on same hash)
+			variantInfos = append(variantInfos, &analysispb.QueryVariantsResponse_VariantInfo{
+				VariantHash: "hash-shared-linux",
+				Variant:     &analysispb.Variant{Def: map[string]string{"os": "Ubuntu-22.04", "test_suite": "browser_tests"}},
+			})
+			statGroups = append(statGroups, &analysispb.QueryTestHistoryStatsResponse_Group{
+				PartitionTime: timestamppb.New(fixedNow.Add(-12 * time.Hour)),
+				VariantHash:   "hash-shared-linux",
+				VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Failed: 3, Passed: 100},
+			})
+
+			// 3..11: 9 skipped-only CI builders + 12: 1 passing-only presubmit builder (CL verdict only in passing verdicts)
+			for i := 0; i < 9; i++ {
+				h := fmt.Sprintf("hash-skip-top-%02d", i)
+				variantInfos = append(variantInfos, &analysispb.QueryVariantsResponse_VariantInfo{
+					VariantHash: h,
+					Variant:     &analysispb.Variant{Def: map[string]string{"bucket": "ci", "builder": fmt.Sprintf("android-x64-%02d", i), "test_suite": "browser_tests"}},
+				})
+				statGroups = append(statGroups, &analysispb.QueryTestHistoryStatsResponse_Group{
+					VariantHash:   h,
+					VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Skipped: int32(300 - i)},
+				})
+			}
+			variantInfos = append(variantInfos, &analysispb.QueryVariantsResponse_VariantInfo{
+				VariantHash: "hash-try-mac-pass",
+				Variant:     &analysispb.Variant{Def: map[string]string{"builder": "mac-rel", "os": "Mac-26", "test_suite": "browser_tests"}},
+			})
+			statGroups = append(statGroups, &analysispb.QueryTestHistoryStatsResponse_Group{
+				VariantHash:   "hash-try-mac-pass",
+				VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Passed: 200},
+			})
+
+			// 13..16: 4 hidden variants (2 skipped-only, 1 passing-only, 1 passing+skipped)
+			variantInfos = append(variantInfos,
+				&analysispb.QueryVariantsResponse_VariantInfo{
+					VariantHash: "hash-hid-pass",
+					Variant:     &analysispb.Variant{Def: map[string]string{"bucket": "ci", "builder": "linux-pass"}},
+				},
+				&analysispb.QueryVariantsResponse_VariantInfo{
+					VariantHash: "hash-hid-mixed",
+					Variant:     &analysispb.Variant{Def: map[string]string{"bucket": "ci", "builder": "linux-mixed"}},
+				},
+				&analysispb.QueryVariantsResponse_VariantInfo{
+					VariantHash: "hash-hid-skip1",
+					Variant:     &analysispb.Variant{Def: map[string]string{"bucket": "ci", "builder": "x86-skip-1"}},
+				},
+				&analysispb.QueryVariantsResponse_VariantInfo{
+					VariantHash: "hash-hid-skip2",
+					Variant:     &analysispb.Variant{Def: map[string]string{"builder": "x86-try-skip-2"}},
+				},
+			)
+			statGroups = append(statGroups,
+				&analysispb.QueryTestHistoryStatsResponse_Group{
+					VariantHash:   "hash-hid-pass",
+					VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Passed: 50},
+				},
+				&analysispb.QueryTestHistoryStatsResponse_Group{
+					VariantHash:   "hash-hid-mixed",
+					VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Passed: 20, Skipped: 10},
+				},
+				&analysispb.QueryTestHistoryStatsResponse_Group{
+					VariantHash:   "hash-hid-skip1",
+					VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Skipped: 15},
+				},
+				&analysispb.QueryTestHistoryStatsResponse_Group{
+					VariantHash:   "hash-hid-skip2",
+					VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Skipped: 10},
+				},
+			)
+
+			thMock := &mockTestHistoryClient{
+				queryVariants: func(ctx context.Context, in *analysispb.QueryVariantsRequest, opts ...grpc.CallOption) (*analysispb.QueryVariantsResponse, error) {
+					return &analysispb.QueryVariantsResponse{Variants: variantInfos}, nil
+				},
+				queryStats: func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
+					return &analysispb.QueryTestHistoryStatsResponse{Groups: statGroups}, nil
+				},
+				query: func(ctx context.Context, in *analysispb.QueryTestHistoryRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryResponse, error) {
+					return &analysispb.QueryTestHistoryResponse{
+						Verdicts: []*analysispb.TestVerdict{
+							{
+								TestId:        in.TestId,
+								VariantHash:   "hash-try-mac-pass",
+								InvocationId:  "build-9000",
+								StatusV2:      analysispb.TestVerdict_PASSED,
+								PartitionTime: timestamppb.New(fixedNow.Add(-10 * time.Minute)),
+								Changelists:   []*analysispb.Changelist{{Host: "chromium-review.googlesource.com", Change: 124, Patchset: 1}},
+							},
+							{
+								TestId:        in.TestId,
+								VariantHash:   "hash-shared-linux",
+								InvocationId:  "build-9001",
+								StatusV2:      analysispb.TestVerdict_PASSED,
+								PartitionTime: timestamppb.New(fixedNow.Add(-20 * time.Minute)),
+								Changelists:   []*analysispb.Changelist{{Host: "chromium-review.googlesource.com", Change: 125, Patchset: 1}},
+							},
+							{
+								TestId:        in.TestId,
+								VariantHash:   "hash-try-win",
+								InvocationId:  "build-9002",
+								StatusV2:      analysispb.TestVerdict_FAILED,
+								PartitionTime: timestamppb.New(fixedNow.Add(-30 * time.Minute)),
+								Changelists:   []*analysispb.Changelist{{Host: "chromium-review.googlesource.com", Change: 123, Patchset: 1}},
+							},
+							{
+								TestId:        in.TestId,
+								VariantHash:   "hash-shared-linux",
+								InvocationId:  "build-9003",
+								StatusV2:      analysispb.TestVerdict_FAILED,
+								PartitionTime: timestamppb.New(fixedNow.Add(-40 * time.Minute)),
+							},
+							{
+								TestId:        in.TestId,
+								VariantHash:   "hash-try-win",
+								InvocationId:  "build-9004",
+								StatusV2:      analysispb.TestVerdict_FAILED,
+								PartitionTime: timestamppb.New(fixedNow.Add(-50 * time.Minute)),
+								Changelists:   []*analysispb.Changelist{{Host: "chromium-review.googlesource.com", Change: 126, Patchset: 1}},
+							},
+							{
+								TestId:        in.TestId,
+								VariantHash:   "hash-try-win",
+								InvocationId:  "build-9005",
+								StatusV2:      analysispb.TestVerdict_FAILED,
+								PartitionTime: timestamppb.New(fixedNow.Add(-60 * time.Minute)),
+								Changelists:   []*analysispb.Changelist{{Host: "chromium-review.googlesource.com", Change: 127, Patchset: 1}},
+							},
+						},
+						NextPageToken: "more-pages",
+					}, nil
+				},
+			}
+
+			code, out, errStr := execTestHistoryCmd(thMock, fixedNow, "-project", "chromium", "-testid", `://chrome/test\:browser_tests!gtest::OmniboxTest#Composebox`)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, errStr, should.BeEmpty)
+
+			// Default -limit=3 is preserved even with 16 variants (>12), and omitted non-passing count (63 - 3 = 60) is shown.
+			assert.Loosely(t, out, should.ContainSubstring("Variants (16 total, 2 with non-passing verdicts, 11 skipped-only)"))
+			assert.Loosely(t, out, should.ContainSubstring("builder=win-rel os=Windows-10 test_suite=browser_tests (presubmit, hash: hash-try-win, last non-passing: 2026-10-08)"))
+			// Shared hash mixing CL and submitted verdicts gets (presubmit+submitted, ...).
+			assert.Loosely(t, out, should.ContainSubstring("os=Ubuntu-22.04 test_suite=browser_tests (presubmit+submitted, hash: hash-shared-linux, last non-passing: 2026-10-08)"))
+			// Passing-only presubmit builder in row 12 gets (presubmit) from page-wide changelist scan even though passing verdicts are omitted from report.Verdicts.
+			assert.Loosely(t, out, should.ContainSubstring("[200 passed] builder=mac-rel os=Mac-26 test_suite=browser_tests (presubmit, hash: hash-try-mac-pass)"))
+			assert.Loosely(t, out, should.ContainSubstring("... +4 more variants (1 passing-only, 1 passing+skipped, 2 skipped-only; pass -variant <k:v> or -subrealm <realm> to narrow)"))
+			assert.Loosely(t, out, should.ContainSubstring("Recent Non-Passing Verdicts (showing 3 of 63, 60 omitted; 2 newer verdicts passed since latest non-passing; pass -limit 0 for all):"))
+			assert.Loosely(t, out, should.ContainSubstring("- FAILED (presubmit CL) build-9002 [2026-10-09T01:30:00Z]\n    Variant: builder=win-rel os=Windows-10 test_suite=browser_tests (hash: hash-try-win)"))
+			assert.Loosely(t, out, should.ContainSubstring("- FAILED build-9003 [2026-10-09T01:20:00Z]\n    Variant: os=Ubuntu-22.04 test_suite=browser_tests (hash: hash-shared-linux)"))
+			assert.Loosely(t, out, should.NotContainSubstring("build-9005"))
+
+			// Unset or empty -variant filters for ANY key fail fast with a generic -subrealm hint instead of silently matching 0 rows.
+			for _, badFilter := range []string{"bucket:(unset)", "board:(unset)", "os:"} {
+				badCode, _, badErr := execTestHistoryCmd(thMock, fixedNow, "-project", "turquoise", "-testid", "t1", "-variant", badFilter)
+				assert.Loosely(t, badCode, should.Equal(1))
+				assert.Loosely(t, badErr, should.ContainSubstring("pass -subrealm <realm>"))
+			}
+
+			// Unit-check edge cases in helper functions.
+			omitted, plus := computeOmittedNonPassing(3, 3, true, reportCountsWithFailed(3), false)
+			assert.Loosely(t, omitted, should.Equal(0))
+			assert.Loosely(t, plus, should.BeFalse)
+
+			// When QueryStats lags behind Query (statsNonPassing < observedNonPassing <= shownCount) and hasMorePages is true, keep "+".
+			omitted, plus = computeOmittedNonPassing(3, 3, true, reportCountsWithFailed(2), false)
+			assert.Loosely(t, omitted, should.Equal(0))
+			assert.Loosely(t, plus, should.BeTrue)
+
+			// When !hasMorePages, observedNonPassing is exact even if 24h-bucketed stats are higher.
+			omitted, plus = computeOmittedNonPassing(3, 5, false, reportCountsWithFailed(10), false)
+			assert.Loosely(t, omitted, should.Equal(2))
+			assert.Loosely(t, plus, should.BeFalse)
+
+			// When hasMorePages is true (e.g. older passing pages) and untruncated stats match observedNonPassing, no "+".
+			omitted, plus = computeOmittedNonPassing(3, 5, true, reportCountsWithFailed(5), false)
+			assert.Loosely(t, omitted, should.Equal(2))
+			assert.Loosely(t, plus, should.BeFalse)
+
+			// When stats are truncated and exceed observedNonPassing, omitted count is a lower bound ("+").
+			omitted, plus = computeOmittedNonPassing(3, 5, true, reportCountsWithFailed(10), true)
+			assert.Loosely(t, omitted, should.Equal(7))
+			assert.Loosely(t, plus, should.BeTrue)
+
+			// formatHiddenVariantsBreakdown handles non-passing, nil Counts, and zero-count variants safely.
+			breakdown := formatHiddenVariantsBreakdown([]variantStatsSummary{
+				{Counts: &rdbpb.TestAggregation_VerdictCounts{Failed: 2}},
+				{Counts: nil},
+				{Counts: &rdbpb.TestAggregation_VerdictCounts{}},
+				{Counts: &rdbpb.TestAggregation_VerdictCounts{Passed: 4}},
+			})
+			assert.Loosely(t, breakdown, should.Equal("1 with non-passing, 1 passing-only"))
+
+			// Positive -limit exhausting maxTestHistoryPages (10 pages) with < limit non-passing verdicts
+			// sets VerdictsPageCapped = true instead of suggesting -limit 0.
+			cappedMock := &mockTestHistoryClient{
+				queryStats: func(ctx context.Context, in *analysispb.QueryTestHistoryStatsRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryStatsResponse, error) {
+					return &analysispb.QueryTestHistoryStatsResponse{
+						Groups: []*analysispb.QueryTestHistoryStatsResponse_Group{
+							{
+								VariantHash:   "h1",
+								VerdictCounts: &analysispb.QueryTestHistoryStatsResponse_Group_VerdictCounts{Failed: 5, Passed: 100},
+							},
+						},
+					}, nil
+				},
+				query: func(ctx context.Context, in *analysispb.QueryTestHistoryRequest, opts ...grpc.CallOption) (*analysispb.QueryTestHistoryResponse, error) {
+					st := analysispb.TestVerdict_PASSED
+					if in.PageToken == "" {
+						st = analysispb.TestVerdict_FAILED
+					}
+					return &analysispb.QueryTestHistoryResponse{
+						Verdicts: []*analysispb.TestVerdict{
+							{
+								TestId:        in.TestId,
+								VariantHash:   "h1",
+								InvocationId:  "build-cap",
+								StatusV2:      st,
+								PartitionTime: timestamppb.New(fixedNow.Add(-1 * time.Hour)),
+							},
+						},
+						NextPageToken: "next",
+					}, nil
+				},
+			}
+			capCode, capOut, _ := execTestHistoryCmd(cappedMock, fixedNow, "-project", "chromium", "-testid", "t_cap")
+			assert.Loosely(t, capCode, should.Equal(0))
+			assert.Loosely(t, capOut, should.ContainSubstring("Recent Non-Passing Verdicts (showing 1 of 5, 4 omitted; page cap reached; pass -variant <k:v> or smaller -days to narrow):"))
 		})
 	})
 }
@@ -926,19 +1168,29 @@ func TestAndroidSourceVerdictHistory(t *testing.T) {
 				},
 			}
 
-			// 1. Stopping at -limit=1 on page 0 must NOT report "partial stats (page cap reached)".
+			// 1. Stopping at -limit=1 on page 0 must NOT report "partial stats (page cap reached)",
+			// while still reporting "more omitted; pass -limit 0 for all" since NextPageToken != "".
 			code1, out1, _ := runCmd(androidEnv{app: app, rdb: rdbTarget, th: thPaged, tvb: &mockTestVariantBranchesClient{}}, "-limit", "1", "TR99999999999999999")
 			assert.Loosely(t, code1, should.Equal(0))
 			assert.Loosely(t, pagesCalled, should.Equal(1))
 			assert.Loosely(t, out1, should.ContainSubstring("sampled source verdict counts)"))
 			assert.Loosely(t, out1, should.NotContainSubstring("partial stats (page cap reached)"))
+			assert.Loosely(t, out1, should.ContainSubstring("Recent Non-Passing Verdicts (showing 1, more omitted; pass -limit 0 for all):"))
 
-			// 2. Exhausting maxSourceVerdictPages (3 pages) with -limit=0 MUST report "partial stats (page cap reached)".
+			// 2. Exhausting maxSourceVerdictPages (3 pages) with -limit=0 (or positive -limit=5 > 3 found)
+			// MUST report "partial stats (page cap reached)" and the page-cap notice rather than "-limit 0".
 			pagesCalled = 0
 			code2, out2, _ := runCmd(androidEnv{app: app, rdb: rdbTarget, th: thPaged, tvb: &mockTestVariantBranchesClient{}}, "-limit", "0", "TR99999999999999999")
 			assert.Loosely(t, code2, should.Equal(0))
 			assert.Loosely(t, pagesCalled, should.Equal(maxSourceVerdictPages))
 			assert.Loosely(t, out2, should.ContainSubstring("sampled source verdict counts, partial stats (page cap reached))"))
+			assert.Loosely(t, out2, should.ContainSubstring("Recent Non-Passing Verdicts (showing 3, more omitted; page cap reached; pass -variant <k:v> or smaller -days to narrow):"))
+
+			pagesCalled = 0
+			code3, out3, _ := runCmd(androidEnv{app: app, rdb: rdbTarget, th: thPaged, tvb: &mockTestVariantBranchesClient{}}, "-limit", "5", "TR99999999999999999")
+			assert.Loosely(t, code3, should.Equal(0))
+			assert.Loosely(t, pagesCalled, should.Equal(maxSourceVerdictPages))
+			assert.Loosely(t, out3, should.ContainSubstring("Recent Non-Passing Verdicts (showing 3, more omitted; page cap reached; pass -variant <k:v> or smaller -days to narrow):"))
 		})
 
 		t.Run("unregistered_scheme_tradefed_emits_scheme_hint_and_preserves_valid_suggestions", func(t *ftt.Test) {
@@ -1139,6 +1391,68 @@ func TestAndroidSourceVerdictHistory(t *testing.T) {
 			code3, _, err3 := runCmd(androidEnv{}, "-project", "android", "-branch", "git_main", "-subrealm", "presubmit", "-testid", androidTestID)
 			assert.Loosely(t, code3, should.Equal(1))
 			assert.Loosely(t, err3, should.ContainSubstring("-subrealm cannot be combined with -branch"))
+
+			code4, _, err4 := runCmd(androidEnv{}, "-project", "android", "-branch", "git_main", "-variant", "module_param:(unset)", "-testid", androidTestID)
+			assert.Loosely(t, code4, should.Equal(1))
+			assert.Loosely(t, err4, should.ContainSubstring("cannot match unset variant keys via -variant"))
+			assert.Loosely(t, err4, should.NotContainSubstring("-subrealm"))
+		})
+
+		t.Run("source_verdict_mode_caps_unqueried_failing_variants_and_suppresses_subrealm_hints", func(t *ftt.Test) {
+			// 5 failing postsubmit variants (> maxSourceVerdictVariants=4) plus a presubmit CL verdict on hash 1.
+			var tvbs []*analysispb.TestVariantBranch
+			for i := 0; i < 5; i++ {
+				h := fmt.Sprintf("%016x", i+1)
+				def := map[string]string{"module_abi": fmt.Sprintf("abi-%d", i)}
+				tvbs = append(tvbs, &analysispb.TestVariantBranch{
+					VariantHash: h,
+					Variant:     &analysispb.Variant{Def: def},
+					Segments: []*analysispb.Segment{
+						{
+							StartHour: timestamppb.New(fixedNow.Add(-24 * time.Hour)),
+							EndHour:   timestamppb.New(fixedNow.Add(-1 * time.Hour)),
+							Counts:    &analysispb.Segment_Counts{UnexpectedVerdicts: 2, TotalVerdicts: 10},
+						},
+					},
+				})
+			}
+			tvb5 := &mockTestVariantBranchesClient{
+				query: func(ctx context.Context, in *analysispb.QueryTestVariantBranchRequest, opts ...grpc.CallOption) (*analysispb.QueryTestVariantBranchResponse, error) {
+					return &analysispb.QueryTestVariantBranchResponse{TestVariantBranch: tvbs}, nil
+				},
+			}
+			th5 := &mockTestHistoryClient{
+				querySourceVerdicts: func(ctx context.Context, in *analysispb.QuerySourceVerdictsV2Request, opts ...grpc.CallOption) (*analysispb.QuerySourceVerdictsV2Response, error) {
+					if in.GetTestIdFlat().GetVariantHash() == fmt.Sprintf("%016x", 1) {
+						return &analysispb.QuerySourceVerdictsV2Response{
+							SourceVerdicts: []*analysispb.SourceVerdict{
+								{
+									Position: 100,
+									InvocationVerdicts: []*analysispb.SourceVerdict_InvocationTestVerdict{
+										{
+											RootInvocation: "rootInvocations/ants-i501",
+											PartitionTime:  timestamppb.New(fixedNow.Add(-1 * time.Hour)),
+											Status:         analysispb.TestVerdict_FAILED,
+											Changelists:    []*analysispb.Changelist{{Host: "android-review.googlesource.com", Change: 1}},
+										},
+									},
+								},
+							},
+						}, nil
+					}
+					return &analysispb.QuerySourceVerdictsV2Response{}, nil
+				},
+			}
+
+			code, stdout, stderr := runCmd(androidEnv{th: th5, tvb: tvb5}, "-project", "android", "-branch", "git_main", "-testid", androidTestID)
+			assert.Loosely(t, code, should.Equal(0))
+			assert.Loosely(t, stderr, should.BeEmpty)
+			// Postsubmit Variants row on hash 1 has no presubmit tag in SourceVerdictMode, while the CL verdict itself shows (presubmit CL).
+			assert.Loosely(t, stdout, should.ContainSubstring("module_abi=abi-0 (hash: 0000000000000001)"))
+			assert.Loosely(t, stdout, should.ContainSubstring("- FAILED (presubmit CL) ants-i501"))
+			assert.Loosely(t, stdout, should.NotContainSubstring("-subrealm"))
+			// 5th failing variant was excluded by maxSourceVerdictVariants=4, so header notes "more omitted; page cap reached".
+			assert.Loosely(t, stdout, should.ContainSubstring("Recent Non-Passing Verdicts (showing 1, more omitted; page cap reached; pass -variant <k:v> or smaller -days to narrow):"))
 		})
 
 		t.Run("permission_denied_enriches_android_and_unmigrated_realm_errors", func(t *ftt.Test) {
@@ -1158,4 +1472,8 @@ func TestAndroidSourceVerdictHistory(t *testing.T) {
 			assert.Loosely(t, errArsp, should.ContainSubstring("ants_cli test-history --test_identifier_id=<ID>"))
 		})
 	})
+}
+
+func reportCountsWithFailed(n int32) *rdbpb.TestAggregation_VerdictCounts {
+	return &rdbpb.TestAggregation_VerdictCounts{Failed: n}
 }

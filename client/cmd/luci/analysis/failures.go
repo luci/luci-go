@@ -121,6 +121,7 @@ type failureExampleOutput struct {
 	PartitionTime       string
 	Count               int32
 	BuildStatus         string
+	IsPresubmit         bool
 	Exonerations        []string
 	Variant             map[string]string
 	FailureReasonPrefix string
@@ -134,6 +135,8 @@ type clusterFailuresReport struct {
 	SuggestedRule         string
 	AdditionalRules       []string
 	TotalFailures         int64
+	PresubmitFailures     int64
+	PostsubmitFailures    int64
 	DistinctGroupsMatched int
 	VariantDistribution   []variantDimensionSummary
 	Examples              []failureExampleOutput
@@ -351,14 +354,18 @@ func fetchClusterFailures(
 		}
 	}
 
-	var totalFailures int64
+	var totalFailures, presubmitFailures int64
 	for _, f := range matched {
 		c := int64(f.GetCount())
 		if c <= 0 {
 			c = 1
 		}
 		totalFailures += c
+		if isPresubmitClusterFailure(f) {
+			presubmitFailures += c
+		}
 	}
+	postsubmitFailures := totalFailures - presubmitFailures
 
 	variantDist := buildVariantDistribution(matched, totalFailures)
 	effectiveLimit := limit
@@ -374,6 +381,8 @@ func fetchClusterFailures(
 		SuggestedRule:         suggestedRule,
 		AdditionalRules:       extraRules,
 		TotalFailures:         totalFailures,
+		PresubmitFailures:     presubmitFailures,
+		PostsubmitFailures:    postsubmitFailures,
 		DistinctGroupsMatched: len(matched),
 		VariantDistribution:   variantDist,
 		Examples:              formatFailureExamples(matched, effectiveLimit),
@@ -398,6 +407,10 @@ func adaptiveExampleLimit(limit, variantDimCount int) int {
 		return maxByBudget
 	}
 	return limit
+}
+
+func isPresubmitClusterFailure(f *analysispb.DistinctClusterFailure) bool {
+	return f.GetPresubmitRun() != nil || len(f.GetChangelists()) > 0
 }
 
 // formatFailureExamples sorts distinct failure groups by partition_time DESC and formats up to
@@ -448,6 +461,7 @@ func formatFailureExamples(failures []*analysispb.DistinctClusterFailure, limit 
 			PartitionTime:       partTime,
 			Count:               c,
 			BuildStatus:         buildStatus,
+			IsPresubmit:         isPresubmitClusterFailure(f),
 			Exonerations:        exReasons,
 			Variant:             f.GetVariant().GetDef(),
 			FailureReasonPrefix: f.GetFailureReasonPrefix(),
@@ -473,6 +487,9 @@ func matchesVariantFilters(def, filters map[string]string) bool {
 		return true
 	}
 	for k, want := range filters {
+		if want == "(unset)" {
+			want = ""
+		}
 		if def[k] != want {
 			return false
 		}
@@ -484,6 +501,10 @@ func matchesVariantFilters(def, filters map[string]string) bool {
 // matched failure groups. Priority triage dimensions (builder, board, test_environment,
 // test_suite, os) are listed first, followed by any other discriminating keys (with >=2 distinct
 // values) so single-value boilerplate tags do not clutter the summary header.
+//
+// For every partially-populated key (where some matched failures omit the key), missing counts
+// are recorded under `(unset)` so percentages always sum to 100% and partially-populated
+// dimensions surface automatically as discriminating.
 func buildVariantDistribution(failures []*analysispb.DistinctClusterFailure, totalFailures int64) []variantDimensionSummary {
 	if len(failures) == 0 || totalFailures <= 0 {
 		return nil
@@ -505,6 +526,16 @@ func buildVariantDistribution(failures []*analysispb.DistinctClusterFailure, tot
 				keyCounts[k] = m
 			}
 			m[v] += c
+		}
+	}
+
+	for _, valMap := range keyCounts {
+		var keySum int64
+		for _, cnt := range valMap {
+			keySum += cnt
+		}
+		if missing := totalFailures - keySum; missing > 0 {
+			valMap["(unset)"] += missing
 		}
 	}
 
@@ -549,6 +580,9 @@ func buildVariantDistribution(failures []*analysispb.DistinctClusterFailure, tot
 			if buckets[i].Count != buckets[j].Count {
 				return buckets[i].Count > buckets[j].Count
 			}
+			if (buckets[i].Value == "(unset)") != (buckets[j].Value == "(unset)") {
+				return buckets[j].Value == "(unset)"
+			}
 			return buckets[i].Value < buckets[j].Value
 		})
 		summaries = append(summaries, variantDimensionSummary{
@@ -557,6 +591,15 @@ func buildVariantDistribution(failures []*analysispb.DistinctClusterFailure, tot
 		})
 	}
 	return summaries
+}
+
+func formatSubmissionBreakdown(postsubmit, presubmit, total int64) string {
+	postPart := fmt.Sprintf("postsubmit=%d (%.1f%%)", postsubmit, float64(postsubmit)*100.0/float64(total))
+	prePart := fmt.Sprintf("presubmit=%d (%.1f%%)", presubmit, float64(presubmit)*100.0/float64(total))
+	if presubmit > postsubmit {
+		return prePart + ", " + postPart
+	}
+	return postPart + ", " + prePart
 }
 
 func printClusterFailuresReport(out io.Writer, report *clusterFailuresReport) error {
@@ -579,6 +622,10 @@ func printClusterFailuresReport(out io.Writer, report *clusterFailuresReport) er
 	if report.TotalFailures == 0 {
 		fmt.Fprintf(out, "\nNo matching cluster failures found.\n")
 		return nil
+	}
+
+	if report.PresubmitFailures > 0 && report.PostsubmitFailures > 0 {
+		fmt.Fprintf(out, "\nSubmission: %s\n", formatSubmissionBreakdown(report.PostsubmitFailures, report.PresubmitFailures, report.TotalFailures))
 	}
 
 	if len(report.VariantDistribution) > 0 {
@@ -634,6 +681,9 @@ func printFailureExamples(out io.Writer, examples []failureExampleOutput) {
 		}
 		if ex.BuildStatus != "" {
 			meta = append(meta, fmt.Sprintf("build=%s", ex.BuildStatus))
+		}
+		if ex.IsPresubmit {
+			meta = append(meta, "presubmit")
 		}
 		if len(ex.Exonerations) > 0 {
 			meta = append(meta, fmt.Sprintf("exonerated=%s", strings.Join(ex.Exonerations, ",")))

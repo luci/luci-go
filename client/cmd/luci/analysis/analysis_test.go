@@ -581,6 +581,112 @@ func TestFailuresCommand(t *testing.T) {
 		assert.Loosely(t, printClusterFailuresReport(&truncOut, truncReport), should.BeNil)
 		assert.Loosely(t, truncOut.String(), should.ContainSubstring("+1 more"))
 	})
+
+	ftt.Run(`Generic (unset) variant distribution and proto-backed presubmit summary`, t, func(t *ftt.Test) {
+		ctx := t.Context()
+		t1 := time.Date(2026, 11, 20, 10, 0, 0, 0, time.UTC)
+		t2 := time.Date(2026, 11, 20, 11, 0, 0, 0, time.UTC)
+
+		rulesMock := &mockRulesClient{
+			lookupBug: func(ctx context.Context, in *analysispb.LookupBugRequest) (*analysispb.LookupBugResponse, error) {
+				return &analysispb.LookupBugResponse{
+					Rules: []string{"projects/chromium/rules/209c70ed4ba05dff2820c8eebc7d5134"},
+				}, nil
+			},
+		}
+		clustersMock := &mockClustersClient{
+			queryClusterFailures: func(ctx context.Context, in *analysispb.QueryClusterFailuresRequest) (*analysispb.QueryClusterFailuresResponse, error) {
+				return &analysispb.QueryClusterFailuresResponse{
+					Failures: []*analysispb.DistinctClusterFailure{
+						{
+							IngestedInvocationId: "build-8664210117733470913",
+							TestId:               "test_ci",
+							PartitionTime:        timestamppb.New(t1),
+							Count:                300,
+							BuildStatus:          analysispb.BuildStatus_BUILD_STATUS_SUCCESS,
+							Variant: &analysispb.Variant{Def: map[string]string{
+								"bucket":      "ci",
+								"builder":     "Linux Tests (dbg)(1)",
+								"device_type": "panther",
+								"os":          "Ubuntu-22.04",
+								"test_suite":  "browser_tests",
+							}},
+						},
+						{
+							IngestedInvocationId: "build-8664211401166861441",
+							TestId:               "test_try",
+							PartitionTime:        timestamppb.New(t2),
+							Count:                150,
+							BuildStatus:          analysispb.BuildStatus_BUILD_STATUS_FAILURE,
+							PresubmitRun: &analysispb.DistinctClusterFailure_PresubmitRun{
+								Mode: analysispb.PresubmitRunMode_DRY_RUN,
+							},
+							Changelists: []*analysispb.Changelist{
+								{Host: "chromium-review.googlesource.com", Change: 8844899, Patchset: 2},
+							},
+							Variant: &analysispb.Variant{Def: map[string]string{
+								"builder":    "linux-rel",
+								"os":         "Ubuntu-22.04",
+								"test_suite": "browser_tests",
+							}},
+						},
+					},
+				}, nil
+			},
+		}
+
+		report, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "576334984", "", "", "", "", "", nil, 3, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, report.TotalFailures, should.Equal(int64(450)))
+		assert.Loosely(t, report.PostsubmitFailures, should.Equal(int64(300)))
+		assert.Loosely(t, report.PresubmitFailures, should.Equal(int64(150)))
+
+		var buf bytes.Buffer
+		assert.Loosely(t, printClusterFailuresReport(&buf, report), should.BeNil)
+		out := buf.String()
+		assert.Loosely(t, out, should.ContainSubstring("Submission: postsubmit=300 (66.7%), presubmit=150 (33.3%)"))
+		assert.Loosely(t, out, should.ContainSubstring("bucket:            ci=300 (66.7%), (unset)=150 (33.3%)"))
+		assert.Loosely(t, out, should.ContainSubstring("device_type:       panther=300 (66.7%), (unset)=150 (33.3%)"))
+		assert.Loosely(t, out, should.ContainSubstring("[2026-11-20T11:00:00Z, count=150, build=FAILURE, presubmit]"))
+		assert.Loosely(t, out, should.ContainSubstring("variant: builder:Linux Tests (dbg)(1) test_suite:browser_tests os:Ubuntu-22.04 bucket:ci device_type:panther"))
+
+		// Generic "(unset)" filter works on any partially-populated variant key (e.g. bucket or device_type).
+		unsetOnly, err := fetchClusterFailures(ctx, rulesMock, clustersMock, "576334984", "", "", "", "", "", map[string]string{"device_type": "(unset)"}, 3, true)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, unsetOnly.TotalFailures, should.Equal(int64(150)))
+		assert.Loosely(t, unsetOnly.PresubmitFailures, should.Equal(int64(150)))
+		assert.Loosely(t, unsetOnly.PostsubmitFailures, should.Equal(int64(0)))
+		assert.Loosely(t, unsetOnly.Examples, should.HaveLength(1))
+		assert.Loosely(t, unsetOnly.Examples[0].InvocationID, should.Equal("build-8664211401166861441"))
+		var tryBuf bytes.Buffer
+		assert.Loosely(t, printClusterFailuresReport(&tryBuf, unsetOnly), should.BeNil)
+		assert.Loosely(t, tryBuf.String(), should.NotContainSubstring("Submission:"))
+		assert.Loosely(t, tryBuf.String(), should.ContainSubstring("[2026-11-20T11:00:00Z, count=150, build=FAILURE, presubmit]"))
+
+		// Projects without any bucket= key never get a fabricated bucket: dimension,
+		// and equal-count ties sort explicit values ahead of "(unset)".
+		tieDist := buildVariantDistribution([]*analysispb.DistinctClusterFailure{
+			{
+				Count:   10,
+				Variant: &analysispb.Variant{Def: map[string]string{"board": "vim3", "gpu": "mali"}},
+			},
+			{
+				Count:   10,
+				Variant: &analysispb.Variant{Def: map[string]string{"board": "vim3"}},
+			},
+		}, 20)
+		var gpuDim *variantDimensionSummary
+		for i := range tieDist {
+			assert.Loosely(t, tieDist[i].Key, should.NotEqual("bucket"))
+			if tieDist[i].Key == "gpu" {
+				gpuDim = &tieDist[i]
+			}
+		}
+		assert.Loosely(t, gpuDim, should.NotBeNil)
+		assert.Loosely(t, gpuDim.Values, should.HaveLength(2))
+		assert.Loosely(t, gpuDim.Values[0].Value, should.Equal("mali"))
+		assert.Loosely(t, gpuDim.Values[1].Value, should.Equal("(unset)"))
+	})
 }
 
 func TestSubcommandRunners(t *testing.T) {
