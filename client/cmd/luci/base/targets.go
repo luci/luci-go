@@ -25,6 +25,7 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -454,11 +455,55 @@ func ParseVerdictName(name string) (invName, variantHash, testIDRegexp string, m
 	return "", "", "", nil, errors.New("invalid verdict name format: could not parse test ID or case name")
 }
 
+// LegacySummaryReadMask returns a fresh FieldMask selecting ResultDB's default
+// QueryTestResults fields plus summary_html and test_metadata.name so legacy
+// 'verdict get' and 'test-result get' render Summary: and Test Name: without
+// decompressing heavy tags/properties on every row.
+func LegacySummaryReadMask() *fieldmaskpb.FieldMask {
+	return &fieldmaskpb.FieldMask{
+		Paths: []string{
+			"name",
+			"test_id",
+			"result_id",
+			"test_id_structured",
+			"variant",
+			"variant_hash",
+			"expected",
+			"status",
+			"status_v2",
+			"start_time",
+			"duration",
+			"failure_reason",
+			"skip_reason",
+			"skipped_reason",
+			"framework_extensions",
+			"summary_html",
+			"test_metadata.name",
+		},
+	}
+}
+
+// LegacyFullReadMask returns a fresh FieldMask selecting all TestResult fields
+// for legacy QueryTestResults requests (matching RootInvocation
+// TEST_VERDICT_VIEW_FULL parity when -show-metadata is requested).
+func LegacyFullReadMask() *fieldmaskpb.FieldMask {
+	return &fieldmaskpb.FieldMask{Paths: []string{"*"}}
+}
+
 // QueryVerdictResultsAndExonerations queries test results and exonerations for a verdict by invocation ID and test ID.
 // Defaults to querying as a root invocation using QueryTestVerdicts unless legacy is true.
+// For legacy invocations, uses ResultDB's lightweight default ReadMask; use
+// QueryVerdictResultsAndExonerationsWithMask when summary_html or metadata fields are needed.
 func QueryVerdictResultsAndExonerations(ctx context.Context, client rdbpb.ResultDBClient, invID, testID, variantHash string, legacy bool, maxFetch int) ([]*rdbpb.TestResult, []*rdbpb.TestExoneration, bool, error) {
+	return QueryVerdictResultsAndExonerationsWithMask(ctx, client, invID, testID, variantHash, legacy, maxFetch, nil)
+}
+
+// QueryVerdictResultsAndExonerationsWithMask queries test results and exonerations
+// for a verdict, applying legacyReadMask on legacy QueryTestResults requests
+// (ignored for RootInvocations, which always use TEST_VERDICT_VIEW_FULL).
+func QueryVerdictResultsAndExonerationsWithMask(ctx context.Context, client rdbpb.ResultDBClient, invID, testID, variantHash string, legacy bool, maxFetch int, legacyReadMask *fieldmaskpb.FieldMask) ([]*rdbpb.TestResult, []*rdbpb.TestExoneration, bool, error) {
 	if legacy {
-		return queryLegacyInvocationVerdicts(ctx, client, invID, testID, variantHash, maxFetch)
+		return queryLegacyInvocationVerdicts(ctx, client, invID, testID, variantHash, maxFetch, legacyReadMask)
 	}
 	return queryRootInvocationVerdicts(ctx, client, invID, testID, variantHash, maxFetch)
 }
@@ -582,7 +627,7 @@ func queryRootInvocationVerdicts(ctx context.Context, client rdbpb.ResultDBClien
 	return verdictResults, exList, hasMore, nil
 }
 
-func queryLegacyInvocationVerdicts(ctx context.Context, client rdbpb.ResultDBClient, invID, testID, variantHash string, maxFetch int) ([]*rdbpb.TestResult, []*rdbpb.TestExoneration, bool, error) {
+func queryLegacyInvocationVerdicts(ctx context.Context, client rdbpb.ResultDBClient, invID, testID, variantHash string, maxFetch int, readMask *fieldmaskpb.FieldMask) ([]*rdbpb.TestResult, []*rdbpb.TestExoneration, bool, error) {
 	legacyInvName := "invocations/" + NormalizeInvocation(invID)
 
 	var verdictResults []*rdbpb.TestResult
@@ -598,6 +643,7 @@ func queryLegacyInvocationVerdicts(ctx context.Context, client rdbpb.ResultDBCli
 			Invocations: []string{legacyInvName},
 			PageSize:    pageSize,
 			PageToken:   pageToken,
+			ReadMask:    readMask,
 		}
 		if testID != "" {
 			req.Predicate = &rdbpb.TestResultPredicate{

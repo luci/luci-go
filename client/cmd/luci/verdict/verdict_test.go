@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
@@ -1022,5 +1023,68 @@ func TestVerdictGetRunCountAndNotices(t *testing.T) {
 				assert.Loosely(t, errBuf.String(), should.ContainSubstring(`luci analysis test-history`))
 			})
 		})
+	})
+}
+
+func TestVerdictGetLegacyReadMask(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`verdictGetRun scopes QueryTestResults ReadMask on legacy invocations`, t, func(t *ftt.Test) {
+		props, _ := structpb.NewStruct(map[string]any{"retry_reason": "protocol_timeout"})
+		var gotMask []string
+		client := &mockAggResultDBClient{
+			getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+				return nil, status.Error(codes.NotFound, "not found")
+			},
+			queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+				gotMask = in.GetReadMask().GetPaths()
+				return &pb.QueryTestResultsResponse{
+					TestResults: []*pb.TestResult{
+						{
+							Name:        "invocations/task-1/tests/e2e%2Ftest/results/r1",
+							TestId:      "e2e/test",
+							ResultId:    "r1",
+							StatusV2:    pb.TestResult_FAILED,
+							SummaryHtml: "<pre>ProtocolError: Target.createBrowserContext timed out</pre>",
+							TestMetadata: &pb.TestMetadata{
+								Name: "e2e/test.ts: creates browser context",
+								Location: &pb.TestLocation{
+									FileName: "//test/e2e/test.ts",
+									Line:     42,
+								},
+							},
+							Tags: []*pb.StringPair{
+								{Key: "test_suite", Value: "e2e_non_hosted"},
+							},
+							Properties: props,
+						},
+					},
+				}, nil
+			},
+		}
+
+		// Default: uses LegacySummaryReadMask and renders Test Name and Summary.
+		var defaultBuf bytes.Buffer
+		defaultRun := GetCmd(nil).CommandRun().(*verdictGetRun)
+		defaultRun.client = client
+		defaultRun.out = &defaultBuf
+		assert.Loosely(t, defaultRun.Run(nil, []string{"-invocationid", "build-8665163162942747409", "-testid", "e2e/test"}, nil), should.Equal(0))
+		assert.Loosely(t, gotMask, should.Resemble(base.LegacySummaryReadMask().GetPaths()))
+		assert.Loosely(t, defaultBuf.String(), should.ContainSubstring("Test Name:    e2e/test.ts: creates browser context"))
+		assert.Loosely(t, defaultBuf.String(), should.ContainSubstring("ProtocolError: Target.createBrowserContext timed out"))
+
+		// With -show-metadata: uses LegacyFullReadMask (["*"]) and renders Location, Tags, and Properties.
+		var metaBuf bytes.Buffer
+		metaRun := GetCmd(nil).CommandRun().(*verdictGetRun)
+		metaRun.client = client
+		metaRun.out = &metaBuf
+		assert.Loosely(t, metaRun.Run(nil, []string{"-invocationid", "build-8665163162942747409", "-testid", "e2e/test", "-show-metadata"}, nil), should.Equal(0))
+		assert.Loosely(t, gotMask, should.Resemble([]string{"*"}))
+		out := metaBuf.String()
+		assert.Loosely(t, out, should.ContainSubstring("//test/e2e/test.ts"))
+		assert.Loosely(t, out, should.ContainSubstring("test_suite: e2e_non_hosted"))
+		assert.Loosely(t, out, should.ContainSubstring("Properties:"))
+		assert.Loosely(t, out, should.ContainSubstring(`"retry_reason"`))
+		assert.Loosely(t, out, should.ContainSubstring(`"protocol_timeout"`))
 	})
 }

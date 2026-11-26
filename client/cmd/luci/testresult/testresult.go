@@ -25,6 +25,7 @@ import (
 	"sync"
 
 	"github.com/maruel/subcommands"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/client/cmd/luci/artifact"
 	"go.chromium.org/luci/client/cmd/luci/base"
@@ -119,7 +120,11 @@ type testResultGetRun struct {
 
 // FetchTestResult fetches a test result by its decomposed IDs.
 func FetchTestResult(ctx context.Context, client pb.ResultDBClient, invID, testID, resultID string, legacy bool) (*pb.TestResult, error) {
-	results, _, _, err := verdict.QueryVerdictResultsAndExonerations(ctx, client, invID, testID, "", legacy, 0)
+	return fetchTestResultWithMask(ctx, client, invID, testID, resultID, legacy, base.LegacyFullReadMask())
+}
+
+func fetchTestResultWithMask(ctx context.Context, client pb.ResultDBClient, invID, testID, resultID string, legacy bool, legacyReadMask *fieldmaskpb.FieldMask) (*pb.TestResult, error) {
+	results, _, _, err := base.QueryVerdictResultsAndExonerationsWithMask(ctx, client, invID, testID, "", legacy, 0, legacyReadMask)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +193,11 @@ func (r *testResultGetRun) Run(a subcommands.Application, args []string, env sub
 		extracted.Legacy = legacy
 	}
 
-	res, err := FetchTestResult(ctx, client, invID, r.testID, r.resultID, legacy)
+	readMask := base.LegacySummaryReadMask()
+	if r.showMetadata {
+		readMask = base.LegacyFullReadMask()
+	}
+	res, err := fetchTestResultWithMask(ctx, client, invID, r.testID, r.resultID, legacy, readMask)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to get test result: %s\n", err)
 		return 1

@@ -234,7 +234,11 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		fetchLimit = max(r.maxResults, verdictRunCountFetchLimit)
 	}
 
-	allResults, exList, fetchHasMore, err := QueryVerdictResultsAndExonerations(ctx, client, invID, r.testID, r.variantHash, legacy, fetchLimit)
+	readMask := base.LegacySummaryReadMask()
+	if r.showMetadata {
+		readMask = base.LegacyFullReadMask()
+	}
+	allResults, exList, fetchHasMore, err := base.QueryVerdictResultsAndExonerationsWithMask(ctx, client, invID, r.testID, r.variantHash, legacy, fetchLimit, readMask)
 	if err != nil {
 		fmt.Fprintf(errOut, "failed to query verdict: %s\n", err)
 		return 1
