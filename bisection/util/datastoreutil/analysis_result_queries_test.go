@@ -59,6 +59,64 @@ func TestGetBuild(t *testing.T) {
 	})
 }
 
+func TestBuilds(t *testing.T) {
+	t.Parallel()
+
+	newBuild := func(id int64, builder string) *model.LuciFailedBuild {
+		return &model.LuciFailedBuild{
+			Id: id,
+			LuciBuild: model.LuciBuild{
+				Project: "chromium",
+				Bucket:  "ci",
+				Builder: builder,
+			},
+		}
+	}
+
+	tests := []struct {
+		name         string
+		bbids        []int64
+		want         map[int64]*model.LuciFailedBuild
+		wantGetMulti int64
+	}{
+		{
+			name: "empty_input",
+			want: map[int64]*model.LuciFailedBuild{},
+		},
+		{
+			name:  "deduplicated_batch_fetch",
+			bbids: []int64{201, 202, 201},
+			want: map[int64]*model.LuciFailedBuild{
+				201: newBuild(201, "builder-1"),
+				202: newBuild(202, "builder-2"),
+			},
+			wantGetMulti: 1,
+		},
+		{
+			name:  "missing_builds_omitted",
+			bbids: []int64{201, 999, 202},
+			want: map[int64]*model.LuciFailedBuild{
+				201: newBuild(201, "builder-1"),
+				202: newBuild(202, "builder-2"),
+			},
+			wantGetMulti: 1,
+		},
+	}
+
+	for _, tc := range tests {
+		ftt.Run(tc.name, t, func(t *ftt.Test) {
+			c := memory.Use(t.Context())
+			assert.Loosely(t, datastore.Put(c, newBuild(201, "builder-1"), newBuild(202, "builder-2")), should.BeNil)
+
+			countedCtx, counter := count.FilterRDS(c)
+			builds, err := Builds(countedCtx, tc.bbids)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, builds, should.Match(tc.want))
+			assert.Loosely(t, counter.GetMulti.Total(), should.Equal(tc.wantGetMulti))
+		})
+	}
+}
+
 func TestGetAnalysisForBuild(t *testing.T) {
 	t.Parallel()
 	c := memory.Use(context.Background())
@@ -252,6 +310,54 @@ func TestGetSuspectForNthSectionAnalysis(t *testing.T) {
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, suspect, should.NotBeNil)
 		assert.Loosely(t, suspect.Id, should.Equal(123))
+	})
+
+	ftt.Run("direct_get_by_suspect_key", t, func(t *ftt.Test) {
+		c := memory.Use(t.Context())
+		testutil.UpdateIndices(c)
+
+		nthSectionAnalysis := &model.CompileNthSectionAnalysis{}
+		assert.Loosely(t, datastore.Put(c, nthSectionAnalysis), should.BeNil)
+		suspect := &model.Suspect{
+			ParentAnalysis: datastore.KeyForObj(c, nthSectionAnalysis),
+			Id:             456,
+		}
+		assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+		nthSectionAnalysis.Suspect = datastore.KeyForObj(c, suspect)
+		assert.Loosely(t, datastore.Put(c, nthSectionAnalysis), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		countedCtx, counter := count.FilterRDS(c)
+		got, err := GetSuspectForNthSectionAnalysis(countedCtx, nthSectionAnalysis)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, got, should.NotBeNil)
+		assert.Loosely(t, got.Id, should.Equal(456))
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
+		assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(0)))
+	})
+
+	ftt.Run("dangling_suspect_key", t, func(t *ftt.Test) {
+		c := memory.Use(t.Context())
+		testutil.UpdateIndices(c)
+
+		nthSectionAnalysis := &model.CompileNthSectionAnalysis{}
+		assert.Loosely(t, datastore.Put(c, nthSectionAnalysis), should.BeNil)
+		// Store a different child Suspect under nthSectionAnalysis to verify
+		// GetSuspectForNthSectionAnalysis does not fall back to an ancestor query.
+		otherChildSuspect := &model.Suspect{
+			ParentAnalysis: datastore.KeyForObj(c, nthSectionAnalysis),
+			Id:             456,
+		}
+		assert.Loosely(t, datastore.Put(c, otherChildSuspect), should.BeNil)
+		nthSectionAnalysis.Suspect = datastore.NewKey(c, "Suspect", "", 9999, datastore.KeyForObj(c, nthSectionAnalysis))
+		datastore.GetTestable(c).CatchupIndexes()
+
+		countedCtx, counter := count.FilterRDS(c)
+		got, err := GetSuspectForNthSectionAnalysis(countedCtx, nthSectionAnalysis)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, got, should.BeNil)
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
+		assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(0)))
 	})
 }
 

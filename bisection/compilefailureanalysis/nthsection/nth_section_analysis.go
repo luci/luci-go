@@ -344,15 +344,21 @@ func setStatusError(c context.Context, nsa *model.CompileNthSectionAnalysis) {
 	}
 }
 
+// CreateSnapshot creates a snapshot of the nthsection analysis state.
 func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSectionAnalysis) (*nthsectionsnapshot.Snapshot, error) {
-	// Get all reruns for the current analysis
-	// This should contain all reruns for nth section and culprit verification
+	// Get all reruns for the current analysis.
+	// This should contain all reruns for nth section and culprit verification.
 	q := datastore.NewQuery("SingleRerun").Eq("analysis", nthSectionAnalysis.ParentAnalysis).Order("start_time")
 	reruns, err := datastore.RunQuery[*model.SingleRerun](c, q).AsSlice()
 	if err != nil {
 		return nil, errors.Fmt("getting all reruns: %w", err)
 	}
+	return CreateSnapshotWithReruns(nthSectionAnalysis, reruns), nil
+}
 
+// CreateSnapshotWithReruns creates a snapshot of the nthsection analysis state
+// from pre-fetched reruns ordered by start time.
+func CreateSnapshotWithReruns(nthSectionAnalysis *model.CompileNthSectionAnalysis, reruns []*model.SingleRerun) *nthsectionsnapshot.Snapshot {
 	snapshot := &nthsectionsnapshot.Snapshot{
 		BlameList:      nthSectionAnalysis.BlameList,
 		Runs:           []*nthsectionsnapshot.Run{},
@@ -383,5 +389,5 @@ func CreateSnapshot(c context.Context, nthSectionAnalysis *model.CompileNthSecti
 			})
 		}
 	}
-	return snapshot, nil
+	return snapshot
 }

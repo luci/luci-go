@@ -43,6 +43,49 @@ func GetBuild(c context.Context, bbid int64) (*model.LuciFailedBuild, error) {
 	return build, nil
 }
 
+// Builds returns the failed builds in the datastore for the given
+// Buildbucket IDs in a single batched Datastore call.
+// Missing builds are omitted from the returned map.
+func Builds(c context.Context, bbids []int64) (map[int64]*model.LuciFailedBuild, error) {
+	seen := make(map[int64]struct{}, len(bbids))
+	builds := make([]*model.LuciFailedBuild, 0, len(bbids))
+	for _, bbid := range bbids {
+		if _, ok := seen[bbid]; ok {
+			continue
+		}
+		seen[bbid] = struct{}{}
+		builds = append(builds, &model.LuciFailedBuild{Id: bbid})
+	}
+	if len(builds) == 0 {
+		return map[int64]*model.LuciFailedBuild{}, nil
+	}
+
+	if err := datastore.Get(c, builds); err != nil {
+		var merr errors.MultiError
+		if !errors.As(err, &merr) || len(merr) != len(builds) {
+			return nil, err
+		}
+		result := make(map[int64]*model.LuciFailedBuild, len(builds))
+		for i, me := range merr {
+			switch {
+			case me == nil:
+				result[builds[i].Id] = builds[i]
+			case errors.Is(me, datastore.ErrNoSuchEntity):
+				// Missing builds are omitted, matching GetBuild returning (nil, nil).
+			default:
+				return nil, me
+			}
+		}
+		return result, nil
+	}
+
+	result := make(map[int64]*model.LuciFailedBuild, len(builds))
+	for _, build := range builds {
+		result[build.Id] = build
+	}
+	return result, nil
+}
+
 // GetAnalysisForBuild returns the failure analysis associated with the given Buildbucket ID
 // Note: if the build or its analysis is not found, this will return (nil, nil)
 func GetAnalysisForBuild(c context.Context, bbid int64) (*model.CompileFailureAnalysis, error) {
@@ -127,6 +170,20 @@ func GetSuspectsForGenAIAnalysis(c context.Context, genaiAnalysis *model.Compile
 
 // GetSuspectForNthSectionAnalysis returns the suspect identified by the given nthsection analysis
 func GetSuspectForNthSectionAnalysis(c context.Context, nthsectionAnalysis *model.CompileNthSectionAnalysis) (*model.Suspect, error) {
+	if nthsectionAnalysis.Suspect != nil {
+		suspect := &model.Suspect{
+			Id:             nthsectionAnalysis.Suspect.IntID(),
+			ParentAnalysis: nthsectionAnalysis.Suspect.Parent(),
+		}
+		switch err := datastore.Get(c, suspect); {
+		case err == nil:
+			return suspect, nil
+		case errors.Is(err, datastore.ErrNoSuchEntity):
+			return nil, nil
+		default:
+			return nil, err
+		}
+	}
 	// Getting the suspects for nthsection analysis
 	q := datastore.NewQuery("Suspect").Ancestor(datastore.KeyForObj(c, nthsectionAnalysis))
 	suspects, err := datastore.RunQuery[*model.Suspect](c, q).AsSlice()
@@ -136,7 +193,7 @@ func GetSuspectForNthSectionAnalysis(c context.Context, nthsectionAnalysis *mode
 	if len(suspects) == 0 {
 		return nil, nil
 	}
-	if len(suspects) > 0 {
+	if len(suspects) > 1 {
 		logging.Warningf(c, "nthsectionAnalysis has more than 1 suspect %d", len(suspects))
 	}
 	return suspects[0], nil

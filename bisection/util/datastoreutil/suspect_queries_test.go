@@ -16,6 +16,7 @@ package datastoreutil
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 
@@ -322,6 +324,62 @@ func TestFetchSuspectsForAnalysis(t *testing.T) {
 		suspects, err = FetchSuspectsForAnalysis(c, cfa)
 		assert.Loosely(t, err, should.BeNil)
 		assert.Loosely(t, len(suspects), should.Equal(2))
+	})
+}
+
+func TestSuspectsForAnalysis(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("empty_result", t, func(t *ftt.Test) {
+		c := memory.Use(t.Context())
+		testutil.UpdateIndices(c)
+
+		cfa := &model.CompileFailureAnalysis{Id: 1001}
+		otherCFA := &model.CompileFailureAnalysis{Id: 1002}
+		assert.Loosely(t, datastore.Put(c, cfa, otherCFA), should.BeNil)
+		otherGenAI := &model.CompileGenAIAnalysis{ParentAnalysis: datastore.KeyForObj(c, otherCFA)}
+		assert.Loosely(t, datastore.Put(c, otherGenAI), should.BeNil)
+		assert.Loosely(t, datastore.Put(c, &model.Suspect{Id: 12, ParentAnalysis: datastore.KeyForObj(c, otherGenAI)}), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		countedCtx, counter := count.FilterRDS(c)
+		suspects, err := SuspectsForAnalysis(countedCtx, cfa)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, suspects, should.BeEmpty)
+		assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(1)))
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(0)))
+	})
+
+	ftt.Run("returns_only_target_analysis_suspects", t, func(t *ftt.Test) {
+		c := memory.Use(t.Context())
+		testutil.UpdateIndices(c)
+
+		cfa1 := &model.CompileFailureAnalysis{Id: 1001}
+		cfa2 := &model.CompileFailureAnalysis{Id: 1002}
+		assert.Loosely(t, datastore.Put(c, cfa1, cfa2), should.BeNil)
+
+		genai := &model.CompileGenAIAnalysis{ParentAnalysis: datastore.KeyForObj(c, cfa1)}
+		nsa := &model.CompileNthSectionAnalysis{ParentAnalysis: datastore.KeyForObj(c, cfa1)}
+		otherGenai := &model.CompileGenAIAnalysis{ParentAnalysis: datastore.KeyForObj(c, cfa2)}
+		assert.Loosely(t, datastore.Put(c, genai, nsa, otherGenai), should.BeNil)
+
+		genaiSuspect := &model.Suspect{Id: 10, ParentAnalysis: datastore.KeyForObj(c, genai)}
+		nsaSuspect := &model.Suspect{Id: 11, ParentAnalysis: datastore.KeyForObj(c, nsa)}
+		otherSuspect := &model.Suspect{Id: 12, ParentAnalysis: datastore.KeyForObj(c, otherGenai)}
+		assert.Loosely(t, datastore.Put(c, genaiSuspect, nsaSuspect, otherSuspect), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		countedCtx, counter := count.FilterRDS(c)
+		suspects, err := SuspectsForAnalysis(countedCtx, cfa1)
+		assert.Loosely(t, err, should.BeNil)
+		gotIDs := make([]int64, len(suspects))
+		for i, s := range suspects {
+			gotIDs[i] = s.Id
+		}
+		slices.Sort(gotIDs)
+		assert.Loosely(t, gotIDs, should.Match([]int64{10, 11}))
+		assert.Loosely(t, counter.RunQuery.Total(), should.Equal(int64(1)))
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(0)))
 	})
 }
 

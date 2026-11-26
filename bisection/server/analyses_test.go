@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/common/testing/ftt"
 	"go.chromium.org/luci/common/testing/truth/assert"
 	"go.chromium.org/luci/common/testing/truth/should"
+	"go.chromium.org/luci/gae/filter/count"
 	"go.chromium.org/luci/gae/impl/memory"
 	"go.chromium.org/luci/gae/service/datastore"
 	"go.chromium.org/luci/server/secrets"
@@ -757,6 +758,507 @@ func TestListAnalyses(t *testing.T) {
 				})
 			})
 		})
+	})
+}
+
+func TestGetAnalysisResultDatastoreQueries(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("rich_analysis_reuses_suspects_and_reruns", t, func(t *ftt.Test) {
+		c := memory.Use(t.Context())
+		testutil.UpdateIndices(c)
+
+		failedBuild := &model.LuciFailedBuild{
+			Id: 5001,
+			LuciBuild: model.LuciBuild{
+				Project: "chromium",
+				Bucket:  "ci",
+				Builder: "linux-rel",
+			},
+			BuildFailureType: pb.BuildFailureType_COMPILE,
+		}
+		assert.Loosely(t, datastore.Put(c, failedBuild), should.BeNil)
+
+		compileFailure := &model.CompileFailure{
+			Id:    5001,
+			Build: datastore.KeyForObj(c, failedBuild),
+		}
+		assert.Loosely(t, datastore.Put(c, compileFailure), should.BeNil)
+
+		cfa := &model.CompileFailureAnalysis{
+			Id:             6001,
+			Project:        "chromium",
+			CompileFailure: datastore.KeyForObj(c, compileFailure),
+			Status:         pb.AnalysisStatus_FOUND,
+			RunStatus:      pb.AnalysisRunStatus_ENDED,
+			CreateTime:     time.Unix(100, 0).UTC(),
+			EndTime:        time.Unix(500, 0).UTC(),
+			InitialRegressionRange: &pb.RegressionRange{
+				FirstFailed: &buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "refs/heads/main",
+					Id:      "commit0",
+				},
+				LastPassed: &buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "refs/heads/main",
+					Id:      "commit9",
+				},
+			},
+		}
+		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
+
+		genaiAnalysis := &model.CompileGenAIAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+			Status:         pb.AnalysisStatus_FOUND,
+			RunStatus:      pb.AnalysisRunStatus_ENDED,
+			StartTime:      time.Unix(110, 0).UTC(),
+			EndTime:        time.Unix(120, 0).UTC(),
+		}
+		nsa := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+			Status:         pb.AnalysisStatus_FOUND,
+			RunStatus:      pb.AnalysisRunStatus_ENDED,
+			StartTime:      time.Unix(110, 0).UTC(),
+			EndTime:        time.Unix(200, 0).UTC(),
+			BlameList:      testutil.CreateBlamelist(10),
+		}
+		assert.Loosely(t, datastore.Put(c, genaiAnalysis, nsa), should.BeNil)
+
+		genaiSuspectRerunBuild := &model.CompileRerunBuild{Id: 9001}
+		genaiParentRerunBuild := &model.CompileRerunBuild{Id: 9002}
+		nsaSuspectRerunBuild := &model.CompileRerunBuild{Id: 9003}
+		nsaParentRerunBuild := &model.CompileRerunBuild{Id: 9004}
+		nsaBisectRerunBuild := &model.CompileRerunBuild{Id: 9005}
+		assert.Loosely(t, datastore.Put(
+			c,
+			genaiSuspectRerunBuild,
+			genaiParentRerunBuild,
+			nsaSuspectRerunBuild,
+			nsaParentRerunBuild,
+			nsaBisectRerunBuild,
+		), should.BeNil)
+
+		genaiSuspect := &model.Suspect{
+			Type: model.SuspectType_GenAI,
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "commit5",
+			},
+			ReviewUrl:          "https://review/genai",
+			ReviewTitle:        "GenAI CL",
+			Justification:      "Modified failing file",
+			Score:              9,
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			ParentAnalysis:     datastore.KeyForObj(c, genaiAnalysis),
+			SuspectRerunBuild:  datastore.KeyForObj(c, genaiSuspectRerunBuild),
+			ParentRerunBuild:   datastore.KeyForObj(c, genaiParentRerunBuild),
+		}
+		nsaSuspect := &model.Suspect{
+			Type: model.SuspectType_NthSection,
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "commit4",
+			},
+			ReviewUrl:          "https://review/nsa",
+			ReviewTitle:        "NthSection CL",
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			ParentAnalysis:     datastore.KeyForObj(c, nsa),
+			SuspectRerunBuild:  datastore.KeyForObj(c, nsaSuspectRerunBuild),
+			ParentRerunBuild:   datastore.KeyForObj(c, nsaParentRerunBuild),
+		}
+		assert.Loosely(t, datastore.Put(c, genaiSuspect, nsaSuspect), should.BeNil)
+
+		nsa.Suspect = datastore.KeyForObj(c, nsaSuspect)
+		cfa.VerifiedCulprits = []*datastore.Key{
+			datastore.KeyForObj(c, genaiSuspect),
+			datastore.KeyForObj(c, nsaSuspect),
+		}
+		assert.Loosely(t, datastore.Put(c, nsa, cfa), should.BeNil)
+
+		// Put two SingleReruns for genaiSuspectRerunBuild to verify the latest
+		// start_time wins (matching GetLastRerunForRerunBuild).
+		reruns := []*model.SingleRerun{
+			{
+				Analysis:   datastore.KeyForObj(c, cfa),
+				Suspect:    datastore.KeyForObj(c, genaiSuspect),
+				RerunBuild: datastore.KeyForObj(c, genaiSuspectRerunBuild),
+				Status:     pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "refs/heads/main",
+					Id:      "commit5",
+				},
+				StartTime: time.Unix(200, 0).UTC(),
+				EndTime:   time.Unix(210, 0).UTC(),
+				Type:      model.RerunBuildType_CulpritVerification,
+			},
+			{
+				Analysis:   datastore.KeyForObj(c, cfa),
+				Suspect:    datastore.KeyForObj(c, genaiSuspect),
+				RerunBuild: datastore.KeyForObj(c, genaiSuspectRerunBuild),
+				Status:     pb.RerunStatus_RERUN_STATUS_FAILED,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "refs/heads/main",
+					Id:      "commit5",
+				},
+				StartTime: time.Unix(220, 0).UTC(),
+				EndTime:   time.Unix(230, 0).UTC(),
+				Type:      model.RerunBuildType_CulpritVerification,
+			},
+			{
+				Analysis:   datastore.KeyForObj(c, cfa),
+				Suspect:    datastore.KeyForObj(c, genaiSuspect),
+				RerunBuild: datastore.KeyForObj(c, genaiParentRerunBuild),
+				Status:     pb.RerunStatus_RERUN_STATUS_PASSED,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "refs/heads/main",
+					Id:      "commit6",
+				},
+				StartTime: time.Unix(240, 0).UTC(),
+				EndTime:   time.Unix(250, 0).UTC(),
+				Type:      model.RerunBuildType_CulpritVerification,
+			},
+			{
+				Analysis:   datastore.KeyForObj(c, cfa),
+				Suspect:    datastore.KeyForObj(c, nsaSuspect),
+				RerunBuild: datastore.KeyForObj(c, nsaSuspectRerunBuild),
+				Status:     pb.RerunStatus_RERUN_STATUS_FAILED,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "refs/heads/main",
+					Id:      "commit4",
+				},
+				StartTime: time.Unix(260, 0).UTC(),
+				EndTime:   time.Unix(270, 0).UTC(),
+				Type:      model.RerunBuildType_CulpritVerification,
+			},
+			{
+				Analysis:   datastore.KeyForObj(c, cfa),
+				Suspect:    datastore.KeyForObj(c, nsaSuspect),
+				RerunBuild: datastore.KeyForObj(c, nsaParentRerunBuild),
+				Status:     pb.RerunStatus_RERUN_STATUS_PASSED,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "refs/heads/main",
+					Id:      "commit5",
+				},
+				StartTime: time.Unix(280, 0).UTC(),
+				EndTime:   time.Unix(290, 0).UTC(),
+				Type:      model.RerunBuildType_CulpritVerification,
+			},
+			{
+				Analysis:           datastore.KeyForObj(c, cfa),
+				NthSectionAnalysis: datastore.KeyForObj(c, nsa),
+				RerunBuild:         datastore.KeyForObj(c, nsaBisectRerunBuild),
+				Status:             pb.RerunStatus_RERUN_STATUS_PASSED,
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "host1",
+					Project: "proj1",
+					Ref:     "refs/heads/main",
+					Id:      "commit8",
+				},
+				StartTime: time.Unix(300, 0).UTC(),
+				EndTime:   time.Unix(310, 0).UTC(),
+				Type:      model.RerunBuildType_NthSection,
+			},
+		}
+		assert.Loosely(t, datastore.Put(c, reruns), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		countedCtx, counter := count.FilterRDS(c)
+		res, err := GetAnalysisResult(countedCtx, cfa)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.Builder, should.Match(&buildbucketpb.BuilderID{
+			Project: "chromium",
+			Bucket:  "ci",
+			Builder: "linux-rel",
+		}))
+		assert.Loosely(t, res.BuildFailureType, should.Equal(pb.BuildFailureType_COMPILE))
+		assert.Loosely(t, res.GenAiResult, should.NotBeNil)
+		assert.Loosely(t, res.GenAiResult.Suspect, should.NotBeNil)
+		assert.Loosely(t, res.GenAiResult.Suspect.VerificationDetails.SuspectRerun.RerunResult.RerunStatus,
+			should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
+		assert.Loosely(t, res.GenAiResult.Suspect.VerificationDetails.SuspectRerun.StartTime.AsTime(),
+			should.Match(time.Unix(220, 0).UTC()))
+		assert.Loosely(t, len(res.Culprits), should.Equal(2))
+		assert.Loosely(t, res.Culprits[0].ReviewUrl, should.Equal("https://review/genai"))
+		assert.Loosely(t, res.Culprits[0].VerificationDetails.SuspectRerun.Bbid, should.Equal(9001))
+		assert.Loosely(t, res.Culprits[0].VerificationDetails.ParentRerun.Bbid, should.Equal(9002))
+		assert.Loosely(t, res.Culprits[1].ReviewUrl, should.Equal("https://review/nsa"))
+		assert.Loosely(t, res.Culprits[1].VerificationDetails.SuspectRerun.Bbid, should.Equal(9003))
+		assert.Loosely(t, res.Culprits[1].VerificationDetails.ParentRerun.Bbid, should.Equal(9004))
+		assert.Loosely(t, res.NthSectionResult, should.NotBeNil)
+		assert.Loosely(t, res.NthSectionResult.Suspect, should.NotBeNil)
+		assert.Loosely(t, res.NthSectionResult.Suspect.ReviewUrl, should.Equal("https://review/nsa"))
+		assert.Loosely(t, res.NthSectionResult.Suspect.VerificationDetails.SuspectRerun.Bbid, should.Equal(9003))
+		assert.Loosely(t, len(res.NthSectionResult.Reruns), should.Equal(6))
+
+		// At most 1 GetMulti (LuciFailedBuild) + 4 RunQuery (GenAI, NthSection, Suspects, SingleReruns).
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
+		assert.Loosely(t, counter.RunQuery.Total(), should.BeLessThanOrEqual(int64(4)))
+	})
+
+	ftt.Run("fallback_mixed_culprits_external_nsa_suspect_and_uncached_rerun", t, func(t *ftt.Test) {
+		c := memory.Use(t.Context())
+		testutil.UpdateIndices(c)
+
+		otherAnalysis := &model.CompileFailureAnalysis{Id: 7000}
+		cfa := &model.CompileFailureAnalysis{
+			Id:         7001,
+			Project:    "chromium",
+			CreateTime: time.Unix(100, 0).UTC(),
+			InitialRegressionRange: &pb.RegressionRange{
+				FirstFailed: &buildbucketpb.GitilesCommit{Host: "host1", Project: "proj1", Ref: "refs/heads/main", Id: "commit0"},
+				LastPassed:  &buildbucketpb.GitilesCommit{Host: "host1", Project: "proj1", Ref: "refs/heads/main", Id: "commit3"},
+			},
+		}
+		assert.Loosely(t, datastore.Put(c, otherAnalysis, cfa), should.BeNil)
+
+		localGenAI := &model.CompileGenAIAnalysis{ParentAnalysis: datastore.KeyForObj(c, cfa)}
+		otherGenAI := &model.CompileGenAIAnalysis{ParentAnalysis: datastore.KeyForObj(c, otherAnalysis)}
+		otherNSA := &model.CompileNthSectionAnalysis{ParentAnalysis: datastore.KeyForObj(c, otherAnalysis)}
+		nsa := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+			Status:         pb.AnalysisStatus_FOUND,
+			BlameList:      testutil.CreateBlamelist(4),
+		}
+		assert.Loosely(t, datastore.Put(c, localGenAI, otherGenAI, otherNSA, nsa), should.BeNil)
+
+		// Do not store CompileRerunBuild in Datastore to confirm the cache-miss
+		// fallback matches cache hits by not fetching CompileRerunBuild.
+		rerunBuildKey := datastore.MakeKey(c, "CompileRerunBuild", 9101)
+		// SingleRerun belongs to otherAnalysis, so it misses cfa's rerun cache.
+		singleRerun := &model.SingleRerun{
+			Analysis:   datastore.KeyForObj(c, otherAnalysis),
+			RerunBuild: rerunBuildKey,
+			Status:     pb.RerunStatus_RERUN_STATUS_FAILED,
+			StartTime:  time.Unix(150, 0).UTC(),
+			EndTime:    time.Unix(160, 0).UTC(),
+			GitilesCommit: buildbucketpb.GitilesCommit{
+				Host:    "host1",
+				Project: "proj1",
+				Id:      "commit-ext",
+			},
+		}
+		assert.Loosely(t, datastore.Put(c, singleRerun), should.BeNil)
+
+		extSuspect1 := &model.Suspect{
+			ParentAnalysis:     datastore.KeyForObj(c, otherGenAI),
+			ReviewUrl:          "https://review/external-1",
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+			SuspectRerunBuild:  rerunBuildKey,
+		}
+		localSuspect := &model.Suspect{
+			ParentAnalysis:     datastore.KeyForObj(c, localGenAI),
+			ReviewUrl:          "https://review/local",
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+		}
+		extSuspect2 := &model.Suspect{
+			ParentAnalysis:     datastore.KeyForObj(c, otherGenAI),
+			ReviewUrl:          "https://review/external-2",
+			VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+		}
+		extNSASuspect := &model.Suspect{
+			ParentAnalysis:     datastore.KeyForObj(c, otherNSA),
+			ReviewUrl:          "https://review/external-nsa",
+			VerificationStatus: model.SuspectVerificationStatus_Vindicated,
+		}
+		assert.Loosely(t, datastore.Put(c, extSuspect1, localSuspect, extSuspect2, extNSASuspect), should.BeNil)
+
+		// Interleave external and cached suspects to verify VerifiedCulprits ordering.
+		cfa.VerifiedCulprits = []*datastore.Key{
+			datastore.KeyForObj(c, extSuspect1),
+			datastore.KeyForObj(c, localSuspect),
+			datastore.KeyForObj(c, extSuspect2),
+		}
+		nsa.Suspect = datastore.KeyForObj(c, extNSASuspect)
+		assert.Loosely(t, datastore.Put(c, cfa, nsa), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		res, err := GetAnalysisResult(c, cfa)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(res.Culprits), should.Equal(3))
+		assert.Loosely(t, res.Culprits[0].ReviewUrl, should.Equal("https://review/external-1"))
+		assert.Loosely(t, res.Culprits[0].VerificationDetails.SuspectRerun.Bbid, should.Equal(9101))
+		assert.Loosely(t, res.Culprits[0].VerificationDetails.SuspectRerun.RerunResult.RerunStatus,
+			should.Equal(pb.RerunStatus_RERUN_STATUS_FAILED))
+		assert.Loosely(t, res.Culprits[1].ReviewUrl, should.Equal("https://review/local"))
+		assert.Loosely(t, res.Culprits[2].ReviewUrl, should.Equal("https://review/external-2"))
+		assert.Loosely(t, res.NthSectionResult, should.NotBeNil)
+		assert.Loosely(t, res.NthSectionResult.Suspect, should.NotBeNil)
+		assert.Loosely(t, res.NthSectionResult.Suspect.ReviewUrl, should.Equal("https://review/external-nsa"))
+	})
+
+	ftt.Run("nthsection_nil_suspect_key_uses_parent_lookup", t, func(t *ftt.Test) {
+		c := memory.Use(t.Context())
+		testutil.UpdateIndices(c)
+
+		cfa := &model.CompileFailureAnalysis{
+			Id:         7002,
+			Project:    "chromium",
+			CreateTime: time.Unix(100, 0).UTC(),
+			InitialRegressionRange: &pb.RegressionRange{
+				FirstFailed: &buildbucketpb.GitilesCommit{Host: "host1", Project: "proj1", Ref: "refs/heads/main", Id: "commit0"},
+				LastPassed:  &buildbucketpb.GitilesCommit{Host: "host1", Project: "proj1", Ref: "refs/heads/main", Id: "commit3"},
+			},
+		}
+		assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
+
+		nsa := &model.CompileNthSectionAnalysis{
+			ParentAnalysis: datastore.KeyForObj(c, cfa),
+			Status:         pb.AnalysisStatus_FOUND,
+			BlameList:      testutil.CreateBlamelist(4),
+			// Leave Suspect nil to exercise the suspectsByParent lookup branch.
+		}
+		assert.Loosely(t, datastore.Put(c, nsa), should.BeNil)
+
+		nsaSuspect := &model.Suspect{
+			Type:               model.SuspectType_NthSection,
+			ParentAnalysis:     datastore.KeyForObj(c, nsa),
+			ReviewUrl:          "https://review/nsa-child",
+			VerificationStatus: model.SuspectVerificationStatus_Unverified,
+		}
+		assert.Loosely(t, datastore.Put(c, nsaSuspect), should.BeNil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		countedCtx, counter := count.FilterRDS(c)
+		res, err := GetAnalysisResult(countedCtx, cfa)
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, res.NthSectionResult, should.NotBeNil)
+		assert.Loosely(t, res.NthSectionResult.Suspect, should.NotBeNil)
+		assert.Loosely(t, res.NthSectionResult.Suspect.ReviewUrl, should.Equal("https://review/nsa-child"))
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(0)))
+		assert.Loosely(t, counter.RunQuery.Total(), should.BeLessThanOrEqual(int64(4)))
+	})
+}
+
+func TestListAnalysesDatastoreQueries(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("batched_builds_and_bounded_rpcs", t, func(t *ftt.Test) {
+		c := memory.Use(t.Context())
+		c = secrets.GeneratePrimaryTinkAEADForTest(c)
+		testutil.UpdateIndices(c)
+		server := &AnalysesServer{ACL: mockCheckAccessAnalyses}
+
+		putFixture := func(analysisID, bbid, rerunBBID int64, createSec int64, reviewURL string, build *model.LuciFailedBuild) {
+			t.Helper()
+			if build != nil {
+				assert.Loosely(t, datastore.Put(c, build), should.BeNil)
+			}
+			cf := &model.CompileFailure{
+				Id:    bbid,
+				Build: datastore.MakeKey(c, "LuciFailedBuild", bbid),
+			}
+			assert.Loosely(t, datastore.Put(c, cf), should.BeNil)
+
+			cfa := &model.CompileFailureAnalysis{
+				Id:             analysisID,
+				Project:        "chromium",
+				CompileFailure: datastore.KeyForObj(c, cf),
+				CreateTime:     time.Unix(createSec, 0).UTC(),
+				Status:         pb.AnalysisStatus_FOUND,
+				RunStatus:      pb.AnalysisRunStatus_ENDED,
+				InitialRegressionRange: &pb.RegressionRange{
+					FirstFailed: &buildbucketpb.GitilesCommit{Host: "h", Project: "p", Ref: "r", Id: "commit0"},
+					LastPassed:  &buildbucketpb.GitilesCommit{Host: "h", Project: "p", Ref: "r", Id: "commit3"},
+				},
+			}
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
+
+			ga := &model.CompileGenAIAnalysis{ParentAnalysis: datastore.KeyForObj(c, cfa), Status: pb.AnalysisStatus_FOUND}
+			nsa := &model.CompileNthSectionAnalysis{
+				ParentAnalysis: datastore.KeyForObj(c, cfa),
+				Status:         pb.AnalysisStatus_FOUND,
+				BlameList:      testutil.CreateBlamelist(4),
+			}
+			assert.Loosely(t, datastore.Put(c, ga, nsa), should.BeNil)
+
+			rerunBuild := &model.CompileRerunBuild{Id: rerunBBID}
+			assert.Loosely(t, datastore.Put(c, rerunBuild), should.BeNil)
+
+			suspect := &model.Suspect{
+				Type:               model.SuspectType_GenAI,
+				ParentAnalysis:     datastore.KeyForObj(c, ga),
+				ReviewUrl:          reviewURL,
+				VerificationStatus: model.SuspectVerificationStatus_ConfirmedCulprit,
+				SuspectRerunBuild:  datastore.KeyForObj(c, rerunBuild),
+			}
+			assert.Loosely(t, datastore.Put(c, suspect), should.BeNil)
+
+			cfa.VerifiedCulprits = []*datastore.Key{datastore.KeyForObj(c, suspect)}
+			assert.Loosely(t, datastore.Put(c, cfa), should.BeNil)
+
+			assert.Loosely(t, datastore.Put(c, &model.SingleRerun{
+				Analysis:   datastore.KeyForObj(c, cfa),
+				Suspect:    datastore.KeyForObj(c, suspect),
+				RerunBuild: datastore.KeyForObj(c, rerunBuild),
+				Status:     pb.RerunStatus_RERUN_STATUS_FAILED,
+				StartTime:  time.Unix(createSec+100, 0).UTC(),
+				EndTime:    time.Unix(createSec+110, 0).UTC(),
+				GitilesCommit: buildbucketpb.GitilesCommit{
+					Host:    "h",
+					Project: "p",
+					Ref:     "r",
+					Id:      "commit1",
+				},
+				Type: model.RerunBuildType_CulpritVerification,
+			}), should.BeNil)
+		}
+
+		putFixture(8101, 8001, 9201, 101, "https://review/1", &model.LuciFailedBuild{
+			Id:               8001,
+			LuciBuild:        model.LuciBuild{Project: "chromium", Bucket: "ci", Builder: "builder-1"},
+			BuildFailureType: pb.BuildFailureType_COMPILE,
+		})
+		putFixture(8102, 8002, 9202, 102, "https://review/2", &model.LuciFailedBuild{
+			Id:               8002,
+			LuciBuild:        model.LuciBuild{Project: "chromium", Bucket: "ci", Builder: "builder-2"},
+			BuildFailureType: pb.BuildFailureType_COMPILE,
+		})
+		putFixture(8103, 8003, 9203, 103, "https://review/3", &model.LuciFailedBuild{
+			Id:               8003,
+			LuciBuild:        model.LuciBuild{Project: "chromium", Bucket: "ci", Builder: "builder-3"},
+			BuildFailureType: pb.BuildFailureType_COMPILE,
+		})
+		// Omit LuciFailedBuild for 8104 to verify missing builds do not fail the batch.
+		putFixture(8104, 8004, 9204, 104, "https://review/4", nil)
+		datastore.GetTestable(c).CatchupIndexes()
+
+		countedCtx, counter := count.FilterRDS(c)
+		res, err := server.ListAnalyses(countedCtx, &pb.ListAnalysesRequest{
+			Project:  "chromium",
+			PageSize: 10,
+		})
+		assert.Loosely(t, err, should.BeNil)
+		assert.Loosely(t, len(res.Analyses), should.Equal(4))
+
+		// Results are ordered by -create_time (ids 8104, 8103, 8102, 8101).
+		assert.Loosely(t, res.Analyses[0].AnalysisId, should.Equal(8104))
+		assert.Loosely(t, res.Analyses[0].Builder, should.BeNil)
+		assert.Loosely(t, res.Analyses[1].AnalysisId, should.Equal(8103))
+		assert.Loosely(t, res.Analyses[1].Builder.Builder, should.Equal("builder-3"))
+		assert.Loosely(t, res.Analyses[1].Culprits[0].ReviewUrl, should.Equal("https://review/3"))
+		assert.Loosely(t, res.Analyses[1].Culprits[0].VerificationDetails.SuspectRerun.Bbid, should.Equal(9203))
+		assert.Loosely(t, res.Analyses[1].GenAiResult.Suspect.ReviewUrl, should.Equal("https://review/3"))
+		assert.Loosely(t, res.Analyses[1].NthSectionResult, should.NotBeNil)
+
+		// 1 batched GetMulti for all LuciFailedBuilds across the page.
+		assert.Loosely(t, counter.GetMulti.Total(), should.Equal(int64(1)))
+		// At most 1 page query + 4 queries (GenAI, NthSection, Suspects, SingleReruns) * 4 analyses = 17.
+		assert.Loosely(t, counter.RunQuery.Total(), should.BeLessThanOrEqual(int64(17)))
 	})
 }
 

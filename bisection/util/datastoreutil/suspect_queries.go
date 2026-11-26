@@ -155,6 +155,22 @@ func FetchSuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalys
 	return suspects, nil
 }
 
+// SuspectsForAnalysis returns all Suspect entities anywhere under the given
+// CompileFailureAnalysis ancestor tree in a single Datastore query.
+//
+// Unlike FetchSuspectsForAnalysis, which queries only the primary GenAI and
+// nth-section child analyses, this ancestor query may also include legacy
+// heuristic suspects on pre-Oct-2025 analyses or suspects under duplicate
+// child analyses. Callers that need to distinguish suspect origin should filter
+// by Suspect.ParentAnalysis.
+func SuspectsForAnalysis(c context.Context, cfa *model.CompileFailureAnalysis) ([]*model.Suspect, error) {
+	suspects, err := fetchSuspectsForParentKey(c, datastore.KeyForObj(c, cfa))
+	if err != nil {
+		return nil, errors.Fmt("getting suspects for analysis %d: %w", cfa.Id, err)
+	}
+	return suspects, nil
+}
+
 func fetchSuspectsForParentKey(c context.Context, parentKey *datastore.Key) ([]*model.Suspect, error) {
 	q := datastore.NewQuery("Suspect").Ancestor(parentKey)
 	return datastore.RunQuery[*model.Suspect](c, q).AsSlice()

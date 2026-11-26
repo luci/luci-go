@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -555,8 +556,91 @@ func isTestFailureDeterministicallyOngoing(tf *model.TestFailure, changepointRes
 	return false, "latest bisected failure is not ongoing"
 }
 
+// analysisPrefetch holds child Datastore entities fetched in parallel for a
+// CompileFailureAnalysis so GetAnalysisResult can assemble the response without
+// redundant or sequential Datastore round-trips.
+type analysisPrefetch struct {
+	failedBuild        *model.LuciFailedBuild
+	failedBuildErr     error
+	genaiAnalysis      *model.CompileGenAIAnalysis
+	genaiErr           error
+	nsa                *model.CompileNthSectionAnalysis
+	nsaErr             error
+	suspectsErr        error
+	suspectsByKey      map[string]*model.Suspect
+	suspectsByParent   map[string][]*model.Suspect
+	reruns             []*model.SingleRerun
+	rerunsErr          error
+	lastRerunByBuildID map[int64]*model.SingleRerun
+}
+
+func prefetchAnalysisData(c context.Context, analysis *model.CompileFailureAnalysis, prefetchedBuild *model.LuciFailedBuild, buildPrefetched bool) *analysisPrefetch {
+	p := &analysisPrefetch{
+		failedBuild: prefetchedBuild,
+	}
+	var allSuspects []*model.Suspect
+	var wg sync.WaitGroup
+	if !buildPrefetched && analysis.CompileFailure != nil && analysis.CompileFailure.Parent() != nil {
+		bbid := analysis.CompileFailure.Parent().IntID()
+		wg.Go(func() {
+			p.failedBuild, p.failedBuildErr = datastoreutil.GetBuild(c, bbid)
+		})
+	}
+	wg.Go(func() {
+		p.genaiAnalysis, p.genaiErr = datastoreutil.GetGenAIAnalysis(c, analysis)
+	})
+	wg.Go(func() {
+		p.nsa, p.nsaErr = datastoreutil.GetNthSectionAnalysis(c, analysis)
+	})
+	wg.Go(func() {
+		allSuspects, p.suspectsErr = datastoreutil.SuspectsForAnalysis(c, analysis)
+	})
+	wg.Go(func() {
+		p.reruns, p.rerunsErr = datastoreutil.GetRerunsForAnalysis(c, analysis)
+	})
+	wg.Wait()
+
+	if p.suspectsErr == nil {
+		p.suspectsByKey = make(map[string]*model.Suspect, len(allSuspects))
+		p.suspectsByParent = make(map[string][]*model.Suspect)
+		for _, s := range allSuspects {
+			p.suspectsByKey[datastore.KeyForObj(c, s).Encode()] = s
+			if s.ParentAnalysis != nil {
+				parentKey := s.ParentAnalysis.Encode()
+				p.suspectsByParent[parentKey] = append(p.suspectsByParent[parentKey], s)
+			}
+		}
+	}
+
+	// GetRerunsForAnalysis orders by start_time ascending, so iterating in order
+	// records the latest SingleRerun per CompileRerunBuild ID.
+	p.lastRerunByBuildID = make(map[int64]*model.SingleRerun, len(p.reruns))
+	if p.rerunsErr == nil {
+		for _, r := range p.reruns {
+			if r.RerunBuild != nil {
+				p.lastRerunByBuildID[r.RerunBuild.IntID()] = r
+			}
+		}
+	}
+	return p
+}
+
+func selectSingleSuspect(c context.Context, suspects []*model.Suspect, analysisLabel string) *model.Suspect {
+	if len(suspects) == 0 {
+		return nil
+	}
+	if len(suspects) > 1 {
+		logging.Warningf(c, "%s has more than 1 suspect %d", analysisLabel, len(suspects))
+	}
+	return suspects[0]
+}
+
 // GetAnalysisResult returns an analysis for pRPC from CompileFailureAnalysis
 func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis) (*pb.Analysis, error) {
+	return buildAnalysisResult(c, analysis, nil, false)
+}
+
+func buildAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis, prefetchedBuild *model.LuciFailedBuild, buildPrefetched bool) (*pb.Analysis, error) {
 	result := &pb.Analysis{
 		AnalysisId:      analysis.Id,
 		Status:          analysis.Status,
@@ -570,34 +654,35 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		result.EndTime = timestamppb.New(analysis.EndTime)
 	}
 
+	prefetched := prefetchAnalysisData(c, analysis, prefetchedBuild, buildPrefetched)
+
 	// Populate Builder and BuildFailureType data
-	if analysis.CompileFailure != nil && analysis.CompileFailure.Parent() != nil {
-		// Add details from associated compile failure
-		failedBuild, err := datastoreutil.GetBuild(c, analysis.CompileFailure.Parent().IntID())
-		if err != nil {
-			return nil, err
+	if prefetched.failedBuildErr != nil {
+		return nil, prefetched.failedBuildErr
+	}
+	if prefetched.failedBuild != nil {
+		result.Builder = &buildbucketpb.BuilderID{
+			Project: prefetched.failedBuild.Project,
+			Bucket:  prefetched.failedBuild.Bucket,
+			Builder: prefetched.failedBuild.Builder,
 		}
-		if failedBuild != nil {
-			result.Builder = &buildbucketpb.BuilderID{
-				Project: failedBuild.Project,
-				Bucket:  failedBuild.Bucket,
-				Builder: failedBuild.Builder,
-			}
-			result.BuildFailureType = failedBuild.BuildFailureType
-		}
+		result.BuildFailureType = prefetched.failedBuild.BuildFailureType
 	}
 
-	genaiAnalysisResult, err := datastoreutil.GetGenAIAnalysis(c, analysis)
-	if err != nil {
-		logging.Errorf(c, "Failed to get GenAI result for analysis %d: %w", analysis.Id, err)
-	} else if genaiAnalysisResult != nil {
-		suspect, err := datastoreutil.GetSuspectsForGenAIAnalysis(c, genaiAnalysisResult)
-		if err != nil {
-			logging.Errorf(c, "Failed to get suspect from datastore: %s", err)
+	if prefetched.genaiErr != nil {
+		logging.Errorf(c, "Failed to get GenAI result for analysis %d: %s", analysis.Id, prefetched.genaiErr)
+	} else if prefetched.genaiAnalysis != nil {
+		if prefetched.suspectsErr != nil {
+			logging.Errorf(c, "Failed to get suspect from datastore: %s", prefetched.suspectsErr)
 		} else {
+			suspect := selectSingleSuspect(
+				c,
+				prefetched.suspectsByParent[datastore.KeyForObj(c, prefetched.genaiAnalysis).Encode()],
+				"genaiAnalysis",
+			)
 			pbGenAIResult := &pb.GenAiAnalysisResult{
-				Status:    genaiAnalysisResult.Status,
-				StartTime: timestamppb.New(genaiAnalysisResult.StartTime),
+				Status:    prefetched.genaiAnalysis.Status,
+				StartTime: timestamppb.New(prefetched.genaiAnalysis.StartTime),
 			}
 
 			if suspect != nil {
@@ -609,7 +694,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 					ConfidenceScore: int32(suspect.Score),
 					SubCommit:       suspect.SubCommit,
 				}
-				verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
+				verificationDetails, err := constructSuspectVerificationDetails(c, suspect, prefetched.lastRerunByBuildID)
 				if err != nil {
 					return nil, errors.Fmt("couldn't constructSuspectVerificationDetails: %w", err)
 				}
@@ -617,25 +702,41 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 				pbGenAIResult.Suspect = pbSuspect
 			}
 
-			if genaiAnalysisResult.HasEnded() {
-				pbGenAIResult.EndTime = timestamppb.New(genaiAnalysisResult.EndTime)
+			if prefetched.genaiAnalysis.HasEnded() {
+				pbGenAIResult.EndTime = timestamppb.New(prefetched.genaiAnalysis.EndTime)
 			}
 			result.GenAiResult = pbGenAIResult
 		}
 	}
 
-	// Get culprits
-	culprits := make([]*pb.Culprit, len(analysis.VerifiedCulprits))
+	// Get culprits, reusing suspects already loaded under the analysis entity
+	// group and batch-fetching any remaining culprits as a fallback.
+	culpritSuspects := make([]*model.Suspect, len(analysis.VerifiedCulprits))
+	var missingCulprits []*model.Suspect
+	var missingIndices []int
 	for i, culprit := range analysis.VerifiedCulprits {
-		suspect := &model.Suspect{
+		if s, ok := prefetched.suspectsByKey[culprit.Encode()]; ok {
+			culpritSuspects[i] = s
+			continue
+		}
+		s := &model.Suspect{
 			Id:             culprit.IntID(),
 			ParentAnalysis: culprit.Parent(),
 		}
-		err = datastore.Get(c, suspect)
-		if err != nil {
+		missingCulprits = append(missingCulprits, s)
+		missingIndices = append(missingIndices, i)
+	}
+	if len(missingCulprits) > 0 {
+		if err := datastore.Get(c, missingCulprits); err != nil {
 			return nil, err
 		}
+		for idx, s := range missingCulprits {
+			culpritSuspects[missingIndices[idx]] = s
+		}
+	}
 
+	culprits := make([]*pb.Culprit, len(culpritSuspects))
+	for i, suspect := range culpritSuspects {
 		pbCulprit := &pb.Culprit{
 			Commit:      &suspect.GitilesCommit,
 			ReviewUrl:   suspect.ReviewUrl,
@@ -643,7 +744,7 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 		}
 
 		// Add suspect verification details for the culprit
-		verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
+		verificationDetails, err := constructSuspectVerificationDetails(c, suspect, prefetched.lastRerunByBuildID)
 		if err != nil {
 			return nil, err
 		}
@@ -653,12 +754,11 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	}
 	result.Culprits = culprits
 
-	nthSectionResult, err := getNthSectionResult(c, analysis)
+	nthSectionResult, err := buildNthSectionResult(c, analysis, prefetched)
 	if err != nil {
 		// If fetching nthSection analysis result failed for some reasons, print
 		// out the error, but we still continue.
-		err = errors.Fmt("getNthSectionResult for analysis %d: %w", analysis.Id, err)
-		logging.Errorf(c, err.Error())
+		logging.Errorf(c, "getNthSectionResult for analysis %d: %s", analysis.Id, err)
 	} else {
 		result.NthSectionResult = nthSectionResult
 	}
@@ -669,11 +769,11 @@ func GetAnalysisResult(c context.Context, analysis *model.CompileFailureAnalysis
 	return result, nil
 }
 
-func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (*pb.NthSectionAnalysisResult, error) {
-	nsa, err := datastoreutil.GetNthSectionAnalysis(c, cfa)
-	if err != nil {
-		return nil, errors.Fmt("getting nthsection analysis: %w", err)
+func buildNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis, prefetched *analysisPrefetch) (*pb.NthSectionAnalysisResult, error) {
+	if prefetched.nsaErr != nil {
+		return nil, errors.Fmt("getting nthsection analysis: %w", prefetched.nsaErr)
 	}
+	nsa := prefetched.nsa
 	if nsa == nil {
 		return nil, nil
 	}
@@ -689,14 +789,11 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 		result.EndTime = timestamppb.New(nsa.EndTime)
 	}
 
-	// Get all reruns for the current analysis
-	// This should contain all reruns for nth section and culprit verification
-	reruns, err := datastoreutil.GetRerunsForAnalysis(c, cfa)
-	if err != nil {
-		return nil, err
+	if prefetched.rerunsErr != nil {
+		return nil, prefetched.rerunsErr
 	}
 
-	for _, rerun := range reruns {
+	for _, rerun := range prefetched.reruns {
 		rerunResult := &pb.SingleRerun{
 			StartTime: timestamppb.New(rerun.StartTime),
 			RerunResult: &pb.RerunResult{
@@ -716,26 +813,22 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 			// the "last pass" revision.
 			// In this case, we should just log and continue, and the run will appear
 			// as part of culprit verification component.
-			logging.Warningf(c, errors.Fmt("couldn't find index for rerun: %w", err).Error())
+			logging.Warningf(c, "couldn't find index for rerun: %s", err)
 			continue
 		}
 		rerunResult.Index = strconv.FormatInt(int64(index), 10)
 		result.Reruns = append(result.Reruns, rerunResult)
 	}
 
-	// Find remaining regression range
-	snapshot, err := nthsection.CreateSnapshot(c, nsa)
-	if err != nil {
-		return nil, errors.Fmt("couldn't create snapshot: %w", err)
-	}
+	// Find remaining regression range using pre-fetched reruns.
+	snapshot := nthsection.CreateSnapshotWithReruns(nsa, prefetched.reruns)
 
 	ff, lp, err := snapshot.GetCurrentRegressionRange()
 	// GetCurrentRegressionRange return error if the regression is invalid
 	// We don't want to return the error here, but just continue
 	if err != nil {
-		err = errors.Fmt("getCurrentRegressionRange: %w", err)
 		// Log as Debugf because it is not exactly an error, but just a state of the analysis
-		logging.Debugf(c, err.Error())
+		logging.Debugf(c, "getCurrentRegressionRange: %s", err)
 	} else {
 		result.RemainingNthSectionRange = &pb.RegressionRange{
 			FirstFailed: getCommitFromIndex(ff, nsa.BlameList, cfa),
@@ -743,10 +836,26 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 		}
 	}
 
-	// Find suspect
-	suspect, err := datastoreutil.GetSuspectForNthSectionAnalysis(c, nsa)
-	if err != nil {
-		return nil, err
+	// Find suspect from pre-fetched suspects, falling back to Datastore if needed.
+	var suspect *model.Suspect
+	if nsa.Suspect != nil {
+		if s, ok := prefetched.suspectsByKey[nsa.Suspect.Encode()]; ok {
+			suspect = s
+		} else {
+			suspect, err = datastoreutil.GetSuspectForNthSectionAnalysis(c, nsa)
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		if prefetched.suspectsErr != nil {
+			return nil, prefetched.suspectsErr
+		}
+		suspect = selectSingleSuspect(
+			c,
+			prefetched.suspectsByParent[datastore.KeyForObj(c, nsa).Encode()],
+			"nthsectionAnalysis",
+		)
 	}
 	if suspect != nil {
 		pbSuspect := &pb.NthSectionSuspect{
@@ -756,7 +865,7 @@ func getNthSectionResult(c context.Context, cfa *model.CompileFailureAnalysis) (
 			Commit:        &suspect.GitilesCommit,
 		}
 
-		verificationDetails, err := constructSuspectVerificationDetails(c, suspect)
+		verificationDetails, err := constructSuspectVerificationDetails(c, suspect, prefetched.lastRerunByBuildID)
 		if err != nil {
 			return nil, errors.Fmt("couldn't constructSuspectVerificationDetails: %w", err)
 		}
@@ -785,20 +894,19 @@ func getCommitFromIndex(index int, blamelist *pb.BlameList, cfa *model.CompileFa
 	}
 }
 
-// constructSingleRerun constructs a pb.SingleRerun using the details from the
-// rerun build and latest single rerun
-func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, error) {
-	rerunBuild := &model.CompileRerunBuild{
-		Id: rerunBBID,
-	}
-	err := datastore.Get(c, rerunBuild)
-	if err != nil {
-		return nil, errors.Fmt("failed getting rerun build: %w", err)
-	}
-
-	singleRerun, err := datastoreutil.GetLastRerunForRerunBuild(c, rerunBuild)
-	if err != nil {
-		return nil, errors.Fmt("failed getting single rerun: %w", err)
+// constructSingleRerun constructs a pb.SingleRerun using pre-fetched reruns
+// when available, falling back to Datastore on a cache miss.
+func constructSingleRerun(c context.Context, rerunBBID int64, lastRerunByBuildID map[int64]*model.SingleRerun) (*pb.SingleRerun, error) {
+	singleRerun, ok := lastRerunByBuildID[rerunBBID]
+	if !ok {
+		var err error
+		singleRerun, err = datastoreutil.GetLastRerunForRerunBuild(c, &model.CompileRerunBuild{Id: rerunBBID})
+		if err != nil {
+			return nil, errors.Fmt("failed getting single rerun: %w", err)
+		}
+		if lastRerunByBuildID != nil {
+			lastRerunByBuildID[rerunBBID] = singleRerun
+		}
 	}
 
 	result := &pb.SingleRerun{
@@ -816,7 +924,7 @@ func constructSingleRerun(c context.Context, rerunBBID int64) (*pb.SingleRerun, 
 }
 
 // constructSuspectVerificationDetails constructs a pb.SuspectVerificationDetails for the given suspect
-func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspect) (*pb.SuspectVerificationDetails, error) {
+func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspect, lastRerunByBuildID map[int64]*model.SingleRerun) (*pb.SuspectVerificationDetails, error) {
 	// Add the current verification status
 	verificationDetails := &pb.SuspectVerificationDetails{
 		Status: string(suspect.VerificationStatus),
@@ -824,7 +932,7 @@ func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspe
 
 	// Add rerun details for the suspect commit
 	if suspect.SuspectRerunBuild != nil {
-		singleRerun, err := constructSingleRerun(c, suspect.SuspectRerunBuild.IntID())
+		singleRerun, err := constructSingleRerun(c, suspect.SuspectRerunBuild.IntID(), lastRerunByBuildID)
 		if err != nil {
 			return nil, errors.Fmt("failed getting verification rerun for suspect commit: %w", err)
 		}
@@ -833,7 +941,7 @@ func constructSuspectVerificationDetails(c context.Context, suspect *model.Suspe
 
 	// Add rerun details for the parent commit of suspect
 	if suspect.ParentRerunBuild != nil {
-		singleRerun, err := constructSingleRerun(c, suspect.ParentRerunBuild.IntID())
+		singleRerun, err := constructSingleRerun(c, suspect.ParentRerunBuild.IntID(), lastRerunByBuildID)
 		if err != nil {
 			return nil, errors.Fmt("failed getting verification rerun for parent commit of suspect: %w", err)
 		}
@@ -942,12 +1050,33 @@ func (server *AnalysesServer) ListAnalyses(c context.Context, req *pb.ListAnalys
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// Get the result for each compile failure analysis
+	// Batch-fetch LuciFailedBuild entities for all analyses in the page.
+	bbids := make([]int64, 0, len(compileFailureAnalyses))
+	for _, cfa := range compileFailureAnalyses {
+		if cfa.CompileFailure != nil && cfa.CompileFailure.Parent() != nil {
+			bbids = append(bbids, cfa.CompileFailure.Parent().IntID())
+		}
+	}
+	failedBuildsByID, err := datastoreutil.Builds(c, bbids)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "getting failed builds: %v", err)
+	}
+
+	// Get the result for each compile failure analysis.
+	// Cap outer concurrency because each buildAnalysisResult issues 4 Datastore
+	// queries in parallel; with up to 200 analyses per page, 25 workers bounds
+	// in-flight Datastore RPCs to at most 100 while finishing default 50-item
+	// pages in 2 waves.
+	const maxListAnalysesWorkers = 25
 	analyses := make([]*pb.Analysis, len(compileFailureAnalyses))
-	err = parallel.FanOutIn(func(workC chan<- func() error) {
+	err = parallel.WorkPool(maxListAnalysesWorkers, func(workC chan<- func() error) {
 		for i, compileFailureAnalysis := range compileFailureAnalyses {
 			workC <- func() error {
-				analysis, err := GetAnalysisResult(c, compileFailureAnalysis)
+				var prefetchedBuild *model.LuciFailedBuild
+				if compileFailureAnalysis.CompileFailure != nil && compileFailureAnalysis.CompileFailure.Parent() != nil {
+					prefetchedBuild = failedBuildsByID[compileFailureAnalysis.CompileFailure.Parent().IntID()]
+				}
+				analysis, err := buildAnalysisResult(c, compileFailureAnalysis, prefetchedBuild, true)
 				if err != nil {
 					logging.Errorf(c, "Could not get analysis data for analysis %d: %s",
 						compileFailureAnalysis.Id, err)

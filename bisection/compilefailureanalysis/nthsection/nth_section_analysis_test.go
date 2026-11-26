@@ -140,6 +140,119 @@ func TestCreateSnapshot(t *testing.T) {
 	})
 }
 
+func TestCreateSnapshotWithReruns(t *testing.T) {
+	t.Parallel()
+
+	blamelist := testutil.CreateBlamelist(4)
+	nsa := &model.CompileNthSectionAnalysis{
+		BlameList: blamelist,
+	}
+
+	tests := []struct {
+		name   string
+		reruns []*model.SingleRerun
+		want   *nthsectionsnapshot.Snapshot
+	}{
+		{
+			name: "empty_reruns",
+			want: &nthsectionsnapshot.Snapshot{
+				BlameList: blamelist,
+				Runs:      []*nthsectionsnapshot.Run{},
+			},
+		},
+		{
+			name: "multiple_commits",
+			reruns: []*model.SingleRerun{
+				{
+					Type:          model.RerunBuildType_CulpritVerification,
+					Status:        pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+					GitilesCommit: bbpb.GitilesCommit{Id: "commit1"},
+				},
+				{
+					Type:          model.RerunBuildType_NthSection,
+					Status:        pb.RerunStatus_RERUN_STATUS_FAILED,
+					GitilesCommit: bbpb.GitilesCommit{Id: "commit3"},
+				},
+				{
+					Type:          model.RerunBuildType_NthSection,
+					Status:        pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+					GitilesCommit: bbpb.GitilesCommit{Id: "commit0"},
+				},
+				{
+					Type:          model.RerunBuildType_NthSection,
+					Status:        pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
+					GitilesCommit: bbpb.GitilesCommit{Id: "commit2"},
+				},
+			},
+			want: &nthsectionsnapshot.Snapshot{
+				BlameList:      blamelist,
+				NumInProgress:  2,
+				NumInfraFailed: 1,
+				Runs: []*nthsectionsnapshot.Run{
+					{
+						Index:  0,
+						Commit: "commit0",
+						Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+						Type:   model.RerunBuildType_NthSection,
+					},
+					{
+						Index:  1,
+						Commit: "commit1",
+						Status: pb.RerunStatus_RERUN_STATUS_IN_PROGRESS,
+						Type:   model.RerunBuildType_CulpritVerification,
+					},
+					{
+						Index:  2,
+						Commit: "commit2",
+						Status: pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
+						Type:   model.RerunBuildType_NthSection,
+					},
+					{
+						Index:  3,
+						Commit: "commit3",
+						Status: pb.RerunStatus_RERUN_STATUS_FAILED,
+						Type:   model.RerunBuildType_NthSection,
+					},
+				},
+			},
+		},
+		{
+			name: "later_rerun_overwrites_earlier_status",
+			reruns: []*model.SingleRerun{
+				{
+					Type:          model.RerunBuildType_NthSection,
+					Status:        pb.RerunStatus_RERUN_STATUS_INFRA_FAILED,
+					GitilesCommit: bbpb.GitilesCommit{Id: "commit2"},
+				},
+				{
+					Type:          model.RerunBuildType_CulpritVerification,
+					Status:        pb.RerunStatus_RERUN_STATUS_PASSED,
+					GitilesCommit: bbpb.GitilesCommit{Id: "commit2"},
+				},
+			},
+			want: &nthsectionsnapshot.Snapshot{
+				BlameList:      blamelist,
+				NumInfraFailed: 1,
+				Runs: []*nthsectionsnapshot.Run{
+					{
+						Index:  2,
+						Commit: "commit2",
+						Status: pb.RerunStatus_RERUN_STATUS_PASSED,
+						Type:   model.RerunBuildType_CulpritVerification,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		ftt.Run(tc.name, t, func(t *ftt.Test) {
+			got := CreateSnapshotWithReruns(nsa, tc.reruns)
+			assert.Loosely(t, got, should.Match(tc.want))
+		})
+	}
+}
+
 func TestAnalyze(t *testing.T) {
 	t.Parallel()
 	ftt.Run("TestAnalyze", t, func(t *ftt.Test) {
