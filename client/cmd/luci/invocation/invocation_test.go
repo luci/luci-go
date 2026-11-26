@@ -35,12 +35,14 @@ import (
 
 type mockInvocationResultDBClient struct {
 	pb.ResultDBClient
-	getRootInvocation     func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
-	getInvocation         func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
-	getWorkUnit           func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
-	batchGetWorkUnits     func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error)
-	listArtifacts         func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
-	queryTestAggregations func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
+	getRootInvocation         func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error)
+	getInvocation             func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error)
+	getWorkUnit               func(ctx context.Context, in *pb.GetWorkUnitRequest) (*pb.WorkUnit, error)
+	batchGetWorkUnits         func(ctx context.Context, in *pb.BatchGetWorkUnitsRequest) (*pb.BatchGetWorkUnitsResponse, error)
+	listArtifacts             func(ctx context.Context, in *pb.ListArtifactsRequest) (*pb.ListArtifactsResponse, error)
+	queryTestAggregations     func(ctx context.Context, in *pb.QueryTestAggregationsRequest) (*pb.QueryTestAggregationsResponse, error)
+	queryTestResultStatistics func(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error)
+	queryTestVariants         func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error)
 }
 
 func (m *mockInvocationResultDBClient) GetRootInvocation(ctx context.Context, in *pb.GetRootInvocationRequest, opts ...grpc.CallOption) (*pb.RootInvocation, error) {
@@ -83,6 +85,20 @@ func (m *mockInvocationResultDBClient) QueryTestAggregations(ctx context.Context
 		return m.queryTestAggregations(ctx, in)
 	}
 	return &pb.QueryTestAggregationsResponse{}, nil
+}
+
+func (m *mockInvocationResultDBClient) QueryTestResultStatistics(ctx context.Context, in *pb.QueryTestResultStatisticsRequest, opts ...grpc.CallOption) (*pb.QueryTestResultStatisticsResponse, error) {
+	if m.queryTestResultStatistics != nil {
+		return m.queryTestResultStatistics(ctx, in)
+	}
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (m *mockInvocationResultDBClient) QueryTestVariants(ctx context.Context, in *pb.QueryTestVariantsRequest, opts ...grpc.CallOption) (*pb.QueryTestVariantsResponse, error) {
+	if m.queryTestVariants != nil {
+		return m.queryTestVariants(ctx, in)
+	}
+	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
 func TestInvocationGet(t *testing.T) {
@@ -354,6 +370,141 @@ func TestInvocationGet(t *testing.T) {
 			buf.Reset()
 			printInvocationDetails(ctx, &buf, client, nil, resolved, false)
 			assert.Loosely(t, buf.String(), should.ContainSubstring("Summary:\n  Setup failed\n\n  Device offline\n"))
+		})
+
+		t.Run(`surfaces legacy invocation verdict summary and zero-verdict diagnostics`, func(t *ftt.Test) {
+			t.Run(`with unexpected, flaky, and exonerated verdicts using v2 status semantics`, func(t *ftt.Test) {
+				client := &mockInvocationResultDBClient{
+					queryTestResultStatistics: func(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+						assert.Loosely(t, in.Invocations, should.Match([]string{"invocations/build-8664642485229324129"}))
+						return &pb.QueryTestResultStatisticsResponse{TotalTestResults: 1200}, nil
+					},
+					queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+						assert.Loosely(t, in.Predicate.GetStatus(), should.Equal(pb.TestVariantStatus_UNEXPECTED_MASK))
+						assert.Loosely(t, in.GetReadMask().GetPaths(), should.Match([]string{"status", "status_v2", "status_override"}))
+						return &pb.QueryTestVariantsResponse{
+							TestVariants: []*pb.TestVariant{
+								{Status: pb.TestVariantStatus_UNEXPECTED, StatusV2: pb.TestVerdict_FAILED},
+								// FAILED + expected SKIP retry: v1 FLAKY, v2 FAILED.
+								{Status: pb.TestVariantStatus_FLAKY, StatusV2: pb.TestVerdict_FAILED},
+								// EXECUTION_ERRORED + PASSED retry: v1 FLAKY, v2 PASSED (not unexpected in v2).
+								{Status: pb.TestVariantStatus_FLAKY, StatusV2: pb.TestVerdict_PASSED},
+								// EXECUTION_ERRORED: v1 UNEXPECTEDLY_SKIPPED, v2 EXECUTION_ERRORED.
+								{Status: pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED, StatusV2: pb.TestVerdict_EXECUTION_ERRORED},
+								{Status: pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED, StatusV2: pb.TestVerdict_PRECLUDED},
+								{Status: pb.TestVariantStatus_FLAKY, StatusV2: pb.TestVerdict_FLAKY},
+								{Status: pb.TestVariantStatus_UNEXPECTED, StatusV2: pb.TestVerdict_FAILED, StatusOverride: pb.TestVerdict_EXONERATED},
+							},
+						}, nil
+					},
+				}
+				resolved := &base.ResolvedInvocation{
+					ID:         "build-8664642485229324129",
+					Legacy:     true,
+					Invocation: &pb.Invocation{Name: "invocations/build-8664642485229324129", State: pb.Invocation_FINALIZED},
+				}
+				var buf bytes.Buffer
+				printInvocationDetails(ctx, &buf, client, nil, resolved, false)
+				out := buf.String()
+				assert.Loosely(t, out, should.ContainSubstring("Invocation:    invocations/build-8664642485229324129 (legacy) [2 failed, 1 execution_errored, 1 precluded, 1 flaky, 1 exonerated]\n"))
+				assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   [2 failed, 1 execution_errored, 1 precluded, 1 flaky, 1 exonerated] (1200 total test results)\n"))
+				assert.Loosely(t, out, should.NotContainSubstring("0 tests ran"))
+			})
+
+			t.Run(`omits Test Verdicts line when statistics RPC fails and 0 unexpected variants are returned`, func(t *ftt.Test) {
+				client := &mockInvocationResultDBClient{
+					queryTestResultStatistics: func(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+						return nil, status.Error(codes.Unavailable, "stats unavailable")
+					},
+					queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+						return &pb.QueryTestVariantsResponse{}, nil
+					},
+				}
+				resolved := &base.ResolvedInvocation{
+					ID:         "build-8664642485229324129",
+					Legacy:     true,
+					Invocation: &pb.Invocation{Name: "invocations/build-8664642485229324129", State: pb.Invocation_FINALIZED},
+				}
+				var buf bytes.Buffer
+				printInvocationDetails(ctx, &buf, client, nil, resolved, false)
+				out := buf.String()
+				assert.Loosely(t, out, should.ContainSubstring("Invocation:    invocations/build-8664642485229324129 (legacy)\n"))
+				assert.Loosely(t, out, should.NotContainSubstring("Test Verdicts:"))
+				assert.Loosely(t, out, should.NotContainSubstring("0 unexpected"))
+			})
+
+			t.Run(`does not report 0 unexpected when first page has only v2-passed variants and NextPageToken is set`, func(t *ftt.Test) {
+				client := &mockInvocationResultDBClient{
+					queryTestResultStatistics: func(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+						return &pb.QueryTestResultStatisticsResponse{TotalTestResults: 5000}, nil
+					},
+					queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+						return &pb.QueryTestVariantsResponse{
+							TestVariants: []*pb.TestVariant{
+								{Status: pb.TestVariantStatus_FLAKY, StatusV2: pb.TestVerdict_PASSED},
+							},
+							NextPageToken: "page-2",
+						}, nil
+					},
+				}
+				resolved := &base.ResolvedInvocation{
+					ID:         "build-8664642485229324129",
+					Legacy:     true,
+					Invocation: &pb.Invocation{Name: "invocations/build-8664642485229324129", State: pb.Invocation_FINALIZED},
+				}
+				var buf bytes.Buffer
+				printInvocationDetails(ctx, &buf, client, nil, resolved, false)
+				out := buf.String()
+				assert.Loosely(t, out, should.ContainSubstring("Invocation:    invocations/build-8664642485229324129 (legacy)\n"))
+				assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   5000 total test results\n"))
+				assert.Loosely(t, out, should.NotContainSubstring("[0 unexpected]"))
+			})
+
+			t.Run(`with 0 tests ran on FINALIZED legacy invocation`, func(t *ftt.Test) {
+				client := &mockInvocationResultDBClient{
+					queryTestResultStatistics: func(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+						return &pb.QueryTestResultStatisticsResponse{TotalTestResults: 0}, nil
+					},
+					queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+						return &pb.QueryTestVariantsResponse{}, nil
+					},
+				}
+				resolved := &base.ResolvedInvocation{
+					ID:         "build-8664642485229324129",
+					Legacy:     true,
+					Invocation: &pb.Invocation{Name: "invocations/build-8664642485229324129", State: pb.Invocation_FINALIZED},
+				}
+				var buf bytes.Buffer
+				printInvocationDetails(ctx, &buf, client, nil, resolved, false)
+				out := buf.String()
+				assert.Loosely(t, out, should.ContainSubstring("Test Verdicts:   0 tests ran\n"))
+				assert.Loosely(t, out, should.ContainSubstring("Note: Inv State: FINALIZED with 0 ResultDB test results only means the invocation closed"))
+				assert.Loosely(t, out, should.ContainSubstring("luci build get -buildid=8664642485229324129"))
+				assert.Loosely(t, out, should.ContainSubstring("luci artifact list -invocationid=build-8664642485229324129"))
+				assert.Loosely(t, out, should.NotContainSubstring("work-unit get"))
+			})
+
+			t.Run(`with 0 tests ran on ACTIVE non-build legacy invocation`, func(t *ftt.Test) {
+				client := &mockInvocationResultDBClient{
+					queryTestResultStatistics: func(ctx context.Context, in *pb.QueryTestResultStatisticsRequest) (*pb.QueryTestResultStatisticsResponse, error) {
+						return &pb.QueryTestResultStatisticsResponse{TotalTestResults: 0}, nil
+					},
+					queryTestVariants: func(ctx context.Context, in *pb.QueryTestVariantsRequest) (*pb.QueryTestVariantsResponse, error) {
+						return &pb.QueryTestVariantsResponse{}, nil
+					},
+				}
+				resolved := &base.ResolvedInvocation{
+					ID:         "task-chromium-swarm-abc123",
+					Legacy:     true,
+					Invocation: &pb.Invocation{Name: "invocations/task-chromium-swarm-abc123", State: pb.Invocation_ACTIVE},
+				}
+				var buf bytes.Buffer
+				printInvocationDetails(ctx, &buf, client, nil, resolved, false)
+				out := buf.String()
+				assert.Loosely(t, out, should.ContainSubstring("Note: Inv State: ACTIVE with 0 ResultDB test results so far"))
+				assert.Loosely(t, out, should.NotContainSubstring("luci build get"))
+				assert.Loosely(t, out, should.ContainSubstring("luci artifact list -invocationid=task-chromium-swarm-abc123"))
+			})
 		})
 
 		t.Run(`fails immediately on PermissionDenied`, func(t *ftt.Test) {

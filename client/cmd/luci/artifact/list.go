@@ -285,6 +285,14 @@ func (r *artifactListRun) Run(a subcommands.Application, args []string, env subc
 				displayed = displayed[:maxArtifacts]
 			}
 			fmt.Fprint(&outBuf, renderPrimaryArtifactSection("Invocation", format.FormatInvocationBreadcrumb(cleanTarget), cleanTarget, displayed, totalCount, false, maxArtifacts, false, filterSuffix, maxOutputBytes))
+			if totalCount == 0 {
+				quotedInv := base.ShellQuoteIfNeeded(resolved.ID)
+				if r.filter != "" || r.glob != "" {
+					fmt.Fprintf(&outBuf, "Hint: legacy invocation %s has no invocation-level artifacts matching the active filter. Test-level artifacts on legacy invocations require -testid and -resultid (discover them via 'luci verdict list -invocationid=%s' and 'luci verdict get').\n", resolved.ID, quotedInv)
+				} else {
+					fmt.Fprintf(&outBuf, "Hint: legacy invocation %s has no invocation-level artifacts. Test-level artifacts on legacy invocations require -testid and -resultid; discover failing tests via:\n  luci verdict list -invocationid=%s\n  luci verdict get -invocationid=%s -testid=<test_id>\n", resolved.ID, quotedInv, quotedInv)
+				}
+			}
 			return flushOut()
 		}
 

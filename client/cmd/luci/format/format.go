@@ -33,6 +33,7 @@ import (
 	"golang.org/x/net/html"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/common/errors"
@@ -90,15 +91,10 @@ func VerdictCountsTotal(vc *rdbpb.TestAggregation_VerdictCounts) int64 {
 		int64(vc.Flaky) + int64(vc.Exonerated) + int64(vc.Passed) + int64(vc.Skipped)
 }
 
-// FormatVerdictCountsInline formats verdict counts as a compact inline bracketed
-// summary, e.g. "[245 failed, 218 passed, 7 skipped]". Returns "" if vc is nil
-// or all counts are zero.
-func FormatVerdictCountsInline(vc *rdbpb.TestAggregation_VerdictCounts) string {
-	if VerdictCountsTotal(vc) == 0 {
-		return ""
+func appendUnexpectedVerdictCountParts(parts []string, vc *rdbpb.TestAggregation_VerdictCounts) []string {
+	if vc == nil {
+		return parts
 	}
-	hasFailures := vc.Failed > 0 || vc.ExecutionErrored > 0 || vc.Precluded > 0 || vc.Flaky > 0 || vc.Exonerated > 0
-	var parts []string
 	if vc.Failed > 0 {
 		parts = append(parts, fmt.Sprintf("%d failed", vc.Failed))
 	}
@@ -114,6 +110,18 @@ func FormatVerdictCountsInline(vc *rdbpb.TestAggregation_VerdictCounts) string {
 	if vc.Exonerated > 0 {
 		parts = append(parts, fmt.Sprintf("%d exonerated", vc.Exonerated))
 	}
+	return parts
+}
+
+// FormatVerdictCountsInline formats verdict counts as a compact inline bracketed
+// summary, e.g. "[245 failed, 218 passed, 7 skipped]". Returns "" if vc is nil
+// or all counts are zero.
+func FormatVerdictCountsInline(vc *rdbpb.TestAggregation_VerdictCounts) string {
+	if VerdictCountsTotal(vc) == 0 {
+		return ""
+	}
+	parts := appendUnexpectedVerdictCountParts(nil, vc)
+	hasFailures := len(parts) > 0
 	if vc.Passed > 0 || hasFailures {
 		parts = append(parts, fmt.Sprintf("%d passed", vc.Passed))
 	}
@@ -122,6 +130,23 @@ func FormatVerdictCountsInline(vc *rdbpb.TestAggregation_VerdictCounts) string {
 	}
 	if len(parts) == 0 {
 		return ""
+	}
+	return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
+}
+
+// FormatUnexpectedVerdictCountsInline formats non-passing verdict counts
+// (failed, execution_errored, precluded, flaky, exonerated) as a compact inline
+// bracketed summary for callers that only query unexpected verdicts (such as
+// legacy invocations). When moreAvailable is true and at least one count is
+// non-zero, ", more available" is appended. Returns "" if vc is nil or all
+// non-passing counts are zero.
+func FormatUnexpectedVerdictCountsInline(vc *rdbpb.TestAggregation_VerdictCounts, moreAvailable bool) string {
+	parts := appendUnexpectedVerdictCountParts(nil, vc)
+	if len(parts) == 0 {
+		return ""
+	}
+	if moreAvailable {
+		parts = append(parts, "more available")
 	}
 	return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
 }
@@ -138,6 +163,42 @@ func FormatVerdictCountsSummary(vc *rdbpb.TestAggregation_VerdictCounts) string 
 		return "0 tests ran"
 	}
 	return fmt.Sprintf("%s (%d total)", FormatVerdictCountsInline(vc), total)
+}
+
+// IsLegacyTestVariantExonerated reports whether a legacy TestVariant is
+// exonerated according to v2 status_override, deprecated v1 status, or
+// attached exoneration records.
+func IsLegacyTestVariantExonerated(tv *rdbpb.TestVariant) bool {
+	if tv == nil {
+		return false
+	}
+	return tv.Status == rdbpb.TestVariantStatus_EXONERATED ||
+		tv.StatusOverride == rdbpb.TestVerdict_EXONERATED ||
+		len(tv.Exonerations) > 0
+}
+
+// LegacyTestVariantStatusV2 returns the v2 TestVerdict_Status of a legacy
+// TestVariant, falling back to mapping deprecated v1 TestVariantStatus when
+// StatusV2 is unspecified.
+func LegacyTestVariantStatusV2(tv *rdbpb.TestVariant) rdbpb.TestVerdict_Status {
+	if tv == nil {
+		return rdbpb.TestVerdict_STATUS_UNSPECIFIED
+	}
+	if tv.StatusV2 != rdbpb.TestVerdict_STATUS_UNSPECIFIED {
+		return tv.StatusV2
+	}
+	switch tv.Status {
+	case rdbpb.TestVariantStatus_UNEXPECTED:
+		return rdbpb.TestVerdict_FAILED
+	case rdbpb.TestVariantStatus_FLAKY:
+		return rdbpb.TestVerdict_FLAKY
+	case rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED:
+		return rdbpb.TestVerdict_EXECUTION_ERRORED
+	case rdbpb.TestVariantStatus_EXPECTED:
+		return rdbpb.TestVerdict_PASSED
+	default:
+		return rdbpb.TestVerdict_STATUS_UNSPECIFIED
+	}
 }
 
 // FormatModuleStatusCountsSummary formats module status counts as a bracketed
@@ -1679,20 +1740,36 @@ func FprintRootInvocationAdditionalMetadata(out io.Writer, rootInv *rdbpb.RootIn
 	if rootInv == nil {
 		return
 	}
-	if rootInv.GetRealm() != "" {
-		fmt.Fprintf(out, "Realm:        %s\n", rootInv.GetRealm())
+	fprintInvocationAdditionalFields(out, rootInv.GetRealm(), rootInv.GetBaselineId(), rootInv.GetTags(), rootInv.GetProperties())
+}
+
+// FprintLegacyInvocationAdditionalMetadata prints extended legacy Invocation
+// metadata (realm, baseline ID, tags, and properties) to out.
+func FprintLegacyInvocationAdditionalMetadata(out io.Writer, inv *rdbpb.Invocation) {
+	if inv == nil {
+		return
 	}
-	if rootInv.GetBaselineId() != "" {
-		fmt.Fprintf(out, "Baseline ID:  %s\n", rootInv.GetBaselineId())
+	fprintInvocationAdditionalFields(out, inv.GetRealm(), inv.GetBaselineId(), inv.GetTags(), inv.GetProperties())
+}
+
+func fprintInvocationAdditionalFields(out io.Writer, realm, baselineID string, tags []*rdbpb.StringPair, props *structpb.Struct) {
+	if out == nil {
+		return
 	}
-	if len(rootInv.GetTags()) > 0 {
+	if realm != "" {
+		fmt.Fprintf(out, "Realm:        %s\n", realm)
+	}
+	if baselineID != "" {
+		fmt.Fprintf(out, "Baseline ID:  %s\n", baselineID)
+	}
+	if len(tags) > 0 {
 		fmt.Fprintln(out, "Invocation Tags:")
-		for _, tag := range rootInv.GetTags() {
+		for _, tag := range tags {
 			fmt.Fprintf(out, "  %s: %s\n", tag.GetKey(), tag.GetValue())
 		}
 	}
-	if rootInv.GetProperties() != nil {
-		b, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(rootInv.GetProperties())
+	if props != nil {
+		b, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(props)
 		if err == nil {
 			fmt.Fprintf(out, "Invocation Properties:\n%s\n", string(b))
 		}

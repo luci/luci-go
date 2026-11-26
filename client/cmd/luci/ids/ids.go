@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+	"go.chromium.org/luci/resultdb/pbutil"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
 
@@ -124,6 +125,7 @@ type idsRun struct {
 	rdbClient pb.ResultDBClient
 	bbClient  grpcpb.BuildsClient
 	out       io.Writer
+	errOut    io.Writer
 	host      string
 	bbHost    string
 	jsonOut   bool
@@ -156,8 +158,16 @@ func (r *idsRun) Run(a subcommands.Application, args []string, env subcommands.E
 		return 1
 	}
 
+	errOut := r.errOut
+	if errOut == nil {
+		errOut = os.Stderr
+	}
 	if extracted.IsEmpty() {
-		fmt.Fprintf(os.Stderr, "no resource IDs could be extracted from %q\n", target)
+		fmt.Fprintf(errOut, "no resource IDs could be extracted from %q\n", target)
+		trimmed := strings.TrimSpace(target)
+		if isShortBareNumericID(trimmed) {
+			fmt.Fprintf(errOut, "Hint: bare numbers with <=%d digits are ambiguous (e.g. Gerrit CL or bug ID); pass a full URL or shorthand such as c/%s or b/%s\n", base.MinBareBuildIDDigits-1, trimmed, trimmed)
+		}
 		return 1
 	}
 
@@ -201,7 +211,7 @@ type TargetBindings struct {
 	AlertGroupID                       *string
 	ResultDBHost                       string // Optional ResultDB host override for lazy client creation (defaults to chromeinfra.ResultDBHost).
 	BuildbucketHost                    string // Optional Buildbucket host override for lazy client creation (defaults to chromeinfra.BuildbucketHost).
-	DefaultRootForWorkUnit             bool   // When true, sets WorkUnitID = "root" if SummaryPlaceholder is true and WorkUnitID is empty.
+	DefaultRootForWorkUnit             bool   // When true (work-unit subcommands), sets WorkUnitID = "root" if SummaryPlaceholder is true and resolves Legacy status when WorkUnitID is missing.
 	IgnoreWorkUnitOnSummaryPlaceholder bool   // When true, does not copy WorkUnitID into *b.WorkUnitID if SummaryPlaceholder is true.
 }
 
@@ -377,13 +387,15 @@ func ExtractWithAuth(ctx context.Context, af *base.AuthFlags, rdbClient pb.Resul
 	resolveAntsMeta := (b.Project != nil && *b.Project == "") ||
 		(b.Branch != nil && *b.Branch == "") ||
 		(b.AndroidDataRealm != nil && *b.AndroidDataRealm == "")
+	resolveLegacyIfNoWU := b.DefaultRootForWorkUnit && b.WorkUnitID != nil && *b.WorkUnitID == ""
 	extracted, err := extractIDs(ctx, raw, extractOptions{
-		af:              af,
-		rdbClient:       rdbClient,
-		bbClient:        bbClient,
-		host:            b.ResultDBHost,
-		bbHost:          b.BuildbucketHost,
-		resolveAntsMeta: resolveAntsMeta,
+		af:                  af,
+		rdbClient:           rdbClient,
+		bbClient:            bbClient,
+		host:                b.ResultDBHost,
+		bbHost:              b.BuildbucketHost,
+		resolveLegacyIfNoWU: resolveLegacyIfNoWU,
+		resolveAntsMeta:     resolveAntsMeta,
 	})
 	if err != nil {
 		return nil, err
@@ -511,7 +523,10 @@ func nextStepHint(extracted *ExtractedIDs, msg string) string {
 
 	// 7. Command expects -workunitid (luci work-unit get or luci work-unit artifact list).
 	if strings.Contains(msg, "-workunitid") && extracted.WorkUnitID == "" {
-		return fmt.Sprintf("Hint: to inspect the root work unit or list failing verdicts in this invocation, run:\n  luci work-unit get -invocationid %s -workunitid root\n  luci verdict list -invocationid %s", extracted.InvocationID, extracted.InvocationID)
+		if extracted.Legacy {
+			return fmt.Sprintf("Hint: %s is a legacy invocation (work units are only supported for root invocations); to list failing verdicts, run:\n  luci verdict list -invocationid %s", extracted.InvocationID, base.ShellQuoteIfNeeded(extracted.InvocationID))
+		}
+		return fmt.Sprintf("Hint: to inspect the root work unit or list failing verdicts in this invocation, run:\n  luci work-unit get -invocationid %s -workunitid root\n  luci verdict list -invocationid %s", base.ShellQuoteIfNeeded(extracted.InvocationID), base.ShellQuoteIfNeeded(extracted.InvocationID))
 	}
 
 	// 8. Default fallback when an InvocationID was extracted (missing -buildid, -testid, -resultid, -modulename, or -project).
@@ -617,14 +632,15 @@ func ExtractIDs(ctx context.Context, rdbClient pb.ResultDBClient, bbClient grpcp
 }
 
 type extractOptions struct {
-	af              *base.AuthFlags
-	rdbClient       pb.ResultDBClient
-	bbClient        grpcpb.BuildsClient
-	host            string
-	bbHost          string
-	legacy          bool
-	resolveLegacy   bool
-	resolveAntsMeta bool
+	af                  *base.AuthFlags
+	rdbClient           pb.ResultDBClient
+	bbClient            grpcpb.BuildsClient
+	host                string
+	bbHost              string
+	legacy              bool
+	resolveLegacy       bool
+	resolveLegacyIfNoWU bool
+	resolveAntsMeta     bool
 }
 
 func extractIDs(ctx context.Context, raw string, opts extractOptions) (*ExtractedIDs, error) {
@@ -747,7 +763,7 @@ func extractIDs(ctx context.Context, raw string, opts extractOptions) (*Extracte
 		}
 	}
 
-	needResolve := !isAntsInv && (extracted.lookupMiloVerdict || opts.resolveLegacy) && extracted.InvocationID != ""
+	needResolve := !isAntsInv && (extracted.lookupMiloVerdict || opts.resolveLegacy || (opts.resolveLegacyIfNoWU && extracted.WorkUnitID == "")) && extracted.InvocationID != ""
 	if needResolve {
 		ctx, rdbClient = ensureRDBClient()
 	}
@@ -1062,8 +1078,15 @@ func extractFromMiloStructuredURL(clean string, extracted *ExtractedIDs) bool {
 	}
 	extracted.VariantHash = variantHash
 
-	// Extract TestID from URL path if present
-	if caseIdx := strings.Index(clean, "/cases/"); caseIdx != -1 {
+	// Reconstruct canonical flat TestID from structured Milo URL segments
+	// (/modules/<mod>/schemes/<scheme>/variants/<hash>[/coarse/<c>][/fine/<f>]/cases/<case>),
+	// falling back to raw /cases/<case> or /tests/<test>.
+	if modName, flatTestID, ok := reconstructMiloStructuredTestID(clean); ok {
+		extracted.TestID = flatTestID
+		if modName != "" {
+			extracted.ModuleName = modName
+		}
+	} else if caseIdx := strings.Index(clean, "/cases/"); caseIdx != -1 {
 		afterCase := clean[caseIdx+len("/cases/"):]
 		caseParts := strings.Split(afterCase, "/")
 		if caseName, errUnescape := url.PathUnescape(caseParts[0]); errUnescape == nil && caseName != "" {
@@ -1081,6 +1104,53 @@ func extractFromMiloStructuredURL(clean string, extracted *ExtractedIDs) bool {
 	extracted.miloMatchFunc = matchFunc
 
 	return true
+}
+
+// reconstructMiloStructuredTestID parses a Milo structured test-investigate URL
+// path (/modules/<mod>/schemes/<scheme>/variants/<hash>[/coarse/<c>][/fine/<f>]/cases/<case>)
+// and encodes a validated ResultDB flat Test ID via pbutil.EncodeTestID.
+func reconstructMiloStructuredTestID(clean string) (moduleName, flatTestID string, ok bool) {
+	modIdx := strings.Index(clean, "/modules/")
+	if modIdx == -1 {
+		return "", "", false
+	}
+	parts := strings.Split(clean[modIdx+1:], "/")
+	var id pbutil.BaseTestIdentifier
+	hasCases := false
+	for i := 0; i+1 < len(parts) && !hasCases; i += 2 {
+		val, err := url.PathUnescape(parts[i+1])
+		if err != nil {
+			return "", "", false
+		}
+		switch parts[i] {
+		case "modules":
+			id.ModuleName = val
+		case "schemes":
+			id.ModuleScheme = val
+		case "variants":
+			// Variant hash is extracted separately by ParseVerdictName.
+		case "coarse":
+			id.CoarseName = val
+		case "fine":
+			id.FineName = val
+		case "cases":
+			id.CaseName = val
+			hasCases = true
+		default:
+			return "", "", false
+		}
+	}
+	if !hasCases {
+		return "", "", false
+	}
+	if err := pbutil.ValidateBaseTestIdentifier(id, pbutil.QuerySideTestIDLimitCallback); err != nil {
+		return "", "", false
+	}
+	flat := pbutil.EncodeTestID(id)
+	if id.ModuleName != pbutil.LegacyModuleName {
+		moduleName = id.ModuleName
+	}
+	return moduleName, flat, true
 }
 
 // extractFromLogDogBuildURL handles LogDog buildbucket URLs
@@ -1101,7 +1171,7 @@ func extractFromLogDogBuildURL(raw string, extracted *ExtractedIDs) bool {
 		return false
 	}
 	candidate := strings.TrimPrefix(parts[1], "b")
-	if !isAllDigits(candidate) || len(candidate) <= 10 {
+	if !base.IsAllDigits(candidate) || len(candidate) < base.MinBareBuildIDDigits {
 		return false
 	}
 	extracted.BuildID = candidate
@@ -1233,7 +1303,7 @@ func extractFromMiloBuildURL(clean string, extracted *ExtractedIDs) bool {
 		if len(parts) >= 3 && parts[0] != "" && parts[1] != "" && parts[2] != "" {
 			target := parts[2]
 			trimmed := strings.TrimPrefix(target, "b")
-			if isAllDigits(trimmed) && (len(trimmed) > 10 || strings.HasPrefix(target, "b")) {
+			if base.IsAllDigits(trimmed) && (len(trimmed) >= base.MinBareBuildIDDigits || strings.HasPrefix(target, "b")) {
 				extracted.BuildID = trimmed
 				extracted.InvocationID = "build-" + trimmed
 				return true
@@ -1286,24 +1356,13 @@ func unescapePathSegment(s string) string {
 }
 
 func populateBuildIDFromInvocation(extracted *ExtractedIDs) {
-	if extracted.BuildID == "" && strings.HasPrefix(extracted.InvocationID, "build-") {
-		trimmed := strings.TrimPrefix(extracted.InvocationID, "build-")
-		if isAllDigits(trimmed) && len(trimmed) > 10 {
-			extracted.BuildID = trimmed
-		}
+	if extracted.BuildID == "" {
+		extracted.BuildID = base.BuildIDFromInvocation(extracted.InvocationID)
 	}
 }
 
-func isAllDigits(s string) bool {
-	if s == "" {
-		return false
-	}
-	for _, c := range s {
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
+func isShortBareNumericID(s string) bool {
+	return base.IsAllDigits(s) && len(s) < base.MinBareBuildIDDigits
 }
 
 // extractFromBugTarget extracts numeric Buganizer IDs from bug URLs and shorthands:
@@ -1338,7 +1397,7 @@ func extractFromBugTarget(raw string, extracted *ExtractedIDs) bool {
 		strings.Contains(host, "issues.chromium.org") ||
 		strings.Contains(host, "crbug.com") {
 		parts := strings.Split(strings.Trim(u.Path, "/"), "/")
-		if len(parts) > 0 && isAllDigits(parts[len(parts)-1]) {
+		if len(parts) > 0 && base.IsAllDigits(parts[len(parts)-1]) {
 			extracted.BugID = parts[len(parts)-1]
 			return true
 		}
@@ -1685,6 +1744,12 @@ func extractFromInvocationResourceName(clean string, extracted *ExtractedIDs) bo
 		}
 	}
 	if extracted.InvocationID == "" && clean != "" && !strings.Contains(clean, "/") {
+		// Short bare numeric strings (<MinBareBuildIDDigits) are typically Gerrit CL or
+		// Buganizer IDs rather than 19-digit Buildbucket build IDs; do not
+		// infer a nonexistent build-<id> invocation for them.
+		if isShortBareNumericID(clean) {
+			return false
+		}
 		extracted.InvocationID = base.NormalizeInvocation(clean)
 		return true
 	}

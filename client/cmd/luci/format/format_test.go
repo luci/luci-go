@@ -17,9 +17,11 @@ package format
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -1337,5 +1339,73 @@ func TestFprintTestIDWithAggregations(t *testing.T) {
 			assert.Loosely(t, buf.String(), should.Equal("Test ID:\n  Module:    libkoru_get_svgelem_size_gtest (scheme: tradefed)\n  Case:      binderRpcTest\n"))
 			assert.Loosely(t, warningEnabledInRPC, should.BeFalse)
 		})
+	})
+}
+
+func TestLegacyTestVariantHelpers(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("legacy_test_variant_helpers", t, func(t *ftt.Test) {
+		assert.Loosely(t, IsLegacyTestVariantExonerated(nil), should.BeFalse)
+		assert.Loosely(t, LegacyTestVariantStatusV2(nil), should.Equal(rdbpb.TestVerdict_STATUS_UNSPECIFIED))
+
+		assert.Loosely(t, IsLegacyTestVariantExonerated(&rdbpb.TestVariant{Status: rdbpb.TestVariantStatus_EXONERATED}), should.BeTrue)
+		assert.Loosely(t, IsLegacyTestVariantExonerated(&rdbpb.TestVariant{StatusOverride: rdbpb.TestVerdict_EXONERATED}), should.BeTrue)
+		assert.Loosely(t, IsLegacyTestVariantExonerated(&rdbpb.TestVariant{Exonerations: []*rdbpb.TestExoneration{{}}}), should.BeTrue)
+		assert.Loosely(t, IsLegacyTestVariantExonerated(&rdbpb.TestVariant{Status: rdbpb.TestVariantStatus_UNEXPECTED}), should.BeFalse)
+
+		// Prefers StatusV2 when populated (e.g. EXECUTION_ERRORED + PASSED -> v1 FLAKY, v2 PASSED).
+		assert.Loosely(t, LegacyTestVariantStatusV2(&rdbpb.TestVariant{
+			Status:   rdbpb.TestVariantStatus_FLAKY,
+			StatusV2: rdbpb.TestVerdict_PASSED,
+		}), should.Equal(rdbpb.TestVerdict_PASSED))
+		assert.Loosely(t, LegacyTestVariantStatusV2(&rdbpb.TestVariant{
+			Status:   rdbpb.TestVariantStatus_FLAKY,
+			StatusV2: rdbpb.TestVerdict_FAILED,
+		}), should.Equal(rdbpb.TestVerdict_FAILED))
+
+		// Falls back to v1 status when StatusV2 is unspecified.
+		assert.Loosely(t, LegacyTestVariantStatusV2(&rdbpb.TestVariant{Status: rdbpb.TestVariantStatus_UNEXPECTED}), should.Equal(rdbpb.TestVerdict_FAILED))
+		assert.Loosely(t, LegacyTestVariantStatusV2(&rdbpb.TestVariant{Status: rdbpb.TestVariantStatus_UNEXPECTEDLY_SKIPPED}), should.Equal(rdbpb.TestVerdict_EXECUTION_ERRORED))
+		assert.Loosely(t, LegacyTestVariantStatusV2(&rdbpb.TestVariant{Status: rdbpb.TestVariantStatus_FLAKY}), should.Equal(rdbpb.TestVerdict_FLAKY))
+		assert.Loosely(t, LegacyTestVariantStatusV2(&rdbpb.TestVariant{Status: rdbpb.TestVariantStatus_EXPECTED}), should.Equal(rdbpb.TestVerdict_PASSED))
+	})
+
+	ftt.Run("FormatUnexpectedVerdictCountsInline", t, func(t *ftt.Test) {
+		assert.Loosely(t, FormatUnexpectedVerdictCountsInline(nil, false), should.BeEmpty)
+		assert.Loosely(t, FormatUnexpectedVerdictCountsInline(&rdbpb.TestAggregation_VerdictCounts{Passed: 10, Skipped: 2}, true), should.BeEmpty)
+		assert.Loosely(t, FormatUnexpectedVerdictCountsInline(&rdbpb.TestAggregation_VerdictCounts{
+			Failed:           2,
+			ExecutionErrored: 1,
+			Precluded:        1,
+			Flaky:            3,
+			Exonerated:       4,
+		}, false), should.Equal("[2 failed, 1 execution_errored, 1 precluded, 3 flaky, 4 exonerated]"))
+		assert.Loosely(t, FormatUnexpectedVerdictCountsInline(&rdbpb.TestAggregation_VerdictCounts{Failed: 5}, true), should.Equal("[5 failed, more available]"))
+	})
+
+	ftt.Run("FprintLegacyInvocationAdditionalMetadata", t, func(t *ftt.Test) {
+		props, err := structpb.NewStruct(map[string]any{"builder": "linux-rel"})
+		assert.Loosely(t, err, should.BeNil)
+		var buf bytes.Buffer
+		FprintLegacyInvocationAdditionalMetadata(&buf, &rdbpb.Invocation{
+			Realm:      "chromium:try",
+			BaselineId: "try:linux-rel",
+			Tags:       []*rdbpb.StringPair{{Key: "os", Value: "Ubuntu"}},
+			Properties: props,
+		})
+		out := buf.String()
+		assert.Loosely(t, out, should.ContainSubstring("Realm:        chromium:try\n"))
+		assert.Loosely(t, out, should.ContainSubstring("Baseline ID:  try:linux-rel\n"))
+		assert.Loosely(t, out, should.ContainSubstring("Invocation Tags:\n  os: Ubuntu\n"))
+		_, propsJSON, found := strings.Cut(out, "Invocation Properties:\n")
+		assert.Loosely(t, found, should.BeTrue)
+		var gotProps map[string]any
+		assert.Loosely(t, json.Unmarshal([]byte(propsJSON), &gotProps), should.BeNil)
+		assert.Loosely(t, gotProps, should.Match(map[string]any{"builder": "linux-rel"}))
+
+		buf.Reset()
+		FprintLegacyInvocationAdditionalMetadata(&buf, nil)
+		assert.Loosely(t, buf.String(), should.BeEmpty)
 	})
 }

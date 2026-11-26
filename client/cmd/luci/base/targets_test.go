@@ -432,3 +432,16 @@ func TestParseBuilderFlags(t *testing.T) {
 		})
 	})
 }
+
+func TestBuildIDFromInvocation(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run("BuildIDFromInvocation", t, func(t *ftt.Test) {
+		assert.Loosely(t, BuildIDFromInvocation("build-8664642485229324129"), should.Equal("8664642485229324129"))
+		assert.Loosely(t, BuildIDFromInvocation("build-12345678901"), should.Equal("12345678901"))
+		assert.Loosely(t, BuildIDFromInvocation("build-1234567890"), should.BeEmpty)
+		assert.Loosely(t, BuildIDFromInvocation("build-abc"), should.BeEmpty)
+		assert.Loosely(t, BuildIDFromInvocation("build-"), should.BeEmpty)
+		assert.Loosely(t, BuildIDFromInvocation("ants-i12345678901234"), should.BeEmpty)
+	})
+}

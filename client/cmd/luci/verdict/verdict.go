@@ -251,7 +251,7 @@ func (r *verdictGetRun) Run(a subcommands.Application, args []string, env subcom
 		if notice := formatExpiredExpectedResultsNotice(invID, resolved); notice != "" {
 			fmt.Fprint(errOut, notice)
 		}
-		if strings.HasSuffix(r.testID, "#.") || strings.HasSuffix(r.testID, ".#") || !strings.Contains(r.testID, "#") {
+		if !legacy && (strings.HasSuffix(r.testID, "#.") || strings.HasSuffix(r.testID, ".#") || !strings.Contains(r.testID, "#")) {
 			modName := strings.TrimSuffix(r.testID, "#.")
 			modName = strings.TrimSuffix(modName, ".#")
 			modName = strings.TrimPrefix(modName, ":")

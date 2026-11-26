@@ -116,15 +116,14 @@ func FormatBuild(w io.Writer, b *pb.Build, opts FormatOptions) error {
 	// 7. ResultDB Invocation
 	inv := ""
 	if rdb := b.GetInfra().GetResultdb(); rdb != nil && rdb.Invocation != "" {
-		inv = rdb.Invocation
+		inv = strings.Replace(rdb.Invocation, "build:", "build-", 1)
+		if !strings.HasPrefix(inv, "invocations/") && !strings.HasPrefix(inv, "rootInvocations/") {
+			inv = "rootInvocations/" + inv
+		}
 	} else if b.Id != 0 {
 		inv = fmt.Sprintf("rootInvocations/build-%d", b.Id)
 	}
 	if inv != "" {
-		if !strings.HasPrefix(inv, "rootInvocations/") {
-			inv = "rootInvocations/" + strings.TrimPrefix(inv, "invocations/")
-			inv = strings.Replace(inv, "build:", "build-", 1)
-		}
 		fmt.Fprintf(w, "Invocation:    %s\n", inv)
 	}
 
@@ -159,9 +158,7 @@ func FormatBuild(w io.Writer, b *pb.Build, opts FormatOptions) error {
 	}
 
 	// 11. Helpful guidance tips
-	if inv != "" && (hasFailures || b.Status == pb.Status_FAILURE || b.Status == pb.Status_INFRA_FAILURE) {
-		cleanInv := strings.TrimPrefix(inv, "rootInvocations/")
-		cleanInv = strings.TrimPrefix(cleanInv, "invocations/")
+	if cleanInv := buildInvocationID(b); cleanInv != "" && (hasFailures || b.Status == pb.Status_FAILURE || b.Status == pb.Status_INFRA_FAILURE) {
 		fmt.Fprintf(w, "\n(Tip: To list failed test verdicts, run: luci verdict list -invocationid %s)\n", cleanInv)
 	}
 	if b.Id != 0 && hasFailures {

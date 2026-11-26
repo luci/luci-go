@@ -296,12 +296,95 @@ func TestExtractIDs(t *testing.T) {
 			assert.Loosely(t, ids.VariantHash, should.Equal("b7de9035241e76cc"))
 			assert.Loosely(t, ids.ArtifactID, should.Equal("summary_node"))
 			assert.Loosely(t, ids.ResultID, should.Equal("0"))
-			assert.Loosely(t, ids.TestID, should.Equal("*fixture"))
+			assert.Loosely(t, ids.ModuleName, should.Equal("//chrome:chrome_private_code_test"))
+			assert.Loosely(t, ids.TestID, should.Equal(`://chrome\:chrome_private_code_test!single::#*fixture`))
 			assert.Loosely(t, ids.Legacy, should.BeTrue)
 
 			idsNoClient, err := ExtractIDs(ctx, nil, nil, url, false)
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, idsNoClient.Legacy, should.BeFalse)
+		})
+
+		t.Run(`Milo structured Chromium test-investigate URL reconstructs flat TestID with coarse and fine segments`, func(t *ftt.Test) {
+			url := "https://ci.chromium.org/ui/test-investigate/invocations/build-8664642485229324129/modules/%2F%2Fchrome%2Ftest%3Abrowser_tests/schemes/gtest/variants/abcd1234abcd1234/fine/OmniboxEverywhereWebUITest/cases/Composebox"
+			extracted, err := ExtractIDs(ctx, nil, nil, url, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, extracted.InvocationID, should.Equal("build-8664642485229324129"))
+			assert.Loosely(t, extracted.VariantHash, should.Equal("abcd1234abcd1234"))
+			assert.Loosely(t, extracted.ModuleName, should.Equal("//chrome/test:browser_tests"))
+			assert.Loosely(t, extracted.TestID, should.Equal(`://chrome/test\:browser_tests!gtest::OmniboxEverywhereWebUITest#Composebox`))
+
+			withCoarse := "https://ci.chromium.org/ui/test-investigate/invocations/build-8664642485229324129/modules/ModA/schemes/junit/variants/abcd1234abcd1234/coarse/com.example/fine/MyTest/cases/testFoo"
+			extracted2, err := ExtractIDs(ctx, nil, nil, withCoarse, false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, extracted2.ModuleName, should.Equal("ModA"))
+			assert.Loosely(t, extracted2.TestID, should.Equal(":ModA!junit:com.example:MyTest#testFoo"))
+		})
+
+		t.Run(`Short bare numeric IDs like Gerrit CL numbers are not inferred as build invocations`, func(t *ftt.Test) {
+			for _, shortID := range []string{"8845411", "588248844", "1234567890"} {
+				extracted, err := ExtractIDs(ctx, nil, nil, shortID, false)
+				assert.Loosely(t, err, should.BeNil)
+				assert.Loosely(t, extracted.IsEmpty(), should.BeTrue)
+				assert.Loosely(t, extracted.InvocationID, should.BeEmpty)
+				assert.Loosely(t, extracted.BuildID, should.BeEmpty)
+			}
+
+			// 19-digit Buildbucket build IDs still resolve normally.
+			longID, err := ExtractIDs(ctx, nil, nil, "8664642485229324129", false)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, longID.BuildID, should.Equal("8664642485229324129"))
+			assert.Loosely(t, longID.InvocationID, should.Equal("build-8664642485229324129"))
+
+			// CLI prints ambiguity hint on stderr for <=10-digit bare numeric targets.
+			var outBuf, errBuf bytes.Buffer
+			run := &idsRun{out: &outBuf, errOut: &errBuf}
+			assert.Loosely(t, run.Run(nil, []string{"8845411"}, nil), should.Equal(1))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring(`no resource IDs could be extracted from "8845411"`))
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("c/8845411 or b/8845411"))
+		})
+
+		t.Run(`ExtractWithAuth resolves Legacy for work-unit commands when -workunitid is missing`, func(t *ftt.Test) {
+			var invID, wuID string
+			extracted, err := ExtractWithAuth(ctx, nil, legacyMockClient(), nil, "https://ci.chromium.org/ui/inv/build-8664642485229324129", TargetBindings{
+				InvocationID:           &invID,
+				WorkUnitID:             &wuID,
+				DefaultRootForWorkUnit: true,
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, extracted.Legacy, should.BeTrue)
+			assert.Loosely(t, invID, should.Equal("build-8664642485229324129"))
+			assert.Loosely(t, wuID, should.BeEmpty)
+
+			var errBuf bytes.Buffer
+			PrintMissingFlagsError(&errBuf, extracted, "flags -invocationid and -workunitid are required")
+			out := errBuf.String()
+			assert.Loosely(t, out, should.ContainSubstring("legacy invocation"))
+			assert.Loosely(t, out, should.ContainSubstring("luci verdict list -invocationid build-8664642485229324129"))
+			assert.Loosely(t, out, should.NotContainSubstring("luci work-unit get"))
+
+			// Optional WorkUnitID bindings (e.g. `luci artifact list`) must not make
+			// redundant ResolveInvocation RPCs before the command's own lookup.
+			resolveCalls := 0
+			countingClient := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					resolveCalls++
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					resolveCalls++
+					return &pb.Invocation{Name: in.Name}, nil
+				},
+			}
+			invID, wuID = "", ""
+			optExtracted, err := ExtractWithAuth(ctx, nil, countingClient, nil, "https://ci.chromium.org/ui/inv/build-8664642485229324129", TargetBindings{
+				InvocationID: &invID,
+				WorkUnitID:   &wuID,
+			})
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, invID, should.Equal("build-8664642485229324129"))
+			assert.Loosely(t, optExtracted.Legacy, should.BeFalse)
+			assert.Loosely(t, resolveCalls, should.Equal(0))
 		})
 
 		t.Run(`Canonical test result artifact name`, func(t *ftt.Test) {
@@ -1759,5 +1842,51 @@ func TestCustomHostsForwarding(t *testing.T) {
 			assert.Loosely(t, err, should.BeNil)
 			assert.Loosely(t, seenRDBHost, should.Equal("staging-rdb.example.com"))
 		})
+	})
+}
+
+func TestReconstructMiloStructuredTestID(t *testing.T) {
+	t.Parallel()
+
+	ftt.Run(`reconstructMiloStructuredTestID validates structured components and ignores trailing segments`, t, func(t *ftt.Test) {
+		// Valid structured URL with trailing /results/.../artifacts/... segments (including invalid %ZZ escape after /cases/).
+		mod, flat, ok := reconstructMiloStructuredTestID(
+			"invocations/build-123/modules/%2F%2Fchrome%2Ftest%3Aunit_tests/schemes/gtest/variants/abcd1234abcd1234/fine/Suite/cases/TestCase/results/0/artifacts/%ZZ",
+		)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, mod, should.Equal("//chrome/test:unit_tests"))
+		assert.Loosely(t, flat, should.Equal(`://chrome/test\:unit_tests!gtest::Suite#TestCase`))
+
+		// Valid legacy module+scheme pair returns empty moduleName and unprefixed case name.
+		mod, flat, ok = reconstructMiloStructuredTestID(
+			"invocations/build-123/modules/legacy/schemes/legacy/variants/abcd1234abcd1234/cases/ninja%3A%2F%2Fchrome%3Atest%2FSuite.Case",
+		)
+		assert.Loosely(t, ok, should.BeTrue)
+		assert.Loosely(t, mod, should.Equal(""))
+		assert.Loosely(t, flat, should.Equal("ninja://chrome:test/Suite.Case"))
+
+		// Rejects mismatched legacy module with non-legacy scheme (would otherwise violate EncodeTestID invariants).
+		_, _, ok = reconstructMiloStructuredTestID(
+			"invocations/build-123/modules/legacy/schemes/gtest/variants/abcd1234abcd1234/cases/Foo",
+		)
+		assert.Loosely(t, ok, should.BeFalse)
+
+		// Rejects coarse name without fine name.
+		_, _, ok = reconstructMiloStructuredTestID(
+			"invocations/build-123/modules/ModA/schemes/junit/variants/abcd1234abcd1234/coarse/pkg/cases/Foo",
+		)
+		assert.Loosely(t, ok, should.BeFalse)
+
+		// Rejects invalid scheme characters (e.g. uppercase or punctuation).
+		_, _, ok = reconstructMiloStructuredTestID(
+			"invocations/build-123/modules/ModA/schemes/GTest!/variants/abcd1234abcd1234/cases/Foo",
+		)
+		assert.Loosely(t, ok, should.BeFalse)
+
+		// Rejects unknown intermediate path segments before /cases/.
+		_, _, ok = reconstructMiloStructuredTestID(
+			"invocations/build-123/modules/ModA/schemes/gtest/variants/abcd1234abcd1234/unknown/seg/cases/Foo",
+		)
+		assert.Loosely(t, ok, should.BeFalse)
 	})
 }

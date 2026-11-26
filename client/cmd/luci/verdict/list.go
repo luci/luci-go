@@ -397,13 +397,9 @@ func rootVerdictToListed(tv *pb.TestVerdict) *ListedVerdict {
 	}
 }
 
-func isLegacyVariantExonerated(tv *pb.TestVariant) bool {
-	return tv.Status == pb.TestVariantStatus_EXONERATED || tv.StatusOverride == pb.TestVerdict_EXONERATED || len(tv.Exonerations) > 0
-}
-
 func legacyVariantToListed(tv *pb.TestVariant) *ListedVerdict {
-	isExonerated := isLegacyVariantExonerated(tv)
-	statusStr := legacyVariantStatusV2(tv).String()
+	isExonerated := format.IsLegacyTestVariantExonerated(tv)
+	statusStr := format.LegacyTestVariantStatusV2(tv).String()
 	if isExonerated {
 		if statusStr == "FAILED" || statusStr == "EXECUTION_ERRORED" || statusStr == "PRECLUDED" || statusStr == "FLAKY" {
 			statusStr = statusStr + " (EXONERATED)"
@@ -627,24 +623,6 @@ func (h hiddenVerdictCounts) formatNotice() string {
 	return fmt.Sprintf("Note: %s %s not shown (%s).\n", strings.Join(counts, ", "), noun, hintClause)
 }
 
-func legacyVariantStatusV2(tv *pb.TestVariant) pb.TestVerdict_Status {
-	if tv.StatusV2 != pb.TestVerdict_STATUS_UNSPECIFIED {
-		return tv.StatusV2
-	}
-	switch tv.Status {
-	case pb.TestVariantStatus_UNEXPECTED:
-		return pb.TestVerdict_FAILED
-	case pb.TestVariantStatus_FLAKY:
-		return pb.TestVerdict_FLAKY
-	case pb.TestVariantStatus_UNEXPECTEDLY_SKIPPED:
-		return pb.TestVerdict_EXECUTION_ERRORED
-	case pb.TestVariantStatus_EXPECTED:
-		return pb.TestVerdict_PASSED
-	default:
-		return pb.TestVerdict_STATUS_UNSPECIFIED
-	}
-}
-
 func matchesLegacyScope(tv *pb.TestVariant, filter statusFilter) bool {
 	if filter.moduleName != "" {
 		modMatch := (tv.TestIdStructured != nil && tv.TestIdStructured.ModuleName == filter.moduleName) ||
@@ -729,8 +707,8 @@ func queryLegacyInvocationListedVerdicts(ctx context.Context, client pb.ResultDB
 			if !matchesLegacyScope(tv, filter) {
 				continue
 			}
-			hasEx := isLegacyVariantExonerated(tv)
-			st := legacyVariantStatusV2(tv)
+			hasEx := format.IsLegacyTestVariantExonerated(tv)
+			st := format.LegacyTestVariantStatusV2(tv)
 			if !filter.Matches(st, tv.StatusOverride, hasEx) {
 				hidden.add(st, tv.StatusOverride, hasEx)
 				continue

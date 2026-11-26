@@ -685,6 +685,44 @@ func TestListCmd(t *testing.T) {
 			assert.Loosely(t, utf8.ValidString(emptyTinyOut), should.BeTrue)
 		})
 
+		t.Run(`prints test-level artifact hint when legacy invocation has 0 invocation-level artifacts`, func(t *ftt.Test) {
+			legacyClient := &mockResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *rdbpb.GetRootInvocationRequest) (*rdbpb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *rdbpb.GetInvocationRequest) (*rdbpb.Invocation, error) {
+					return &rdbpb.Invocation{Name: in.Name}, nil
+				},
+				listArtifacts: func(ctx context.Context, in *rdbpb.ListArtifactsRequest) (*rdbpb.ListArtifactsResponse, error) {
+					return &rdbpb.ListArtifactsResponse{}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			run := &artifactListRun{
+				artifactCommonRun: artifactCommonRun{
+					client:       legacyClient,
+					out:          &buf,
+					parentType:   ParentTypeInvocation,
+					invocationID: "build-8664642485229324129",
+				},
+				maxArtifacts: DefaultMaxArtifacts,
+			}
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("(no artifacts)"))
+			assert.Loosely(t, out, should.ContainSubstring("require -testid and -resultid"))
+			assert.Loosely(t, out, should.ContainSubstring("luci verdict list -invocationid=build-8664642485229324129"))
+
+			// Filtered empty legacy invocation mentions active filter and -testid/-resultid.
+			buf.Reset()
+			run.filter = "logcat"
+			assert.Loosely(t, run.Run(nil, nil, nil), should.Equal(0))
+			filteredOut := buf.String()
+			assert.Loosely(t, filteredOut, should.ContainSubstring("matching the active filter"))
+			assert.Loosely(t, filteredOut, should.ContainSubstring("require -testid and -resultid"))
+		})
+
 		t.Run(`preserves active -filter and -glob flags in omitted view-all hint`, func(t *ftt.Test) {
 			var invArts []*rdbpb.Artifact
 			for i := range 120 {

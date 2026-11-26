@@ -419,6 +419,32 @@ func TestCmdVerdict(t *testing.T) {
 					"Hint: if this was a module error, try: luci module get -invocationid build-123 -modulename ninja://chrome/test:browser_tests/Suite.Test\n",
 			))
 		})
+
+		t.Run(`verdictGetRun suppresses module get hint on legacy invocations`, func(t *ftt.Test) {
+			client := &mockAggResultDBClient{
+				getRootInvocation: func(ctx context.Context, in *pb.GetRootInvocationRequest) (*pb.RootInvocation, error) {
+					return nil, status.Error(codes.NotFound, "not found")
+				},
+				getInvocation: func(ctx context.Context, in *pb.GetInvocationRequest) (*pb.Invocation, error) {
+					return &pb.Invocation{Name: in.Name, State: pb.Invocation_FINALIZED}, nil
+				},
+				queryTestResults: func(ctx context.Context, in *pb.QueryTestResultsRequest) (*pb.QueryTestResultsResponse, error) {
+					return &pb.QueryTestResultsResponse{}, nil
+				},
+			}
+			var outBuf, errBuf bytes.Buffer
+			run := getCmd.CommandRun().(*verdictGetRun)
+			run.client = client
+			run.out = &outBuf
+			run.errOut = &errBuf
+			run.invocationID = "build-123"
+			run.testID = "Composebox"
+			rc := run.Run(nil, nil, nil)
+			assert.Loosely(t, rc, should.Equal(1))
+			assert.Loosely(t, outBuf.String(), should.BeEmpty)
+			assert.Loosely(t, errBuf.String(), should.ContainSubstring("no results found for test \"Composebox\""))
+			assert.Loosely(t, errBuf.String(), should.NotContainSubstring("luci module get"))
+		})
 	})
 }
 

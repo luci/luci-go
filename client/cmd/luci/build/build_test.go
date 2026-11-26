@@ -227,6 +227,27 @@ func TestFormatBuild(t *testing.T) {
 
 			assert.Loosely(t, out, should.ContainSubstring("Timing:        1h 15m 00s (Created: 2026-09-08 23:50:00 UTC, Started: 23:55:00, Ended: 2026-09-09 01:10:00)"))
 		})
+
+		t.Run(`Preserves legacy invocations/ prefix from Buildbucket ResultDB metadata`, func(t *ftt.Test) {
+			b := &pb.Build{
+				Id:     8664642485229324129,
+				Status: pb.Status_FAILURE,
+				Infra: &pb.BuildInfra{
+					Resultdb: &pb.BuildInfra_ResultDB{
+						Invocation: "invocations/build-8664642485229324129",
+					},
+				},
+			}
+
+			var buf bytes.Buffer
+			err := FormatBuild(&buf, b, FormatOptions{})
+			assert.Loosely(t, err, should.BeNil)
+			out := buf.String()
+
+			assert.Loosely(t, out, should.ContainSubstring("Invocation:    invocations/build-8664642485229324129\n"))
+			assert.Loosely(t, out, should.NotContainSubstring("rootInvocations/build-8664642485229324129"))
+			assert.Loosely(t, out, should.ContainSubstring("luci verdict list -invocationid build-8664642485229324129"))
+		})
 	})
 }
 

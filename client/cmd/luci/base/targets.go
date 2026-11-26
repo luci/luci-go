@@ -225,16 +225,16 @@ func NormalizeInvocation(inv string) string {
 	inv = strings.TrimSpace(inv)
 	inv = strings.TrimPrefix(inv, "invocations/")
 	inv = strings.TrimPrefix(inv, "rootInvocations/")
-	if strings.HasPrefix(inv, "I") && len(inv) > 1 && isAllDigits(inv[1:]) {
+	if strings.HasPrefix(inv, "I") && len(inv) > 1 && IsAllDigits(inv[1:]) {
 		return "ants-i" + inv[1:]
 	}
-	if strings.HasPrefix(inv, "i") && len(inv) > 1 && isAllDigits(inv[1:]) {
+	if strings.HasPrefix(inv, "i") && len(inv) > 1 && IsAllDigits(inv[1:]) {
 		return "ants-i" + inv[1:]
 	}
-	if strings.HasPrefix(strings.ToLower(inv), "ants-i") && len(inv) > 6 && isAllDigits(inv[6:]) {
+	if strings.HasPrefix(strings.ToLower(inv), "ants-i") && len(inv) > 6 && IsAllDigits(inv[6:]) {
 		return "ants-i" + inv[6:]
 	}
-	if strings.HasPrefix(inv, "b") && len(inv) > 1 && isAllDigits(inv[1:]) {
+	if strings.HasPrefix(inv, "b") && len(inv) > 1 && IsAllDigits(inv[1:]) {
 		return "build-" + inv[1:]
 	}
 	if !strings.HasPrefix(inv, "build-") && !strings.HasPrefix(inv, "task-") && !strings.HasPrefix(inv, "u-") && !strings.HasPrefix(inv, "ants-") {
@@ -257,7 +257,13 @@ func NormalizeWorkUnit(wu string) string {
 	return wu
 }
 
-func isAllDigits(s string) bool {
+// MinBareBuildIDDigits is the minimum digit count for a bare numeric string
+// (or build-<digits> suffix) to be treated as a Buildbucket build ID rather
+// than a shorter Gerrit CL or Buganizer issue number.
+const MinBareBuildIDDigits = 11
+
+// IsAllDigits reports whether s is a non-empty ASCII decimal digit string.
+func IsAllDigits(s string) bool {
 	if len(s) == 0 {
 		return false
 	}
@@ -267,6 +273,17 @@ func isAllDigits(s string) bool {
 		}
 	}
 	return true
+}
+
+// BuildIDFromInvocation extracts the numeric Buildbucket build ID from a
+// "build-<digits>" invocation ID (requiring at least MinBareBuildIDDigits
+// digits), returning "" otherwise.
+func BuildIDFromInvocation(invID string) string {
+	trimmed, ok := strings.CutPrefix(invID, "build-")
+	if ok && IsAllDigits(trimmed) && len(trimmed) >= MinBareBuildIDDigits {
+		return trimmed
+	}
+	return ""
 }
 
 // TrimResourceURL strips URL scheme/host prefix and query/hash fragments from a resource target or URL.

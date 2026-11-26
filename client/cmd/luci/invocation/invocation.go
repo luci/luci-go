@@ -21,16 +21,19 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.chromium.org/luci/client/cmd/luci/base"
 	"go.chromium.org/luci/client/cmd/luci/format"
 	"go.chromium.org/luci/client/cmd/luci/ids"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 	pb "go.chromium.org/luci/resultdb/proto/v1"
 )
@@ -186,7 +189,13 @@ func printInvocationDetails(ctx context.Context, out io.Writer, client pb.Result
 	}
 	if resolved.Legacy {
 		inv := resolved.Invocation
-		fmt.Fprintf(out, "Invocation:    invocations/%s (legacy)\n", resolved.ID)
+		summary := fetchLegacyInvocationSummary(ctx, client, resolved.ID)
+		inlineCounts := formatLegacyVerdictCountsInline(summary)
+		var countsSuffix string
+		if inlineCounts != "" {
+			countsSuffix = " " + inlineCounts
+		}
+		fmt.Fprintf(out, "Invocation:    invocations/%s (legacy)%s\n", resolved.ID, countsSuffix)
 		if inv == nil {
 			return
 		}
@@ -205,25 +214,15 @@ func printInvocationDetails(ctx context.Context, out io.Writer, client pb.Result
 		if inv.GetFinalizeTime() != nil {
 			fmt.Fprintf(out, "Finalized:     %s\n", inv.GetFinalizeTime().AsTime().UTC().Format(time.RFC3339))
 		}
+		if verdictSummary := formatLegacyVerdictCountsSummary(summary, inlineCounts); verdictSummary != "" {
+			fmt.Fprintf(out, "Test Verdicts:   %s\n", verdictSummary)
+		}
 		if showMetadata {
 			fmt.Fprintln(out)
-			if inv.GetRealm() != "" {
-				fmt.Fprintf(out, "Realm:        %s\n", inv.GetRealm())
-			}
-			if inv.GetBaselineId() != "" {
-				fmt.Fprintf(out, "Baseline ID:  %s\n", inv.GetBaselineId())
-			}
-			if len(inv.GetTags()) > 0 {
-				fmt.Fprintln(out, "Invocation Tags:")
-				for _, tag := range inv.GetTags() {
-					fmt.Fprintf(out, "  %s: %s\n", tag.GetKey(), tag.GetValue())
-				}
-			}
-			if inv.GetProperties() != nil {
-				if b, err := (protojson.MarshalOptions{Multiline: true, Indent: "  "}).Marshal(inv.GetProperties()); err == nil {
-					fmt.Fprintf(out, "Invocation Properties:\n%s\n", string(b))
-				}
-			}
+			format.FprintLegacyInvocationAdditionalMetadata(out, inv)
+		}
+		if summary != nil && summary.isZeroTestsRan() {
+			fprintLegacyZeroVerdictDiagnostics(out, resolved.ID, inv)
 		}
 		return
 	}
@@ -271,4 +270,136 @@ func printInvocationDetails(ctx context.Context, out io.Writer, client pb.Result
 			IncludeWorkUnitGet: true,
 		})
 	}
+}
+
+type legacyInvocationSummary struct {
+	hasTotalResults  bool
+	totalTestResults int64
+	hasVariants      bool
+	anyVariants      bool
+	counts           pb.TestAggregation_VerdictCounts
+	moreUnexpected   bool
+}
+
+func (s *legacyInvocationSummary) isZeroTestsRan() bool {
+	if s == nil {
+		return false
+	}
+	return s.hasTotalResults && s.totalTestResults == 0 && !s.anyVariants && !s.moreUnexpected
+}
+
+func fetchLegacyInvocationSummary(ctx context.Context, client pb.ResultDBClient, invID string) *legacyInvocationSummary {
+	if client == nil || invID == "" {
+		return nil
+	}
+	invName := "invocations/" + base.NormalizeInvocation(invID)
+	probeCtx := logging.SetLevel(ctx, logging.Error)
+
+	var (
+		statsResp *pb.QueryTestResultStatisticsResponse
+		statsErr  error
+		tvResp    *pb.QueryTestVariantsResponse
+		tvErr     error
+		wg        sync.WaitGroup
+	)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		statsResp, statsErr = client.QueryTestResultStatistics(probeCtx, &pb.QueryTestResultStatisticsRequest{
+			Invocations: []string{invName},
+		})
+	}()
+	go func() {
+		defer wg.Done()
+		tvResp, tvErr = client.QueryTestVariants(probeCtx, &pb.QueryTestVariantsRequest{
+			Invocations: []string{invName},
+			Predicate: &pb.TestVariantPredicate{
+				Status: pb.TestVariantStatus_UNEXPECTED_MASK,
+			},
+			PageSize:    1000,
+			ResultLimit: 1,
+			ReadMask:    &fieldmaskpb.FieldMask{Paths: []string{"status", "status_v2", "status_override"}},
+		})
+	}()
+	wg.Wait()
+
+	if (statsErr != nil || statsResp == nil) && (tvErr != nil || tvResp == nil) {
+		return nil
+	}
+
+	summary := &legacyInvocationSummary{}
+	if statsErr == nil && statsResp != nil {
+		summary.hasTotalResults = true
+		summary.totalTestResults = statsResp.GetTotalTestResults()
+	}
+	if tvErr == nil && tvResp != nil {
+		summary.hasVariants = true
+		summary.anyVariants = len(tvResp.GetTestVariants()) > 0
+		summary.moreUnexpected = tvResp.GetNextPageToken() != ""
+		for _, tv := range tvResp.GetTestVariants() {
+			if format.IsLegacyTestVariantExonerated(tv) {
+				summary.counts.Exonerated++
+				continue
+			}
+			switch format.LegacyTestVariantStatusV2(tv) {
+			case pb.TestVerdict_FAILED:
+				summary.counts.Failed++
+			case pb.TestVerdict_EXECUTION_ERRORED:
+				summary.counts.ExecutionErrored++
+			case pb.TestVerdict_PRECLUDED:
+				summary.counts.Precluded++
+			case pb.TestVerdict_FLAKY:
+				summary.counts.Flaky++
+			}
+		}
+	}
+	return summary
+}
+
+func formatLegacyVerdictCountsInline(s *legacyInvocationSummary) string {
+	if s == nil {
+		return ""
+	}
+	if inline := format.FormatUnexpectedVerdictCountsInline(&s.counts, s.moreUnexpected); inline != "" {
+		return inline
+	}
+	if s.hasVariants && !s.moreUnexpected && s.hasTotalResults && s.totalTestResults > 0 {
+		return "[0 unexpected]"
+	}
+	return ""
+}
+
+func formatLegacyVerdictCountsSummary(s *legacyInvocationSummary, inline string) string {
+	if s == nil {
+		return ""
+	}
+	if s.isZeroTestsRan() {
+		return "0 tests ran"
+	}
+	if s.hasTotalResults && s.totalTestResults > 0 {
+		if inline != "" {
+			return fmt.Sprintf("%s (%d total test results)", inline, s.totalTestResults)
+		}
+		return fmt.Sprintf("%d total test results", s.totalTestResults)
+	}
+	return inline
+}
+
+func fprintLegacyZeroVerdictDiagnostics(out io.Writer, invID string, inv *pb.Invocation) {
+	quotedInv := base.ShellQuoteIfNeeded(invID)
+	switch inv.GetState() {
+	case pb.Invocation_FINALIZED:
+		fmt.Fprintf(out, "Note: Inv State: FINALIZED with 0 ResultDB test results only means the invocation closed (it does not mean tests passed).\n")
+	case pb.Invocation_ACTIVE:
+		fmt.Fprintf(out, "Note: Inv State: ACTIVE with 0 ResultDB test results so far (test execution may still be in progress).\n")
+	case pb.Invocation_FINALIZING:
+		fmt.Fprintf(out, "Note: Inv State: FINALIZING with 0 ResultDB test results so far (results may still be uploading until finalized).\n")
+	default:
+		fmt.Fprintf(out, "Note: No test results were uploaded to ResultDB for invocation %q (0 tests ran).\n", invID)
+	}
+	fmt.Fprintln(out, "Next steps:")
+	if buildID := base.BuildIDFromInvocation(invID); buildID != "" {
+		fmt.Fprintf(out, "  - Inspect build steps and compile/setup errors: luci build get -buildid=%s\n", base.ShellQuoteIfNeeded(buildID))
+	}
+	fmt.Fprintf(out, "  - List invocation-level logs and artifacts: luci artifact list -invocationid=%s\n", quotedInv)
 }
