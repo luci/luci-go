@@ -106,8 +106,8 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
     expect(keys).not.toContain('type');
     expect(keys).not.toContain('hostname');
 
-    expect(keys).toContain('host_group_health_pct');
-    expect(keys).toContain('run_target_health_pct');
+    expect(keys).toContain('effective_host_group_health_pct');
+    expect(keys).toContain('effective_run_target_health_pct');
 
     const hostGroupBuilder = result.current.filterBuilders.host_group;
     const hostGroupValues = (
@@ -546,7 +546,7 @@ describe('<AndroidPriorityRulesPanel /> and filter builders', () => {
         rules: [
           {
             id: 'rule-1',
-            expressionAip160: 'host_group_health_pct <= 0.5',
+            expressionAip160: 'effective_host_group_health_pct <= 0.5',
             weight: '30',
             workspace: AndroidWorkspace.ANDROID_WORKSPACE_ANDROID,
             siteId: '',

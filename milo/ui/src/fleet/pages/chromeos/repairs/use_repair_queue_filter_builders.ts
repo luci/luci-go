@@ -14,7 +14,7 @@
 
 import { useMemo } from 'react';
 
-import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
+import { buildEffectiveHealthRangeFilter } from '@/fleet/components/repair_queue/utils';
 import { useChromeOSFields } from '@/fleet/pages/device_list_page/chromeos/use_chromeos_available_columns';
 
 import {
@@ -57,20 +57,9 @@ export const useRepairQueueFilterBuilders = (): {
     );
 
     const queueFilters: Record<string, RepairQueueFilterBuilder> = {
-      [POOL_HEALTH_FILTER_KEY]: new RangeFilterCategoryBuilder()
-        .setLabel('Pool Health')
-        .setMin(0)
-        .setMax(100)
-        .setScaleFactor(0.01)
-        .setUnit('%')
-        .setHelperText('* Note: Claimed devices count as healthy'),
-      [MODEL_HEALTH_FILTER_KEY]: new RangeFilterCategoryBuilder()
-        .setLabel('Model Health')
-        .setMin(0)
-        .setMax(100)
-        .setScaleFactor(0.01)
-        .setUnit('%')
-        .setHelperText('* Note: Claimed devices count as healthy'),
+      [POOL_HEALTH_FILTER_KEY]: buildEffectiveHealthRangeFilter('Pool Health'),
+      [MODEL_HEALTH_FILTER_KEY]:
+        buildEffectiveHealthRangeFilter('Model Health'),
       [ACTIVE_IRM_FILTER_KEY]: buildStringListFilter(
         'Active IRM',
         irmBugIds,

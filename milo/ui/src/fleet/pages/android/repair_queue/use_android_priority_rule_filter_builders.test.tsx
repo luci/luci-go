@@ -198,14 +198,26 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
       (workspace) => {
         mockDimensions({
           baseDimensions: {},
-          // A device label with the same name must not shadow the column.
-          labels: { host_group_health_pct: { values: ['0.5'] } },
+          // Device labels with legacy or effective health names must not shadow the column.
+          labels: {
+            host_group_health_pct: { values: ['0.5'] },
+            effective_host_group_health_pct: { values: ['0.5'] },
+            run_target_health_pct: { values: ['0.5'] },
+            effective_run_target_health_pct: { values: ['0.5'] },
+          },
         });
 
         const { result } = renderFilterBuilders(workspace);
         const builders = result.current.filterBuilders;
 
         expect(builders['labels."host_group_health_pct"']).toBeUndefined();
+        expect(
+          builders['labels."effective_host_group_health_pct"'],
+        ).toBeUndefined();
+        expect(builders['labels."run_target_health_pct"']).toBeUndefined();
+        expect(
+          builders['labels."effective_run_target_health_pct"'],
+        ).toBeUndefined();
         for (const key of HEALTH_KEYS) {
           const builder = builders[key];
           expect(builder).toBeInstanceOf(RangeFilterCategoryBuilder);
@@ -214,9 +226,16 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
           expect(builder.max).toBe(100);
           expect(builder.scaleFactor).toBe(0.01);
           expect(builder.unit).toBe('%');
+          expect(builder.helperText).toBe(
+            '* Note: Claimed devices count as healthy',
+          );
         }
-        expect(builders.host_group_health_pct?.label).toBe('Host Group Health');
-        expect(builders.run_target_health_pct?.label).toBe('Run Target Health');
+        expect(builders[HOST_GROUP_HEALTH_FILTER_KEY]?.label).toBe(
+          'Host Group Health',
+        );
+        expect(builders[RUN_TARGET_HEALTH_FILTER_KEY]?.label).toBe(
+          'Run Target Health',
+        );
       },
     );
 
@@ -235,8 +254,12 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
 
       const { result } = renderFilterBuilders('Android');
 
-      expect(result.current.filterBuilders.host_group_health_pct).toBeDefined();
-      expect(result.current.filterBuilders.run_target_health_pct).toBeDefined();
+      expect(
+        result.current.filterBuilders[HOST_GROUP_HEALTH_FILTER_KEY],
+      ).toBeDefined();
+      expect(
+        result.current.filterBuilders[RUN_TARGET_HEALTH_FILTER_KEY],
+      ).toBeDefined();
     });
 
     it('parses stored fractional rules as percentages without warnings', () => {
@@ -245,12 +268,14 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
 
       const { result: filterState } = renderFilterState(
         result.current.filterBuilders,
-        'host_group_health_pct <= 0.5 AND run_target_health_pct >= 0.2 AND run_target_health_pct <= 0.8',
+        'effective_host_group_health_pct <= 0.5 AND effective_run_target_health_pct >= 0.2 AND effective_run_target_health_pct <= 0.8',
       );
 
       expect(filterState.current.filterErrors).toEqual([]);
-      const hostGroup = filterState.current.filterValues?.host_group_health_pct;
-      const runTarget = filterState.current.filterValues?.run_target_health_pct;
+      const hostGroup =
+        filterState.current.filterValues?.[HOST_GROUP_HEALTH_FILTER_KEY];
+      const runTarget =
+        filterState.current.filterValues?.[RUN_TARGET_HEALTH_FILTER_KEY];
       expect(hostGroup).toBeInstanceOf(RangeFilterCategory);
       expect(runTarget).toBeInstanceOf(RangeFilterCategory);
       if (
@@ -270,15 +295,16 @@ describe('useAndroidPriorityRuleFilterBuilders', () => {
 
       const { result: filterState } = renderFilterState(
         result.current.filterBuilders,
-        'run_target_health_pct >= 0.25',
+        'effective_run_target_health_pct >= 0.25',
       );
-      const runTarget = filterState.current.filterValues?.run_target_health_pct;
+      const runTarget =
+        filterState.current.filterValues?.[RUN_TARGET_HEALTH_FILTER_KEY];
       expect(runTarget).toBeInstanceOf(RangeFilterCategory);
       if (!(runTarget instanceof RangeFilterCategory)) return;
 
       runTarget.value = { min: 10, max: 75 };
       expect(runTarget.toAIP160()).toBe(
-        'run_target_health_pct >= 0.1 AND run_target_health_pct <= 0.75',
+        'effective_run_target_health_pct >= 0.1 AND effective_run_target_health_pct <= 0.75',
       );
     });
   });

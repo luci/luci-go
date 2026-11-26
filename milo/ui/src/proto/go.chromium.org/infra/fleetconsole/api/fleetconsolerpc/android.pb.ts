@@ -273,6 +273,21 @@ export interface AndroidRepairQueueItem {
    * caller-claimed pinning). Set by ListAndroidRepairQueue.
    */
   readonly rank: number;
+  /**
+   * The proportion of entities in the lowest-health host group
+   * (lowest_health_host_group) currently claimed in repair, represented as a
+   * ratio in [0.0, 1.0]. Unset if no entities are claimed in repair or host
+   * group total count is unavailable.
+   */
+  readonly hostGroupInRepairPct?:
+    | number
+    | undefined;
+  /**
+   * The proportion of devices with the same run_target currently claimed in
+   * repair, represented as a ratio in [0.0, 1.0]. Unset for host rows, if no
+   * devices are claimed in repair, or if run_target total count is unavailable.
+   */
+  readonly runTargetInRepairPct?: number | undefined;
 }
 
 export interface ListAndroidRepairQueueRequest {
@@ -343,7 +358,8 @@ export interface AndroidPriorityRule {
   readonly id: string;
   /**
    * AIP-160 expression over the queue columns (same fields as
-   * ListAndroidRepairQueueRequest.filter).
+   * ListAndroidRepairQueueRequest.filter, plus effective_host_group_health_pct
+   * and effective_run_target_health_pct).
    */
   readonly expressionAip160: string;
   readonly weight: string;
@@ -2702,6 +2718,8 @@ function createBaseAndroidRepairQueueItem(): AndroidRepairQueueItem {
     fcMachineType: 0,
     etag: "",
     rank: 0,
+    hostGroupInRepairPct: undefined,
+    runTargetInRepairPct: undefined,
   };
 }
 
@@ -2753,6 +2771,12 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
     }
     if (message.rank !== 0) {
       writer.uint32(120).int32(message.rank);
+    }
+    if (message.hostGroupInRepairPct !== undefined) {
+      writer.uint32(129).double(message.hostGroupInRepairPct);
+    }
+    if (message.runTargetInRepairPct !== undefined) {
+      writer.uint32(137).double(message.runTargetInRepairPct);
     }
     return writer;
   },
@@ -2900,6 +2924,22 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
             message.rank = reader.int32();
             continue;
           }
+          case 16: {
+            if (tag !== 129) {
+              break;
+            }
+
+            message.hostGroupInRepairPct = reader.double();
+            continue;
+          }
+          case 17: {
+            if (tag !== 137) {
+              break;
+            }
+
+            message.runTargetInRepairPct = reader.double();
+            continue;
+          }
         }
         if ((tag & 7) === 4 || tag === 0) {
           break;
@@ -2977,6 +3017,16 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
         : 0,
       etag: isSet(object.etag) ? globalThis.String(object.etag) : "",
       rank: isSet(object.rank) ? globalThis.Number(object.rank) : 0,
+      hostGroupInRepairPct: isSet(object.hostGroupInRepairPct)
+        ? globalThis.Number(object.hostGroupInRepairPct)
+        : isSet(object.host_group_in_repair_pct)
+        ? globalThis.Number(object.host_group_in_repair_pct)
+        : undefined,
+      runTargetInRepairPct: isSet(object.runTargetInRepairPct)
+        ? globalThis.Number(object.runTargetInRepairPct)
+        : isSet(object.run_target_in_repair_pct)
+        ? globalThis.Number(object.run_target_in_repair_pct)
+        : undefined,
     };
   },
 
@@ -3027,6 +3077,12 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
     if (message.rank !== 0) {
       obj.rank = Math.round(message.rank);
     }
+    if (message.hostGroupInRepairPct !== undefined) {
+      obj.hostGroupInRepairPct = message.hostGroupInRepairPct;
+    }
+    if (message.runTargetInRepairPct !== undefined) {
+      obj.runTargetInRepairPct = message.runTargetInRepairPct;
+    }
     return obj;
   },
 
@@ -3050,6 +3106,8 @@ export const AndroidRepairQueueItem: MessageFns<AndroidRepairQueueItem> = {
     message.fcMachineType = object.fcMachineType ?? 0;
     message.etag = object.etag ?? "";
     message.rank = object.rank ?? 0;
+    message.hostGroupInRepairPct = object.hostGroupInRepairPct ?? undefined;
+    message.runTargetInRepairPct = object.runTargetInRepairPct ?? undefined;
     return message;
   },
 };

@@ -15,6 +15,7 @@
 import { ReactNode } from 'react';
 
 import { FilterChip } from '@/fleet/components/filter_dropdown/filter_chip';
+import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import {
   buildFilters,
   FilterCategory,
@@ -22,6 +23,18 @@ import {
 } from '@/fleet/components/filters/use_filters';
 
 import { RepairPriorityRule } from './editable_rule_row';
+
+export const EFFECTIVE_HEALTH_HELPER_TEXT =
+  '* Note: Claimed devices count as healthy';
+
+export const buildEffectiveHealthRangeFilter = (label: string) =>
+  new RangeFilterCategoryBuilder()
+    .setLabel(label)
+    .setMin(0)
+    .setMax(100)
+    .setScaleFactor(0.01)
+    .setUnit('%')
+    .setHelperText(EFFECTIVE_HEALTH_HELPER_TEXT);
 
 /**
  * Formats a signed point value (priority score or rule weight) for display,

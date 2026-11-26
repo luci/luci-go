@@ -16,18 +16,20 @@ import { useMemo } from 'react';
 
 import { RangeFilterCategoryBuilder } from '@/fleet/components/filters/range_filter';
 import { StringListFilterCategoryBuilder } from '@/fleet/components/filters/string_list_filter';
+import { buildEffectiveHealthRangeFilter } from '@/fleet/components/repair_queue/utils';
 import { BLANK_VALUE } from '@/fleet/constants/filters';
 import { useDeviceDimensions } from '@/fleet/pages/device_list_page/common/use_device_dimensions';
 import { AndroidPageWorkspace } from '@/fleet/workspaces';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
-// Health percentages computed by RepopulateAndroidRepairTasks and backing the
-// "Host Group / Run Target Health" column. They are not device dimensions, so
-// they are offered as fixed range filters rather than read from the
-// dimensions API. The backend stores them as fractions in [0, 1]; the editor
-// presents them as percentages in [0, 100], matching the column.
-export const HOST_GROUP_HEALTH_FILTER_KEY = 'host_group_health_pct';
-export const RUN_TARGET_HEALTH_FILTER_KEY = 'run_target_health_pct';
+// Effective health percentages evaluated by Android priority scoring rules and
+// backing the "Host Group / Run Target Health" column (where claimed in-repair
+// entities count toward effective health). They are not device dimensions, so
+// they are offered as fixed range filters rather than read from the dimensions
+// API. The backend stores them as fractions in [0, 1]; the editor presents
+// them as percentages in [0, 100], matching the column.
+export const HOST_GROUP_HEALTH_FILTER_KEY = 'effective_host_group_health_pct';
+export const RUN_TARGET_HEALTH_FILTER_KEY = 'effective_run_target_health_pct';
 export const CLAIMED_BY_FILTER_KEY = 'claimed_by';
 export const FC_MACHINE_TYPE_FILTER_KEY = 'fc_machine_type';
 const HEALTH_PCT_FILTER_LABELS: Readonly<Record<string, string>> = {
@@ -72,6 +74,8 @@ const SUPERSEDED_LABEL_KEYS: ReadonlySet<string> = new Set([
   'run_target',
   'state',
   CLAIMED_BY_FILTER_KEY,
+  'host_group_health_pct',
+  'run_target_health_pct',
   HOST_GROUP_HEALTH_FILTER_KEY,
   RUN_TARGET_HEALTH_FILTER_KEY,
 ]);
@@ -125,12 +129,7 @@ export const useAndroidPriorityRuleFilterBuilders = (
     };
 
     for (const [filterKey, label] of Object.entries(HEALTH_PCT_FILTER_LABELS)) {
-      builders[filterKey] = new RangeFilterCategoryBuilder()
-        .setLabel(label)
-        .setMin(0)
-        .setMax(100)
-        .setScaleFactor(0.01)
-        .setUnit('%');
+      builders[filterKey] = buildEffectiveHealthRangeFilter(label);
     }
 
     if (isDimensionsLoaded && dimensionsQuery.data) {

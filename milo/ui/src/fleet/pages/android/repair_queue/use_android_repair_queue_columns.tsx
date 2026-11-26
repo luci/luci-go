@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Typography } from '@mui/material';
 import { MRT_ColumnDef } from 'material-react-table';
 import { useMemo } from 'react';
 
 import { labelValuesToString } from '@/fleet/components/device_table/dimensions';
 import { EllipsisTooltip } from '@/fleet/components/ellipsis_tooltip';
 import { AssigneeCell } from '@/fleet/components/repair_queue/assignee_cell';
+import { HealthPairCell } from '@/fleet/components/repair_queue/health_metric_cell';
 import { getRepairQueueRank } from '@/fleet/components/repair_queue/pinned_rows';
 import { PriorityScoreCell } from '@/fleet/components/repair_queue/priority_score_cell';
 import { RepairQueueRankCell } from '@/fleet/components/repair_queue/repair_queue_rank_cell';
@@ -259,25 +259,16 @@ export const useAndroidRepairQueueColumns = (
             'group(s) and run target. For devices with multiple host groups, ' +
             'the lowest percentage is shown.',
         },
-        Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => {
-          const hostGroupHealth = row.original.hostGroupHealthPct;
-          const runTargetHealth = row.original.runTargetHealthPct;
-          const hostGroupStr =
-            hostGroupHealth !== undefined && hostGroupHealth !== null
-              ? `${Math.round(hostGroupHealth * 100)}%`
-              : '-';
-          const runTargetStr =
-            runTargetHealth !== undefined && runTargetHealth !== null
-              ? `${Math.round(runTargetHealth * 100)}%`
-              : '-';
-          return (
-            <Typography
-              variant="body2"
-              noWrap
-              sx={{ fontSize: '13px' }}
-            >{`${hostGroupStr} / ${runTargetStr}`}</Typography>
-          );
-        },
+        Cell: ({ row }: FC_CellProps<AndroidRepairQueueRow>) => (
+          <HealthPairCell
+            primaryLabel="Host Group"
+            primaryHealthPct={row.original.hostGroupHealthPct}
+            primaryInRepairPct={row.original.hostGroupInRepairPct}
+            secondaryLabel="Run Target"
+            secondaryHealthPct={row.original.runTargetHealthPct}
+            secondaryInRepairPct={row.original.runTargetInRepairPct}
+          />
+        ),
       },
       {
         id: 'priority_score',
