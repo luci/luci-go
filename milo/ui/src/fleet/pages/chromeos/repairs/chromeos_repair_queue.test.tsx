@@ -472,4 +472,31 @@ describe('<ChromeOSRepairDashboard /> (Repair Queue & Claiming)', () => {
     await then.repairTaskIsPinnedWithRank('demo-cros-r2-rk1-h2', 1);
     await then.repairTaskIsPinnedWithRank('host-1', 2);
   });
+
+  it('forwards explicit lab prop on ChromeOSRepairTable to both ListRepairQueue and ListPriorityRules', async () => {
+    given.initialUrl('/?lab=IAD65');
+    given.priorityRules([
+      aPriorityRule('rule-em25', 'model = "volteer"', '80'),
+    ]);
+    given.repairQueue([
+      aRepairQueueItem(1)
+        .withDutId('chromeos6-row1-rack2-host3')
+        .withModel('volteer'),
+    ]);
+
+    when.repairTableIsRenderedWithLab('EM25');
+    await then.repairTaskMatches('chromeos6-row1-rack2-host3', {
+      rank: 1,
+      score: '+80 pts',
+    });
+    then.rpcWasCalledWith('ListRepairQueue', { lab: 'EM25' });
+    then.rpcWasCalledWith('ListPriorityRules', { lab: 'EM25' });
+
+    await when.userHoversScoreCell('chromeos6-row1-rack2-host3');
+    await then.scoreBreakdownShowsRule(
+      'rule-em25',
+      /1 rule matched/i,
+      /volteer/i,
+    );
+  });
 });

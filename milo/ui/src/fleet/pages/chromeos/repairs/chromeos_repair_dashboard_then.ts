@@ -130,9 +130,18 @@ export const then = {
   async scoreBreakdownShowsRule(
     ruleId: string,
     expectedSummaryText: string | RegExp,
+    expectedRuleText?: string | RegExp,
   ) {
     const matchedRule = await screen.findByTestId(`matched-rule-${ruleId}`);
     expect(matchedRule).toBeInTheDocument();
+    expect(
+      within(matchedRule).queryByText(`Rule #${ruleId}`),
+    ).not.toBeInTheDocument();
+    if (expectedRuleText !== undefined) {
+      expect(
+        within(matchedRule).getByText(expectedRuleText),
+      ).toBeInTheDocument();
+    }
     expect(await screen.findByText(expectedSummaryText)).toBeInTheDocument();
   },
 

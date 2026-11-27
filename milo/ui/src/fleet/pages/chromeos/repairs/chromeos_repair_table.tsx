@@ -96,6 +96,7 @@ export const ChromeOSRepairTable = ({
     pageSize,
     pinnedRowIndices,
     onError: setErrorMessage,
+    lab,
   });
   const columns = propColumns || defaultColumns;
 

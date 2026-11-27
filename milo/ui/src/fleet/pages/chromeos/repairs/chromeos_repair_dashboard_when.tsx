@@ -23,6 +23,7 @@ import {
 } from '@/fleet/testing_tools/integration/fleet_integration_test';
 
 import { ChromeOSRepairDashboard } from './chromeos_repair_dashboard';
+import { ChromeOSRepairTable } from './chromeos_repair_table';
 
 const RULE_FILTER_PLACEHOLDER =
   'Add rule filter (e.g. pool, model, pool health)...';
@@ -32,6 +33,10 @@ export const when = {
 
   dashboardIsRendered() {
     return genericWhen.renderPage(<ChromeOSRepairDashboard />);
+  },
+
+  repairTableIsRenderedWithLab(lab: string) {
+    return genericWhen.renderPage(<ChromeOSRepairTable lab={lab} />);
   },
 
   async userGoesToNextPage() {

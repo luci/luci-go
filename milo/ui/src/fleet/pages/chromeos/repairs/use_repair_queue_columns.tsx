@@ -68,6 +68,7 @@ export interface UseRepairQueueColumnsOptions {
   pageSize?: number;
   pinnedRowIndices?: ReadonlySet<number>;
   onError?: (message: string) => void;
+  lab?: string;
 }
 
 const BaseDeviceIdCell = renderCellWithLink<RepairQueueRow>({
@@ -95,6 +96,7 @@ export const useRepairQueueColumns = ({
   pageSize = 100,
   pinnedRowIndices,
   onError,
+  lab,
 }: UseRepairQueueColumnsOptions = {}) => {
   const { mutate: claimTask, isPending: isClaimPending } = useClaimRepairTask({
     onError: (err) => {
@@ -113,7 +115,7 @@ export const useRepairQueueColumns = ({
 
   const { filterBuilders } = useRepairQueueFilterBuilders();
 
-  const { rules } = usePriorityRules();
+  const { rules } = usePriorityRules(lab);
   const rulesById = useMemo(
     () => parsePriorityRules(rules, filterBuilders),
     [rules, filterBuilders],
