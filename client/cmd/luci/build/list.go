@@ -24,6 +24,7 @@ import (
 
 	"github.com/maruel/subcommands"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
 	grpcpb "go.chromium.org/luci/buildbucket/proto/grpcpb"
@@ -33,11 +34,14 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/proto/structmask"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
 const (
 	defaultBuildListLimit      = 10
+	maxBuildListPageSize       = 1000
+	maxUnlimitedBuildPages     = 10
 	maxPrecedingPatchsetProbes = 3
 )
 
@@ -72,7 +76,7 @@ func ListCmd(af *base.AuthFlags) *subcommands.Command {
 			r.Flags.StringVar(&r.cl, "cl", "", "Filter by Gerrit CL (URL, e.g. https://chromium-review.googlesource.com/c/..., crrev.com/c/..., or change ID)")
 			r.Flags.IntVar(&r.patchset, "patchset", 0, "Filter by specific patchset number (defaults to latest patchset with builds, or patchset in -cl URL)")
 			r.Flags.IntVar(&r.patchset, "ps", 0, "Alias for -patchset")
-			r.Flags.IntVar(&r.limit, "limit", defaultBuildListLimit, "Maximum number of builds to return (default: 10)")
+			r.Flags.IntVar(&r.limit, "limit", defaultBuildListLimit, "Maximum number of builds to return (default: 10, 0 for up to 10 pages)")
 			r.Flags.IntVar(&r.limit, "n", defaultBuildListLimit, "Alias for -limit")
 			return r
 		},
@@ -108,8 +112,8 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 		fmt.Fprintf(os.Stderr, "unexpected positional arguments; use flags -project, -bucket, -builder, -tag, -status, or -cl\n")
 		return 1
 	}
-	if r.limit <= 0 {
-		fmt.Fprintf(os.Stderr, "flag -limit / -n must be a positive integer\n")
+	if r.limit < 0 {
+		fmt.Fprintf(os.Stderr, "flag -limit / -n must be non-negative (use 0 for all)\n")
 		return 1
 	}
 	patchsetExplicit := r.patchset != 0
@@ -200,53 +204,156 @@ func (r *buildListRun) Run(a subcommands.Application, args []string, env subcomm
 			},
 		},
 	}
+	if shouldFetchTargetBuilder(predicate) {
+		mask.InputProperties = []*structmask.StructMask{
+			{Path: []string{"$build/chromium_polymorphic", "target_builder_id"}},
+			{Path: []string{"target_builder_id"}},
+		}
+	}
 
-	builds, notice, err := searchBuildsWithFallback(ctx, client, predicate, mask, int32(r.limit), gerritChange, autoPatchset)
+	builds, hasMore, effectivePS, notice, err := searchBuildsWithFallback(ctx, client, predicate, mask, r.limit, gerritChange, autoPatchset)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "SearchBuilds RPC failed: %s\n", err)
 		return 1
+	}
+
+	// If an explicit patchset returned 0 builds, check Gerrit (best-effort) to
+	// distinguish a nonexistent patchset from a valid patchset with no builds.
+	if !autoPatchset && gerritChange != nil && len(builds) == 0 && notice == "" {
+		if r.gerritClient == nil && r.client == nil && r.af != nil {
+			if err := r.af.Parse(); err == nil {
+				r.gerritClient, _ = r.af.NewGerritClient(ctx, gerritChange.Host)
+			}
+		}
+		if r.gerritClient != nil {
+			probe := &pb.GerritChange{
+				Host:    gerritChange.Host,
+				Project: gerritChange.Project,
+				Change:  gerritChange.Change,
+			}
+			if latest, err := base.ResolveGerritPatchset(ctx, r.gerritClient, probe); err == nil {
+				if latest.Project != "" {
+					gerritChange.Project = latest.Project
+				}
+				if latest.Patchset > 0 && gerritChange.Patchset > latest.Patchset {
+					notice = fmt.Sprintf("Notice: Patchset %d does not exist on CL %d (latest patchset is %d)", gerritChange.Patchset, gerritChange.Change, latest.Patchset)
+				}
+			}
+		}
 	}
 
 	out := r.out
 	if out == nil {
 		out = os.Stdout
 	}
+	if gerritChange != nil {
+		displayChange := &pb.GerritChange{
+			Host:     gerritChange.Host,
+			Project:  gerritChange.Project,
+			Change:   gerritChange.Change,
+			Patchset: effectivePS,
+		}
+		fmt.Fprintf(out, "CL:            %s (patchset %d)\n", formatGerritChangeURL(displayChange), effectivePS)
+	}
 	if notice != "" {
 		fmt.Fprintf(out, "%s\n\n", notice)
 	}
-	if err := FormatBuildList(out, builds); err != nil {
+	if err := FormatBuildListWithOptions(out, builds, BuildListFormatOptions{
+		HasMore:         hasMore,
+		HasCL:           gerritChange != nil,
+		HasStatusFilter: predicate.Status != pb.Status_STATUS_UNSPECIFIED,
+		LimitZero:       r.limit == 0,
+	}); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to format builds: %s\n", err)
 		return 1
 	}
 	return 0
 }
 
+func formatGerritChangeURL(cl *pb.GerritChange) string {
+	switch cl.Host {
+	case base.DefaultGerritHost:
+		return fmt.Sprintf("https://crrev.com/c/%d/%d", cl.Change, cl.Patchset)
+	case base.InternalGerritHost:
+		return fmt.Sprintf("https://crrev.com/i/%d/%d", cl.Change, cl.Patchset)
+	default:
+		if cl.Project != "" {
+			return fmt.Sprintf("https://%s/c/%s/+/%d/%d", cl.Host, cl.Project, cl.Change, cl.Patchset)
+		}
+		return fmt.Sprintf("https://%s/c/%d/%d", cl.Host, cl.Change, cl.Patchset)
+	}
+}
+
+// searchBuildsPaginated fetches up to limit builds (or up to
+// maxUnlimitedBuildPages pages when limit == 0) using Buildbucket pagination,
+// returning the builds and whether more matching builds remain.
+func searchBuildsPaginated(ctx context.Context, client grpcpb.BuildsClient, predicate *pb.BuildPredicate, mask *pb.BuildMask, limit int) ([]*pb.Build, bool, error) {
+	var builds []*pb.Build
+	pageToken := ""
+	pages := 0
+	// Keep PageSize constant across paginated requests as required by
+	// SearchBuildsRequest.page_token, and avoid int32 truncation overflow.
+	pageSize := int32(maxBuildListPageSize)
+	if limit > 0 && limit < maxBuildListPageSize {
+		pageSize = int32(limit)
+	}
+
+	for {
+		resp, err := client.SearchBuilds(ctx, &pb.SearchBuildsRequest{
+			Predicate: predicate,
+			Mask:      mask,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+		})
+		if err != nil {
+			return nil, false, err
+		}
+		pages++
+		pageBuilds := resp.GetBuilds()
+		nextToken := resp.GetNextPageToken()
+		if limit > 0 && len(builds)+len(pageBuilds) > limit {
+			builds = append(builds, pageBuilds[:limit-len(builds)]...)
+			return builds, true, nil
+		}
+		builds = append(builds, pageBuilds...)
+		if limit > 0 && len(builds) >= limit {
+			return builds, nextToken != "" && nextToken != pageToken, nil
+		}
+		if nextToken == "" || len(pageBuilds) == 0 || nextToken == pageToken {
+			return builds, false, nil
+		}
+		if limit == 0 && pages >= maxUnlimitedBuildPages {
+			return builds, true, nil
+		}
+		pageToken = nextToken
+	}
+}
+
 // searchBuildsWithFallback runs SearchBuilds for predicate, and when autoPatchset
 // is true and the latest patchset N (N > 1) has 0 builds in Buildbucket, probes up
 // to maxPrecedingPatchsetProbes preceding patchsets (N-1..max(1, N-3)).
-func searchBuildsWithFallback(ctx context.Context, client grpcpb.BuildsClient, predicate *pb.BuildPredicate, mask *pb.BuildMask, limit int32, gerritChange *pb.GerritChange, autoPatchset bool) ([]*pb.Build, string, error) {
-	resp, err := client.SearchBuilds(ctx, &pb.SearchBuildsRequest{
-		Predicate: predicate,
-		Mask:      mask,
-		PageSize:  limit,
-	})
-	if err != nil {
-		return nil, "", err
+func searchBuildsWithFallback(ctx context.Context, client grpcpb.BuildsClient, predicate *pb.BuildPredicate, mask *pb.BuildMask, limit int, gerritChange *pb.GerritChange, autoPatchset bool) ([]*pb.Build, bool, int64, string, error) {
+	effectivePS := int64(0)
+	if gerritChange != nil {
+		effectivePS = gerritChange.Patchset
 	}
-	builds := resp.GetBuilds()
+	builds, hasMore, err := searchBuildsPaginated(ctx, client, predicate, mask, limit)
+	if err != nil {
+		return nil, false, effectivePS, "", err
+	}
 
 	if !autoPatchset || gerritChange.Patchset <= 1 || len(builds) > 0 {
-		return builds, "", nil
+		return builds, hasMore, effectivePS, "", nil
 	}
 
 	hasExtraFilters := predicate.Builder != nil || len(predicate.Tags) > 0 || predicate.Status != pb.Status_STATUS_UNSPECIFIED
 	if hasExtraFilters {
 		anyBuilds, err := patchsetHasAnyBuilds(ctx, client, gerritChange)
 		if err != nil {
-			return nil, "", err
+			return nil, false, effectivePS, "", err
 		}
 		if anyBuilds {
-			return builds, "", nil
+			return builds, hasMore, effectivePS, "", nil
 		}
 	}
 
@@ -265,34 +372,30 @@ func searchBuildsWithFallback(ctx context.Context, client grpcpb.BuildsClient, p
 			Status:        predicate.Status,
 			GerritChanges: []*pb.GerritChange{candidate},
 		}
-		probeResp, err := client.SearchBuilds(ctx, &pb.SearchBuildsRequest{
-			Predicate: probePredicate,
-			Mask:      mask,
-			PageSize:  limit,
-		})
+		probeBuilds, probeHasMore, err := searchBuildsPaginated(ctx, client, probePredicate, mask, limit)
 		if err != nil {
-			return nil, "", err
+			return nil, false, effectivePS, "", err
 		}
-		if len(probeResp.GetBuilds()) > 0 {
+		if len(probeBuilds) > 0 {
 			notice := fmt.Sprintf("Notice: No builds on latest patchset %d; showing builds from patchset %d", latestPatchset, ps)
-			return probeResp.GetBuilds(), notice, nil
+			return probeBuilds, probeHasMore, ps, notice, nil
 		}
 		if hasExtraFilters {
 			anyBuilds, err := patchsetHasAnyBuilds(ctx, client, candidate)
 			if err != nil {
-				return nil, "", err
+				return nil, false, effectivePS, "", err
 			}
 			if anyBuilds {
 				notice := fmt.Sprintf("Notice: No builds on latest patchset %d; patchset %d has builds, but none match the filters", latestPatchset, ps)
-				return nil, notice, nil
+				return nil, false, ps, notice, nil
 			}
 		}
 	}
 
 	if minPatchset == latestPatchset-1 {
-		return nil, fmt.Sprintf("Notice: No builds on latest patchset %d (also checked patchset %d)", latestPatchset, minPatchset), nil
+		return nil, false, effectivePS, fmt.Sprintf("Notice: No builds on latest patchset %d (also checked patchset %d)", latestPatchset, minPatchset), nil
 	}
-	return nil, fmt.Sprintf("Notice: No builds on latest patchset %d (also checked patchsets %d..%d)", latestPatchset, latestPatchset-1, minPatchset), nil
+	return nil, false, effectivePS, fmt.Sprintf("Notice: No builds on latest patchset %d (also checked patchsets %d..%d)", latestPatchset, latestPatchset-1, minPatchset), nil
 }
 
 // patchsetHasAnyBuilds reports whether Buildbucket has at least one build of any
@@ -403,14 +506,32 @@ func parseBuildStatus(raw string) (pb.Status, error) {
 	}
 }
 
+// BuildListFormatOptions controls truncation headers and hints in FormatBuildListWithOptions.
+type BuildListFormatOptions struct {
+	HasMore         bool
+	HasCL           bool
+	HasStatusFilter bool
+	LimitZero       bool
+}
+
 // FormatBuildList formats a slice of Build messages into human-readable terminal output.
 func FormatBuildList(w io.Writer, builds []*pb.Build) error {
+	return FormatBuildListWithOptions(w, builds, BuildListFormatOptions{})
+}
+
+// FormatBuildListWithOptions formats a slice of Build messages into human-readable
+// terminal output with optional truncation headers and guidance hints.
+func FormatBuildListWithOptions(w io.Writer, builds []*pb.Build, opts BuildListFormatOptions) error {
 	if len(builds) == 0 {
 		fmt.Fprintf(w, "No matching builds found.\n")
 		return nil
 	}
 
-	fmt.Fprintf(w, "Builds (%d):\n", len(builds))
+	if opts.HasMore {
+		fmt.Fprintf(w, "Builds (showing %d, more available):\n", len(builds))
+	} else {
+		fmt.Fprintf(w, "Builds (%d):\n", len(builds))
+	}
 	for i, b := range builds {
 		if i > 0 {
 			fmt.Fprintln(w)
@@ -430,6 +551,9 @@ func FormatBuildList(w io.Writer, builds []*pb.Build) error {
 			} else {
 				fmt.Fprintf(w, "Builder:       %s\n", builderStr)
 			}
+		}
+		if targetBuilder := extractTargetBuilder(b); targetBuilder != "" {
+			fmt.Fprintf(w, "Target Builder: %s\n", targetBuilder)
 		}
 
 		// 2. Status
@@ -463,6 +587,28 @@ func FormatBuildList(w io.Writer, builds []*pb.Build) error {
 		}
 	}
 
+	if opts.HasMore {
+		if opts.LimitZero {
+			if !opts.HasStatusFilter {
+				fmt.Fprintf(w, "\n(Note: Stopped after %d pages (%d builds) for -n 0; narrow filters with -status=failure, -builder, or -tag to focus results.)\n", maxUnlimitedBuildPages, len(builds))
+			} else {
+				fmt.Fprintf(w, "\n(Note: Stopped after %d pages (%d builds) for -n 0; narrow filters with -builder or -tag to focus results.)\n", maxUnlimitedBuildPages, len(builds))
+			}
+		} else if opts.HasCL {
+			if !opts.HasStatusFilter {
+				fmt.Fprintf(w, "\n(Note: More builds exist; pass -status=failure to filter failures, or -n <N> / -n 0 to show more.)\n")
+			} else {
+				fmt.Fprintf(w, "\n(Note: More builds exist; pass -n <N> / -n 0 to show more.)\n")
+			}
+		} else {
+			if !opts.HasStatusFilter {
+				fmt.Fprintf(w, "\n(Note: More builds exist; pass -status=failure to filter failures, or -n <N> to show more.)\n")
+			} else {
+				fmt.Fprintf(w, "\n(Note: More builds exist; pass -n <N> to show more.)\n")
+			}
+		}
+	}
+
 	// 6. Helpful guidance tips
 	target := builds[0]
 	for _, b := range builds {
@@ -472,13 +618,66 @@ func FormatBuildList(w io.Writer, builds []*pb.Build) error {
 		}
 	}
 	if target.Id != 0 {
-		fmt.Fprintf(w, "\n(Tip: To inspect build details, steps and full summaries, run: luci build get -buildid %d)\n", target.Id)
+		if !opts.HasMore {
+			fmt.Fprintln(w)
+		}
+		fmt.Fprintf(w, "(Tip: To inspect build details, steps and full summaries, run: luci build get -buildid %d)\n", target.Id)
 		if target.Status == pb.Status_FAILURE || target.Status == pb.Status_INFRA_FAILURE {
 			fmt.Fprintf(w, "(Tip: To list failed test verdicts, run: luci verdict list -invocationid %s)\n", buildInvocationID(target))
 		}
 	}
 
 	return nil
+}
+
+// shouldFetchTargetBuilder reports whether SearchBuilds should request
+// input.properties target_builder_id fields. Requesting InputProperties causes
+// Buildbucket to load and unmarshal a BuildInputProperties Datastore entity per
+// returned build, so we only request it when querying wrapper/polymorphic
+// buckets or builders (e.g. chromium/reviver/runner).
+func shouldFetchTargetBuilder(predicate *pb.BuildPredicate) bool {
+	if predicate == nil || predicate.Builder == nil {
+		return false
+	}
+	bucket := strings.ToLower(predicate.Builder.Bucket)
+	builder := strings.ToLower(predicate.Builder.Builder)
+	return strings.Contains(bucket, "reviver") ||
+		strings.Contains(bucket, "polymorphic") ||
+		strings.Contains(builder, "reviver") ||
+		strings.Contains(builder, "polymorphic")
+}
+
+// extractTargetBuilder returns the wrapped target builder for wrapper builders
+// like chromium/reviver/runner from input.properties["$build/chromium_polymorphic"].target_builder_id,
+// top-level input.properties.target_builder_id, or a target_builder tag.
+func extractTargetBuilder(b *pb.Build) string {
+	if fields := b.GetInput().GetProperties().GetFields(); fields != nil {
+		for _, tbVal := range []*structpb.Value{
+			fields["$build/chromium_polymorphic"].GetStructValue().GetFields()["target_builder_id"],
+			fields["target_builder_id"],
+		} {
+			if tb := tbVal.GetStructValue().GetFields(); tb != nil {
+				proj := tb["project"].GetStringValue()
+				bucket := tb["bucket"].GetStringValue()
+				builder := tb["builder"].GetStringValue()
+				if builder != "" {
+					if proj != "" && bucket != "" {
+						return fmt.Sprintf("%s/%s/%s", proj, bucket, builder)
+					}
+					if bucket != "" {
+						return fmt.Sprintf("%s/%s", bucket, builder)
+					}
+					return builder
+				}
+			}
+		}
+	}
+	for _, tag := range b.GetTags() {
+		if tag.GetKey() == "target_builder" && tag.GetValue() != "" {
+			return tag.GetValue()
+		}
+	}
+	return ""
 }
 
 func buildInvocationID(b *pb.Build) string {

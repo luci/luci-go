@@ -20,9 +20,13 @@ import (
 	"strconv"
 	"strings"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	pb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/grpc/appstatus"
 )
 
 const (
@@ -169,30 +173,51 @@ func ResolveGerritPatchset(ctx context.Context, client gerritpb.GerritClient, ch
 		Project: change.Project,
 		Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
 	})
+	if err != nil && change.Project != "" && isNotFoundErr(err) {
+		// Retry without Project when a full Gerrit URL carries a redirected or
+		// mismatched slash-containing project path (change numbers are unique
+		// per Gerrit host).
+		info, err = client.GetChange(ctx, &gerritpb.GetChangeRequest{
+			Number:  change.Change,
+			Options: []gerritpb.QueryOption{gerritpb.QueryOption_CURRENT_REVISION},
+		})
+	}
 	if err != nil {
 		return nil, errors.Fmt("failed to fetch CL %d from %s: %w", change.Change, change.Host, err)
 	}
-
-	if change.Project == "" && info.Project != "" {
-		change.Project = info.Project
+	if info == nil {
+		return nil, errors.Fmt("could not determine latest patchset for CL %d from Gerrit", change.Change)
 	}
 
+	var patchset int64
 	if rev, ok := info.Revisions[info.CurrentRevision]; ok && rev.Number > 0 {
-		change.Patchset = int64(rev.Number)
-		return change, nil
-	}
-
-	// Fallback to max revision number in Revisions
-	var maxRev int64
-	for _, rev := range info.Revisions {
-		if int64(rev.Number) > maxRev {
-			maxRev = int64(rev.Number)
+		patchset = int64(rev.Number)
+	} else {
+		// Fallback to max revision number in Revisions.
+		for _, rev := range info.Revisions {
+			if int64(rev.Number) > patchset {
+				patchset = int64(rev.Number)
+			}
 		}
 	}
-	if maxRev > 0 {
-		change.Patchset = maxRev
-		return change, nil
+	if patchset <= 0 {
+		return nil, errors.Fmt("could not determine latest patchset for CL %d from Gerrit", change.Change)
 	}
 
-	return nil, errors.Fmt("could not determine latest patchset for CL %d from Gerrit", change.Change)
+	if info.Project != "" {
+		change.Project = info.Project
+	}
+	change.Patchset = patchset
+	return change, nil
+}
+
+func isNotFoundErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	code := status.Code(err)
+	if code == codes.Unknown {
+		code = appstatus.Code(err)
+	}
+	return code == codes.NotFound
 }

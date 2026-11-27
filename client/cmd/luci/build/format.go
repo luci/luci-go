@@ -87,16 +87,7 @@ func FormatBuild(w io.Writer, b *pb.Build, opts FormatOptions) error {
 		fmt.Fprintf(w, "Commit:        https://%s/%s/+/%s\n", gc.Host, gc.Project, target)
 	}
 	for _, cl := range b.Input.GetGerritChanges() {
-		clURL := ""
-		switch cl.Host {
-		case "chromium-review.googlesource.com":
-			clURL = fmt.Sprintf("https://crrev.com/c/%d/%d", cl.Change, cl.Patchset)
-		case "chrome-internal-review.googlesource.com":
-			clURL = fmt.Sprintf("https://crrev.com/i/%d/%d", cl.Change, cl.Patchset)
-		default:
-			clURL = fmt.Sprintf("https://%s/c/%s/+/%d/%d", cl.Host, cl.Project, cl.Change, cl.Patchset)
-		}
-		fmt.Fprintf(w, "Gerrit CL:     %s\n", clURL)
+		fmt.Fprintf(w, "Gerrit CL:     %s\n", formatGerritChangeURL(cl))
 	}
 
 	if b.CreatedBy != "" {

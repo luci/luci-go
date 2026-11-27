@@ -17,12 +17,14 @@ package build
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "go.chromium.org/luci/buildbucket/proto"
@@ -235,10 +237,10 @@ func TestBuildListRun(t *testing.T) {
 			assert.Loosely(t, ret, should.Equal(1))
 		})
 
-		t.Run(`Non-positive limit returns 1`, func(t *ftt.Test) {
+		t.Run(`Negative limit returns 1`, func(t *ftt.Test) {
 			cmd := ListCmd(af)
 			run := cmd.CommandRun().(*buildListRun)
-			err := run.Flags.Parse([]string{"-builder", "chromium/ci/linux-rel", "-n", "0"})
+			err := run.Flags.Parse([]string{"-builder", "chromium/ci/linux-rel", "-n", "-1"})
 			assert.Loosely(t, err, should.BeNil)
 			ret := run.Run(nil, run.Flags.Args(), nil)
 			assert.Loosely(t, ret, should.Equal(1))
@@ -917,6 +919,271 @@ func TestBuildListRun(t *testing.T) {
 				ret := run.Run(nil, run.Flags.Args(), nil)
 				assert.Loosely(t, ret, should.Equal(1))
 			}
+		})
+
+		t.Run(`Surfaces CL header and truncation notice with -status=failure hint when more builds exist`, func(t *ftt.Test) {
+			mock := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{
+							{
+								Id:      8738491827364512345,
+								Builder: &pb.BuilderID{Project: "chromium", Bucket: "try", Builder: "linux-rel"},
+								Status:  pb.Status_SUCCESS,
+							},
+						},
+						NextPageToken: "page-2",
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mock
+			run.out = &buf
+			assert.Loosely(t, run.Flags.Parse([]string{"-cl", "https://crrev.com/c/8847442/3", "-n", "1"}), should.BeNil)
+			assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("CL:            https://crrev.com/c/8847442/3 (patchset 3)"))
+			assert.Loosely(t, out, should.ContainSubstring("Builds (showing 1, more available):"))
+			assert.Loosely(t, out, should.ContainSubstring("pass -status=failure to filter failures, or -n <N> / -n 0 to show more"))
+		})
+
+		t.Run(`Supports -n 0 pagination across multiple pages`, func(t *ftt.Test) {
+			calls := 0
+			mock := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					calls++
+					assert.Loosely(t, in.PageSize, should.Equal(int32(maxBuildListPageSize)))
+					if calls == 1 {
+						return &pb.SearchBuildsResponse{
+							Builds:        []*pb.Build{{Id: 1, Status: pb.Status_SUCCESS}},
+							NextPageToken: "page-2",
+						}, nil
+					}
+					return &pb.SearchBuildsResponse{
+						Builds: []*pb.Build{{Id: 2, Status: pb.Status_FAILURE}},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mock
+			run.out = &buf
+			assert.Loosely(t, run.Flags.Parse([]string{"-builder", "chromium/ci/linux-rel", "-n", "0"}), should.BeNil)
+			assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, calls, should.Equal(2))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Builds (2):"))
+			assert.Loosely(t, buf.String(), should.NotContainSubstring("more available"))
+		})
+
+		t.Run(`Distinguishes nonexistent explicit patchset when 0 builds returned`, func(t *ftt.Test) {
+			mockBuilds := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8847442,
+						CurrentRevision: "rev3",
+						Revisions:       map[string]*gerritpb.RevisionInfo{"rev3": {Number: 3}},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBuilds
+			run.gerritClient = mockGerrit
+			run.out = &buf
+			assert.Loosely(t, run.Flags.Parse([]string{"-cl", "https://crrev.com/c/8847442/99"}), should.BeNil)
+			assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Notice: Patchset 99 does not exist on CL 8847442 (latest patchset is 3)"))
+		})
+
+		t.Run(`Surfaces Target Builder for wrapper builders like chromium/reviver/runner`, func(t *ftt.Test) {
+			props, _ := structpb.NewStruct(map[string]any{
+				"$build/chromium_polymorphic": map[string]any{
+					"target_builder_id": map[string]any{
+						"project": "chromium",
+						"bucket":  "ci",
+						"builder": "android-desktop-x64-compile-rel",
+					},
+				},
+			})
+			builds := []*pb.Build{
+				{
+					Id:      8664199980394766945,
+					Builder: &pb.BuilderID{Project: "chromium", Bucket: "reviver", Builder: "runner"},
+					Status:  pb.Status_SUCCESS,
+					Input:   &pb.Build_Input{Properties: props},
+				},
+			}
+			var buf bytes.Buffer
+			assert.Loosely(t, FormatBuildList(&buf, builds), should.BeNil)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Builder:       chromium/reviver/runner"))
+			assert.Loosely(t, out, should.ContainSubstring("Target Builder: chromium/ci/android-desktop-x64-compile-rel"))
+		})
+
+		t.Run(`Keeps PageSize constant across multi-page pagination for -n > 1000`, func(t *ftt.Test) {
+			makeBuilds := func(startID int64, count int) []*pb.Build {
+				out := make([]*pb.Build, count)
+				for i := range count {
+					out[i] = &pb.Build{Id: startID + int64(i), Status: pb.Status_SUCCESS}
+				}
+				return out
+			}
+
+			var pageSizes []int32
+			var pageTokens []string
+			mock := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					pageSizes = append(pageSizes, in.PageSize)
+					pageTokens = append(pageTokens, in.PageToken)
+					if len(pageSizes) == 1 {
+						return &pb.SearchBuildsResponse{
+							Builds:        makeBuilds(1, 1000),
+							NextPageToken: "page-2",
+						}, nil
+					}
+					return &pb.SearchBuildsResponse{
+						Builds: makeBuilds(1001, 600),
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mock
+			run.out = &buf
+			assert.Loosely(t, run.Flags.Parse([]string{"-builder", "chromium/ci/linux-rel", "-n", "1500"}), should.BeNil)
+			assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, pageSizes, should.Match([]int32{maxBuildListPageSize, maxBuildListPageSize}))
+			assert.Loosely(t, pageTokens, should.Match([]string{"", "page-2"}))
+			assert.Loosely(t, buf.String(), should.ContainSubstring("Builds (showing 1500, more available):"))
+		})
+
+		t.Run(`Caps -n 0 at maxUnlimitedBuildPages and tailors footer note`, func(t *ftt.Test) {
+			calls := 0
+			mock := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					calls++
+					assert.Loosely(t, in.PageSize, should.Equal(int32(maxBuildListPageSize)))
+					return &pb.SearchBuildsResponse{
+						Builds:        []*pb.Build{{Id: int64(calls), Status: pb.Status_SUCCESS}},
+						NextPageToken: fmt.Sprintf("page-%d", calls+1),
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mock
+			run.out = &buf
+			assert.Loosely(t, run.Flags.Parse([]string{"-builder", "chromium/ci/linux-rel", "-n", "0"}), should.BeNil)
+			assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, calls, should.Equal(maxUnlimitedBuildPages))
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("Builds (showing 10, more available):"))
+			assert.Loosely(t, out, should.ContainSubstring("Stopped after 10 pages (10 builds) for -n 0"))
+			assert.Loosely(t, out, should.ContainSubstring("narrow filters with -status=failure, -builder, or -tag"))
+			assert.Loosely(t, out, should.NotContainSubstring("-n 0 to show more"))
+			assert.Loosely(t, out, should.NotContainSubstring("pass an explicit -n <N>"))
+		})
+
+		t.Run(`Omits -n 0 hint on non-CL truncated queries and scopes InputProperties to wrapper builders`, func(t *ftt.Test) {
+			var gotMask *pb.BuildMask
+			mock := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					gotMask = in.Mask
+					return &pb.SearchBuildsResponse{
+						Builds:        []*pb.Build{{Id: 1, Status: pb.Status_SUCCESS}},
+						NextPageToken: "page-2",
+					}, nil
+				},
+			}
+
+			// Standard non-CL builder query: no tags, no InputProperties, no -n 0 hint.
+			var buf bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mock
+			run.out = &buf
+			assert.Loosely(t, run.Flags.Parse([]string{"-builder", "chromium/ci/linux-rel", "-n", "1"}), should.BeNil)
+			assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, gotMask.GetFields().GetPaths(), should.NotContain("tags"))
+			assert.Loosely(t, gotMask.GetInputProperties(), should.BeEmpty)
+			out := buf.String()
+			assert.Loosely(t, out, should.ContainSubstring("pass -status=failure to filter failures, or -n <N> to show more"))
+			assert.Loosely(t, out, should.NotContainSubstring("-n 0"))
+
+			// Reviver wrapper bucket query: requests InputProperties target_builder_id without tags.
+			gotMask = nil
+			buf.Reset()
+			cmd2 := ListCmd(af)
+			run2 := cmd2.CommandRun().(*buildListRun)
+			run2.client = mock
+			run2.out = &buf
+			assert.Loosely(t, run2.Flags.Parse([]string{"-project", "chromium", "-bucket", "reviver", "-n", "1"}), should.BeNil)
+			assert.Loosely(t, run2.Run(nil, run2.Flags.Args(), nil), should.Equal(0))
+			assert.Loosely(t, gotMask.GetFields().GetPaths(), should.NotContain("tags"))
+			assert.Loosely(t, len(gotMask.GetInputProperties()), should.Equal(2))
+		})
+
+		t.Run(`Emits no nonexistent-patchset notice when valid explicit patchset has 0 builds`, func(t *ftt.Test) {
+			mockBuilds := &mockBuildsClient{
+				searchBuilds: func(ctx context.Context, in *pb.SearchBuildsRequest, opts ...grpc.CallOption) (*pb.SearchBuildsResponse, error) {
+					return &pb.SearchBuildsResponse{}, nil
+				},
+			}
+			mockGerrit := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					return &gerritpb.ChangeInfo{
+						Number:          8847442,
+						CurrentRevision: "rev5",
+						Revisions:       map[string]*gerritpb.RevisionInfo{"rev5": {Number: 5}},
+					}, nil
+				},
+			}
+
+			var buf bytes.Buffer
+			cmd := ListCmd(af)
+			run := cmd.CommandRun().(*buildListRun)
+			run.client = mockBuilds
+			run.gerritClient = mockGerrit
+			run.out = &buf
+			assert.Loosely(t, run.Flags.Parse([]string{"-cl", "https://crrev.com/c/8847442/3"}), should.BeNil)
+			assert.Loosely(t, run.Run(nil, run.Flags.Args(), nil), should.Equal(0))
+			out := buf.String()
+			assert.Loosely(t, out, should.NotContainSubstring("Notice:"))
+			assert.Loosely(t, out, should.ContainSubstring("No matching builds found."))
+		})
+
+		t.Run(`extractTargetBuilder falls back to top-level target_builder_id and target_builder tag`, func(t *ftt.Test) {
+			topProps, _ := structpb.NewStruct(map[string]any{
+				"target_builder_id": map[string]any{
+					"project": "chromium",
+					"bucket":  "ci",
+					"builder": "linux-rel",
+				},
+			})
+			assert.Loosely(t, extractTargetBuilder(&pb.Build{
+				Input: &pb.Build_Input{Properties: topProps},
+			}), should.Equal("chromium/ci/linux-rel"))
+
+			assert.Loosely(t, extractTargetBuilder(&pb.Build{
+				Tags: []*pb.StringPair{{Key: "target_builder", Value: "chromium/ci/mac-rel"}},
+			}), should.Equal("chromium/ci/mac-rel"))
 		})
 	})
 }

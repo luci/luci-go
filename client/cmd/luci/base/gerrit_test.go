@@ -383,6 +383,60 @@ func TestResolveGerritPatchset(t *testing.T) {
 			assert.Loosely(t, resolved.Patchset, should.Equal(2))
 		})
 
+		t.Run(`Retries without project on NotFound and updates canonical project`, func(t *ftt.Test) {
+			calls := 0
+			mock := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					calls++
+					assert.Loosely(t, in.Number, should.Equal(10135520))
+					if calls == 1 {
+						assert.Loosely(t, in.Project, should.Equal("chrome/src-internal"))
+						return nil, status.Errorf(codes.NotFound, "not found")
+					}
+					assert.Loosely(t, in.Project, should.BeEmpty)
+					return &gerritpb.ChangeInfo{
+						Number:          10135520,
+						Project:         "chrome/experimental/chromium/src",
+						CurrentRevision: "sha_1",
+						Revisions: map[string]*gerritpb.RevisionInfo{
+							"sha_1": {Number: 1},
+						},
+					}, nil
+				},
+			}
+
+			change := &pb.GerritChange{
+				Host:    "chrome-internal-review.googlesource.com",
+				Project: "chrome/src-internal",
+				Change:  10135520,
+			}
+			resolved, err := ResolveGerritPatchset(ctx, mock, change)
+			assert.Loosely(t, err, should.BeNil)
+			assert.Loosely(t, calls, should.Equal(2))
+			assert.Loosely(t, resolved.Patchset, should.Equal(1))
+			assert.Loosely(t, resolved.Project, should.Equal("chrome/experimental/chromium/src"))
+		})
+
+		t.Run(`Does not retry without project on non-NotFound errors`, func(t *ftt.Test) {
+			calls := 0
+			mock := &mockGerritClient{
+				getChange: func(ctx context.Context, in *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+					calls++
+					return nil, status.Errorf(codes.PermissionDenied, "permission denied")
+				},
+			}
+
+			change := &pb.GerritChange{
+				Host:    "chrome-internal-review.googlesource.com",
+				Project: "chrome/src-internal",
+				Change:  10135520,
+			}
+			_, err := ResolveGerritPatchset(ctx, mock, change)
+			assert.Loosely(t, err, should.NotBeNil)
+			assert.Loosely(t, calls, should.Equal(1))
+			assert.Loosely(t, change.Project, should.Equal("chrome/src-internal"))
+		})
+
 		t.Run(`Nil client returns error`, func(t *ftt.Test) {
 			change := &pb.GerritChange{
 				Host:   "chromium-review.googlesource.com",
