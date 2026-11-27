@@ -13,13 +13,22 @@
 // limitations under the License.
 
 import { Box, Divider, Typography } from '@mui/material';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router';
 
+import { useFeatureFlag } from '@/common/feature_flags';
+import { WorkforceActivityButton } from '@/fleet/components/repair_queue/workforce_activity_button';
+import { generateRepairsWorkforceURL } from '@/fleet/constants/paths';
+import { enableAndroidWorkforceActivity } from '@/fleet/features';
 import { surfaceCardSx } from '@/fleet/theme/recipes';
-import { AndroidPageWorkspace } from '@/fleet/workspaces';
+import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
+import { ListAndroidRepairQueueRequest } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { AndroidMyRepairTasksActions } from './android_my_repair_tasks_actions';
 import { AndroidPriorityRulesPanel } from './android_priority_rules_panel';
 import { AndroidRepairQueueTable } from './android_repair_queue_table';
+import { toAndroidWorkspaceEnum } from './android_workspace';
+import { useAndroidRepairQueue } from './use_android_repair_queue';
 
 export interface AndroidRepairDashboardProps {
   workspace: AndroidPageWorkspace;
@@ -28,6 +37,20 @@ export interface AndroidRepairDashboardProps {
 export const AndroidRepairDashboard = ({
   workspace,
 }: AndroidRepairDashboardProps) => {
+  const navigate = useNavigate();
+  const isWorkforceEnabled = useFeatureFlag(enableAndroidWorkforceActivity);
+  const queueRequest = useMemo(
+    () =>
+      ListAndroidRepairQueueRequest.fromPartial({
+        pageSize: 100,
+        workspace: toAndroidWorkspaceEnum(workspace),
+      }),
+    [workspace],
+  );
+  const { inProgressCount } = useAndroidRepairQueue(queueRequest, {
+    enabled: isWorkforceEnabled,
+  });
+
   return (
     <div
       css={{
@@ -54,6 +77,16 @@ export const AndroidRepairDashboard = ({
             repair queue.
           </Typography>
         </div>
+        {isWorkforceEnabled && (
+          <WorkforceActivityButton
+            inProgressCount={inProgressCount}
+            onClick={() =>
+              navigate(
+                generateRepairsWorkforceURL(workspaces[workspace].baseUrl),
+              )
+            }
+          />
+        )}
       </Box>
 
       <Box

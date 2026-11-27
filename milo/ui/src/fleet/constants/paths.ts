@@ -97,9 +97,14 @@ export const getCurrentFleetPathnameWithParams = () =>
 export const getCurrentFleetPathname = () =>
   getCurrentFleetPathnameWithParams().split(/[?#]/)[0];
 
+export interface CorrespondingURLOptions {
+  isAndroidWorkforceEnabled?: boolean;
+}
+
 export const generateAnotherPlatformCorrespondingURL = (
   platform: Platform,
   newPlatform: Platform,
+  options?: CorrespondingURLOptions,
 ) => {
   const currentPathname = getCurrentFleetPathname();
   const targetPlatformUrl = platformToURL(newPlatform);
@@ -115,8 +120,12 @@ export const generateAnotherPlatformCorrespondingURL = (
     currentPathname.includes(`/${REPAIRS_SUBROUTE}/`) ||
     currentPathname.endsWith(`/${REPAIRS_SUBROUTE}`)
   ) {
+    const targetSupportsWorkforce =
+      newPlatform === Platform.CHROMEOS ||
+      ((newPlatform === Platform.ANDROID || newPlatform === Platform.PIXEL) &&
+        Boolean(options?.isAndroidWorkforceEnabled));
     if (
-      newPlatform === Platform.CHROMEOS &&
+      targetSupportsWorkforce &&
       currentPathname.includes(`/${WORKFORCE_SUBROUTE}`)
     ) {
       return generateRepairsWorkforceURL(targetPlatformUrl);

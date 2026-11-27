@@ -498,6 +498,88 @@ describe('<AndroidRepairDashboard />', () => {
       expect(
         screen.getByText('Android Manual Repair Dashboard'),
       ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Workforce Activity/i }),
+      ).toHaveTextContent('1 In-Progress');
     });
+  });
+
+  it('hides Workforce Activity button when enableAndroidWorkforceActivity is false', () => {
+    jest.spyOn(FeatureFlagsModule, 'useFeatureFlag').mockReturnValue(false);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider
+          mountedPath="/ui/fleet/p/:platform/repairs"
+          routerOptions={{
+            initialEntries: ['/ui/fleet/p/android/repairs'],
+          }}
+        >
+          <SettingsProvider>
+            <ShortcutProvider>
+              <AndroidRepairDashboard workspace="Android" />
+            </ShortcutProvider>
+          </SettingsProvider>
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: /Workforce Activity/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('navigates to the workspace workforce activity page when clicking Workforce Activity', async () => {
+    jest.spyOn(FeatureFlagsModule, 'useFeatureFlag').mockReturnValue(true);
+    jest
+      .spyOn(UseAndroidRepairQueueModule, 'useAndroidRepairQueue')
+      .mockReturnValue({
+        data: {
+          repairQueueItems: MOCK_QUEUE_ITEMS,
+          totalSize: 2,
+          nextPageToken: '',
+        },
+        inProgressCount: 3,
+        isPending: false,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        isPlaceholderData: false,
+      } as unknown as ReturnType<
+        typeof UseAndroidRepairQueueModule.useAndroidRepairQueue
+      >);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <FakeContextProvider
+          mountedPath="/ui/fleet/p/:platform/repairs"
+          siblingRoutes={[
+            {
+              path: '/ui/fleet/p/pixel/repairs/workforce',
+              element: (
+                <div data-testid="pixel-workforce-dest">Pixel Workforce</div>
+              ),
+            },
+          ]}
+          routerOptions={{
+            initialEntries: ['/ui/fleet/p/pixel/repairs'],
+          }}
+        >
+          <SettingsProvider>
+            <ShortcutProvider>
+              <AndroidRepairDashboard workspace="Pixel" />
+            </ShortcutProvider>
+          </SettingsProvider>
+        </FakeContextProvider>
+      </QueryClientProvider>,
+    );
+
+    const btn = screen.getByRole('button', { name: /Workforce Activity/i });
+    expect(btn).toHaveTextContent('3 In-Progress');
+    fireEvent.click(btn);
+
+    expect(
+      await screen.findByTestId('pixel-workforce-dest'),
+    ).toBeInTheDocument();
   });
 });

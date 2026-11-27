@@ -40,6 +40,18 @@ jest.mock('@/fleet/pages/chromeos/repairs/workforce_activity_view', () => ({
   ),
 }));
 
+jest.mock(
+  '@/fleet/pages/android/repair_queue/android_workforce_activity_view',
+  () => ({
+    __esModule: true,
+    default: ({ workspace }: { workspace: string }) => (
+      <div data-testid={`android-workforce-page-${workspace.toLowerCase()}`}>
+        {workspace} Workforce Page
+      </div>
+    ),
+  }),
+);
+
 describe('platformRoutes', () => {
   it('redirects /p/chromium to /devices', async () => {
     const router = createMemoryRouter(
@@ -234,6 +246,31 @@ describe('platformRoutes', () => {
 
       expect(
         await screen.findByTestId('chromeos-workforce-page'),
+      ).toBeInTheDocument();
+    });
+
+    const renderRoute = (path: string) =>
+      render(
+        <FakeContextProvider
+          siblingRoutes={[{ path: 'p/:platform', children: platformRoutes }]}
+          routerOptions={{ initialEntries: [path] }}
+        >
+          <></>
+        </FakeContextProvider>,
+      );
+
+    it.each([
+      ['/p/android/repairs/workforce', 'android-workforce-page-android'],
+      ['/p/pixel/repairs/workforce', 'android-workforce-page-pixel'],
+    ])('renders %s', async (path, testId) => {
+      renderRoute(path);
+      expect(await screen.findByTestId(testId)).toBeInTheDocument();
+    });
+
+    it('renders PlatformNotAvailable for Chromium workforce route', async () => {
+      renderRoute('/p/chromium/repairs/workforce');
+      expect(
+        await screen.findByText('Platform not available'),
       ).toBeInTheDocument();
     });
   });

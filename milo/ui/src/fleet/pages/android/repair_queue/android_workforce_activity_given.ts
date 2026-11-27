@@ -14,6 +14,7 @@
 
 import {
   enableAndroidRepairQueue,
+  enableAndroidWorkforceActivity,
   enableWorkforceInProgressRepairs,
   enableWorkforcePickupRank,
   enableWorkforceTimeframeFilter,
@@ -73,6 +74,7 @@ export const given = {
 
   allFlagsEnabled() {
     genericGiven.featureFlag(enableAndroidRepairQueue, true);
+    genericGiven.featureFlag(enableAndroidWorkforceActivity, true);
     genericGiven.featureFlag(enableWorkforcePickupRank, true);
     genericGiven.featureFlag(enableWorkforceInProgressRepairs, true);
     genericGiven.featureFlag(enableWorkforceTimeframeFilter, true);
@@ -80,5 +82,9 @@ export const given = {
 
   androidRepairQueueEnabled(enabled = true) {
     genericGiven.featureFlag(enableAndroidRepairQueue, enabled);
+  },
+
+  androidWorkforceActivityEnabled(enabled = true) {
+    genericGiven.featureFlag(enableAndroidWorkforceActivity, enabled);
   },
 };

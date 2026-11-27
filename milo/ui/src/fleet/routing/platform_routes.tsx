@@ -39,6 +39,13 @@ const WorkforceActivityPage = lazy(
   () => import('@/fleet/pages/chromeos/repairs/workforce_activity_view'),
 );
 
+const AndroidWorkforceActivityPage = lazy(
+  () =>
+    import(
+      '@/fleet/pages/android/repair_queue/android_workforce_activity_view'
+    ),
+);
+
 const ChromeOsHealthPage = lazy(() => import('@/fleet/pages/chromeos/health'));
 
 const AndroidDeviceDetailsPage = lazy(() =>
@@ -65,6 +72,10 @@ const WorkforceRouteElement = () => {
   return (
     <PlatformDependentPage
       pageComponentMap={{
+        [Platform.ANDROID]: (
+          <AndroidWorkforceActivityPage workspace="Android" />
+        ),
+        [Platform.PIXEL]: <AndroidWorkforceActivityPage workspace="Pixel" />,
         [Platform.CHROMEOS]: WorkforceActivityPage,
       }}
     />

@@ -214,6 +214,7 @@ describe('<AndroidWorkforceActivityView /> (Full Page Integration with Fake pRPC
   );
 
   it('gates the route wrapper behind enableAndroidRepairQueue', async () => {
+    given.allFlagsEnabled();
     given.androidRepairQueueEnabled(false);
 
     when.routeComponentIsRendered('Android');
@@ -221,7 +222,16 @@ describe('<AndroidWorkforceActivityView /> (Full Page Integration with Fake pRPC
     await then.pageNotFoundIsVisible();
   });
 
-  it('renders the workforce page in route wrapper when enableAndroidRepairQueue is enabled', async () => {
+  it('gates the route wrapper behind enableAndroidWorkforceActivity', async () => {
+    given.allFlagsEnabled();
+    given.androidWorkforceActivityEnabled(false);
+
+    when.routeComponentIsRendered('Pixel');
+
+    await then.pageNotFoundIsVisible();
+  });
+
+  it('renders the workforce page in route wrapper when both flags are enabled', async () => {
     given.allFlagsEnabled();
     given.workforceActivity({
       activeRepairers: 1,

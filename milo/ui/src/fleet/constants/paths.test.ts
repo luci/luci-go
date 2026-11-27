@@ -35,13 +35,54 @@ describe('generateAnotherPlatformCorrespondingURL', () => {
     expect(result).toBe('/ui/fleet/p/android/devices');
   });
 
-  it('routes to repairs workforce when switching to ChromeOS on workforce route', () => {
+  it('preserves repairs workforce route when switching between ChromeOS, Android, and Pixel if enabled', () => {
     setUrl('/ui/fleet/p/android/repairs/workforce');
-    const result = generateAnotherPlatformCorrespondingURL(
-      Platform.ANDROID,
-      Platform.CHROMEOS,
-    );
-    expect(result).toBe('/ui/fleet/p/chromeos/repairs/workforce');
+    expect(
+      generateAnotherPlatformCorrespondingURL(
+        Platform.ANDROID,
+        Platform.CHROMEOS,
+      ),
+    ).toBe('/ui/fleet/p/chromeos/repairs/workforce');
+    expect(
+      generateAnotherPlatformCorrespondingURL(
+        Platform.ANDROID,
+        Platform.PIXEL,
+        { isAndroidWorkforceEnabled: true },
+      ),
+    ).toBe('/ui/fleet/p/pixel/repairs/workforce');
+
+    setUrl('/ui/fleet/p/chromeos/repairs/workforce');
+    expect(
+      generateAnotherPlatformCorrespondingURL(
+        Platform.CHROMEOS,
+        Platform.ANDROID,
+        { isAndroidWorkforceEnabled: true },
+      ),
+    ).toBe('/ui/fleet/p/android/repairs/workforce');
+    expect(
+      generateAnotherPlatformCorrespondingURL(
+        Platform.CHROMEOS,
+        Platform.CHROMIUM,
+        { isAndroidWorkforceEnabled: true },
+      ),
+    ).toBe('/ui/fleet/p/chromium/repairs');
+  });
+
+  it('falls back to standard repairs for Android and Pixel when Android workforce flag is disabled', () => {
+    setUrl('/ui/fleet/p/chromeos/repairs/workforce');
+    expect(
+      generateAnotherPlatformCorrespondingURL(
+        Platform.CHROMEOS,
+        Platform.ANDROID,
+      ),
+    ).toBe('/ui/fleet/p/android/repairs');
+    expect(
+      generateAnotherPlatformCorrespondingURL(
+        Platform.CHROMEOS,
+        Platform.PIXEL,
+        { isAndroidWorkforceEnabled: false },
+      ),
+    ).toBe('/ui/fleet/p/pixel/repairs');
   });
 
   it('routes to standard repairs when on repairs route without workforce', () => {

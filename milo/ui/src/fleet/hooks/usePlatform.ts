@@ -14,6 +14,11 @@
 
 import { useNavigate, useParams } from 'react-router';
 
+import { getFeatureFlagValue } from '@/common/feature_flags';
+import {
+  enableAndroidRepairQueue,
+  enableAndroidWorkforceActivity,
+} from '@/fleet/features';
 import { Platform } from '@/proto/go.chromium.org/infra/fleetconsole/api/fleetconsolerpc';
 
 import { generateAnotherPlatformCorrespondingURL } from '../constants/paths';
@@ -50,7 +55,14 @@ export function usePlatform(): PlatformDetails {
   }
 
   const setPlatform = (newPlatform: Platform) => {
-    navigate(generateAnotherPlatformCorrespondingURL(platform, newPlatform));
+    const isAndroidWorkforceEnabled =
+      getFeatureFlagValue(enableAndroidRepairQueue) &&
+      getFeatureFlagValue(enableAndroidWorkforceActivity);
+    navigate(
+      generateAnotherPlatformCorrespondingURL(platform, newPlatform, {
+        isAndroidWorkforceEnabled,
+      }),
+    );
   };
 
   return {

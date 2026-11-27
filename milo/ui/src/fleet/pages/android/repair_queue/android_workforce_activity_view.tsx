@@ -21,7 +21,10 @@ import { LoggedInBoundary } from '@/fleet/components/logged_in_boundary';
 import { SharedWorkforceActivityView } from '@/fleet/components/repair_queue/workforce_activity_view';
 import { TimeframeOption } from '@/fleet/components/repair_queue/workforce_helpers';
 import { generateRepairsURL } from '@/fleet/constants/paths';
-import { enableAndroidRepairQueue } from '@/fleet/features';
+import {
+  enableAndroidRepairQueue,
+  enableAndroidWorkforceActivity,
+} from '@/fleet/features';
 import { FleetHelmet } from '@/fleet/layouts/fleet_helmet';
 import { PageNotFoundPage } from '@/fleet/pages/not_found_page';
 import { AndroidPageWorkspace, workspaces } from '@/fleet/workspaces';
@@ -82,7 +85,8 @@ function AndroidWorkforceActivityPageContent({
   workspace: AndroidPageWorkspace;
 }) {
   const isRepairQueueEnabled = useFeatureFlag(enableAndroidRepairQueue);
-  if (!isRepairQueueEnabled) {
+  const isWorkforceEnabled = useFeatureFlag(enableAndroidWorkforceActivity);
+  if (!isRepairQueueEnabled || !isWorkforceEnabled) {
     return <PageNotFoundPage />;
   }
   return (

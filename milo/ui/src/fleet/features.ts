@@ -120,6 +120,18 @@ export const enableAndroidRepairQueue = createFleetFeatureFlag({
   allowedEnvironments: ['dev'],
 });
 
+export const enableAndroidWorkforceActivity = createFleetFeatureFlag({
+  description:
+    'Enables the Workforce Activity view and entry point for Android and Pixel.',
+  name: 'android-workforce-activity',
+  percentage: {
+    dev: 100,
+    prod: 0,
+  },
+  trackingBug: '573210745',
+  allowedEnvironments: ['dev', 'prod'],
+});
+
 export const enableProductCatalogRevamp = createFleetFeatureFlag({
   description:
     'Enables the revamped Product Catalog card view, hardware reference photos, and unified details view.',
